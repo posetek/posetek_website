@@ -1,5 +1,11 @@
 # PoseTek website context
 
+For development/CI changes, read `docs/engineering/WORKFLOW.md` and
+`docs/engineering/DECISIONS.md`. The user approved automatic PR tests, human
+approval/merge and advisory AI review. Pending adaptations in the register require
+the user's decision; do not silently adopt or discard them. Staging and paid review
+remain disabled. Use isolated worktrees while other instances are active.
+
 Read `POSETEK_PROJECT_CONTEXT.md` before working on this website. It records the
 source version, project background, key files, release workflow, and review results.
 

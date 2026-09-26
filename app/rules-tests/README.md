@@ -1,5 +1,10 @@
 # Rules emulator suites
 
+For concurrent worktrees, set `RULES_PORT_OFFSET` to a distinct non-negative
+integer (for example `20000`). It offsets all four loopback emulator ports;
+invalid or out-of-range values fail before startup. Never stop another worktree's
+emulators to reclaim a port.
+
 These suites test the **canonical** Firestore and Storage rules, which live only in
 `PoseTek-mobile-app/firebase/firestore.rules` and `storage.rules`. This repository has
 no rules files and cannot publish rules: `firebase.json` carries Firestore *indexes*

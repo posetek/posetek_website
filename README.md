@@ -1,5 +1,9 @@
 # PoseTek website
 
+Engineering pipeline candidate: [workflow and validation](docs/engineering/WORKFLOW.md),
+[playbook decisions requiring review](docs/engineering/DECISIONS.md). CI configuration
+is prepared; hosted checks, branch protection, staging and paid review are not yet enabled.
+
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 

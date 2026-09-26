@@ -1,0 +1,42 @@
+{
+  "status": "disabled-pending-user-review",
+  "enabled": false,
+  "mode": "advisory",
+  "trigger": "each-new-ready-pr-head",
+  "provider": null,
+  "model": null,
+  "github_app_id": null,
+  "budget": {
+    "max_attempts_per_head": 1,
+    "max_attempts_per_pr": 3,
+    "daily_usd_limit": null,
+    "failures_count_toward_limits": true
+  },
+  "timeout_minutes": 10,
+  "input": {
+    "max_diff_bytes": 200000,
+    "max_files": 40,
+    "oversize_result": "partial",
+    "source": "immutable-base-and-head",
+    "policy": "trusted-default-branch"
+  },
+  "permissions": {
+    "reviewer": [
+      "read-content"
+    ],
+    "publisher": [
+      "post-advisory-review"
+    ],
+    "approve": false,
+    "merge": false,
+    "deploy": false
+  },
+  "outcomes": [
+    "complete",
+    "partial",
+    "unavailable",
+    "not-run"
+  ],
+  "stale_head_action": "discard-and-report",
+  "spend_override": "explicit-maintainer-action-only"
+}

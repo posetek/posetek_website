@@ -1,0 +1,188 @@
+# PoseTek engineering workflow
+
+Status: candidate configuration under review. Nothing here enables a cloud
+deployment, paid reviewer or GitHub ruleset. See [DECISIONS.md](DECISIONS.md) for
+user-approved choices and every proposed adaptation of the supplied playbook.
+
+## Daily development
+
+1. Write the intended observable behavior and preserved behavior. For a bug, first
+   reproduce it. For contracts, identify both clients and every writer/reader.
+2. Use a short-lived branch in a separate worktree. Do not switch, stash or reset
+   another engineer's checkout. Mobile builds still require the primary owner;
+   isolated worktrees may parse Swift, but cannot claim device acceptance.
+3. Make a focused change and add the smallest meaningful regression coverage.
+   Prefer pure tests for logic, emulator tests for authorization, browser tests for
+   user flows and physical-device tests for capture/memory/thermal behavior.
+4. Run the relevant local lane, then open a PR using the template. Include actual
+   results and remaining gaps, linked companion PRs and compatibility/release order.
+5. Automatic CI tests the PR merge commit. The `ci` job succeeds only when every
+   lane succeeds; cancellation, failure and skipped lanes cannot satisfy it.
+   AI review will be advisory when enabled. A human reviews and merges.
+6. Merge means integrated source. Release requires separate artifact verification,
+   environment approval, promotion, smoke, rollback readiness and a receipt.
+
+Keep changes small; avoid turning every fix into a planning ceremony. Existing
+tests protect real product contracts and should not be replaced with generic
+coverage-count tests. Source-text assertions alone do not prove runtime behavior.
+
+## Current standing lanes
+
+| Repository | PR lanes in this candidate | Important limit |
+| --- | --- | --- |
+| Website | Vitest; all Functions/tooling Node tests; TypeScript/application build; Svelte check; marketing build; guest Chromium smoke; workflow contract tests | Ordinary builds do not prove the protected production artifact. Three existing private-fixture tests skip on clean clones. Lint decision pending. |
+| Backend | Gateway pytest with live-network guard; authored replay evaluation; legacy processor syntax; workflow contract tests | Replay is not model-quality evidence. Processor syntax is not video/biomechanics coverage. Python dependencies need Linux lock work. |
+| Mobile | Canonical Firestore/Storage emulator suites and hash receipt; publishing-tool unit tests; all tracked app Swift syntax; workflow contract tests | No full native build, simulator XCTest, signing or camera acceptance is claimed. |
+
+The website's additional rule suites still need the canonical mobile checkout.
+They are **not yet a required hosted lane**: private cross-repo source retrieval
+must be wired without exposing its token to PR code (D23). Do not copy rule files
+into this repository to remove that dependency.
+
+All three workflows have PR, main-push, merge-group and manual triggers, no path
+filters, per-job read permissions, timeouts and immutable action SHAs. The gate
+tests exercise its actual shell script against success, failure, cancellation,
+skip and malformed/empty evidence. They also reject dangerous workflow mutations.
+These tests help prevent mistakes; an author who edits tests and policy together
+still requires independent human review and server-enforced GitHub controls.
+
+## Local website commands
+
+Use Node 22.23.3, Python 3.12 for policy checks, and the committed lockfiles:
+
+```sh
+npm --prefix app ci --ignore-scripts --no-audit --no-fund
+npm --prefix functions ci --ignore-scripts --no-audit --no-fund
+npm --prefix app test
+node --test functions/*.test.js scripts/*.test.cjs scripts/*.test.mjs
+npm --prefix app run check:svelte
+npm --prefix app run build
+npm --prefix app run build:marketing
+node app/node_modules/playwright/cli.js install chromium
+node --test scripts/browser-smoke.mjs
+# In your Python virtual environment:
+python -m pip install -r ci/requirements.txt
+python -m unittest discover -s ci -p 'test_*.py'
+```
+
+Browser smoke starts a disposable loopback server on an available port, exercises
+the compiled checkout, uses separate guest contexts and blocks external HTTP and
+WebSocket requests before navigation. It does not log in, seed data, send email,
+call a model or claim authenticated end-to-end coverage.
+
+Rules integration, when a reviewed mobile checkout is available:
+
+```sh
+RULES_PATH=/absolute/path/to/mobile/firebase/firestore.rules \
+STORAGE_RULES_PATH=/absolute/path/to/mobile/firebase/storage.rules \
+FIREBASE_BIN=/absolute/path/to/mobile/firebase/node_modules/firebase-tools/lib/bin/firebase.js \
+node scripts/run-rules-tests.mjs
+```
+
+The runner accepts `RULES_PORT_OFFSET=20000` to isolate ports from other local
+emulator users. Choose a distinct offset per concurrent worktree; a bind failure
+must not terminate somebody else's emulators. Use isolated runners for hosted
+integration, with exact partner SHAs logged.
+
+## GitHub rollout, in order
+
+1. Authenticate an administrator and inspect repository visibility, Actions policy,
+   existing rulesets and hosting integrations. This session has no authenticated
+   `gh`; remote policy has not been inspected or changed.
+2. Review/merge these separate CI PRs. Resolve recorded baseline failures first.
+   Run each workflow on GitHub; local results are not hosted-run evidence.
+3. Only after green hosted runs, protect main: require a PR, one human approval,
+   stale-approval dismissal, resolved conversations and the `ci` check from the
+   expected Actions source; block force pushes/deletion. Confirm emergency access
+   explicitly. Keep GitHub workflow write-token permissions restricted.
+4. Assign real owners for `.github/`, agent policy, release scripts, Firebase rules
+   and identity/payment code. Do not install placeholder CODEOWNERS handles.
+5. Confirm whether Netlify Git publishing is enabled before pushing/merging source.
+   Its ordinary build preserves the deployed application, so green Git CI alone
+   neither releases new app code nor validates an intended application release.
+6. Wire private cross-repo tests and native build prerequisites, then require their
+   gates. Do not pretend pending suites already protect merges.
+
+Merge queue is optional and pending (D12); the merge_group trigger is prepared.
+Do not enable a queue until its synthetic merge commit demonstrably receives the
+required check. Keep humans responsible for merge; bot approval is not a substitute.
+
+## Staging and release preparation
+
+[staging.proposed.json](staging.proposed.json) is a proposal, not Terraform or an
+active deployment config. Its null fields deliberately need user decisions.
+
+Provision one separate GCP/Firebase project, separate buckets/identities/Secrets,
+synthetic athletes/clubs, test payment credentials and controlled email recipients.
+Never point staging at `kickai-69dd0` or copy athlete records/video into it. First
+parameterize and test the frontend Firebase configuration, Functions/gateway
+project references, callback URLs, App Check and CORS. A public preview URL alone
+does not provide isolation. A tagged no-traffic production gateway revision still
+uses production resources and cannot serve as the staging substitute.
+
+Use OIDC with repository/ref/environment claims and least-privilege deployment
+service accounts. Keep cloud credentials out of PR test jobs. Add protected
+environment approval and a budget alert before enabling hosted deploys. Build and
+test immutable artifacts, record digests, serialize promotions, verify health and
+critical synthetic journeys, and record the last successful deployment.
+
+Preserve existing canonical publishers until replacements are approved:
+
+- Website: reviewed `production-dist` from the guarded builders, Netlify draft
+  acceptance and promotion of the same artifact; preserve baseline reconciliation.
+- Gateway: `Services/agent-gateway/scripts/release.sh` from pushed main; exact image
+  tests, no-traffic candidate, verification, then explicit traffic shift.
+- Rules: mobile `firebase/operations.py publish`, exact-byte test receipt,
+  reviewed baseline and identity audit, then deployed checks and scoped cleanup.
+- iOS: primary-owner compile/XCTest, physical-iPhone capture and repeated-rep
+  acceptance, TestFlight, then separately approved distribution.
+
+A platform release receipt should name all three source SHAs, artifact digests,
+rules hashes, supported client contracts, verification results, approver, timestamps,
+previous serving artifacts and exact rollback actions. Old mobile clients remain
+supported until an explicit minimum-version policy says otherwise. Never roll back
+rules to a weaker authorization policy just to restore an old client.
+
+The rules drift alarm currently compares pushed main with live rules. Keep it until
+the proposed release-receipt comparison (D16) is reviewed; otherwise an ordinary
+merge could create an alarm before a scheduled publish.
+
+## Advisory reviewer preparation
+
+[reviewer.proposed.json](reviewer.proposed.json) and
+[the rubric](../../.github/review/CORE.md) are prepared specifications. There is no
+running bot, provider key or review workflow yet. Activation needs a provider/model,
+hard daily budget, repository data handling approval and GitHub identity.
+
+The intended implementation has three separate trust domains:
+
+1. Trusted resolver reads the policy from default branch, authenticates the trigger,
+   captures exact base/head SHAs and applies attempt/spend limits. Fetch PR content
+   as data; do not execute checkout scripts or install its dependencies.
+2. Reviewer reads the bounded content with no shell, write, merge or deploy tools.
+   A provider credential cannot coexist with execution of PR-authored code.
+3. Trusted publisher validates structured output, rechecks the current head and
+   posts advisory findings only. Partial, stale and unavailable results are visible.
+
+Before enablement, test malicious diffs, forged output/markers, changed policy,
+forks, stale heads, duplicate delivery, cancellation, provider outage and exhausted
+budgets. Failures count toward attempts. No auto-fix feedback loop or App write
+scope is needed for the initial advisory reviewer. Larger diffs need explicit
+partial reporting or human review, not a fabricated clean verdict.
+
+## Next coverage, ordered by risk
+
+1. Authenticated emulator journeys: player code redemption (existing document ID),
+   staff invitation, stranger access denial, workout proposal privacy/publication,
+   refresh/retry and duplicate submission. Include browser + Functions + rules.
+2. Cross-service contracts: exact website/mobile/backend revisions, schema-version
+   compatibility, actor/target distinction, SSE completion/error recovery.
+3. Native: curated XCTest suites plus fixture assets and an explicitly provisioned
+   isolated Mac runner. Real-device capture memory/thermal tests remain separate.
+4. Legacy processors: known video fixtures, expected metrics, model checksums,
+   malformed media, resource bounds and idempotent upload behavior.
+5. Operational: staged rollback rehearsal, alert delivery, backup/restore drill,
+   service latency/error targets and release recovery time.
+
+Track fast-lane duration, flake/skip rate, escaped regressions, change-failure rate
+and recovery time. Expand based on observed risks; test count alone is not readiness.

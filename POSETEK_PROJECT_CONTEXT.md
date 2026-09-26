@@ -1,5 +1,11 @@
 # PoseTek website project context
 
+Engineering pipeline candidate (September 26, 2026): see
+`docs/engineering/WORKFLOW.md`, `DECISIONS.md` and `VALIDATION.md` in that directory.
+Prepared in an isolated worktree; no production release or remote protections
+were changed. Automatic PR checks and human approval/merge are user-approved;
+staging, hosted paid review and the flagged playbook adaptations remain pending.
+
 Reviewed on September 26, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
