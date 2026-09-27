@@ -4,13 +4,36 @@ Reviewed on September 26, 2026. This guide summarizes the available repository a
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
-## Confirmed training setup and account entry (2026-09-26)
+## Email-free staff and administrator access (2026-09-26)
 
-The managed-account follow-up implements manually shared coach, organization-admin
-and PoseTek-admin activation links plus PoseTek-assisted password recovery.
-Read [the implementation and operations handoff](docs/EMAIL_FREE_ACCOUNT_ACCESS.md).
-Its release receipt records live status separately; the preceding release below
-remains the production reference until guarded publication is verified.
+Website deployment `6ab8679ccbfca079f8997124`, from source
+`f9f10e0b69adcf3f5ed7e5742470a9a698ccd2d5`, was published September 26, 2026 at
+5:50:52 PM PDT. The exact reviewed draft was promoted without rebuilding. All
+1,177 artifact files match the candidate; the reconciled baseline protects 1,145
+application/public files (121,839,203 bytes). Production route/asset verification,
+role-routing browser checks and the ordinary preservation build passed.
+
+Organization managers and PoseTek admins share private staff activation links.
+New recipients choose a password; existing recipients sign in as the bound account.
+Coaches receive only their assigned teams, and organization admins their current
+organization. PoseTek admins use **Account access** in their account menu for
+trusted internal-admin activation and assisted password recovery. These flows send
+no email. Ordinary staff setup never verifies email; internal-admin authority keeps
+the existing verified exact-domain predicate and adds explicit trusted attestation.
+Player signup and the independent/legacy coach paths remain separate.
+
+Eleven scoped Firebase functions are live from source `026e2a0`. Website validation
+passed 1,278 tests, TypeScript, 22 release checks, 370 backend tests (three existing
+skips), 73 admin/access rules checks and 251 social rules checks. Live API and browser
+acceptance covered activation, replacement, recovery, all three staff roles,
+assigned-team boundaries and zero email-send requests. Responsive review covered
+360/390/430px and desktop. Seven temporary Auth accounts and all run-owned records
+were removed; cleanup readback includes every asynchronous deletion tombstone.
+Rules, gateway, training catalog and native UI were unchanged by this adjustment.
+Read [the production receipt](deployment/EMAIL_FREE_ACCOUNT_ACCESS_PRODUCTION.json)
+and [the implementation and operations handoff](docs/EMAIL_FREE_ACCOUNT_ACCESS.md).
+
+## Confirmed training setup and account entry (2026-09-26, preceding release)
 
 Website deployment `6ab788d1c138322f8f9b9911`, from source
 `e571df38b80f524da4dd547a9d82fe906d10aaa9`, was published September 26, 2026 at

@@ -48,7 +48,17 @@ default to a sibling `../PoseTek-mobile-app` checkout, and `RULES_PATH` /
 `deployment/*.json`, including the composed `whole-body-firestore.rules`
 (deleted), are historical records of past publishes, not instructions.
 
-Confirmed training resources and accurate account entry are live in website
+The current website release is `6ab8679ccbfca079f8997124`, source `f9f10e0`,
+published September 26, 2026 at 5:50:52 PM PDT. Email-free staff activation and
+PoseTek-assisted recovery are live through eleven scoped Firebase functions.
+Read `deployment/EMAIL_FREE_ACCOUNT_ACCESS_PRODUCTION.json` and
+`docs/EMAIL_FREE_ACCOUNT_ACCESS.md`. The reconciled baseline protects 1,145
+application/public files; all 1,177 artifact files match the reviewed draft.
+Production acceptance and the ordinary preservation build passed. Seven synthetic
+accounts and run-owned records were removed, including Auth deletion tombstones.
+Rules, gateway, training catalog and native UI were unchanged by this release.
+
+The preceding confirmed training resources and account-entry release is website
 deployment `6ab788d1c138322f8f9b9911`, source `e571df3`, published September 26,
 2026 at 2:55:16 AM PDT. The baseline protects 1,078 application/public files.
 Production artifact/browser verification and the ordinary preservation guard

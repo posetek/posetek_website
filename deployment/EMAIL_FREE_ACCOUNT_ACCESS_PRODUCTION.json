@@ -1,0 +1,246 @@
+{
+  "release": "Email-free coach and administrator access",
+  "status": "published_verified",
+  "website": {
+    "deployId": "6ab8679ccbfca079f8997124",
+    "url": "https://posetek.net",
+    "sourceCommit": "f9f10e0b69adcf3f5ed7e5742470a9a698ccd2d5",
+    "previousDeploy": "6ab788d1c138322f8f9b9911",
+    "publishedAt": "2026-09-27T00:50:52.209Z",
+    "applicationSha1": "266c13100ab08e82cc90d59f9e1d2ab54521f195",
+    "applicationBytes": 1396,
+    "guardedBuildPreservedFiles": 1077,
+    "addedAssets": 67,
+    "draftArtifactFiles": 1177,
+    "draftArtifactBytes": 127921550,
+    "draftInventorySha256": "f09430079cb6bfa79bac68c5982b43be1062af222df973b1370dcc43f6c79a5c",
+    "draftDownloadedFilesVerified": 100,
+    "draftRoutesVerified": 12,
+    "approvedMarketingFilesPreserved": 32,
+    "marketingSnapshot": "6ab5e409d3ca5da40c5c01d2",
+    "rawHomepageSha1": "e4d2dfc372f5554ba31be85fefffac6f1b467847",
+    "servedHomepageSha1": "ef9d1b3fb603c59e4c0e2a26fcefc1fb0ec8d286",
+    "coachesSha1": "0581430222a96caf034d1d6099adff7d4c68236d",
+    "productionArtifactFilesVerified": 1177,
+    "productionArtifactVerifiedAt": "2026-09-27T00:52:03.082Z",
+    "primaryHostVerifiedAt": "2026-09-27T00:52:09.945Z",
+    "primaryHostDownloadedFiles": 100,
+    "primaryHostRoutes": 12,
+    "reconciledBaselineFiles": 1145,
+    "reconciledBaselineBytes": 121839203,
+    "promotion": "Exact accepted draft restored to production without rebuilding",
+    "ordinaryPreservationBuildPassed": true
+  },
+  "backend": {
+    "projectId": "kickai-69dd0",
+    "region": "us-central1",
+    "sourceRepository": "posetek/posetek_website",
+    "sourceCommit": "026e2a0febb0da926745d85c8d32fb5b78e962cd",
+    "status": "deployed_verified",
+    "functions": [
+      "getClubContext",
+      "createClubStaffInvitation",
+      "redeemClubStaffInvitation",
+      "revokeClubStaffInvitation",
+      "replaceClubStaffInvitation",
+      "issueInternalAdminAccess",
+      "issueAccountRecovery",
+      "listAccountAccessLinks",
+      "revokeAccountAccessLink",
+      "getAccountAccessLink",
+      "completeAccountAccessLink"
+    ],
+    "scope": "Only these eleven account-access callables were deployed; no gateway or rules release."
+  },
+  "behavior": {
+    "everydayEntry": "/signin",
+    "recipientEntry": "/join",
+    "organizationIssuer": "/organization",
+    "poseTekIssuer": "/admin/access (Account access in the administrator account menu)",
+    "delivery": "Manual sharing of a private activation or recovery link; no email delivery in the managed flow",
+    "staffActivation": "Canonical organization membership and assigned teams; does not verify email",
+    "internalAdministratorActivation": "Existing administrator, recent sign-in and explicit identity/address confirmation; bound exact @posetek.net identity receives the existing verified-domain authority",
+    "recovery": "Existing enabled UID only; changes password and revokes refresh sessions, preserving email verification, memberships and authority",
+    "linkExpiryHours": {
+      "staff": 168,
+      "internalAdmin": 24,
+      "recovery": 0.5
+    },
+    "interruptedWrites": "Durable stages, exact-UID acknowledgement and fail-closed ambiguous Auth outcomes; no password or enable replay",
+    "legacy": "Existing CLUB invitations retain their verification contract; explicit replacement creates an email-free link"
+  },
+  "verification": {
+    "websiteTests": {
+      "passed": 1278,
+      "files": 106
+    },
+    "typescriptPassed": true,
+    "backendTests": {
+      "passed": 370,
+      "skipped": 3,
+      "failed": 0
+    },
+    "releaseChecksPassed": 22,
+    "canonicalAdminAndAccessRulesPassed": 73,
+    "socialRulesAssertionsPassed": 251,
+    "responsive": {
+      "widths": [
+        360,
+        390,
+        430,
+        1280
+      ],
+      "states": 16,
+      "noOverflow": true
+    },
+    "liveApi": {
+      "checks": [
+        "isolated temporary accounts and organization prepared",
+        "existing unverified coach activates without email, password reset or extra team access",
+        "completed activation readback is idempotent",
+        "new organization admin chooses password and receives only organization authority",
+        "organization manager cannot issue internal-admin access or password recovery",
+        "attested internal administrator activates to existing verified-domain authority",
+        "new coach remains disabled until recipient password setup",
+        "browser activation and recovery preserve exact UID, verification and team scope"
+      ],
+      "temporaryAccountsOnly": true
+    },
+    "draftBrowser": {
+      "passed": true,
+      "origin": "https://6ab8679ccbfca079f8997124--posetek.netlify.app",
+      "checkedAt": "2026-09-27T00:50:22.459Z",
+      "emailRequests": 0,
+      "reports": [
+        {
+          "name": "organization manager replaces pending activation link",
+          "passed": true
+        },
+        {
+          "name": "newcoach activation opens assigned team without email",
+          "passed": true
+        },
+        {
+          "name": "PoseTek admin issues assisted recovery in account access UI",
+          "passed": true
+        },
+        {
+          "name": "recovery activation opens assigned team without email",
+          "passed": true
+        },
+        {
+          "name": "newcoach ordinary sign-in reaches authorized destination",
+          "passed": true
+        },
+        {
+          "name": "orgadmin ordinary sign-in reaches authorized destination",
+          "passed": true
+        },
+        {
+          "name": "internal ordinary sign-in reaches authorized destination",
+          "passed": true
+        }
+      ]
+    },
+    "productionBrowser": {
+      "passed": true,
+      "origin": "https://posetek.net",
+      "checkedAt": "2026-09-27T00:51:19.184Z",
+      "emailRequests": 0,
+      "reports": [
+        {
+          "name": "newcoach ordinary sign-in reaches authorized destination",
+          "passed": true
+        },
+        {
+          "name": "orgadmin ordinary sign-in reaches authorized destination",
+          "passed": true
+        },
+        {
+          "name": "internal ordinary sign-in reaches authorized destination",
+          "passed": true
+        }
+      ]
+    },
+    "noManagedEmailSendRequests": true
+  },
+  "rules": {
+    "changed": false,
+    "deployed": false,
+    "canonicalRepository": "PoseTek-mobile-app/firebase",
+    "firestoreSha256": "ffd8a5c344e4cfd67882ab33f0fec41aaf7f2ce08beb860b286ced94e1b0e92e",
+    "storageSha256": "1da8799ec5f785c1a43330342f895fef76774622b32bbf48853b45bc3e4bf3eb",
+    "privateCollections": [
+      "accountAccessGrants",
+      "accountAccessTargets",
+      "accountAccessAudit",
+      "accountAccessRateLimits"
+    ],
+    "access": "Default-denied to clients; server only"
+  },
+  "cleanup": {
+    "status": "verified_zero_fixture_residue",
+    "accountsRemoved": 7,
+    "grantsRemoved": 6,
+    "authDeletionTombstonesObservedAndRemoved": 7,
+    "verifiedAt": "2026-09-27T00:54:00.345Z",
+    "remainingAccounts": 0,
+    "remainingRunOwnedDocuments": 0,
+    "scope": "Synthetic Auth identities, organization and nested membership/profile documents, teams, invitations, access grants/targets/audit, coaches/admins profiles and asynchronous social deletion tombstones. No fixture players or storage objects were created.",
+    "excluded": "Operational rate-limit counters and normal service/analytics logs are retained; shared IP limits are not removed or bypassed.",
+    "independentReadback": {
+      "checkedAt": "2026-09-27T00:55:14.542Z",
+      "readOnly": true,
+      "checkedOwnedAccounts": 7,
+      "checkedKnownGrants": 6,
+      "allAuthDeletionTombstonesPreviouslyObserved": true,
+      "counts": {
+        "authAccounts": 0,
+        "accountAccessGrants": 0,
+        "knownGrantDocuments": 0,
+        "accountAccessAudit": 0,
+        "accountAccessTargets": 0,
+        "coaches": 0,
+        "admins": 0,
+        "socialPreferences": 0,
+        "organizations": 0,
+        "organizationMembers": 0,
+        "organizationStaffProfiles": 0,
+        "otherOrganizationChildren": 0,
+        "teams": 0,
+        "players": 0,
+        "clubStaffInvitations": 0
+      },
+      "remainingFixtureRecords": 0,
+      "excludedCollections": {
+        "accountAccessRateLimits": "Operational hashed IP/UID rate counters are intentionally retained; no counters were read or changed."
+      },
+      "passed": true
+    }
+  },
+  "preserved": {
+    "marketing": true,
+    "playerSignup": true,
+    "independentAndLegacyCoachSignup": true,
+    "canonicalTeamBoundaries": true,
+    "gatewayUnchanged": true,
+    "trainingCatalogUnchanged": true,
+    "catalogVersion": "1.0.92",
+    "catalogRecords": 208,
+    "unpublishedWholeBodyDrafts": 80,
+    "mobileAcceptanceGate": false,
+    "nativeUiUnchanged": true
+  },
+  "limits": [
+    "Browser acceptance used desktop Edge at mobile viewport sizes; no new native build or physical-device acceptance is claimed.",
+    "Previously issued ID tokens may remain valid until expiry; recovery does not claim instant revocation of every active token.",
+    "Uncertain account-enabling outcomes remain held for operator review."
+  ],
+  "nativeContract": {
+    "repository": "posetek/PoseTek-mobile-app",
+    "file": "docs/ADMIN_IDENTITY_CONTRACT.md",
+    "documentationCommit": "17e03bbfb76e3db08303508588a44d3d4921e376",
+    "mainMergeCommit": "6af349e39fdc81e8eb1407a459884bef1f13d3cd",
+    "scope": "Documentation only; no native code, rules, build or deployment changed."
+  }
+}

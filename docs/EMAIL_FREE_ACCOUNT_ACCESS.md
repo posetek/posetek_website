@@ -1,7 +1,9 @@
 # Managed account activation and recovery
 
-Implementation handoff, September 26, 2026. Publication and acceptance are recorded
-separately in the release receipt; source changes alone do not establish a live release.
+Production handoff, September 26, 2026. Published as website deployment
+`6ab8679ccbfca079f8997124` at 5:50:52 PM PDT. The
+[release receipt](../deployment/EMAIL_FREE_ACCOUNT_ACCESS_PRODUCTION.json) records
+scoped backend deployment, browser acceptance, artifact verification and cleanup.
 
 ## Account ownership and authority
 
@@ -51,7 +53,7 @@ The new website managed activation and assisted recovery do not depend on email.
 ## Server contract and recovery
 
 The existing `createClubStaffInvitation` accepts optional `activationMode: manual`.
-New endpoints are `issueInternalAdminAccess`, `issueAccountRecovery`,
+New endpoints are `replaceClubStaffInvitation`, `issueInternalAdminAccess`, `issueAccountRecovery`,
 `listAccountAccessLinks`, `revokeAccountAccessLink`, `getAccountAccessLink` and
 `completeAccountAccessLink`. Roles, target UID, purpose, primary-email snapshot,
 team scope, expiry and issuer are bound on the server. Client input never chooses
@@ -70,6 +72,11 @@ sign-in to the same bound UID and current server readback establish recovery.
 An uncertain write is never converted back to an unused link; unresolved states
 require PoseTek review. Revocation stops pending grants; an operation already
 consuming reports that state instead of falsely claiming cancellation.
+
+For a blocked operation on an already enabled account, PoseTek can issue a new
+recovery link after the operation has been quiet for at least two minutes and
+the administrator confirms the identity again. Recovery never re-enables a
+disabled account; an uncertain enablement requires separate operator review.
 
 Password recovery revokes old refresh sessions. Previously issued ID tokens can
 remain valid until expiry under the existing rules; this release does not claim
