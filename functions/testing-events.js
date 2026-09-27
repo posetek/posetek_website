@@ -521,6 +521,152 @@ function createTestingEvents({
     return { eventId, status: "live", participantCount: participants.length, reservationCount: expectedReservations };
   }
 
+  // Staff change counts for the whole team or one athlete, before or during testing. Completed
+  // reps are never removed: a lower target is simply met sooner, a higher one reopens the station
+  // row. Every change is recorded with the remaining reps it moved.
+  async function updateTestingRepCounts(data, auth) {
+    const eventId = cleanId(data?.eventId, "testing event");
+    const access = await requireEventOperator(eventId, auth);
+    if (access.event.ownerUid !== auth.uid && !isClubAdmin(auth) && access.member?.role !== "manager") {
+      fail("permission-denied", "Only the owner or a club manager can change rep counts.");
+    }
+    const playerId = data?.playerId === undefined || data?.playerId === null ? null : cleanId(data.playerId, "player");
+    const reset = data?.reset === true;
+    if (reset && !playerId) fail("invalid-argument", "Choose the athlete whose custom counts to clear.");
+    const plans = reset ? {} : drillPlans(data?.repCounts);
+    if (!reset && !Object.keys(plans).length) fail("invalid-argument", "Change at least one drill.");
+    const sameDrill = (left, right) => left.repCount === right.repCount && left.sides.join() === right.sides.join();
+
+    return db.runTransaction(async (tx) => {
+      const eventDoc = await tx.get(access.ref);
+      const event = eventDoc.data();
+      if (!eventDoc.exists || !["draft", "starting", "live"].includes(event.status)) {
+        fail("failed-precondition", "This testing session can no longer change rep counts.");
+      }
+      const participantDocs = playerId
+        ? [await tx.get(access.ref.collection("participants").doc(playerId))]
+        : (await tx.get(access.ref.collection("participants").limit(MAX_PARTICIPANTS))).docs;
+      if (playerId && !participantDocs[0].exists) fail("not-found", "That athlete is not in this testing session.");
+      const teamBefore = effectiveStations(event.protocolSnapshot);
+      const teamAfter = playerId ? teamBefore : checkStationTotals(effectiveStations(teamBefore, plans));
+
+      const changes = [];
+      let playerOverrides = null;
+      for (const doc of participantDocs) {
+        const participant = doc.data();
+        const overridesBefore = participant.protocolOverrides || null;
+        const overridesAfter = !playerId ? overridesBefore : (reset ? null : { ...(overridesBefore || {}), ...plans });
+        const before = effectiveStations(teamBefore, overridesBefore);
+        const after = checkStationTotals(effectiveStations(teamAfter, overridesAfter));
+        after.forEach((station, stationIndex) => station.drills.forEach((drill, drillIndex) => {
+          const old = before[stationIndex].drills[drillIndex];
+          if (!sameDrill(old, drill)) changes.push({ playerId: doc.id, participant, station, drill, old });
+        }));
+        if (playerId) playerOverrides = overridesAfter;
+      }
+
+      // Every read happens before the first write.
+      const progressDocs = new Map();
+      const reservationDocs = new Map();
+      for (const change of changes) {
+        const progressId = `${change.station.id}_${change.playerId}`;
+        if (!progressDocs.has(progressId)) progressDocs.set(progressId, await tx.get(access.ref.collection("progress").doc(progressId)));
+        const reservationId = `${progressId}_${change.drill.drillType}`;
+        reservationDocs.set(reservationId, await tx.get(access.ref.collection("sessionReservations").doc(reservationId)));
+      }
+      const counterRef = (change) => db.collection("players").doc(change.playerId).collection("recordingCounters").doc(change.drill.drillType);
+      const growing = changes.filter((change) => {
+        const reservation = reservationDocs.get(`${change.station.id}_${change.playerId}_${change.drill.drillType}`);
+        return reservation.exists && change.drill.repCount > Number(reservation.data().repCount || 0);
+      });
+      const counterDocs = new Map();
+      for (const change of growing) counterDocs.set(`${change.playerId}_${change.drill.drillType}`, await tx.get(counterRef(change)));
+
+      const affected = changes.map((change) => {
+        const progress = progressDocs.get(`${change.station.id}_${change.playerId}`).data() || {};
+        const done = progress.completedByDrill || {};
+        const doneSides = progress.completedByProtocolSide || {};
+        return {
+          playerId: change.playerId,
+          displayName: change.participant.displayName || "Athlete",
+          stationId: change.station.id,
+          drillType: change.drill.drillType,
+          completed: Number(done[change.drill.drillType] || 0),
+          before: change.old.repCount,
+          after: change.drill.repCount,
+          beforeSides: change.old.sides,
+          afterSides: change.drill.sides,
+          remainingBefore: remainingReps(change.old, done, doneSides),
+          remainingAfter: remainingReps(change.drill, done, doneSides),
+        };
+      });
+
+      // Absolute rep numbers were reserved by count at start. Growth extends the reservation at
+      // the counter's tail, contiguously when nothing was reserved after it.
+      for (const change of growing) {
+        const reservationRef = access.ref.collection("sessionReservations").doc(`${change.station.id}_${change.playerId}_${change.drill.drillType}`);
+        const reservation = reservationDocs.get(reservationRef.id).data();
+        const counter = counterDocs.get(`${change.playerId}_${change.drill.drillType}`).data() || {};
+        const capacity = Number(reservation.repCount || 0);
+        const extra = change.drill.repCount - capacity;
+        const extensions = Array.isArray(reservation.absoluteRepExtensions) ? reservation.absoluteRepExtensions : [];
+        const tail = reservation.absoluteRepStart + capacity;
+        const next = Math.max(Number(counter.nextAbsoluteRepNumber) || tail, tail);
+        tx.update(reservationRef, !extensions.length && next === tail
+          ? { repCount: change.drill.repCount }
+          : { repCount: change.drill.repCount, absoluteRepExtensions: [...extensions, { start: next, count: extra }] });
+        tx.set(counterRef(change), { nextAbsoluteRepNumber: next + extra, updatedAt: stamp() }, { merge: true });
+      }
+      for (const change of changes) {
+        const reservation = reservationDocs.get(`${change.station.id}_${change.playerId}_${change.drill.drillType}`);
+        if (!reservation.exists) continue;
+        tx.set(db.collection("players").doc(change.playerId).collection("sessions").doc(reservation.data().sessionDocId),
+          { expectedRepCount: change.drill.repCount }, { merge: true });
+      }
+      for (const [progressId, doc] of progressDocs) {
+        if (!doc.exists) continue;
+        const row = doc.data();
+        const change = changes.find((candidate) => `${candidate.station.id}_${candidate.playerId}` === progressId);
+        const done = row.completedByDrill || {};
+        const doneSides = row.completedByProtocolSide || {};
+        const firstOpen = change.station.drills.findIndex((drill) => !drillComplete(drill, done, doneSides));
+        let status = row.status;
+        if (status === "inProgress" && firstOpen < 0) status = "completedPendingSync";
+        if (["completedPendingSync", "completed"].includes(status) && firstOpen >= 0) status = "inProgress";
+        if (status === row.status) continue;
+        tx.update(doc.ref, {
+          status,
+          currentDrillIndex: firstOpen < 0 ? change.station.drills.length - 1 : firstOpen,
+          revision: Number(row.revision || 0) + 1,
+          updatedAt: stamp(),
+        });
+      }
+
+      const protocolRevision = Number(event.protocolRevision || 1) + 1;
+      if (playerId) {
+        tx.update(participantDocs[0].ref, { protocolOverrides: playerOverrides });
+      } else {
+        const snapshot = protocolSnapshot(teamAfter);
+        tx.update(access.ref, { protocolSnapshot: snapshot, repsPerParticipant: repsForStations(snapshot) });
+        for (const station of snapshot) tx.update(access.ref.collection("stations").doc(station.id), { drills: station.drills });
+      }
+      tx.update(access.ref, { protocolRevision, updatedAt: stamp() });
+      tx.create(access.ref.collection("protocolChanges").doc(), {
+        protocolRevision,
+        scope: playerId ? "player" : "team",
+        playerId,
+        reset,
+        repCounts: plans,
+        eventStatus: event.status,
+        changedByUid: auth.uid,
+        changedAt: stamp(),
+        changedAtMillis: now(),
+        affected,
+      });
+      return { eventId, protocolRevision, scope: playerId ? "player" : "team", playerId, affected };
+    });
+  }
+
   function inviteCode(token) { return `TEST-${token}`; }
   function tokenFromCode(code) {
     if (typeof code !== "string") fail("invalid-argument", "Enter a valid testing session code.");
@@ -829,6 +975,7 @@ function createTestingEvents({
     createTestingEvent,
     addTestingParticipant,
     startTestingEvent,
+    updateTestingRepCounts,
     createTestingEventInvite,
     joinTestingEvent,
     claimTestingStation: (data, auth) => claimStation(data, auth),
@@ -852,4 +999,7 @@ module.exports = {
   INVITE_TTL_MS,
   REPS_PER_PARTICIPANT,
   RESERVATIONS_PER_PARTICIPANT,
+  MAX_REPS_PER_DRILL,
+  MAX_REPS_PER_STATION,
+  effectiveStations,
 };
