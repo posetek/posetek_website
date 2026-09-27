@@ -35,9 +35,13 @@ const STATIONS = Object.freeze([
 
 const RESERVATIONS_PER_PARTICIPANT = STATIONS.reduce((sum, station) => sum + station.drills.length, 0);
 const REPS_PER_PARTICIPANT = STATIONS.flatMap((station) => station.drills).reduce((sum, drill) => sum + drill.repCount, 0);
+const MAX_REPS_PER_DRILL = 10;
+// The published progress rules cap a station row's repIds at 10. Raise this only together with
+// the rules change in STATION_ADJUSTABLE_REP_COUNTS_PLAN, after that ruleset is live.
+const MAX_REPS_PER_STATION = 10;
 
-function protocolSnapshot() {
-  return STATIONS.map((station) => ({
+function protocolSnapshot(stations = STATIONS) {
+  return stations.map((station) => ({
     id: station.id,
     order: station.order,
     label: station.label,
@@ -46,6 +50,45 @@ function protocolSnapshot() {
     drills: station.drills.map((drill) => ({ ...drill, sides: [...drill.sides] })),
   }));
 }
+
+const baseDrill = (drillType) => STATIONS.flatMap((station) => station.drills).find((drill) => drill.drillType === drillType);
+const sided = (drillType) => (baseDrill(drillType)?.sides.length || 0) > 0;
+const sideTarget = (drill, side) => drill.sides.filter((value) => value === side).length;
+const sidesFor = (left, right) => [...Array(left).fill("left"), ...Array(right).fill("right")];
+
+// The event's own snapshot is the protocol. Events created before adjustable counts carry the
+// v1 snapshot; one without any snapshot falls back to v1. A participant override replaces the
+// team plan for the drills it names and nothing else.
+function effectiveStations(snapshot, overrides = null) {
+  const stations = Array.isArray(snapshot) && snapshot.length ? snapshot : protocolSnapshot();
+  return stations.map((station) => ({
+    ...station,
+    drills: station.drills.map((drill) => {
+      const override = overrides?.[drill.drillType];
+      return override ? { ...drill, repCount: override.repCount, sides: [...override.sides] } : { ...drill, sides: [...(drill.sides || [])] };
+    }),
+  }));
+}
+
+// Sided drills are complete per side, so a count change can never be met by extra reps on the
+// other foot. Unsided drills count valid reps.
+function drillComplete(drill, completedByDrill = {}, completedByProtocolSide = {}) {
+  if (drill.sides.length) {
+    return ["left", "right"].every((side) =>
+      Number(completedByProtocolSide[`${drill.drillType}:${side}`] || 0) >= sideTarget(drill, side));
+  }
+  return Number(completedByDrill[drill.drillType] || 0) >= drill.repCount;
+}
+
+function remainingReps(drill, completedByDrill = {}, completedByProtocolSide = {}) {
+  if (drill.sides.length) {
+    return ["left", "right"].reduce((sum, side) =>
+      sum + Math.max(0, sideTarget(drill, side) - Number(completedByProtocolSide[`${drill.drillType}:${side}`] || 0)), 0);
+  }
+  return Math.max(0, drill.repCount - Number(completedByDrill[drill.drillType] || 0));
+}
+
+const repsForStations = (stations) => stations.flatMap((station) => station.drills).reduce((sum, drill) => sum + drill.repCount, 0);
 
 function createTestingEvents({
   db,
@@ -85,6 +128,38 @@ function createTestingEvents({
     return joined || (typeof player.name === "string" && player.name.trim()) || "Athlete";
   };
   const eventRef = (eventId) => db.collection("testingEvents").doc(cleanId(eventId, "testing event"));
+  const count = (value, label, minimum) => Number.isInteger(value) && value >= minimum && value <= MAX_REPS_PER_DRILL
+    ? value : fail("invalid-argument", `${label} must be a whole number from ${minimum} to ${MAX_REPS_PER_DRILL}.`);
+
+  // Counts arrive as { drillType: n } and, for sided drills, { drillType: { left, right } } so
+  // left/right stay explicit. Only named drills change.
+  function drillPlans(input) {
+    if (input === undefined || input === null) return {};
+    if (typeof input !== "object" || Array.isArray(input)) fail("invalid-argument", "Rep counts must name drills.");
+    const plans = {};
+    for (const [drillType, value] of Object.entries(input)) {
+      const drill = baseDrill(drillType);
+      if (!drill) fail("invalid-argument", "Choose a valid testing drill.");
+      if (sided(drillType)) {
+        if (!value || typeof value !== "object") fail("invalid-argument", `${drill.label} needs left and right counts.`);
+        const left = count(value.left, `${drill.label} left`, 0);
+        const right = count(value.right, `${drill.label} right`, 0);
+        if (left + right < 1 || left + right > MAX_REPS_PER_DRILL) fail("invalid-argument", `${drill.label} needs 1-${MAX_REPS_PER_DRILL} reps in total.`);
+        plans[drillType] = { repCount: left + right, sides: sidesFor(left, right) };
+      } else {
+        plans[drillType] = { repCount: count(value, drill.label, 1), sides: [] };
+      }
+    }
+    return plans;
+  }
+
+  function checkStationTotals(stations) {
+    for (const station of stations) {
+      const total = station.drills.reduce((sum, drill) => sum + drill.repCount, 0);
+      if (total > MAX_REPS_PER_STATION) fail("invalid-argument", `${station.label} can have at most ${MAX_REPS_PER_STATION} reps per athlete.`);
+    }
+    return stations;
+  }
 
   async function authorityFor(organizationId, auth) {
     authRequired(auth);
@@ -142,6 +217,16 @@ function createTestingEvents({
       return { id: doc.id, ...player };
     });
     const teamIds = [...new Set(players.map((player) => cleanId(player.teamId, "participant team")))].sort();
+    const teamStations = checkStationTotals(effectiveStations(protocolSnapshot(), drillPlans(data?.repCounts)));
+    const snapshot = protocolSnapshot(teamStations);
+    const playerRepCounts = data?.playerRepCounts ?? {};
+    if (typeof playerRepCounts !== "object" || Array.isArray(playerRepCounts)) fail("invalid-argument", "Player rep counts must name participants.");
+    const overridesByPlayer = new Map(Object.entries(playerRepCounts).map(([playerId, counts]) => {
+      if (!playerIds.includes(playerId)) fail("invalid-argument", "Player rep counts must name a participant.");
+      const overrides = drillPlans(counts);
+      checkStationTotals(effectiveStations(snapshot, overrides));
+      return [playerId, overrides];
+    }));
     const ref = db.collection("testingEvents").doc();
     const batch = db.batch();
     batch.create(ref, {
@@ -155,8 +240,9 @@ function createTestingEvents({
       status: "draft",
       participantCount: players.length,
       stationCount: STATIONS.length,
-      repsPerParticipant: REPS_PER_PARTICIPANT,
-      protocolSnapshot: protocolSnapshot(),
+      repsPerParticipant: repsForStations(snapshot),
+      protocolSnapshot: snapshot,
+      protocolRevision: 1,
       createdAt: stamp(),
       createdAtMillis: now(),
       updatedAt: stamp(),
@@ -169,9 +255,11 @@ function createTestingEvents({
       weightKg: weight(player),
       weightStatus: weight(player) === null ? "missing" : "ready",
       rosterOrder,
+      ...(overridesByPlayer.get(player.id) && Object.keys(overridesByPlayer.get(player.id)).length
+        ? { protocolOverrides: overridesByPlayer.get(player.id) } : {}),
       createdAt: stamp(),
     }));
-    for (const station of protocolSnapshot()) batch.create(ref.collection("stations").doc(station.id), {
+    for (const station of snapshot) batch.create(ref.collection("stations").doc(station.id), {
       ...station,
       claimedByUid: null,
       claimedDeviceId: null,
@@ -253,7 +341,7 @@ function createTestingEvents({
     });
     if (participant.enrollmentStatus === "pending") {
       const floors = await storageSessionFloors(playerId);
-      for (const station of STATIONS) {
+      for (const station of effectiveStations(access.event.protocolSnapshot, participant.protocolOverrides)) {
         for (const drill of station.drills) await reserveSession(eventId, participant, station, drill, floors);
       }
     }
@@ -396,7 +484,7 @@ function createTestingEvents({
     ])));
     const reservationWork = [];
     for (const participant of refreshedParticipants) {
-      for (const station of STATIONS) {
+      for (const station of effectiveStations(access.event.protocolSnapshot, participant.protocolOverrides)) {
         for (const drill of station.drills) {
           reservationWork.push(() => reserveSession(
             eventId,
@@ -664,12 +752,15 @@ function createTestingEvents({
     // testing event; this guards reps journaled by older builds whose progress write was lost.
     if (source.resultsValid === false) return;
     const drillType = source.testingDrillType;
-    const station = STATIONS.find((candidate) => candidate.id === stationId);
-    const drillIndex = station?.drills.findIndex((candidate) => candidate.drillType === drillType) ?? -1;
-    if (drillIndex < 0) return;
     const progressRef = eventRef(eventId).collection("progress").doc(`${stationId}_${playerId}`);
     await db.runTransaction(async (tx) => {
-      const snapshot = await tx.get(progressRef);
+      const [snapshot, eventDoc, participantDoc] = await Promise.all([
+        tx.get(progressRef), tx.get(eventRef(eventId)), tx.get(eventRef(eventId).collection("participants").doc(playerId)),
+      ]);
+      const station = effectiveStations(eventDoc.data()?.protocolSnapshot, participantDoc.data()?.protocolOverrides)
+        .find((candidate) => candidate.id === stationId);
+      const drillIndex = station?.drills.findIndex((candidate) => candidate.drillType === drillType) ?? -1;
+      if (drillIndex < 0) return;
       if (!snapshot.exists) return;
       const row = snapshot.data();
       const repIds = Array.isArray(row.repIds) ? row.repIds.filter(playerSegment) : [];
@@ -681,10 +772,10 @@ function createTestingEvents({
         const key = `${drillType}:${source.protocolSide}`;
         completedByProtocolSide[key] = Number(completedByProtocolSide[key] || 0) + 1;
       }
-      const stationComplete = station.drills.every((drill) => Number(completedByDrill[drill.drillType] || 0) >= drill.repCount);
+      const stationComplete = station.drills.every((drill) => drillComplete(drill, completedByDrill, completedByProtocolSide));
       const keepAttention = row.status === "needsAttention";
       tx.update(progressRef, {
-        repIds: [...repIds, repId].slice(0, REPS_PER_PARTICIPANT),
+        repIds: [...repIds, repId].slice(0, MAX_REPS_PER_STATION),
         completedByDrill,
         completedByProtocolSide,
         currentDrillIndex: stationComplete ? station.drills.length - 1 : drillIndex,
