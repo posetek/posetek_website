@@ -6,6 +6,7 @@
 const crypto = require("crypto");
 const { playerSegment } = require("./athlete-storage-paths");
 const { isClubAdmin, activeMember, memberCanAccessPlayer } = require("./club-access");
+const { staffPlayerProfile } = require("./player-profile");
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_TEAMS = 100;
 const MAX_STAFF = 100;
@@ -306,14 +307,9 @@ function createClubs({ invitations, db, FieldValue, HttpsError, now = () => Date
     const firstName = text(data?.firstName, "first name");
     const lastName = text(data?.lastName, "last name");
     const teamId = id(data?.teamId, "team");
-    const extra = {};
-    for (const [field, max] of [["height", 300], ["weight", 500]]) {
-      if (data?.[field] !== undefined) {
-        if (typeof data[field] !== "number" || !Number.isFinite(data[field]) || data[field] <= 0 || data[field] > max) fail("invalid-argument", `Enter a valid ${field}.`);
-        extra[field] = data[field];
-      }
-    }
-    for (const field of ["phone_number", "preferredFoot"]) if (data?.[field]) extra[field] = text(data[field], field);
+    // Phone and position are required; height/weight are validated when sent.
+    const extra = staffPlayerProfile(data, fail);
+    if (data?.preferredFoot) extra.preferredFoot = text(data.preferredFoot, "preferredFoot");
     if (data?.signupEmail) extra.signupEmail = email(data.signupEmail);
     const ref = db.collection("players").doc();
     const code = randomBytes(12).toString("hex").toUpperCase();
