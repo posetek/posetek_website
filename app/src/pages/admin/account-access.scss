@@ -1,0 +1,23 @@
+.pt-admin .admin-access {
+  .admin-access-modes { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+  .admin-access-modes .selected { border-color: var(--admin-accent); color: var(--admin-accent); background: rgba(183, 243, 74, .08); }
+  .admin-access-fields { display: grid; gap: 22px; max-width: 720px; border: 0; padding: 0; margin: 24px 0 0; }
+  .admin-access-fields > .primary-cta { justify-self: start; }
+  label { display: grid; gap: 8px; color: var(--admin-text); font-size: 14px; }
+  input { min-width: 0; width: 100%; min-height: 44px; padding: 12px 14px; border: 1px solid var(--admin-line); border-radius: var(--admin-field-radius); background: var(--admin-bg); color: var(--admin-text); font: inherit; }
+  .admin-access-name { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .admin-access-confirm { display: flex; align-items: start; gap: 12px; padding: 14px; border-radius: 12px; background: var(--admin-panel); line-height: 1.6; cursor: pointer; }
+  .admin-access-confirm input { flex: 0 0 20px; width: 20px; min-height: 20px; height: 20px; margin: 2px 0; accent-color: var(--admin-accent); }
+  .admin-access-reauth { border-color: var(--admin-warn); }
+  .admin-access-password { display: flex; align-items: center; gap: 10px; max-width: 540px; }
+  .admin-access-list-heading, .admin-access-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+  .admin-access-list-heading h2 { margin: 0; }
+  .admin-access-row { padding: 18px 0; border-bottom: 1px solid var(--admin-line); }
+  .admin-access-row > div { min-width: 0; overflow-wrap: anywhere; }
+  .admin-access-row span { display: block; margin-top: 5px; color: var(--admin-dim); font-size: 13px; line-height: 1.5; }
+  .admin-access-revoke { margin-top: 20px; padding: 18px; background: var(--admin-panel-strong); border-radius: var(--admin-card-radius); }
+  .admin-access-revoke p { overflow-wrap: anywhere; line-height: 1.6; }
+  button { min-height: 44px; }
+  input:focus-visible, button:focus-visible { outline: 2px solid var(--admin-accent); outline-offset: 3px; }
+  @media (max-width: 640px) { .admin-access-name { grid-template-columns: 1fr; } .admin-access-row { align-items: start; flex-direction: column; } }
+}

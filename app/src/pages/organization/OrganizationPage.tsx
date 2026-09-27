@@ -8,10 +8,13 @@ import { accountContext, accountQuery } from "../admin/lib/accountHierarchy";
 import { organizationPlayerPath } from "../athlete-portal/lib/navigation";
 import { insightsLink } from "../insights/lib/navigation";
 import SignupStatus from "../admin/views/SignupStatus";
+import AccessLinkCard from "../../components/AccessLinkCard";
+import { accessLinkText, accessStatusLabel, refreshAfterIssued } from "../../lib/access-link-issuer";
+import type { IssuedAccessLink } from "../../lib/access-link-issuer";
 import "../../styles/pose-portal.css";
 import "./organization.scss";
 
-type IssuedInvitation = { code: string; email: string; expiresAtMillis?: number; player?: false }
+type IssuedInvitation = (IssuedAccessLink & { player?: false; organizationName?: string })
   | { playerId: string; email: string; player: true };
 
 export default function OrganizationPage({ admin = false }: { admin?: boolean }) {
@@ -33,6 +36,7 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
   const [issued, setIssued] = useState<IssuedInvitation | null>(null);
   const [newPlayer, setNewPlayer] = useState({ firstName: "", lastName: "" });
   const [editedStaff, setEditedStaff] = useState<ClubContext["staff"][number] | null>(null);
+  const [replaceInvitation, setReplaceInvitation] = useState<ClubContext["invitations"][number] | null>(null);
   const mounted = useRef(false);
   const currentUid = useRef<string | null>(null);
   const loadGeneration = useRef(0);
@@ -45,9 +49,10 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
   const players = context?.players.filter(player => player.organizationId === organizationId && player.teamId === teamId) || [];
   const unassignedPlayers = context?.players.filter(player => player.organizationId === organizationId && !context.teams.some(entry => entry.id === player.teamId)) || [];
 
-  const clearClubData = useCallback(() => {
+  const clearClubData = useCallback((preserveIssued = false) => {
     setContext(null); setOrganizationId(""); setTeamId(""); setWebsiteUrl("");
-    setIssued(null); setEditedStaff(null); setNotice("");
+    if (!preserveIssued) setIssued(null);
+    setEditedStaff(null); setReplaceInvitation(null); setNotice("");
     setNewClub(""); setTeamName(""); setTeamNameDraft({ teamId: "", value: "" });
     setNewPlayer({ firstName: "", lastName: "" });
     setInvite({ firstName: "", lastName: "", email: "", role: "coach", teamIds: [] });
@@ -55,7 +60,7 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
   const reload = useCallback(async (id?: string, preferredTeamId?: string) => {
     const uid = auth.currentUser?.uid;
     const generation = ++loadGeneration.current;
-    setIssued(null); setInvitationVersion(value => value + 1);
+    setInvitationVersion(value => value + 1);
     const isCurrent = () => mounted.current && generation === loadGeneration.current
       && uid !== undefined && currentUid.current === uid && auth.currentUser?.uid === uid;
     if (!uid) return null;
@@ -73,7 +78,7 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
       return result;
     } catch (failure) {
       if (!isCurrent()) return null;
-      clearClubData();
+      clearClubData(true);
       throw failure;
     }
   }, [clearClubData]);
@@ -117,12 +122,19 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
       // Creation selects its returned club/team instead of restoring the
       // organization captured before the request started.
       const selection = outcome && typeof outcome === "object" ? outcome as { organizationId?: string; teamId?: string; issued?: IssuedInvitation } : {};
-      const result = await reload(selection.organizationId || selectedOrganization || undefined, selection.teamId);
-      if (isCurrent() && result) { setNotice(success); if (selection.issued) setIssued(selection.issued); }
+      if (selection.issued) {
+        const status = await refreshAfterIssued(selection.issued, { isCurrent, retain: setIssued,
+          refresh: () => reload(selection.organizationId || selectedOrganization || undefined, selection.teamId) });
+        if (status === "stale") return;
+        setNotice(success);
+        if (status === "saved-refresh-failed") setError("The change was saved, but the organization list could not refresh. Copy the link above now, then refresh the list.");
+      } else {
+        const result = await reload(selection.organizationId || selectedOrganization || undefined, selection.teamId);
+        if (isCurrent() && result) setNotice(success);
+      }
     } catch (failure) {
       if (!isCurrent()) return;
       ++loadGeneration.current;
-      clearClubData();
       setError(failure instanceof Error ? failure.message : "The change could not be saved.");
     } finally {
       if (isCurrent()) { operationBusy.current = false; setBusy(false); }
@@ -135,7 +147,8 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
     const isCurrent = () => mounted.current && generation === operationGeneration.current
       && currentUid.current === uid && auth.currentUser?.uid === uid;
     operationBusy.current = true;
-    clearClubData(); setBusy(true); setError("");
+    if (id !== organizationId) clearClubData();
+    setBusy(true); setError("");
     try { await reload(id || undefined); }
     catch (failure) {
       if (isCurrent()) setError(failure instanceof Error ? failure.message : "The organization could not be loaded.");
@@ -143,9 +156,19 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
       if (isCurrent()) { operationBusy.current = false; setBusy(false); }
     }
   }
+  async function copyAccessLink(link: IssuedAccessLink, kind: "link" | "code" | "instructions") {
+    const uid = auth.currentUser?.uid;
+    if (!uid || currentUid.current !== uid) return;
+    try {
+      await navigator.clipboard.writeText(accessLinkText(link, kind));
+      if (mounted.current && auth.currentUser?.uid === uid) setNotice(`${kind === "instructions" ? "Sharing instructions" : kind === "link" ? "Activation link" : "Access code"} copied.`);
+    } catch {
+      if (mounted.current && auth.currentUser?.uid === uid) setError("Clipboard access is unavailable. Select the private code and share it directly with instructions to open posetek.net/join.");
+    }
+  }
   const body = <main className="club-shell">
     <section className="club-heading">
-      <div><p className="eyebrow">{admin ? "PoseTek admin" : context?.role === "manager" ? "Organization manager" : "Coach"}</p>
+      <div><p className="eyebrow">{admin ? "PoseTek admin" : context?.role === "manager" ? "Organization admin" : "Coach"}</p>
         <div className="club-title">{context?.organization?.logoUrl && <img className="club-logo" src={context.organization.logoUrl} alt={`${context.organization.name} logo`} />}<h1>{context?.organization?.name || "Organizations"}</h1></div>
         <p>{context?.role === "coach" ? "Choose one of your teams to open its players and results." : "Manage your teams, staff access and player rosters."}</p></div>
       <button className="quiet-button" disabled={busy} onClick={() => void chooseOrganization(organizationId)}>Refresh</button>
@@ -163,10 +186,8 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
         return result;
       }, "Organization created. Add teams and staff below."); }}><label>New organization name<input required maxLength={120} value={newClub} onChange={event => setNewClub(event.target.value)} /></label><button className="primary-cta" disabled={busy}>Create organization</button></form>}
     </section>}
-    {issued && <section className="club-card club-code" aria-live="polite"><h2>Invitation ready</h2><p>{issued.email}</p>
-      {issued.player ? <><SignupStatus playerId={issued.playerId} playerName={issued.email} variant="club" reloadKey={invitationVersion} /><p>Share the signup link with this player. It connects their new account to this existing profile.</p></>
-        : <><code data-clarity-mask="true">{issued.code}</code><p>{issued.expiresAtMillis ? `Expires ${new Date(issued.expiresAtMillis).toLocaleDateString()}. ` : ""}Copy this code now and share it with the intended person. They can claim it at <Link to="/join">/join</Link>.</p><button type="button" className="quiet-button" onClick={() => { void navigator.clipboard.writeText(issued.code).then(() => setNotice("Code copied.")).catch(() => setError("Copy the code above manually; clipboard access is unavailable.")); }}>Copy code</button></>}
-      <button className="quiet-button" onClick={() => setIssued(null)}>Done</button></section>}
+    {issued && (issued.player ? <section className="club-card club-code" aria-live="polite"><h2>Player invitation ready</h2><p>{issued.email}</p><SignupStatus playerId={issued.playerId} playerName={issued.email} variant="club" reloadKey={invitationVersion} /><p>Share the signup link with this player. It connects their new account to this existing profile.</p><button className="quiet-button" onClick={() => setIssued(null)}>Done</button></section>
+      : <AccessLinkCard link={issued} organizationName={issued.organizationName} onCopy={kind => void copyAccessLink(issued, kind)} onDismiss={() => setIssued(null)} />)}
     {context?.organization && context.role !== "player" && <>
       <section className="club-card"><div className="club-section-title"><h2>Teams</h2><span>{context.teams.length} teams · {context.players.length} players</span></div>
         {context.teams.length ? <div className="club-team-grid">{context.teams.map(entry => <button key={entry.id} type="button" className={`club-team${teamId === entry.id ? " selected" : ""}`} aria-pressed={teamId === entry.id} onClick={() => setTeamId(entry.id)}><strong>{entry.name}</strong><span>{context.players.filter(player => player.organizationId === organizationId && player.teamId === entry.id).length} players{manager ? ` · ${context.staff.filter(member => member.role === "coach" && member.status === "active" && member.teamIds.includes(entry.id)).length} linked coaches` : ""}</span></button>)}</div> : <p>No teams have been created yet.</p>}
@@ -189,20 +210,43 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
       </div>)}</div></section>}
       {manager && <>
         <section className="club-card"><h2>Organization logo</h2><p>Import the logo from your club’s official website.</p><form className="club-inline" onSubmit={event => { event.preventDefault(); void mutate(() => clubCall("importClubLogo", { organizationId, websiteUrl: websiteUrl.trim() }), "Organization logo imported."); }}><label>Official website<input type="url" required value={websiteUrl} onChange={event => setWebsiteUrl(event.target.value)} placeholder="https://…" /></label><button className="primary-cta" disabled={busy}>Import logo</button></form></section>
-        <section className="club-card"><h2>Invite a coach or manager</h2><p>Managers can access every team. Coaches receive access to the teams selected here.</p><form onSubmit={event => { event.preventDefault(); void mutate(async isCurrent => { const result = await clubCall<{ code: string; expiresAtMillis: number }>("createClubStaffInvitation", { organizationId, ...invite, teamIds: invite.role === "manager" ? [] : invite.teamIds }); if (isCurrent()) setInvite({ firstName: "", lastName: "", email: "", role: "coach", teamIds: [] }); return { issued: { ...result, email: invite.email } }; }, "Invitation created. Copy the code above."); }}>
-          <div className="club-fields"><label>First name<input required maxLength={100} value={invite.firstName} onChange={event => setInvite({ ...invite, firstName: event.target.value })} /></label><label>Last name<input required maxLength={100} value={invite.lastName} onChange={event => setInvite({ ...invite, lastName: event.target.value })} /></label><label>Email<input type="email" required autoComplete="off" value={invite.email} onChange={event => setInvite({ ...invite, email: event.target.value })} /></label><label>Role<select value={invite.role} onChange={event => setInvite({ ...invite, role: event.target.value as StaffRole })}><option value="coach">Coach</option><option value="manager">Organization manager</option></select></label></div>
+        <section className="club-card"><h2>Add staff</h2><p>Organization admins can access every team. Coaches receive access to the teams selected here. You will get a private activation link to share directly.</p><form onSubmit={event => { event.preventDefault(); void mutate(async isCurrent => { const result = await clubCall<IssuedAccessLink>("createClubStaffInvitation", { organizationId, ...invite, activationMode: "manual", teamIds: invite.role === "manager" ? [] : invite.teamIds }); if (isCurrent()) setInvite({ firstName: "", lastName: "", email: "", role: "coach", teamIds: [] }); return { issued: { ...result, organizationName: context.organization?.name } }; }, "Activation link ready. Share it directly. No email was sent."); }}>
+          <div className="club-fields"><label>First name<input required maxLength={100} value={invite.firstName} onChange={event => setInvite({ ...invite, firstName: event.target.value })} /></label><label>Last name<input required maxLength={100} value={invite.lastName} onChange={event => setInvite({ ...invite, lastName: event.target.value })} /></label><label>Email<input type="email" required autoComplete="off" spellCheck={false} value={invite.email} onChange={event => setInvite({ ...invite, email: event.target.value })} /></label><label>Role<select value={invite.role} onChange={event => setInvite({ ...invite, role: event.target.value as StaffRole })}><option value="coach">Coach</option><option value="manager">Organization admin</option></select></label></div>
           {invite.role === "coach" && <TeamChecks teams={context.teams} selected={invite.teamIds} onChange={teamIds => setInvite({ ...invite, teamIds })} />}
-          <button className="primary-cta" disabled={busy || (invite.role === "coach" && invite.teamIds.length === 0)}>Generate invitation code</button>
+          <button className="primary-cta" disabled={busy || (invite.role === "coach" && invite.teamIds.length === 0)}>Create activation link</button>
         </form></section>
-        <section className="club-card"><h2>Staff access</h2>{context.staff.length === 0 && <p>No staff have claimed an invitation yet.</p>}{context.staff.map(member => <div className="club-staff" key={member.userUID}><div><strong>{member.firstName} {member.lastName}</strong><span>{member.email} · {member.role} · {member.status}</span><span>{member.role === "manager" ? "All teams" : context.teams.filter(entry => member.teamIds.includes(entry.id)).map(entry => entry.name).join(", ") || "No teams assigned"}</span></div><button className="quiet-button" disabled={busy} onClick={() => setEditedStaff({ ...member, teamIds: [...member.teamIds] })}>Edit access</button></div>)}
+        <section className="club-card"><h2>Staff access</h2>{context.staff.length === 0 && <p>No staff have activated access yet.</p>}{context.staff.map(member => <div className="club-staff" key={member.userUID}><div><strong>{member.firstName} {member.lastName}</strong><span>{member.email} · {member.role === "manager" ? "Organization admin" : "Coach"} · {accessStatusLabel(member.status)}</span><span>{member.role === "manager" ? "All teams" : context.teams.filter(entry => member.teamIds.includes(entry.id)).map(entry => entry.name).join(", ") || "No teams assigned"}</span></div><button className="quiet-button" disabled={busy} onClick={() => setEditedStaff({ ...member, teamIds: [...member.teamIds] })}>Edit access</button></div>)}
           {editedStaff && <form className="club-edit" onSubmit={event => { event.preventDefault(); void mutate(async isCurrent => { await clubCall("setClubStaffTeams", { organizationId, userUID: editedStaff.userUID, teamIds: editedStaff.role === "manager" ? [] : editedStaff.teamIds, status: editedStaff.status }); if (isCurrent()) setEditedStaff(null); }, "Staff access updated."); }}><h3>{editedStaff.firstName} {editedStaff.lastName}</h3>{editedStaff.role === "coach" && <TeamChecks teams={context.teams} selected={editedStaff.teamIds} onChange={teamIds => setEditedStaff({ ...editedStaff, teamIds })} />}<label>Access status<select value={editedStaff.status} onChange={event => setEditedStaff({ ...editedStaff, status: event.target.value })}><option value="active">Active</option><option value="inactive">Inactive</option></select></label><button className="primary-cta" disabled={busy}>Save access</button><button type="button" className="quiet-button" onClick={() => setEditedStaff(null)}>Cancel</button></form>}
         </section>
-        <section className="club-card"><h2>Invitations</h2>{context.invitations.length === 0 && <p>No invitations yet.</p>}{context.invitations.map(entry => <div key={entry.id} className="club-staff"><div><strong>{entry.firstName} {entry.lastName}</strong><span>{entry.email} · {entry.role} · {entry.status}</span></div>{entry.status === "pending" && <button className="quiet-button" disabled={busy} onClick={() => void mutate(() => clubCall("revokeClubStaffInvitation", { organizationId, invitationId: entry.id }), "Invitation revoked.")}>Revoke invitation</button>}</div>)}</section>
+        <section className="club-card"><h2>Activation links</h2><StaffInvitationList invitations={context.invitations} busy={busy} onReplace={setReplaceInvitation} onRevoke={entry => void mutate(async isCurrent => {
+          await clubCall("revokeClubStaffInvitation", { organizationId, invitationId: entry.id });
+          if (isCurrent() && issued && !issued.player && issued.invitationId === entry.id) setIssued(null);
+        }, "Activation link revoked.")} />
+          {replaceInvitation && <form className="club-edit" onSubmit={event => { event.preventDefault(); void mutate(async isCurrent => {
+            const result = await clubCall<IssuedAccessLink>("replaceClubStaffInvitation", { organizationId, invitationId: replaceInvitation.id });
+            if (isCurrent()) setReplaceInvitation(null);
+            return { issued: { ...result, organizationName: context.organization?.name } };
+          }, "Replacement link ready. The previous link no longer works. No email was sent."); }}>
+            <h3>Replace access link?</h3><p>This creates a new link for <strong>{replaceInvitation.email}</strong> with the same role and teams. The previous link will stop working. Existing passwords stay the same.</p>
+            <div className="club-actions"><button className="primary-cta" disabled={busy}>Replace activation link</button><button type="button" className="quiet-button" disabled={busy} onClick={() => setReplaceInvitation(null)}>Cancel</button></div>
+          </form>}
+        </section>
       </>}
     </>}
   </main>;
   if (admin) return <div className="pt-club">{body}</div>;
-  return <div className="pt-pose portal-body pt-club"><header className="portal-header"><Link className="quiet-button" to={`/feed?organizationId=${encodeURIComponent(organizationId)}`}>Community feed</Link><Link className="portal-brand" to="/organization"><span className="portal-brand-mark">P</span>POSETEK</Link><Link className="quiet-button" to="/join">Claim invitation</Link><button className="quiet-button" onClick={() => { void auth.signOut().then(() => navigate("/signin")); }}>Sign out</button></header>{body}</div>;
+  return <div className="pt-pose portal-body pt-club"><header className="portal-header"><Link className="quiet-button" to={`/feed?organizationId=${encodeURIComponent(organizationId)}`}>Community feed</Link><Link className="portal-brand" to="/organization"><span className="portal-brand-mark">P</span>POSETEK</Link><button className="quiet-button" onClick={() => { void auth.signOut().then(() => navigate("/signin")); }}>Sign out</button></header>{body}</div>;
+}
+export function StaffInvitationList({ invitations, busy, onReplace, onRevoke }: {
+  invitations: ClubContext["invitations"]; busy: boolean;
+  onReplace(entry: ClubContext["invitations"][number]): void;
+  onRevoke(entry: ClubContext["invitations"][number]): void;
+}) {
+  return <>{invitations.length === 0 && <p>No activation links yet. Add staff to create one.</p>}{invitations.map(entry => {
+    const editable = entry.activationMode !== "manual" || ["pending", "expired"].includes(entry.activationStatus || "");
+    const status = entry.activationMode === "manual" && entry.activationStatus !== "pending" ? entry.activationStatus || "blocked" : entry.status;
+    return <div key={entry.id} className="club-staff"><div><strong>{entry.firstName} {entry.lastName}</strong><span>{entry.email} · {entry.role === "manager" ? "Organization admin" : "Coach"}</span><span>{accessStatusLabel(status, "staff_activation", entry.expiresAtMillis)}</span>{entry.activationMode !== "manual" && ["pending", "expired"].includes(entry.status) && <span>Previous invitation process. Replace it to activate without email.</span>}</div><div className="club-actions">{editable && ["pending", "expired"].includes(entry.status) && <button type="button" className="quiet-button" disabled={busy} onClick={() => onReplace(entry)} aria-label={`Replace activation link for ${entry.email}`}>Replace link</button>}{editable && entry.status === "pending" && <button type="button" className="quiet-button" disabled={busy} onClick={() => onRevoke(entry)} aria-label={`Revoke activation link for ${entry.email}`}>Revoke link</button>}</div></div>;
+  })}</>;
 }
 function TeamChecks({ teams, selected, onChange }: { teams: ClubContext["teams"]; selected: string[]; onChange: (ids: string[]) => void }) {
   return <fieldset className="club-team-checks"><legend>Assigned teams</legend>{teams.map(team => <label key={team.id}><input type="checkbox" checked={selected.includes(team.id)} onChange={event => onChange(event.target.checked ? [...selected, team.id] : selected.filter(id => id !== team.id))} />{team.name}</label>)}{!teams.length && <p>Create a team first.</p>}</fieldset>;

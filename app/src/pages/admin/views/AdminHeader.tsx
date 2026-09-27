@@ -101,6 +101,7 @@ export default function AdminHeader({ ready, email, preview = false, onSignOut }
           </summary>
           <div className="admin-menu-panel admin-account-panel">
             <p>{email}</p>
+            <Link to="/admin/access"><span className="material-symbols-outlined" aria-hidden="true">key</span><span>Account access</span></Link>
             <Link to="/feed"><span className="material-symbols-outlined" aria-hidden="true">dynamic_feed</span><span>Community feed</span><span className="material-symbols-outlined" aria-hidden="true">open_in_new</span></Link>
             <button type="button" onClick={onSignOut}><span className="material-symbols-outlined" aria-hidden="true">logout</span>Sign out</button>
           </div>

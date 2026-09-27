@@ -51,9 +51,9 @@ function createClubs({ invitations, db, FieldValue, HttpsError, now = () => Date
     return { id: team.id, organizationId: team.organizationId, name: team.name, coachUIDs: team.coachUIDs || [], playerIds: team.playerIds || [] };
   }
   function invitationStatus(invite) { return invite.status === "pending" && invite.expiresAtMillis <= now() ? "expired" : invite.status; }
-  function publicInvite(doc) {
+  function publicInvite(doc, activation = null) {
     const invite = doc.data();
-    return { id: doc.id, email: invite.email, firstName: invite.firstName, lastName: invite.lastName, role: invite.role, teamIds: invite.teamIds, status: invitationStatus(invite), expiresAtMillis: invite.expiresAtMillis };
+    return { id: doc.id, email: invite.email, firstName: invite.firstName, lastName: invite.lastName, role: invite.role, teamIds: invite.teamIds, activationMode: invite.activationMode === "manual" ? "manual" : "verified_email", status: invitationStatus(invite), ...(invite.activationMode === "manual" ? { activationStatus: activation?.status === "pending" && activation.expiresAtMillis <= now() ? "expired" : activation?.status || "blocked" } : {}), expiresAtMillis: invite.expiresAtMillis };
   }
   function requireTeams(state, ids) {
     if (ids.some((teamId) => !state.teams.some((team) => team.id === teamId))) fail("invalid-argument", "Every selected team must belong to this club.");
@@ -164,7 +164,7 @@ function createClubs({ invitations, db, FieldValue, HttpsError, now = () => Date
         db.collection("clubStaffInvitations").where("organizationId", "==", selected).limit(200).get(),
       ]);
       result.staff = staff.docs.map((doc) => publicMember(doc.data()));
-      result.invitations = invitations.docs.map(publicInvite);
+      result.invitations = await Promise.all(invitations.docs.map(async doc => publicInvite(doc, doc.data().activationMode === "manual" && playerSegment(doc.data().grantId) ? (await db.doc(`accountAccessGrants/${doc.data().grantId}`).get()).data() : null)));
     }
     return result;
   }
@@ -195,7 +195,28 @@ function createClubs({ invitations, db, FieldValue, HttpsError, now = () => Date
     });
     return { teamId: teamRef.id };
   }
-  async function createClubStaffInvitation(data, auth) {
+  async function validateStaffInvitation(data, auth, replacementId = null) {
+    return db.runTransaction(async tx => {
+      const state = await readClub(tx, data?.organizationId, auth);
+      email(data?.email); text(data?.firstName, "first name"); text(data?.lastName, "last name");
+      if (!["manager", "coach"].includes(data?.role)) fail("invalid-argument", "Choose manager or coach.");
+      const assigned = teamIds(data?.teamIds || []);
+      if (data.role === "manager" && assigned.length) fail("invalid-argument", "Managers have access to every team; leave team assignments empty.");
+      requireTeams(state, assigned);
+      const pending = await tx.get(db.collection("clubStaffInvitations").where("organizationId", "==", state.orgRef.id).limit(201));
+      if (state.members.length >= MAX_STAFF || pending.size >= 200) fail("resource-exhausted", "This club has reached its staff invitation limit.");
+      if (state.members.some(m => String(m.email).toLowerCase() === email(data.email)) || pending.docs.some(doc => doc.id !== replacementId && doc.data().email === email(data.email) && invitationStatus(doc.data()) === "pending")) fail("already-exists", "This email already has staff access or a pending invitation.");
+      if (replacementId) {
+        const old = pending.docs.find(doc => doc.id === replacementId)?.data();
+        if (!old || !["pending", "expired"].includes(invitationStatus(old))) fail("failed-precondition", "Only pending or expired invitations can be replaced.");
+      }
+      return { organizationName: state.org.name, teamNames: state.teams.filter(team => assigned.includes(team.id)).map(team => team.name) };
+    });
+  }
+  // The third argument is an in-process capability, never callable request data.
+  async function createClubStaffInvitation(data, auth, manual = null) {
+    if (data?.activationMode !== undefined && !["manual", "verified_email"].includes(data.activationMode)) fail("invalid-argument", "Choose a supported activation method.");
+    if ((data?.activationMode === "manual") !== Boolean(manual)) fail("failed-precondition", "Use the account activation service for private links.");
     const invitedEmail = email(data?.email);
     const firstName = text(data?.firstName, "first name");
     const lastName = text(data?.lastName, "last name");
@@ -212,11 +233,23 @@ function createClubs({ invitations, db, FieldValue, HttpsError, now = () => Date
       if (state.members.length >= MAX_STAFF) fail("resource-exhausted", "The club staff limit has been reached.");
       const pending = await tx.get(db.collection("clubStaffInvitations").where("organizationId", "==", state.orgRef.id).limit(201));
       if (pending.size >= 200) fail("resource-exhausted", "The club invitation limit has been reached. Contact PoseTek.");
-      if (state.members.some((m) => String(m.email).toLowerCase() === invitedEmail) || pending.docs.some((doc) => doc.data().email === invitedEmail && invitationStatus(doc.data()) === "pending")) fail("already-exists", "This email already has staff access or a pending invitation.");
+      if (state.members.some((m) => String(m.email).toLowerCase() === invitedEmail) || pending.docs.some((doc) => doc.id !== manual?.replacementId && doc.data().email === invitedEmail && invitationStatus(doc.data()) === "pending")) fail("already-exists", "This email already has staff access or a pending invitation.");
+      let replacement = null;
+      if (manual?.replacementId) {
+        replacement = pending.docs.find(doc => doc.id === manual.replacementId);
+        if (!replacement || !["pending", "expired"].includes(invitationStatus(replacement.data()))) fail("failed-precondition", "Only pending or expired invitations can be replaced.");
+      }
+      if (manual) await manual.beforeWrite(tx);
       const profileRef = state.orgRef.collection("staffProfiles").doc();
       const invitation = { organizationId: state.orgRef.id, email: invitedEmail, firstName, lastName, role, teamIds: assigned, status: "pending", staffProfileId: profileRef.id, createdByUID: auth.uid, createdAt: stamp(), expiresAtMillis };
+      if (manual) Object.assign(invitation, { activationMode: "manual", targetUID: manual.targetUID, grantId: manual.grantId });
+      if (replacement) {
+        tx.update(replacement.ref, { status: "revoked", revokedAt: stamp(), revokedByUID: auth.uid, replacedByInvitationId: inviteRef.id });
+        tx.update(state.orgRef.collection("staffProfiles").doc(replacement.data().staffProfileId), { status: "revoked", updatedAt: stamp() });
+      }
       tx.create(inviteRef, invitation);
       tx.create(profileRef, { email: invitedEmail, firstName, lastName, role, teamIds: assigned, status: "pending", invitationId: inviteRef.id, createdAt: stamp() });
+      if (manual) manual.write(tx, { invitationId: inviteRef.id, staffProfileId: profileRef.id });
     });
     return { invitationId: inviteRef.id, code, expiresAtMillis };
   }
@@ -227,13 +260,31 @@ function createClubs({ invitations, db, FieldValue, HttpsError, now = () => Date
     const code = typeof data?.code === "string" ? data.code.trim().toUpperCase() : "";
     if (!/^CLUB-[A-F0-9]{32}$/.test(code)) fail("not-found", "That invitation is invalid or has expired.");
     const ref = db.collection("clubStaffInvitations").doc(crypto.createHash("sha256").update(code).digest("hex"));
+    return claimStaffInvitation(ref, auth, invitedEmail);
+  }
+  async function claimManualStaffInvitation(invitationId, auth, grantId, issuer) {
+    authRequired(auth);
+    return claimStaffInvitation(db.collection("clubStaffInvitations").doc(id(invitationId)), auth, email(auth.email), grantId, issuer);
+  }
+  async function claimStaffInvitation(ref, auth, invitedEmail, grantId = null, issuer = null) {
     return db.runTransaction(async (tx) => {
       const doc = await tx.get(ref);
       const invite = doc.exists ? doc.data() : null;
-      if (!invite || invitationStatus(invite) !== "pending") fail("not-found", "That invitation is invalid or has expired.");
+      if (!invite || (invitationStatus(invite) !== "pending" && !(grantId && invite.status === "claimed" && invite.claimedByUID === auth.uid))) fail("not-found", "That invitation is invalid or has expired.");
+      if (invite.activationMode === "manual") {
+        if (!grantId || invite.grantId !== grantId || invite.targetUID !== auth.uid || /^[^@]+@posetek\.net$/i.test(invitedEmail)) fail("permission-denied", "Use your private staff activation link.");
+        const grant = await tx.get(db.collection("accountAccessGrants").doc(grantId));
+        if (grant.data()?.status !== "consuming" || grant.data()?.targetUID !== auth.uid || grant.data()?.purpose !== "staff_activation" || issuer?.uid !== grant.data()?.createdByUID) fail("failed-precondition", "This activation cannot be completed. Contact PoseTek.");
+      } else if (grantId) fail("permission-denied", "This invitation requires verified email.");
       if (invite.email !== invitedEmail) fail("permission-denied", "Sign in with the email address this invitation was sent to.");
       const state = await readClub(tx, invite.organizationId, auth, false);
+      if (grantId) requireManager({ ...state, actor: state.members.find(member => member.userUID === issuer.uid) }, issuer);
       requireTeams(state, invite.teamIds);
+      if (grantId && invite.status === "claimed") {
+        const member = state.members.find(entry => entry.userUID === auth.uid);
+        if (!activeMember(member, auth.uid) || member.role !== invite.role || member.staffProfileId !== invite.staffProfileId || JSON.stringify(member.teamIds) !== JSON.stringify(invite.teamIds)) fail("failed-precondition", "This account's access changed. Ask PoseTek to review it.");
+        return { organizationId: invite.organizationId, role: invite.role, teamIds: invite.teamIds };
+      }
       if (state.members.some((m) => m.userUID === auth.uid) || state.members.length >= MAX_STAFF) fail("already-exists", "This account already has a staff membership or the club is full.");
       const coachRef = db.collection("coaches").doc(auth.uid);
       const profileRef = state.orgRef.collection("staffProfiles").doc(id(invite.staffProfileId));
@@ -283,7 +334,14 @@ function createClubs({ invitations, db, FieldValue, HttpsError, now = () => Date
       const doc = await tx.get(inviteRef);
       if (!doc.exists || doc.data().organizationId !== state.orgRef.id) fail("not-found", "That invitation could not be found.");
       if (doc.data().status !== "pending") fail("failed-precondition", "Only pending invitations can be revoked.");
+      let grantRef = null;
+      if (doc.data().activationMode === "manual") {
+        grantRef = db.collection("accountAccessGrants").doc(id(doc.data().grantId));
+        const grant = await tx.get(grantRef);
+        if (grant.data()?.status !== "pending") fail("failed-precondition", "This activation has started and cannot be revoked as an invitation.");
+      }
       tx.update(inviteRef, { status: "revoked", revokedAt: stamp(), revokedByUID: auth.uid });
+      if (grantRef) tx.update(grantRef, { status: "revoked", revokedAtMillis: now(), revokedByUID: auth.uid });
       tx.update(state.orgRef.collection("staffProfiles").doc(doc.data().staffProfileId), { status: "revoked", updatedAt: stamp() });
     });
     return { ok: true };
@@ -355,6 +413,6 @@ function createClubs({ invitations, db, FieldValue, HttpsError, now = () => Date
     });
     return { playerId, code };
   }
-  return { getClubContext, createClubOrganization, saveClubTeam, createClubStaffInvitation, redeemClubStaffInvitation, setClubStaffTeams, revokeClubStaffInvitation, setClubPlayerTeam, createClubPlayer, issueClubPlayerInvitation };
+  return { getClubContext, createClubOrganization, saveClubTeam, validateStaffInvitation, createClubStaffInvitation, redeemClubStaffInvitation, claimManualStaffInvitation, setClubStaffTeams, revokeClubStaffInvitation, setClubPlayerTeam, createClubPlayer, issueClubPlayerInvitation };
 }
 module.exports = { createClubs, INVITE_TTL_MS };

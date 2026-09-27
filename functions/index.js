@@ -81,6 +81,8 @@ exports.trainingSaveReadiness = functions.https.onCall((data, context) => traini
 const analysisReviews = createAnalysisReviews({ db, bucket: admin.storage().bucket("kickai-69dd0.firebasestorage.app"), FieldValue: admin.firestore.FieldValue, HttpsError: functions.https.HttpsError });
 const clubBranding = createClubBranding({ db, bucket: admin.storage().bucket("kickai-69dd0.firebasestorage.app"), FieldValue: admin.firestore.FieldValue, HttpsError: functions.https.HttpsError });
 const clubs = createClubs({ invitations: playerInvitations, db, FieldValue: admin.firestore.FieldValue, HttpsError: functions.https.HttpsError });
+const { createAccountAccess } = require("./account-access");
+const accountAccess = createAccountAccess({ db, authDirectory: admin.auth(), clubs, FieldValue: admin.firestore.FieldValue, HttpsError: functions.https.HttpsError });
 const testingEvents = createTestingEvents({
   db,
   FieldValue: admin.firestore.FieldValue,
@@ -430,7 +432,7 @@ function requireCaller(context) {
   if (context.auth.token?.firebase?.sign_in_provider === "anonymous") {
     throw new functions.https.HttpsError("permission-denied", "A registered account is required.");
   }
-  return { uid: context.auth.uid, email: context.auth.token?.email || null, emailVerified: context.auth.token?.email_verified === true, isAnonymous: false };
+  return { uid: context.auth.uid, email: context.auth.token?.email || null, emailVerified: context.auth.token?.email_verified === true, authTime: context.auth.token?.auth_time, isAnonymous: false };
 }
 
 // Explicit exports keep Firebase deployment discovery stable across releases.
@@ -438,7 +440,31 @@ exports.importClubLogo = functions.runWith({ timeoutSeconds: 120 }).https.onCall
 exports.getClubContext = functions.https.onCall((data, context) => clubs.getClubContext(data, requireCaller(context)));
 exports.createClubOrganization = functions.https.onCall((data, context) => clubs.createClubOrganization(data, requireCaller(context)));
 exports.saveClubTeam = functions.https.onCall((data, context) => clubs.saveClubTeam(data, requireCaller(context)));
-exports.createClubStaffInvitation = functions.https.onCall((data, context) => clubs.createClubStaffInvitation(data, requireCaller(context)));
+exports.createClubStaffInvitation = functions.https.onCall(async (data, context) => {
+  const caller = requireCaller(context);
+  if (data?.activationMode !== "manual") return clubs.createClubStaffInvitation(data, caller);
+  await accountAccess.rate(context.rawRequest, caller, "issue", 30);
+  return accountAccess.issueStaffActivation(data, caller);
+});
+exports.replaceClubStaffInvitation = functions.https.onCall(async (data, context) => {
+  const caller = requireCaller(context);
+  await accountAccess.rate(context.rawRequest, caller, "issue", 30);
+  return accountAccess.replaceClubStaffInvitation(data || {}, caller);
+});
+for (const name of ["issueInternalAdminAccess", "issueAccountRecovery", "listAccountAccessLinks", "revokeAccountAccessLink"]) {
+  exports[name] = functions.https.onCall(async (data, context) => {
+    const caller = requireCaller(context);
+    await accountAccess.rate(context.rawRequest, caller, "manage", 60);
+    return accountAccess[name](data || {}, caller);
+  });
+}
+for (const name of ["getAccountAccessLink", "completeAccountAccessLink"]) {
+  exports[name] = functions.runWith({ timeoutSeconds: 120 }).https.onCall(async (data, context) => {
+    const caller = context.auth ? requireCaller(context) : null;
+    await accountAccess.rate(context.rawRequest, caller, name === "getAccountAccessLink" ? "check" : "complete", name === "getAccountAccessLink" ? 60 : 10);
+    return accountAccess[name](data || {}, caller);
+  });
+}
 exports.redeemClubStaffInvitation = functions.https.onCall((data, context) => clubs.redeemClubStaffInvitation(data, requireCaller(context)));
 exports.setClubStaffTeams = functions.https.onCall((data, context) => clubs.setClubStaffTeams(data, requireCaller(context)));
 exports.revokeClubStaffInvitation = functions.https.onCall((data, context) => clubs.revokeClubStaffInvitation(data, requireCaller(context)));

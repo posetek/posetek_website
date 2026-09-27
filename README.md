@@ -3,7 +3,20 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
-Confirmed training resources and accurate account entry are live on
+Email-free coach and administrator access is live on [posetek.net](https://posetek.net).
+Source `f9f10e0` was published as deployment `6ab8679ccbfca079f8997124` on
+September 26, 2026 at 5:50:52 PM PDT. Organization managers create private staff
+activation links; recipients choose their password and then use the same sign-in
+page. PoseTek admins issue internal-admin activation and assisted recovery from
+**Account access** in their account menu. No email is sent by these managed flows.
+See the [production receipt](deployment/EMAIL_FREE_ACCOUNT_ACCESS_PRODUCTION.json)
+and [account access handoff](docs/EMAIL_FREE_ACCOUNT_ACCESS.md).
+All 1,177 artifact files match the reviewed draft. The reconciled baseline protects
+1,145 application/public files; production role-routing checks and the ordinary
+preservation build passed. Seven temporary accounts and their run-owned records
+were removed, including asynchronous deletion tombstones.
+
+The preceding release of confirmed training resources and account entry remains live on
 [posetek.net](https://posetek.net). Source `e571df3` was published as deployment
 `6ab788d1c138322f8f9b9911` on September 26, 2026 at 2:55:16 AM PDT. The baseline
 protects 1,078 application/public files. Production artifact/browser verification

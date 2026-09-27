@@ -1,10 +1,20 @@
 .staff-activation {
   .portal-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
   .club-signup { max-width: 600px; }
+  .activation-account { display: grid; gap: 6px; padding-bottom: 20px; border-bottom: 1px solid #264137; margin-bottom: 20px; }
+  .activation-account strong { font-size: 19px; overflow-wrap: anywhere; }
+  .activation-account span { font-size: 14px; color: #b3c4ba; }
+  .activation-username { position: absolute; width: 1px; height: 1px; min-height: 0; padding: 0; opacity: 0; pointer-events: none; }
+  .activation-change-code { display: block; min-height: 44px; padding: 8px 0; border: 0; background: transparent; color: #b8d5c5; text-decoration: underline; text-underline-offset: 4px; font: inherit; margin-top: 14px; }
+  .activation-password-toggle { display: block; min-height: 44px; padding: 8px 0; margin-top: -6px; border: 0; background: transparent; color: #b8d5c5; font: inherit; font-size: 14px; }
+  .activation-assistance { margin-top: 24px; color: #c8d8cf; }
+  .activation-assistance summary { cursor: pointer; min-height: 44px; padding: 10px 0; }
+  .activation-assistance p { font-size: 14px; margin: 10px 0; }
   h1 { text-wrap: balance; }
   .activation-steps { display: grid; gap: 10px; padding-left: 24px; color: #d8e8de; margin: 24px 0; }
   .activation-steps li::marker { color: #c5f16c; font-weight: 700; }
   .activation-help { font-size: 13px; margin-top: -4px; }
+  input { font-size: 16px; }
   .primary-cta, .quiet-button, .club-inline-link { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
   .primary-cta { white-space: normal; text-align: center; }
   .activation-actions { display: flex; gap: 4px 12px; flex-wrap: wrap; margin-top: 12px; }

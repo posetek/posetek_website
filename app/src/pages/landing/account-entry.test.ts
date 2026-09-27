@@ -11,7 +11,7 @@ describe("account entry destinations", () => {
   it.each(["/join", "/organization?orgId=club&teamId=team", "/programs?player=athlete&orgId=club", "/insights?orgId=club"]) ("accepts the explicit same-origin destination %s", target => {
     expect(getSafeReturnToUrl("?returnTo=" + encodeURIComponent(target), base, origin)).toBe(origin + target);
   });
-  it.each(["https://elsewhere.example/join", "//elsewhere.example/programs", "javascript:alert(1)", "https://person:secret@posetek.example/join", "/signin", "/admin", "/join/unknown"]) ("rejects unsafe or unsupported return target %s", target => {
+  it.each(["https://elsewhere.example/join", "//elsewhere.example/programs", "javascript:alert(1)", "https://person:secret@posetek.example/join", "/signin", "/admin/unknown", "/join/unknown"]) ("rejects unsafe or unsupported return target %s", target => {
     expect(getSafeReturnToUrl("?returnTo=" + encodeURIComponent(target), base, origin)).toBeNull();
   });
   it.each(["admin", "manager", "coach"] as const)("honors staff return intent for %s", role => {
@@ -26,6 +26,10 @@ describe("account entry destinations", () => {
     expect(route("independent")).toBe("/roster?userType=coach");
     expect(route("player")).toBe("/feed?player=canonical-player&userType=player");
     expect(route("pending")).toBe("/join");
+  });
+  it.each(["/admin", "/admin/access"])("preserves the admin destination only for administrators: %s", target => {
+    expect(route("admin", target)).toBe(origin + target);
+    for (const role of ["coach", "manager", "independent", "player", "pending"] as const) expect(route(role, target)).toBe(route(role));
   });
   it("returns players to Training and preserves canonical player parameters", () => {
     expect(route("player", "/programs?player=canonical-player")).toBe(origin + "/programs?player=canonical-player");
