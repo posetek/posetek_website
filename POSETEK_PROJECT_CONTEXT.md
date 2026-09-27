@@ -6,6 +6,12 @@ business document is included.
 
 ## Confirmed training setup and account entry (2026-09-26)
 
+The managed-account follow-up implements manually shared coach, organization-admin
+and PoseTek-admin activation links plus PoseTek-assisted password recovery.
+Read [the implementation and operations handoff](docs/EMAIL_FREE_ACCOUNT_ACCESS.md).
+Its release receipt records live status separately; the preceding release below
+remains the production reference until guarded publication is verified.
+
 Website deployment `6ab788d1c138322f8f9b9911`, from source
 `e571df38b80f524da4dd547a9d82fe906d10aaa9`, was published September 26, 2026 at
 2:55:16 AM PDT. All 1,110 artifact files match the reviewed candidate; the

@@ -38,6 +38,9 @@
   .club-message.error { background: #482a27; color: #ffded8; }
   .club-code code { display: block; font-size: 22px; overflow-wrap: anywhere; color: #a4f4cb; padding: 16px 0; user-select: all; }
   .club-code .quiet-button { margin-right: 12px; }
+  .club-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .club-actions button { min-height: 44px; }
+  .club-staff > div { min-width: 0; overflow-wrap: anywhere; }
   .club-signup { max-width: 540px; margin: 0 auto; }
   .club-signup label { margin: 16px 0; }
   .club-signup .primary-cta { margin-top: 10px; }

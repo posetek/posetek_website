@@ -48,6 +48,10 @@
 }
 
 .pt-landing {
+  .password-visibility { display: block; min-height: 44px; padding: 8px 0; border: 0; background: transparent; color: #b8d5c5; font: inherit; font-size: 14px; cursor: pointer; }
+  .account-signin-help { margin: 18px 0; padding: 16px; border: 1px solid #355246; border-radius: 10px; color: #c8d8cf; }
+  .account-signin-help p { font-size: 14px; line-height: 1.55; margin: 8px 0 12px; }
+  .account-signin-help summary { cursor: pointer; min-height: 44px; padding: 12px 0; }
   /* ---- 1. kickai.html inline <style> ---- */
 
   & {

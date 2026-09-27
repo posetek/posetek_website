@@ -11,6 +11,8 @@ describe("admin navigation", () => {
     expect((html.match(/class="admin-nav-link/g) ?? []).length).toBe(7);
     expect(html).toContain('href="/feed"');
     expect(html).toContain("Community feed");
+    expect(html).toContain('href="/admin/access"');
+    expect(html).toContain("Account access");
     expect(html).toContain("Technique review");
     expect(html).not.toContain('href="/insights');
     expect(html).not.toContain("admin-nav-short");

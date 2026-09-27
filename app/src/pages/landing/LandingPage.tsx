@@ -11,10 +11,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import firebase, { auth, cloud, db } from "../../lib/firebase";
-import { getClubContext } from "../../lib/organization-data";
+import { loadAccountAccess, STAFF_RECOVERY_HELP } from "../../lib/account-access";
 import { findCoach, findPlayer } from "../../lib/identity";
 import { useThemeColor } from "../../lib/use-theme-color";
-import { refreshAdminIdentity, sendAdminVerification, upsertAdminProfile } from "../admin/lib/identity";
+import { refreshAdminIdentity, upsertAdminProfile } from "../admin/lib/identity";
 import { capturePlayerInvitationLink, createInvitedPlayer, forgetPlayerInvitationLink, initialPlayerInvitationLink, readPlayerInvitationLink, unavailablePlayerInvitation } from "./player-invitation-link";
 import { accountDestination, accountError } from "./account-entry";
 import type { AccountRole } from "./account-entry";
@@ -62,10 +62,12 @@ export default function LandingPage() {
   // Login form
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [loginSuccess, setLoginSuccess] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [pendingActivation, setPendingActivation] = useState(false);
+  const [signInHelp, setSignInHelp] = useState(false);
   const loginMounted = useRef(false);
   const authEpoch = useRef(0);
 
@@ -297,84 +299,36 @@ export default function LandingPage() {
       const revision = authEpoch.current;
       isCurrent = () => loginMounted.current && authEpoch.current === revision && auth.currentUser?.uid === user.uid;
 
-      // PoseTek admin branch — FIRST, before any coach/player query
-      // (ADMIN_IDENTITY_CONTRACT.md §2.2). An @posetek.net address must never
-      // fall through to the cascade below: its Auth-UID fallback would resolve
-      // a staff account as a player and point every upload at players/{adminUid}.
-      const identity = await refreshAdminIdentity(user);
+      const access = await loadAccountAccess(user, isCurrent);
       if (!isCurrent()) return;
-      if (identity.adminDomain) {
-        if (!identity.isAdmin) {
-          // A domain match on an UNVERIFIED address is not admin (§1.3): send
-          // the verification (at most one per ten minutes), say so, sign out.
-          let sent = false;
-          try {
-            sent = await sendAdminVerification(user);
-          } catch {
-            sent = false;
-          }
-          if (!isCurrent()) return;
-          await auth.signOut();
-          if (!loginMounted.current) return;
-          setLoginError(
-            sent
-              ? "Verify your PoseTek email, then sign in again — we just sent you a link."
-              : "Verify your PoseTek email, then sign in again. A verification link was already sent recently; check your inbox and spam folder.",
-          );
-          return;
-        }
-        await upsertAdminProfile(identity);
-        if (isCurrent()) redirectAfterAuth("admin");
+      if (access.kind === "activation") {
+        const returnTo = getSafeReturnToUrl();
+        if (access.reason === "unlinked" && returnTo && new URL(returnTo).pathname === "/join") { redirectAfterAuth("pending"); return; }
+        setPendingActivation(access.reason !== "staff-inactive");
+        setLoginSuccess(access.reason === "admin-unverified"
+          ? "You are signed in. Ask a PoseTek administrator for your account activation link, then open it to finish access. No email has been sent."
+          : access.reason === "staff-inactive"
+            ? "You are signed in, but your staff access is not active. Ask your organization admin to check your assignment."
+            : "You are signed in. Open your staff access link to connect your account. If you expected a player profile, ask your coach to check your account link.");
         return;
       }
-
-      const club = await getClubContext();
-      if (!isCurrent()) return;
-      if (club.role === "manager" || club.role === "coach") {
-        redirectAfterAuth(club.role);
-        return;
-      }
-
-      const coachDoc = await findCoach(db, user.uid);
-      if (!isCurrent()) return;
-      if (coachDoc) {
-        await coachDoc.ref.update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
-        if (isCurrent()) redirectAfterAuth("independent");
-      } else {
-        const playerDoc = await findPlayer(db, user.uid);
+      if (access.role === "admin") {
+        const identity = await refreshAdminIdentity(user);
         if (!isCurrent()) return;
-        if (!playerDoc) {
-          const returnTo = getSafeReturnToUrl();
-          if (returnTo && new URL(returnTo).pathname === "/join") redirectAfterAuth("pending");
-          else {
-            setPendingActivation(true);
-            setLoginSuccess("You are signed in. Have a staff invitation? Finish activation to connect your account. If you expected a player profile, ask your coach to check your account link.");
-          }
-          return;
-        }
-        await playerDoc.ref.update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
-        if (isCurrent()) redirectAfterAuth("player", playerDoc.id);
+        if (!identity.isAdmin) throw new Error("Account access changed. Sign in again.");
+        await upsertAdminProfile(identity);
+      } else if (access.role === "independent") {
+        const coachDoc = await findCoach(db, user.uid);
+        if (!isCurrent()) return;
+        await coachDoc?.ref.update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
+      } else if (access.role === "player" && access.playerId) {
+        await db.collection("players").doc(access.playerId).update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
       }
+      if (isCurrent()) redirectAfterAuth(access.role, access.playerId || null);
     } catch (error: any) {
       if (isCurrent()) setLoginError(accountError(error, "We could not load your account access. Your sign-in has been kept; try again, or use your staff invitation to finish activation."));
     } finally {
       if (loginMounted.current) setLoginLoading(false);
-    }
-  }
-
-  // Resend verification email
-  async function handleResendVerification() {
-    const user = auth.currentUser;
-    if (user) {
-      setLoginLoading(true);
-      try {
-        await user.sendEmailVerification();
-        setLoginSuccess("Verification email resent!");
-      } catch (error: any) {
-        setLoginError(error.message);
-      } finally {
-        setLoginLoading(false);
-      }
     }
   }
 
@@ -584,27 +538,15 @@ export default function LandingPage() {
                 <h2 className="modal-title" id="login-title">
                   Sign in to PoseTek
                 </h2>
-                <p className="login-support">One sign-in for players, coaches and organization admins.</p>
+                <p className="login-support">One sign-in for players, coaches and admins.</p>
                 {/* legacy: hidden by CSS; its click handler (hideModal(loginModal)) is a no-op */}
                 <button className="close-btn" id="closeModal" type="button" tabIndex={-1} aria-hidden="true">
                   &times;
                 </button>
               </div>
-              <div className="verification-banner" id="verificationBanner" role="status" aria-live="polite">
-                <p>Your email is not verified</p>
-                <a
-                  href="#"
-                  id="resendVerification"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    void handleResendVerification();
-                  }}
-                >
-                  Resend verification email
-                </a>
-              </div>
               <form
                 id="loginForm"
+                data-clarity-mask="true"
                 onSubmit={(e) => {
                   e.preventDefault();
                   void handleLogin();
@@ -629,7 +571,7 @@ export default function LandingPage() {
                 <div className="form-group">
                   <label htmlFor="password">Password</label>
                   <input
-                    type="password"
+                    type={showLoginPassword ? "text" : "password"}
                     id="password"
                     name="password"
                     placeholder="Enter your password"
@@ -638,6 +580,7 @@ export default function LandingPage() {
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                   />
+                  <button className="password-visibility" type="button" aria-pressed={showLoginPassword} onClick={() => setShowLoginPassword(value => !value)}>{showLoginPassword ? "Hide password" : "Show password"}</button>
                 </div>
                 <div className="login-form-row">
                   <div className="checkbox-group">
@@ -650,10 +593,10 @@ export default function LandingPage() {
                     id="forgotPassword"
                     onClick={(e) => {
                       e.preventDefault();
-                      void handleForgotPassword();
+                      setSignInHelp(value => !value);
                     }}
                   >
-                    Forgot password?
+                    Need help signing in?
                   </a>
                 </div>
                 <div className="error-message" id="loginError" role="alert" style={{ display: loginError ? "block" : "none" }}>
@@ -678,12 +621,13 @@ export default function LandingPage() {
                   ></span>
                 </button>
               </form>
+              {signInHelp && <aside className="account-signin-help" aria-label="Sign-in help"><strong>Coach or admin account?</strong><p>{STAFF_RECOVERY_HELP} No email is sent from this screen.</p><Link className="text-link" to="/join">Open an access code</Link><details><summary>Player or independent account</summary><p>Use the existing password reset email for a player or independent coach account.</p><button className="secondary-action" type="button" onClick={() => { void handleForgotPassword(); }}>Reset password by email</button></details></aside>}
               {pendingActivation && <Link className="secondary-action activation-pending" to="/join">Finish staff activation</Link>}
               <div className="signup-prompt">
                 <p>Joining PoseTek?</p>
                 <div className="account-entry-options">
                   <button type="button" className="secondary-action" id="getStartedBtn" onClick={() => openSignupModal()}><strong>Player</strong><span>Use your player signup code</span></button>
-                  <Link className="secondary-action" to="/join"><strong>Invited coach or organization admin</strong><span>Activate your staff invitation</span></Link>
+                  <Link className="secondary-action" to="/join"><strong>Coach or admin</strong><span>Use your access link or code</span></Link>
                 </div>
                 <details className="account-entry-legacy"><summary>Independent coach or organization code</summary><p>Existing independent coaching and organization-code signup remain available.</p><div className="account-entry-options">
                   <button type="button" className="secondary-action" onClick={() => openSignupModal("independent")}>Create an independent coach account</button>

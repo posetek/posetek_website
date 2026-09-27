@@ -160,6 +160,8 @@ const RETURN_TO_ALLOWED = new Set([
 // Clean SPA routes that alias the allowlisted legacy pages (see app/src/App.tsx).
 // Ported pages redirect signed-out visitors here with these as returnTo values.
 const RETURN_TO_ALLOWED_PATHS = new Set([
+  "/admin",
+  "/admin/access",
   "/feed",
   "/athlete",
   "/roster",

@@ -3,6 +3,12 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
+The managed-account follow-up adds manually shared activation links and
+PoseTek-assisted recovery for coaches and administrators. See the
+[account access handoff](docs/EMAIL_FREE_ACCOUNT_ACCESS.md) for permissions,
+delivery, recovery and deployment verification. Source completion does not by
+itself establish publication; use its production receipt for live status.
+
 Confirmed training resources and accurate account entry are live on
 [posetek.net](https://posetek.net). Source `e571df3` was published as deployment
 `6ab788d1c138322f8f9b9911` on September 26, 2026 at 2:55:16 AM PDT. The baseline
