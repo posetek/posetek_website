@@ -1,25 +1,37 @@
 # Workout email alerts
 
-Implemented September 28, 2026. The supplied Resend sending-only key is stored in
-Secret Manager and bound to the deployed delivery functions. Email activation is
-pending Resend dashboard access, verification of `alerts.posetek.net`, its signed
-webhook setup, and mailbox acceptance. Missing settings keep collection and sending
-disabled. Do not describe
-the feature as delivering production mail until these steps have passed.
+Provider setup completed September 28, 2026; synthetic acceptance is still in
+progress. All seven scoped Firebase functions are deployed, ACTIVE at version 1,
+with audited source bytes, definitions, IAM and preservation of unrelated
+functions. The four intake functions were deployed from source `38baa80`.
+Anonymous requests to both callables were rejected. The delivery functions use
+`RESEND_API_KEY` version 1; the signed webhook uses the independent
+`RESEND_WEBHOOK_SECRET` version 1. No secret values belong in this repository.
 
-The four intake functions are deployed and verified from source `38baa80`:
-both saved-log observers, athlete activity intake, and the admin status callable.
-Source bytes, function definitions, IAM and preservation of all unrelated
-functions passed the scoped audit. Configuration remains absent, so neither
-collection nor sending is enabled. Anonymous requests to both callables were
-rejected. The two delivery functions and five-minute scheduler are now deployed;
-the webhook remains undeployed until its genuine signing secret is available.
-Public DNS does not yet expose the planned sender's DKIM/SPF/MX records.
-The key's sending-only permission is confirmed, but its domain restriction still
-requires dashboard verification. No notification jobs, activity records or emails
-have been created. The original preview receipt remains a historical checkpoint;
-read [the provider setup receipt](../deployment/WORKOUT_NOTIFICATIONS_PROVIDER_SETUP.json)
-for the subsequent deployment state.
+Resend verified `alerts.posetek.net`. Its actual generated DNS consists of one
+DKIM TXT record and two DNS-only CNAMEs, documented in
+[the scoped release guide](../deployments/workout-notifications/README.md).
+A fourth TXT record adds `v=DMARC1; p=none;` only at `_dmarc.alerts.posetek.net`;
+public readback passed at 22:30:38 UTC. The root DMARC policy, mail routing and SPF
+were unchanged. Resend analysis of that new policy remains pending the next quiet
+fixture email; it does not establish inbox placement. The sending-only key is
+restricted to `alerts.posetek.net`, open/click tracking is disabled, and the
+enabled webhook subscribes to all six supported delivery events.
+
+Sending is restricted to a synthetic-player allowlist; all-player activation has
+not occurred. Two synthetic saved outcomes reached `delivered` with genuine
+signed webhook receipts. Sending was paused at 22:25:00 UTC while the inactivity
+fixtures aged. Quiet/resume acceptance, final provider/mailbox and production-link
+checks, cleanup, and a fresh all-player cutoff remain pending. The website is
+still the reviewed unpublished draft, not a production release of these screens.
+Missing settings continue to disable collection and sending by design.
+
+Read the new [provider verification checkpoint](../deployment/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json).
+The [preview receipt](../deployment/WORKOUT_NOTIFICATIONS_PREVIEW.json) and
+[earlier provider setup receipt](../deployment/WORKOUT_NOTIFICATIONS_PROVIDER_SETUP.json)
+remain unchanged historical records; their pending DNS/access states are not the
+current setup instructions. This checkpoint does not certify completed pilot or
+all-player acceptance.
 
 The delivery source, secret bindings, function IAM, scheduler target and unrelated
 function inventory passed readback. The publisher now accepts Google's equivalent
@@ -204,10 +216,23 @@ auth-domain/security settings were changed. Read the
 [preview/intake receipt](../deployment/WORKOUT_NOTIFICATIONS_PREVIEW.json) for
 the exact prepared state; this is not a production-email acceptance receipt.
 
-Before all-player activation: verify the sending domain, deploy the genuine
-secret-bound delivery/webhook scopes, confirm the five-minute scheduler, and
-perform synthetic live completion, early-finish, quiet/resume and delivery-status
-acceptance to the sole recipient. Check the protected link through sign-in and
-read back all scoped source/configuration/IAM metadata. Record the actual
-production receipt and activation cutoff; remove only run-owned synthetic data.
-Local/emulator tests do not substitute for mailbox acceptance.
+Provider verification and the seven scoped deployments have passed; the
+five-minute scheduler is enabled with its verified target topic. Before
+all-player activation, finish the synthetic quiet/resume test and independent
+provider/mailbox acceptance to the sole recipient. If artificial timing is used,
+identify it as artificial; it cannot precede the real thirty-minute eligibility
+or fresh cutoff. Require three delivered fixture messages, genuine
+signed delivery receipts, one unattempted cancelled quiet alert, and no historical
+email or invented workout ending. Check truthful set/skip content and Pacific
+times. Provider `delivered` alone does not establish inbox placement or reading.
+
+After provider acceptance of all three messages, promote the exact reviewed
+website draft and reconcile its baseline. Verify the exact protected fixture
+links through administrator sign-in on the published frontend while those
+fixtures still exist. Then park the pilot, remove only its proven run-owned
+fixtures, reconcile asynchronous descendants and the Auth-deletion tombstone,
+and complete the read-only cleanup audit. Once mailbox acceptance and cleanup
+have passed, enable all players with a fresh cutoff and remove the pilot
+allowlist. Record the final production receipt and settings readback.
+Local/emulator tests and this provider checkpoint do not substitute for completed
+live acceptance.

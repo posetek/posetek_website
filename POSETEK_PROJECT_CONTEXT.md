@@ -11,17 +11,18 @@ through Resend, with website inactivity alerts after 30 minutes. Native coverage
 uses existing saved endings; detailed inactivity is limited to web-observed
 sessions. The admin player detail adds exact saved-workout history and protected
 email links with delivery status. Missing settings disable collection and mail.
-The supplied Resend sending-only key is stored in Secret Manager and bound to the
-delivery functions. Dashboard access, a verified `alerts.posetek.net` sender,
-the webhook signing secret and synthetic mailbox acceptance remain required. Read
+Provider setup is complete: `alerts.posetek.net` is verified, the sending-only
+key is restricted to that domain, and both provider secrets are bound from Secret
+Manager. A synthetic-only pilot has two signed delivery receipts; sending is
+paused while quiet/resume and mailbox acceptance remain pending. Read
 [the notification handoff](docs/WORKOUT_NOTIFICATIONS.md) and
 [scoped release guide](deployments/workout-notifications/README.md).
 The implementation does not change workout logs, canonical rules, gateway,
 native source, training catalog or the whole-body mobile acceptance gate.
-The four scoped intake functions are live and audited from `38baa80`, with absent
-settings keeping collection/sending disabled. The two delivery functions and
-five-minute scheduler are also deployed with the genuine Resend key; the webhook
-remains undeployed. See the [provider setup receipt](deployment/WORKOUT_NOTIFICATIONS_PROVIDER_SETUP.json).
+All seven scoped functions and the five-minute scheduler are live and audited.
+All-player activation has not occurred. The new sender uses one DKIM TXT and two
+DNS-only CNAMEs plus a subdomain-only initial DMARC policy; existing root mail
+records remain unchanged. See the [provider verification receipt](deployment/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json).
 Frontend candidate `d814225` is available as reviewed draft
 `6abadd8abff0a78fde2fbe28`; production remains the September 26 release below.
 Changes are shared in [draft PR #11](https://github.com/posetek/posetek_website/pull/11).

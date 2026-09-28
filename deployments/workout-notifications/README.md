@@ -2,22 +2,56 @@
 
 This release adds email observers and web activity tracking without modifying
 workout logs, gateway operations, native code or Firebase rules. Missing settings
-disable collection and sending. Never enable production mail before verifying
-Resend and the intended recipient with synthetic outcomes.
+disable collection and sending. As of the September 28 provider checkpoint, all
+seven scoped functions and the five-minute scheduler are deployed and audited.
+Resend domain, key scope, tracking settings and signed webhook setup are complete.
+Delivery is restricted to a synthetic-player pilot; two terminal messages have
+delivered, while quiet/resume acceptance remains pending. Sending is paused during
+that wait. The reviewed website draft is unpublished and all-player sending is
+not enabled. Read [the provider verification receipt](../../deployment/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json);
+preserve earlier receipts as historical checkpoints.
 
 ## Prerequisites
 
 - Resend sending domain `alerts.posetek.net`, with its exact generated DNS records
-  installed and verified. Preserve existing `posetek.net` mail routing.
+  installed and verified. The three provider-generated records and subsequent
+  subdomain-only DMARC record are below;
+  use the provider's current values for later setup or rotation. Preserve existing
+  `posetek.net` mail routing.
 - Sender `PoseTek Workouts <workouts@alerts.posetek.net>`; the sole destination is
-  `dylank@posetek.net`. Disable open and click tracking in Resend.
+  `dylank@posetek.net`. Both open and click tracking were verified disabled in the
+  Resend dashboard and must remain disabled.
 - Sending-only, domain-restricted `RESEND_API_KEY` and independent
   `RESEND_WEBHOOK_SECRET` in Google Secret Manager for `kickai-69dd0`. Enter values
   through the provider/secret-manager UI or secure CLI input, never in Git or chat.
-- Configure the signed webhook URL after its function exists:
+  Both current bindings use version 1; the sending key's domain is exactly
+  `alerts.posetek.net`.
+- Register the exact signed webhook URL to obtain its endpoint-specific signing
+  secret, store the genuine secret, then deploy and verify the receiver before
+  any live pilot:
   `https://us-central1-kickai-69dd0.cloudfunctions.net/resendWorkoutNotificationWebhook`.
-  Subscribe to sent, delivered, delivery_delayed, bounced, failed and
-  suppressed email events supported by the adapter.
+  The enabled endpoint `000f971a-e5b5-4df1-9a87-c0335554f403` subscribes to
+  `email.sent`, `email.delivered`, `email.delivery_delayed`, `email.bounced`,
+  `email.failed` and `email.suppressed`.
+
+| Type | Name | Actual provider target/value | Cloudflare mode |
+| --- | --- | --- | --- |
+| TXT | `resend._domainkey.alerts.posetek.net` | Provider-generated DKIM public key; exact value verified in the private DNS receipt | DNS only |
+| CNAME | `rsend.alerts.posetek.net` | `rsend.forge.rmta.net` | DNS only |
+| CNAME | `send.alerts.posetek.net` | `send.forge.rmta.net` | DNS only |
+| TXT | `_dmarc.alerts.posetek.net` | `v=DMARC1; p=none;` | DNS only |
+
+Public resolution of the three provider-generated records passed at 22:18:17 UTC
+and Resend showed the domain verified at 22:20 UTC. The additional DMARC TXT
+readback passed at 22:30:38 UTC; the root `_dmarc.posetek.net` remained absent.
+The initial `p=none` policy applies only to alerts, with no reporting/forwarding
+addresses or change to root mail policy. Resend analysis of the new policy remains
+pending the third, quiet fixture email; no inbox guarantee is implied.
+This setup uses these TXT/CNAME records; older
+example MX/SPF lookups in the historical setup receipt are not records to add.
+The existing root Microsoft mail routing and SPF were preserved. Provider public
+keys are not credentials, but future operators should obtain their exact current
+value from the verified domain configuration rather than copy an obsolete key.
 
 ## Prepare and verify
 
@@ -65,7 +99,16 @@ in `docs/WORKOUT_NOTIFICATIONS.md`. Save the previous settings before changing t
 Choose `activatedAtMillis` at the verified production activation, so historical
 completion records do not flood the mailbox. Keep global mail disabled until
 mailbox acceptance passes. Enable both flags only with a synthetic test allowlist
-for the live pilot, then advance the cutoff when enabling all players.
+for the live pilot. A generic webhook test returning HTTP 200 is insufficient:
+require actual attempted messages, signed `email.delivered` receipts, independent
+provider readback, and mailbox/protected-link acceptance. Complete quiet/resume
+checks and provider acceptance of all three messages. Promote the exact reviewed
+frontend and reconcile its baseline, then check production protected links while
+the fixtures still exist. Park and clean up only proven run-owned fixtures and
+audit that cleanup. After mailbox acceptance and cleanup pass, remove the pilot
+allowlist and advance the cutoff at all-player activation;
+neither the provider checkpoint nor the current pilot authorizes a historical
+backfill.
 
 For website changes, use the guarded application builder with a verified current
 marketing snapshot, review the exact draft, promote it without rebuilding and

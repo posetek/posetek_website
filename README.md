@@ -3,14 +3,15 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
-Workout email alerts are implemented with activation pending Resend setup and
-mailbox acceptance. See [the notification handoff](docs/WORKOUT_NOTIFICATIONS.md)
+Workout email alerts are implemented and Resend setup is complete; all-player
+activation awaits synthetic acceptance. See [the notification handoff](docs/WORKOUT_NOTIFICATIONS.md)
 for confirmed behavior, private APIs and remaining activation requirements, and
 [the scoped release guide](deployments/workout-notifications/README.md) for
 independent intake, delivery and webhook deployment.
-Intake and delivery are deployed with the genuine sending key, while collection
-and mail remain disabled pending sender verification, webhook setup and acceptance.
-See the [provider setup receipt](deployment/WORKOUT_NOTIFICATIONS_PROVIDER_SETUP.json).
+All seven scoped functions are deployed with the verified sender and signed
+webhook. Two synthetic outcome emails have delivery receipts; sending is paused
+while quiet/resume and mailbox acceptance finish. All-player sending is not on.
+See the [provider verification receipt](deployment/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json).
 The website changes remain in
 [draft PR #11](https://github.com/posetek/posetek_website/pull/11) and the
 [verified preview](https://6abadd8abff0a78fde2fbe28--posetek.netlify.app/admin).
