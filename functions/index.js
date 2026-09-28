@@ -474,6 +474,7 @@ exports.createClubPlayer = functions.https.onCall((data, context) => clubs.creat
 exports.createTestingEvent = functions.runWith({ timeoutSeconds: 120 }).https.onCall((data, context) => testingEvents.createTestingEvent(data || {}, requireCaller(context)));
 exports.addTestingParticipant = functions.runWith({ timeoutSeconds: 120 }).https.onCall((data, context) => testingEvents.addTestingParticipant(data || {}, requireCaller(context)));
 exports.startTestingEvent = functions.runWith({ timeoutSeconds: 540 }).https.onCall((data, context) => testingEvents.startTestingEvent(data || {}, requireCaller(context)));
+exports.updateTestingRepCounts = functions.runWith({ timeoutSeconds: 120 }).https.onCall((data, context) => testingEvents.updateTestingRepCounts(data || {}, requireCaller(context)));
 exports.createTestingEventInvite = functions.https.onCall((data, context) => testingEvents.createTestingEventInvite(data || {}, requireCaller(context)));
 exports.joinTestingEvent = functions.https.onCall((data, context) => testingEvents.joinTestingEvent(data || {}, requireCaller(context)));
 exports.claimTestingStation = functions.https.onCall((data, context) => testingEvents.claimTestingStation(data || {}, requireCaller(context)));
