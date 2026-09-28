@@ -114,10 +114,40 @@ class ReleaseTests(unittest.TestCase):
         api.rows[release.PARENT + '/functions/observePersonalWorkoutNotifications']['eventTrigger']['resource'] = 'players/{playerId}/workoutLogs/{logId}'
         with self.assertRaisesRegex(RuntimeError, 'Event trigger'): self.verify(release, run, api)
 
-    def test_scheduled_topic_change_refused(self):
+    def test_empty_scheduler_failure_policy_is_equivalent_without_mutating_metadata(self):
         release, run, api = self.setup_scope('delivery')
-        api.rows[release.PARENT + '/functions/sweepWorkoutNotifications']['eventTrigger']['resource'] += '-wrong'
+        row = api.rows[release.PARENT + '/functions/sweepWorkoutNotifications']
+        row['eventTrigger']['failurePolicy'] = {}
+        before = deepcopy(row)
+        self.verify(release, run, api)
+        prepare.validate('sweepWorkoutNotifications', row, {})
+        self.assertEqual(row, before)
+        self.assertNotIn('failurePolicy', prepare.definitions()['sweepWorkoutNotifications']['eventTrigger'])
+
+    def test_scheduler_explicit_retry_or_malformed_policy_refused(self):
+        release, run, api = self.setup_scope('delivery')
+        trigger = api.rows[release.PARENT + '/functions/sweepWorkoutNotifications']['eventTrigger']
+        for policy in ({'retry': {}}, {'unexpected': {}}, None, []):
+            with self.subTest(policy=policy):
+                trigger['failurePolicy'] = policy
+                with self.assertRaisesRegex(RuntimeError, 'Event trigger'): self.verify(release, run, api)
+
+    def test_sender_still_requires_explicit_retry_policy(self):
+        release, run, api = self.setup_scope('delivery')
+        trigger = api.rows[release.PARENT + '/functions/dispatchWorkoutNotification']['eventTrigger']
+        trigger['failurePolicy'] = {}
         with self.assertRaisesRegex(RuntimeError, 'Event trigger'): self.verify(release, run, api)
+        del trigger['failurePolicy']
+        with self.assertRaisesRegex(RuntimeError, 'Event trigger'): self.verify(release, run, api)
+
+    def test_scheduled_trigger_changes_refused_even_with_empty_failure_policy(self):
+        release, run, api = self.setup_scope('delivery')
+        row = api.rows[release.PARENT + '/functions/sweepWorkoutNotifications']
+        original = deepcopy(row['eventTrigger'])
+        for field in ('resource', 'eventType', 'service', 'unexpected'):
+            with self.subTest(field=field):
+                row['eventTrigger'] = {**original, 'failurePolicy': {}, field: 'wrong'}
+                with self.assertRaisesRegex(RuntimeError, 'Event trigger'): self.verify(release, run, api)
 
 
 if __name__ == '__main__': unittest.main()

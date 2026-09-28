@@ -8,7 +8,10 @@ mailbox acceptance. See [the notification handoff](docs/WORKOUT_NOTIFICATIONS.md
 for confirmed behavior, private APIs and remaining activation requirements, and
 [the scoped release guide](deployments/workout-notifications/README.md) for
 independent intake, delivery and webhook deployment.
-The intake scope is deployed but disabled; the website changes remain in
+Intake and delivery are deployed with the genuine sending key, while collection
+and mail remain disabled pending sender verification, webhook setup and acceptance.
+See the [provider setup receipt](deployment/WORKOUT_NOTIFICATIONS_PROVIDER_SETUP.json).
+The website changes remain in
 [draft PR #11](https://github.com/posetek/posetek_website/pull/11) and the
 [verified preview](https://6abadd8abff0a78fde2fbe28--posetek.netlify.app/admin).
 

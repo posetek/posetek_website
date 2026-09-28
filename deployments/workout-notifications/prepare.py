@@ -74,7 +74,14 @@ def validate(name, row, policy):
         audit.require(any(b.get('role') == 'roles/cloudfunctions.invoker' and 'allUsers' in b.get('members', []) and not b.get('condition') for b in bindings), 'Public transport invoker missing: ' + name)
         audit.require(all(b.get('role') == 'roles/cloudfunctions.invoker' for b in bindings if 'allUsers' in b.get('members', [])), 'Unexpected public IAM role: ' + name)
     else:
-        audit.require('httpsTrigger' not in row and row.get('eventTrigger') == expected['eventTrigger'], 'Event trigger differs: ' + name)
+        actual_trigger = row.get('eventTrigger')
+        # Cloud Functions v1 may serialize an unspecified retry policy as an
+        # empty object for the scheduler. Normalize only that equivalent form;
+        # retain exact resource/type/service checks and all explicit retries.
+        if (name == 'sweepWorkoutNotifications' and isinstance(actual_trigger, dict)
+                and 'failurePolicy' not in expected['eventTrigger'] and actual_trigger.get('failurePolicy') == {}):
+            actual_trigger = {key: value for key, value in actual_trigger.items() if key != 'failurePolicy'}
+        audit.require('httpsTrigger' not in row and actual_trigger == expected['eventTrigger'], 'Event trigger differs: ' + name)
     return expected
 
 

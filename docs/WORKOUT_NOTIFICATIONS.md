@@ -1,8 +1,10 @@
 # Workout email alerts
 
-Implemented September 28, 2026. Email activation is pending Resend account access,
-verification of `alerts.posetek.net`, real Secret Manager credentials, and mailbox
-acceptance. Missing settings keep collection and sending disabled. Do not describe
+Implemented September 28, 2026. The supplied Resend sending-only key is stored in
+Secret Manager and bound to the deployed delivery functions. Email activation is
+pending Resend dashboard access, verification of `alerts.posetek.net`, its signed
+webhook setup, and mailbox acceptance. Missing settings keep collection and sending
+disabled. Do not describe
 the feature as delivering production mail until these steps have passed.
 
 The four intake functions are deployed and verified from source `38baa80`:
@@ -10,7 +12,19 @@ both saved-log observers, athlete activity intake, and the admin status callable
 Source bytes, function definitions, IAM and preservation of all unrelated
 functions passed the scoped audit. Configuration remains absent, so neither
 collection nor sending is enabled. Anonymous requests to both callables were
-rejected. Delivery, the scheduler and the webhook are not deployed.
+rejected. The two delivery functions and five-minute scheduler are now deployed;
+the webhook remains undeployed until its genuine signing secret is available.
+Public DNS does not yet expose the planned sender's DKIM/SPF/MX records.
+The key's sending-only permission is confirmed, but its domain restriction still
+requires dashboard verification. No notification jobs, activity records or emails
+have been created. The original preview receipt remains a historical checkpoint;
+read [the provider setup receipt](../deployment/WORKOUT_NOTIFICATIONS_PROVIDER_SETUP.json)
+for the subsequent deployment state.
+
+The delivery source, secret bindings, function IAM, scheduler target and unrelated
+function inventory passed readback. The publisher now accepts Google's equivalent
+empty scheduler retry policy while still rejecting an enabled retry or changed
+trigger. All 14 notification-publisher and 19 shared-publisher checks passed.
 
 ## Confirmed behavior
 
