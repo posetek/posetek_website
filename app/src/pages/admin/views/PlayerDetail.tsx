@@ -127,7 +127,7 @@ export default function PlayerDetail() {
 
       <ResultsCard playerId={player.id} reps={reps} context={accountQuery(navigation)} />
 
-      <PlayerWorkoutHistory key={player.id} playerId={player.id} />
+      <PlayerWorkoutHistory key={`workout-history:${player.id}`} playerId={player.id} />
 
       <div className="admin-grid-two">
         <ProfileCard key={String(player.raw?.updatedAt?.seconds ?? player.id)} player={player} coach={coach} onSaved={reload} />
