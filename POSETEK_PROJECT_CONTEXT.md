@@ -1,8 +1,22 @@
 # PoseTek website project context
 
-Reviewed on September 26, 2026. This guide summarizes the available repository and
+Reviewed on September 28, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
+
+## Workout email alerts (2026-09-28, activation pending)
+
+The approved implementation sends saved workout outcomes to `dylank@posetek.net`
+through Resend, with website inactivity alerts after 30 minutes. Native coverage
+uses existing saved endings; detailed inactivity is limited to web-observed
+sessions. The admin player detail adds exact saved-workout history and protected
+email links with delivery status. Missing settings disable collection and mail.
+Provider account access, verified `alerts.posetek.net` sender, genuine secrets
+and synthetic mailbox acceptance are still required before activation. Read
+[the notification handoff](docs/WORKOUT_NOTIFICATIONS.md) and
+[scoped release guide](deployments/workout-notifications/README.md).
+The implementation does not change workout logs, canonical rules, gateway,
+native source, training catalog or the whole-body mobile acceptance gate.
 
 ## Email-free staff and administrator access (2026-09-26)
 

@@ -27,7 +27,7 @@ describe("account entry destinations", () => {
     expect(route("player")).toBe("/feed?player=canonical-player&userType=player");
     expect(route("pending")).toBe("/join");
   });
-  it.each(["/admin", "/admin/access"])("preserves the admin destination only for administrators: %s", target => {
+  it.each(["/admin", "/admin/access", "/admin/accounts/player/example?workoutSource=personalWorkoutLogs&workoutLog=log-1"])("preserves the admin destination only for administrators: %s", target => {
     expect(route("admin", target)).toBe(origin + target);
     for (const role of ["coach", "manager", "independent", "player", "pending"] as const) expect(route(role, target)).toBe(route(role));
   });

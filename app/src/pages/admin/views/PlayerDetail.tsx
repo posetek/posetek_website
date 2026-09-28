@@ -47,6 +47,7 @@ import type { CoachNote, CoachRow, PlayerRow } from "../lib/accounts";
 import { accountContext, accountPlayerPath, accountQuery, accountReturnPath } from "../lib/accountHierarchy";
 import { RESULT_DRILLS, resultsPath } from "../lib/results";
 import PlayerAiIncidents from "./PlayerAiIncidents";
+import PlayerWorkoutHistory from "./PlayerWorkoutHistory";
 
 export default function PlayerDetail() {
   const { playerId = "" } = useParams();
@@ -125,6 +126,8 @@ export default function PlayerDetail() {
       {error && <p className="form-message" role="alert">{error}</p>}
 
       <ResultsCard playerId={player.id} reps={reps} context={accountQuery(navigation)} />
+
+      <PlayerWorkoutHistory key={player.id} playerId={player.id} />
 
       <div className="admin-grid-two">
         <ProfileCard key={String(player.raw?.updatedAt?.seconds ?? player.id)} player={player} coach={coach} onSaved={reload} />

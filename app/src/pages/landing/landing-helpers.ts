@@ -184,9 +184,20 @@ export function getSafeReturnToUrl(
   try {
     const target = new URL(raw, baseHref);
     const fileName = target.pathname.split("/").pop() ?? "";
-    const allowed = RETURN_TO_ALLOWED.has(fileName) || RETURN_TO_ALLOWED_PATHS.has(target.pathname);
+    const allowed = RETURN_TO_ALLOWED.has(fileName) || RETURN_TO_ALLOWED_PATHS.has(target.pathname) || isAdminPlayerReturnPath(target.pathname);
     return target.origin === origin && !target.username && !target.password && allowed ? target.href : null;
   } catch {
     return null;
   }
+}
+
+/** Exact existing athlete-detail route for signed-out workout notification links. */
+export function isAdminPlayerReturnPath(path: string): boolean {
+  const match = /^\/admin\/accounts\/player\/([^/]+)$/.exec(path);
+  if (!match) return false;
+  try {
+    const id = decodeURIComponent(match[1]);
+    return Boolean(id) && id.length <= 1500 && id !== '.' && id !== '..' && !/[\\/]/.test(id)
+      && !Array.from(id).some(character => character.charCodeAt(0) < 32);
+  } catch { return false; }
 }

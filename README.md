@@ -3,6 +3,12 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
+Workout email alerts are implemented with activation pending Resend setup and
+mailbox acceptance. See [the notification handoff](docs/WORKOUT_NOTIFICATIONS.md)
+for confirmed behavior, private APIs and remaining activation requirements, and
+[the scoped release guide](deployments/workout-notifications/README.md) for
+independent intake, delivery and webhook deployment.
+
 Email-free coach and administrator access is live on [posetek.net](https://posetek.net).
 Source `f9f10e0` was published as deployment `6ab8679ccbfca079f8997124` on
 September 26, 2026 at 5:50:52 PM PDT. Organization managers create private staff
