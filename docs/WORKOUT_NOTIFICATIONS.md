@@ -5,6 +5,13 @@ verification of `alerts.posetek.net`, real Secret Manager credentials, and mailb
 acceptance. Missing settings keep collection and sending disabled. Do not describe
 the feature as delivering production mail until these steps have passed.
 
+The four intake functions are deployed and verified from source `38baa80`:
+both saved-log observers, athlete activity intake, and the admin status callable.
+Source bytes, function definitions, IAM and preservation of all unrelated
+functions passed the scoped audit. Configuration remains absent, so neither
+collection nor sending is enabled. Anonymous requests to both callables were
+rejected. Delivery, the scheduler and the webhook are not deployed.
+
 ## Confirmed behavior
 
 The only recipient is `dylank@posetek.net`. All players are eligible after launch.
@@ -169,12 +176,19 @@ all 32 current marketing files, replacing only the application entry and adding
 existing warnings; scoped admin notification lint is clean.
 
 The reviewed draft is
-[`6abada4b493ace6c0a463c71`](https://6abada4b493ace6c0a463c71--posetek.netlify.app/admin).
+[`6abadd8abff0a78fde2fbe28`](https://6abadd8abff0a78fde2fbe28--posetek.netlify.app/admin),
+from frontend source `d814225`.
 All 1,239 uploaded artifact files match the local candidate, all 32 served
 marketing routes match current production, and protected deep-link routes serve
 the intended application entry. Production remains `6ab8679ccbfca079f8997124`.
-Authenticated preview browser acceptance is incomplete: sign-in returned a
-connection interruption twice. No auth-domain/security settings were changed.
+Final browser checks passed automatic sign-in return to the requested player,
+exact saved-record selection and the deployed callable's disabled status. History
+remained a single section after selection, Refresh, Back and Forward; the history
+component now has a distinct sibling key from AI incidents. Initial transient
+account-access connection errors did not recur on this final preview. No
+auth-domain/security settings were changed. Read the
+[preview/intake receipt](../deployment/WORKOUT_NOTIFICATIONS_PREVIEW.json) for
+the exact prepared state; this is not a production-email acceptance receipt.
 
 Before all-player activation: verify the sending domain, deploy the genuine
 secret-bound delivery/webhook scopes, confirm the five-minute scheduler, and

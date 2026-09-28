@@ -8,6 +8,9 @@ mailbox acceptance. See [the notification handoff](docs/WORKOUT_NOTIFICATIONS.md
 for confirmed behavior, private APIs and remaining activation requirements, and
 [the scoped release guide](deployments/workout-notifications/README.md) for
 independent intake, delivery and webhook deployment.
+The intake scope is deployed but disabled; the website changes remain in
+[draft PR #11](https://github.com/posetek/posetek_website/pull/11) and the
+[verified preview](https://6abadd8abff0a78fde2fbe28--posetek.netlify.app/admin).
 
 Email-free coach and administrator access is live on [posetek.net](https://posetek.net).
 Source `f9f10e0` was published as deployment `6ab8679ccbfca079f8997124` on

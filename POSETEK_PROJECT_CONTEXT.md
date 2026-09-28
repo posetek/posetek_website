@@ -17,6 +17,11 @@ and synthetic mailbox acceptance are still required before activation. Read
 [scoped release guide](deployments/workout-notifications/README.md).
 The implementation does not change workout logs, canonical rules, gateway,
 native source, training catalog or the whole-body mobile acceptance gate.
+The four scoped intake functions are live and audited from `38baa80`, with absent
+settings keeping collection/sending disabled. Delivery/scheduler/webhook scopes
+remain undeployed. Frontend candidate `d814225` is available as reviewed draft
+`6abadd8abff0a78fde2fbe28`; production remains the September 26 release below.
+Changes are shared in [draft PR #11](https://github.com/posetek/posetek_website/pull/11).
 
 ## Email-free staff and administrator access (2026-09-26)
 
