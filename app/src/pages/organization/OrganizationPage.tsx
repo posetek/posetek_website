@@ -11,6 +11,8 @@ import SignupStatus from "../admin/views/SignupStatus";
 import AccessLinkCard from "../../components/AccessLinkCard";
 import { accessLinkText, accessStatusLabel, refreshAfterIssued } from "../../lib/access-link-issuer";
 import type { IssuedAccessLink } from "../../lib/access-link-issuer";
+import { emptyStaffPlayerProfile, missingRequirement, staffPlayerProfileFields } from "../../lib/player-profile";
+import { StaffPlayerProfileFields } from "../../components/StaffPlayerProfileFields";
 import "../../styles/pose-portal.css";
 import "./organization.scss";
 
@@ -35,6 +37,7 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
   const [invitationVersion, setInvitationVersion] = useState(0);
   const [issued, setIssued] = useState<IssuedInvitation | null>(null);
   const [newPlayer, setNewPlayer] = useState({ firstName: "", lastName: "" });
+  const [newProfile, setNewProfile] = useState(emptyStaffPlayerProfile);
   const [editedStaff, setEditedStaff] = useState<ClubContext["staff"][number] | null>(null);
   const [replaceInvitation, setReplaceInvitation] = useState<ClubContext["invitations"][number] | null>(null);
   const mounted = useRef(false);
@@ -197,11 +200,11 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
       {team && <section className="club-card"><div className="club-section-title"><h2>{team.name}</h2><Link className="quiet-button" to={insightsLink({ orgId: organizationId, teamId: team.id }, "organization")}>Team Insights</Link><Link className="quiet-button" to={`${admin ? "/admin/programs" : "/programs"}${accountQuery({ orgId: organizationId, teamId: team.id })}`}>Personalized programs</Link>{context.role === "coach" && <Link className="quiet-button" to={`/dashboard?team=${encodeURIComponent(team.id)}&orgId=${encodeURIComponent(organizationId)}&teamId=${encodeURIComponent(team.id)}`}>Team dashboard</Link>}</div>
         {manager && <form className="club-inline" onSubmit={event => { event.preventDefault(); void mutate(() => clubCall("saveClubTeam", { organizationId, teamId, name: editTeamName.trim() }), "Team renamed."); }}><label>Team name<input required maxLength={120} value={editTeamName} onChange={event => setEditTeamName(event.target.value)} /></label><button className="quiet-button" disabled={busy}>Save name</button></form>}
         <div className="club-player-list">{players.length ? players.map(player => <div className="club-player" key={player.id}><Link to={organizationPlayerPath(player, admin)}><strong>{player.firstName} {player.lastName}</strong><span>Open profile and results</span></Link><SignupStatus playerId={player.id} playerName={`${player.firstName} ${player.lastName}`} variant="club" reloadKey={invitationVersion} disabled={busy} />{manager && <label className="club-move">Team<select aria-label={`Team for ${player.firstName} ${player.lastName}`} value={player.teamId} disabled={busy} onChange={event => { void mutate(() => clubCall("setClubPlayerTeam", { organizationId, playerId: player.id, teamId: event.target.value }), "Player moved; existing results and sign-in preserved."); }}>{context.teams.map(entry => <option key={entry.id} value={entry.id}>{entry.name}</option>)}</select></label>}</div>) : <p>No players in this team yet.</p>}</div>
-        <form className="club-inline" onSubmit={event => { event.preventDefault(); void mutate(async isCurrent => {
-          const result = await clubCall<{ playerId: string; code: string }>("createClubPlayer", { organizationId, teamId, ...newPlayer });
-          if (isCurrent()) setNewPlayer({ firstName: "", lastName: "" });
+        <form className="club-inline" onSubmit={event => { event.preventDefault(); const missing = missingRequirement(newProfile); if (missing) { setError(missing); return; } void mutate(async isCurrent => {
+          const result = await clubCall<{ playerId: string; code: string }>("createClubPlayer", { organizationId, teamId, ...newPlayer, ...staffPlayerProfileFields(newProfile) });
+          if (isCurrent()) { setNewPlayer({ firstName: "", lastName: "" }); setNewProfile(emptyStaffPlayerProfile()); }
           return { issued: { playerId: result.playerId, email: `${newPlayer.firstName} ${newPlayer.lastName}`, player: true } };
-        }, "Player created. Their code claims this same profile."); }}><label>Player first name<input required maxLength={100} value={newPlayer.firstName} onChange={event => setNewPlayer({ ...newPlayer, firstName: event.target.value })} /></label><label>Last name<input required maxLength={100} value={newPlayer.lastName} onChange={event => setNewPlayer({ ...newPlayer, lastName: event.target.value })} /></label><button className="primary-cta" disabled={busy}>Add player</button></form>
+        }, "Player created. Their code claims this same profile."); }}><label>Player first name<input required maxLength={100} value={newPlayer.firstName} onChange={event => setNewPlayer({ ...newPlayer, firstName: event.target.value })} /></label><label>Last name<input required maxLength={100} value={newPlayer.lastName} onChange={event => setNewPlayer({ ...newPlayer, lastName: event.target.value })} /></label><StaffPlayerProfileFields value={newProfile} onChange={setNewProfile} disabled={busy} /><button className="primary-cta" disabled={busy}>Add player</button></form>
       </section>}
       {manager && unassignedPlayers.length > 0 && <section className="club-card"><h2>Unassigned players</h2><p>These players belong to this organization and need a current team.</p><div className="club-player-list">{unassignedPlayers.map(player => <div className="club-player" key={player.id}>
         <Link to={organizationPlayerPath(player, admin)}><strong>{player.firstName} {player.lastName}</strong><span>Open profile and results</span></Link>

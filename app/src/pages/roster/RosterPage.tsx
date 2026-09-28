@@ -10,6 +10,8 @@ import { readAccessibleLegacyRoster } from "../../lib/legacy-roster";
 import { selectedTeam } from "../../lib/organization";
 import firebase, { auth, cloud, db } from "../../lib/firebase";
 import { findCoach as findCoachByUid } from "../../lib/identity";
+import { emptyStaffPlayerProfile, missingRequirement, staffPlayerProfileFields } from "../../lib/player-profile";
+import { StaffPlayerProfileFields } from "../../components/StaffPlayerProfileFields";
 import {
   filterPlayers,
   fullName,
@@ -81,6 +83,7 @@ export default function RosterPage() {
   const firstNameRef = useRef<HTMLInputElement>(null);
   const lastNameRef = useRef<HTMLInputElement>(null);
   const codeRef = useRef<HTMLInputElement>(null);
+  const [profile, setProfile] = useState(emptyStaffPlayerProfile);
 
   const setMessage = useCallback((text: string, success = false) => {
     setFormMessage({ text, success });
@@ -193,13 +196,16 @@ export default function RosterPage() {
     }
     const firstName = firstNameRef.current?.value.trim() ?? "";
     const lastName = lastNameRef.current?.value.trim() ?? "";
+    const missing = missingRequirement(profile);
     if (clubRef.current) {
       if (!firstName || !lastName) return setMessage("Enter both a first and last name.");
+      if (missing) return setMessage(missing);
       setCreateBusy(true); setMessage("");
       try {
-        await clubCall("createClubPlayer", { organizationId: clubRef.current.context.organization!.id, teamId: clubRef.current.teamId, firstName, lastName });
+        await clubCall("createClubPlayer", { organizationId: clubRef.current.context.organization!.id, teamId: clubRef.current.teamId, firstName, lastName, ...staffPlayerProfileFields(profile) });
         if (firstNameRef.current) firstNameRef.current.value = "";
         if (lastNameRef.current) lastNameRef.current.value = "";
+        setProfile(emptyStaffPlayerProfile());
         dialogRef.current?.close(); await loadRoster(clubRef.current.teamId);
       } catch (failure: any) { setMessage(failure.message || "The player could not be created."); }
       finally { setCreateBusy(false); }
@@ -210,6 +216,7 @@ export default function RosterPage() {
       return setMessage("Return to the coach account that created the pending player to finish its roster link.");
     }
     if (!pendingBefore && (!firstName || !lastName)) return setMessage("Enter both a first and last name.");
+    if (!pendingBefore && missing) return setMessage(missing);
     setCreateBusy(true);
     setMessage(pendingBefore ? "Retrying roster link…" : "Creating player…", true);
     try {
@@ -223,6 +230,7 @@ export default function RosterPage() {
           registered: false,
           signupCode: makeCode(),
           signupCodeVersion: 2,
+          ...staffPlayerProfileFields(profile),
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         });
@@ -246,6 +254,7 @@ export default function RosterPage() {
       setPending(null);
       if (firstNameRef.current) firstNameRef.current.value = "";
       if (lastNameRef.current) lastNameRef.current.value = "";
+      setProfile(emptyStaffPlayerProfile());
       dialogRef.current?.close();
       await loadRoster();
     } catch (error: any) {
@@ -444,6 +453,7 @@ export default function RosterPage() {
               Last name
               <input id="newLastName" maxLength={80} autoComplete="off" ref={lastNameRef} disabled={Boolean(pendingPlayer)} />
             </label>
+            <StaffPlayerProfileFields value={profile} onChange={setProfile} disabled={Boolean(pendingPlayer)} />
             <button
               className="primary-cta"
               id="createPlayerButton"

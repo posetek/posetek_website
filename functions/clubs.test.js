@@ -207,9 +207,19 @@ test("revoking pending invitation prevents later claim", async () => {
 });
 test("assigned coach adds player with canonical club/team and existing player-code claim works", async () => {
   const { clubs, db } = harness();
-  await assert.rejects(clubs.createClubPlayer({ organizationId: "club", teamId: "b", firstName: "New", lastName: "Player" }, coachA), { code: "permission-denied" });
-  const created = await clubs.createClubPlayer({ organizationId: "club", teamId: "a", firstName: "New", lastName: "Player" }, coachA);
+  await assert.rejects(clubs.createClubPlayer({ organizationId: "club", teamId: "b", firstName: "New", lastName: "Player", phone_number: "9258727208", position: "CM" }, coachA), { code: "permission-denied" });
+  const base = { organizationId: "club", teamId: "a", firstName: "New", lastName: "Player" };
+  await assert.rejects(clubs.createClubPlayer(base, coachA), /phone number/);
+  await assert.rejects(clubs.createClubPlayer({ ...base, phone_number: "925-872" , position: "CM" }, coachA), /phone number/);
+  await assert.rejects(clubs.createClubPlayer({ ...base, phone_number: "9258727208" }, coachA), /position/);
+  await assert.rejects(clubs.createClubPlayer({ ...base, phone_number: "9258727208", position: "Striker" }, coachA), /position/);
+  await assert.rejects(clubs.createClubPlayer({ ...base, phone_number: "9258727208", position: "CM", weight: 0 }, coachA), /weight/);
+  const created = await clubs.createClubPlayer({ ...base, phone_number: "+1 925 872 7208", position: "CM", height: 177.8, weight: 70.3 }, coachA);
   const player = db.snapshot(`players/${created.playerId}`);
+  assert.equal(player.phone_number, "(925)-872-7208");
+  assert.equal(player.position, "CM");
+  assert.equal(player.height, 177.8);
+  assert.equal(player.weight, 70.3);
   assert.equal(player.organizationId, "club");
   assert.equal(player.teamId, "a");
   const admission = createAdmission({ db, FieldValue, HttpsError, randomInt: () => 0 });

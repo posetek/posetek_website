@@ -59,7 +59,7 @@ test("canonical team access wins over stale coach pointers and malformed ownersh
 });
 test("independent coach creation commits roster and invitation together", async () => {
   const { invitations, db } = setup();
-  const result = await invitations.createCoachPlayer({ firstName: "New", lastName: "Athlete" }, { uid: "c" });
+  const result = await invitations.createCoachPlayer({ firstName: "New", lastName: "Athlete", phone_number: "9258727208", position: "ST" }, { uid: "c" });
   assert.ok(db.snapshot("coaches/c").members.includes(result.playerId));
   assert.equal(db.snapshot("players/" + result.playerId).signupCode, undefined);
   assert.equal(db.snapshot("playerSignupInvitations/" + result.playerId).code, result.code);
@@ -70,9 +70,16 @@ test("missing owners and organization-only strangers never receive invitation ac
   assert.ok((await invitations.ensure("mismatch")).skipped);
 });
 
+test("coach creation requires a phone number and position", async () => {
+  const { invitations, db } = setup();
+  await assert.rejects(invitations.createCoachPlayer({ firstName: "No", lastName: "Phone", position: "CM" }, { uid: "c" }), /phone number/);
+  await assert.rejects(invitations.createCoachPlayer({ firstName: "No", lastName: "Position", phone_number: "9258727208" }, { uid: "c" }), /position/);
+  assert.equal((db.snapshot("coaches/c").members || []).length, 0);
+});
+
 test("coach creation retries return the same player and never duplicate roster membership", async () => {
   const { invitations, db } = setup();
-  const input = { firstName:"Retry", lastName:"Player", creationId:"test-creation-request-001" };
+  const input = { firstName:"Retry", lastName:"Player", creationId:"test-creation-request-001", phone_number:"9258727208", position:"GK" };
   const first = await invitations.createCoachPlayer(input, { uid:"c" });
   const retry = await invitations.createCoachPlayer(input, { uid:"c" });
   assert.deepEqual(retry, first); assert.equal(db.snapshot("coaches/c").members.length, 1);
