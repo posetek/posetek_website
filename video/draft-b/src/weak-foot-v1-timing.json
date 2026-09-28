@@ -1,0 +1,23 @@
+{
+  "version": "weak-foot-investor-v1",
+  "fps": 30,
+  "duration": 60,
+  "duration_frames": 1800,
+  "width": 1080,
+  "height": 1920,
+  "scenes": [
+    {"id":"opening","start":0,"end":120},
+    {"id":"player1-capture","start":120,"end":390},
+    {"id":"player1-comparison","start":390,"end":660},
+    {"id":"player2-capture","start":660,"end":930},
+    {"id":"player2-comparison","start":930,"end":1170},
+    {"id":"practice","start":1170,"end":1470},
+    {"id":"cycle","start":1470,"end":1710},
+    {"id":"identity","start":1710,"end":1800}
+  ],
+  "capture": {"right_duration_frames":135,"left_duration_frames":135,"speed":1,"muted":true},
+  "comparison": {"speed":0.25,"play_frames":72,"source_start_seconds":-0.2,"source_end_seconds":0.4,"phase_transition_frames":9,"first_metric_frames":93},
+  "motion": {"workspace_transition_frames":16,"internal_transition_frames":8},
+  "safe_area": {"left":72,"right":120,"top":70,"bottom":270,"caption_top":1538},
+  "audio": {"voice":"af_heart","synthesis_rate":1.2,"music_continuous":true,"target_lufs":-16,"maximum_dbtp":-1}
+}

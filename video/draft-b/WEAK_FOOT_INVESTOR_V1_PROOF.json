@@ -1,0 +1,37 @@
+{
+  "composition": "PoseTekWeakFootInvestorV1",
+  "status": "timed-proof-awaiting-creative-review",
+  "audience": "investors",
+  "compositionSize": [1080, 1920],
+  "proofSize": [720, 1280],
+  "seconds": 60,
+  "fps": 30,
+  "frames": 1800,
+  "narrationWords": 92,
+  "captionCues": 25,
+  "proof": {
+    "file": "PoseTek-Weak-Foot-Investor-V1-Timed-Proof.mp4",
+    "bytes": 7893515,
+    "sha256": "842b2adac23b06c91bcf8830b77d213042cd5bb48bc18f237183b5b4cbf351e4"
+  },
+  "captions": {
+    "file": "PoseTek-Weak-Foot-Investor-V1.srt",
+    "bytes": 1567,
+    "sha256": "c19c56eaafd7d800d11b6908611e52224528992083614f0582355970fcbe4f6e"
+  },
+  "checks": {
+    "sourceAndMedia": 96,
+    "encodedVisual": 19,
+    "fullDecode": true,
+    "typecheck": true,
+    "transitionResolutions": [720, 1080],
+    "fullResolutionBoundaryClips": 15,
+    "integratedLUFS": -16.01,
+    "truePeakDBTP": -1.58,
+    "audioLagSamples": 0,
+    "captionsVerbatim": true,
+    "fieldAudioMuted": true,
+    "priorEditionsPreserved": true
+  },
+  "deliveryGate": "Creative review before final master, compact delivery and editable asset package."
+}

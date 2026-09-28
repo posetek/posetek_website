@@ -1,0 +1,57 @@
+{
+  "version": "weak-foot-v1",
+  "voice": "af_heart",
+  "language": "en-us",
+  "synthesis_rate": 1.2,
+  "duration_seconds": 60,
+  "fps": 30,
+  "duration_frames": 1800,
+  "sample_rate": 48000,
+  "bpm": 106,
+  "transitions": [4, 8.5, 13, 22, 26.5, 31, 39, 49, 57],
+  "music": {"continuous": true, "duck_db": 16, "attack_seconds": 0.15, "release_seconds": 0.35},
+  "pronunciation_only_substitutions": {"PoseTek": "Pose Tech"},
+  "passages": [
+    {
+      "id": "passage_01", "start": 0, "end": 4,
+      "text": "Weak-foot practice needs a clear starting point.",
+      "utterances": [{"id": "opening", "start": 0.1, "end": 4, "text": "Weak-foot practice needs a clear starting point.", "caption_phrases": ["Weak-foot practice needs", "a clear starting point."]}]
+    },
+    {
+      "id": "passage_02", "start": 4, "end": 13,
+      "text": "First, a right-foot kick. Then, the same player’s left.",
+      "utterances": [
+        {"id": "player1_right", "start": 4.2, "end": 8.5, "text": "First, a right-foot kick.", "caption_phrases": ["First, a right-foot kick."]},
+        {"id": "player1_left", "start": 8.7, "end": 13, "text": "Then, the same player’s left.", "caption_phrases": ["Then, the same player’s left."]}
+      ]
+    },
+    {
+      "id": "passage_03", "start": 13, "end": 22,
+      "text": "At backswing, the support knee bends more on the left. The kicking-leg position also changes.",
+      "utterances": [{"id": "player1_evidence", "start": 15.7, "end": 22, "text": "At backswing, the support knee bends more on the left. The kicking-leg position also changes.", "caption_phrases": ["At backswing, the support knee", "bends more on the left.", "The kicking-leg position", "also changes."]}]
+    },
+    {
+      "id": "passage_04", "start": 22, "end": 31,
+      "text": "Now a second right-footed player. Right foot first, then left.",
+      "utterances": [
+        {"id": "player2_right", "start": 22.2, "end": 26.5, "text": "Now a second right-footed player. Right foot first,", "caption_phrases": ["Now a second right-footed player.", "Right foot first,"]},
+        {"id": "player2_left", "start": 26.7, "end": 31, "text": "then left.", "caption_phrases": ["then left."]}
+      ]
+    },
+    {
+      "id": "passage_05", "start": 31, "end": 39,
+      "text": "Each comparison is grounded in that player’s own movement, giving practice an individual starting point.",
+      "utterances": [{"id": "player2_evidence", "start": 31.15, "end": 39, "text": "Each comparison is grounded in that player’s own movement, giving practice an individual starting point.", "caption_phrases": ["Each comparison is grounded", "in that player’s own movement,", "giving practice an individual", "starting point."]}]
+    },
+    {
+      "id": "passage_06", "start": 39, "end": 49,
+      "text": "For the first player, the saved cue is: With your left foot, try a comfortably larger backswing, letting your heel rise higher.",
+      "utterances": [{"id": "practice", "start": 39.15, "end": 49, "text": "For the first player, the saved cue is: With your left foot, try a comfortably larger backswing, letting your heel rise higher.", "caption_phrases": ["For the first player,", "the saved cue is:", "With your left foot,", "try a comfortably larger backswing,", "letting your heel rise higher."]}]
+    },
+    {
+      "id": "passage_07", "start": 49, "end": 57,
+      "text": "PoseTek turns phone recordings into individual feedback, focused practice and reassessment—a repeatable development process.",
+      "utterances": [{"id": "cycle", "start": 49.1, "end": 57, "text": "PoseTek turns phone recordings into individual feedback, focused practice and reassessment—a repeatable development process.", "caption_phrases": ["PoseTek turns phone recordings", "into individual feedback,", "focused practice", "and reassessment—a repeatable", "development process."]}]
+    }
+  ]
+}
