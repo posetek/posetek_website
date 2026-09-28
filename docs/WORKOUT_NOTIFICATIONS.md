@@ -1,7 +1,13 @@
 # Workout email alerts
 
-Provider setup completed September 28, 2026; synthetic acceptance is still in
-progress. All seven scoped Firebase functions are deployed, ACTIVE at version 1,
+Workout email alerts are live for all players as of September 28, 2026 at
+4:06:30 PM PDT. Activation was confirmed at `2026-09-28T23:06:30.994Z` with exactly
+`enabled: true`, `sendEnabled: true`, and
+`activatedAtMillis: 1790636790868` (`2026-09-28T23:06:30.868Z`); no test allowlist
+remains. The website release `6abadd8abff0a78fde2fbe28`, from frontend source
+`d814225`, was promoted at `2026-09-28T22:56:54.754Z`.
+
+All seven scoped Firebase functions are deployed, ACTIVE at version 1,
 with audited source bytes, definitions, IAM and preservation of unrelated
 functions. The four intake functions were deployed from source `38baa80`.
 Anonymous requests to both callables were rejected. The delivery functions use
@@ -13,25 +19,34 @@ DKIM TXT record and two DNS-only CNAMEs, documented in
 [the scoped release guide](../deployments/workout-notifications/README.md).
 A fourth TXT record adds `v=DMARC1; p=none;` only at `_dmarc.alerts.posetek.net`;
 public readback passed at 22:30:38 UTC. The root DMARC policy, mail routing and SPF
-were unchanged. Resend analysis of that new policy remains pending the next quiet
-fixture email; it does not establish inbox placement. The sending-only key is
+were unchanged. The quiet fixture email reached the inbox at 22:56:03 UTC after
+that policy change. This observation does not guarantee future inbox placement.
+The sending-only key is
 restricted to `alerts.posetek.net`, open/click tracking is disabled, and the
 enabled webhook subscribes to all six supported delivery events.
 
-Sending is restricted to a synthetic-player allowlist; all-player activation has
-not occurred. Two synthetic saved outcomes reached `delivered` with genuine
-signed webhook receipts. Sending was paused at 22:25:00 UTC while the inactivity
-fixtures aged. Quiet/resume acceptance, final provider/mailbox and production-link
-checks, cleanup, and a fresh all-player cutoff remain pending. The website is
-still the reviewed unpublished draft, not a production release of these screens.
-Missing settings continue to disable collection and sending by design.
+The isolated synthetic pilot completed with three provider-confirmed deliveries
+and genuine signed delivery receipts: an assigned completion, a personal early
+finish, and inactivity after a natural 30-minute wait. Only the third message's
+inbox placement was independently confirmed; the first two have provider delivery
+confirmation. Resume cancelled one unattempted quiet email, and one historical
+fixture ending produced no email. Inactivity did not invent a workout ending.
+Production protected links and sign-in return passed before fixture removal.
+The final cleanup audit passed at `2026-09-28T23:06:17.889Z`.
 
-Read the new [provider verification checkpoint](../deployment/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json).
-The [preview receipt](../deployment/WORKOUT_NOTIFICATIONS_PREVIEW.json) and
+The read-only postactivation audit verified the exact three settings fields,
+observed zero records in each of three bounded private activity/outbox queries,
+and confirmed all 15 explicit synthetic notification roots absent. These are
+bounded observations, not evidence of real-athlete delivery or exhaustive
+historical coverage. Missing settings still disable collection and sending by
+design.
+
+Read the [production activation receipt](../deployment/WORKOUT_NOTIFICATIONS_PRODUCTION.json).
+The [provider verification checkpoint](../deployment/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json),
+[preview receipt](../deployment/WORKOUT_NOTIFICATIONS_PREVIEW.json), and
 [earlier provider setup receipt](../deployment/WORKOUT_NOTIFICATIONS_PROVIDER_SETUP.json)
 remain unchanged historical records; their pending DNS/access states are not the
-current setup instructions. This checkpoint does not certify completed pilot or
-all-player acceptance.
+current setup instructions.
 
 The delivery source, secret bindings, function IAM, scheduler target and unrelated
 function inventory passed readback. The publisher now accepts Google's equivalent
@@ -40,7 +55,8 @@ trigger. All 14 notification-publisher and 19 shared-publisher checks passed.
 
 ## Confirmed behavior
 
-The only recipient is `dylank@posetek.net`. All players are eligible after launch.
+The only recipient is `dylank@posetek.net`. All players are eligible from the
+activation cutoff.
 Saved endings from both `players/{playerId}/workoutLogs/{logId}` and
 `players/{playerId}/personalWorkoutLogs/{logId}` are observed, including endings
 saved by the current native app. Assigned/ad-hoc endings support `completed`,
@@ -171,7 +187,7 @@ change is marked for review because acceptance may already have occurred.
 Never blindly issue a new key to recover an uncertain send. Do not delete workout
 history or overwrite players' original outcomes during notification recovery.
 
-## Validation and activation gate
+## Validation and future release gates
 
 Focused coverage includes future-only activation, both source namespaces,
 synthetic allowlists, identity/ownership, delayed saves, idle/pause behavior,
@@ -201,32 +217,35 @@ all 32 current marketing files, replacing only the application entry and adding
 `useSelection` hook-name errors in unchanged `use-personal-workouts.ts`, plus
 existing warnings; scoped admin notification lint is clean.
 
-The reviewed draft is
+The production release is
 [`6abadd8abff0a78fde2fbe28`](https://6abadd8abff0a78fde2fbe28--posetek.netlify.app/admin),
-from frontend source `d814225`.
-All 1,239 uploaded artifact files match the local candidate, all 32 served
-marketing routes match current production, and protected deep-link routes serve
-the intended application entry. Production remains `6ab8679ccbfca079f8997124`.
-Final browser checks passed automatic sign-in return to the requested player,
-exact saved-record selection and the deployed callable's disabled status. History
+from frontend source `d814225`, promoted without rebuilding the reviewed candidate.
+The reconciled protected baseline contains 1,207 files. The ordinary preservation
+build passed all 1,239 artifact checks, retained all 32 marketing files, and passed
+22 release/baseline tests. Production checks passed 30 routes and 1,049 asset HTTP
+checks. Browser checks passed all three exact protected fixture links and automatic
+sign-in return to the requested player before cleanup. History
 remained a single section after selection, Refresh, Back and Forward; the history
 component now has a distinct sibling key from AI incidents. Initial transient
 account-access connection errors did not recur on this final preview. No
-auth-domain/security settings were changed. Read the
+auth-domain/security settings were changed. The
 [preview/intake receipt](../deployment/WORKOUT_NOTIFICATIONS_PREVIEW.json) for
-the exact prepared state; this is not a production-email acceptance receipt.
+the earlier prepared state remains historical; the
+[production receipt](../deployment/WORKOUT_NOTIFICATIONS_PRODUCTION.json) records
+completed live acceptance and activation.
 
 Provider verification and the seven scoped deployments have passed; the
-five-minute scheduler is enabled with its verified target topic. Before
-all-player activation, finish the synthetic quiet/resume test and independent
-provider/mailbox acceptance to the sole recipient. If artificial timing is used,
+five-minute scheduler is enabled with its verified target topic. For future
+releases or reactivation, retain the synthetic quiet/resume test and independent
+provider/mailbox acceptance to the sole recipient as gates. If artificial timing is used,
 identify it as artificial; it cannot precede the real thirty-minute eligibility
 or fresh cutoff. Require three delivered fixture messages, genuine
 signed delivery receipts, one unattempted cancelled quiet alert, and no historical
 email or invented workout ending. Check truthful set/skip content and Pacific
 times. Provider `delivered` alone does not establish inbox placement or reading.
 
-After provider acceptance of all three messages, promote the exact reviewed
+For those future releases, after provider acceptance of all three messages,
+promote the exact reviewed
 website draft and reconcile its baseline. Verify the exact protected fixture
 links through administrator sign-in on the published frontend while those
 fixtures still exist. Then park the pilot, remove only its proven run-owned
@@ -234,5 +253,5 @@ fixtures, reconcile asynchronous descendants and the Auth-deletion tombstone,
 and complete the read-only cleanup audit. Once mailbox acceptance and cleanup
 have passed, enable all players with a fresh cutoff and remove the pilot
 allowlist. Record the final production receipt and settings readback.
-Local/emulator tests and this provider checkpoint do not substitute for completed
+Local/emulator tests and provider setup checkpoints do not substitute for completed
 live acceptance.

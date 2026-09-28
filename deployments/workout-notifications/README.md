@@ -2,14 +2,28 @@
 
 This release adds email observers and web activity tracking without modifying
 workout logs, gateway operations, native code or Firebase rules. Missing settings
-disable collection and sending. As of the September 28 provider checkpoint, all
-seven scoped functions and the five-minute scheduler are deployed and audited.
+disable collection and sending. All-player activation was confirmed on September
+28, 2026 at `23:06:30.994Z` (4:06:30 PM PDT). Current settings contain exactly
+`enabled: true`, `sendEnabled: true`, and `activatedAtMillis: 1790636790868`
+(`2026-09-28T23:06:30.868Z`), with no test allowlist. All seven scoped functions and
+the five-minute scheduler are deployed and audited.
 Resend domain, key scope, tracking settings and signed webhook setup are complete.
-Delivery is restricted to a synthetic-player pilot; two terminal messages have
-delivered, while quiet/resume acceptance remains pending. Sending is paused during
-that wait. The reviewed website draft is unpublished and all-player sending is
-not enabled. Read [the provider verification receipt](../../deployment/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json);
-preserve earlier receipts as historical checkpoints.
+The synthetic pilot completed with three provider-confirmed deliveries and genuine
+signed delivery receipts, including inactivity after a natural 30-minute wait.
+The quiet message's inbox arrival was independently confirmed at 22:56:03 UTC;
+the first two messages have provider delivery confirmation only. Resume cancelled
+one unattempted quiet email, and a historical fixture ending produced no email.
+The exact reviewed website `6abadd8abff0a78fde2fbe28` (frontend source `d814225`)
+was promoted at `22:56:54.754Z`, with protected links and sign-in return verified
+before cleanup. Final run-owned cleanup passed at `23:06:17.889Z`.
+
+The postactivation read-only audit confirmed the exact settings, zero records in
+each of three bounded private activity/outbox queries, and all 15 explicit
+synthetic notification roots absent. These observations do not establish
+real-athlete delivery or exhaustive historical coverage. Read
+[the production activation receipt](../../deployment/WORKOUT_NOTIFICATIONS_PRODUCTION.json);
+preserve [the provider verification receipt](../../deployment/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json)
+and earlier receipts as historical checkpoints.
 
 ## Prerequisites
 
@@ -45,8 +59,8 @@ Public resolution of the three provider-generated records passed at 22:18:17 UTC
 and Resend showed the domain verified at 22:20 UTC. The additional DMARC TXT
 readback passed at 22:30:38 UTC; the root `_dmarc.posetek.net` remained absent.
 The initial `p=none` policy applies only to alerts, with no reporting/forwarding
-addresses or change to root mail policy. Resend analysis of the new policy remains
-pending the third, quiet fixture email; no inbox guarantee is implied.
+addresses or change to root mail policy. The quiet fixture email reached the
+inbox at 22:56:03 UTC after this change; future inbox placement is not guaranteed.
 This setup uses these TXT/CNAME records; older
 example MX/SPF lookups in the historical setup receipt are not records to add.
 The existing root Microsoft mail routing and SPF were preserved. Provider public
@@ -93,7 +107,9 @@ the retired website rules copies or deploy rules from this repository.
 
 ## Enable and recover
 
-Use an operator-reviewed server write to `workoutNotificationSettings/current`;
+For subsequent setup, releases or reactivation, preserve the following acceptance
+and recovery gates. Use an operator-reviewed server write to
+`workoutNotificationSettings/current`;
 clients have no direct access. The settings contract and activity API are documented
 in `docs/WORKOUT_NOTIFICATIONS.md`. Save the previous settings before changing them.
 Choose `activatedAtMillis` at the verified production activation, so historical
@@ -107,7 +123,7 @@ frontend and reconcile its baseline, then check production protected links while
 the fixtures still exist. Park and clean up only proven run-owned fixtures and
 audit that cleanup. After mailbox acceptance and cleanup pass, remove the pilot
 allowlist and advance the cutoff at all-player activation;
-neither the provider checkpoint nor the current pilot authorizes a historical
+neither a provider checkpoint nor a pilot authorizes a historical
 backfill.
 
 For website changes, use the guarded application builder with a verified current
