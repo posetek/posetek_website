@@ -1,0 +1,270 @@
+{
+  "version": "investor-v4-copyedit",
+  "fps": 30,
+  "duration": 116,
+  "duration_frames": 3480,
+  "synthesis_rate": 1.2,
+  "original_demo": {
+    "start": 21.5,
+    "end": 46.5
+  },
+  "passage_starts": {
+    "passage_01": 0.1,
+    "passage_02": 12.5,
+    "passage_03": 46.6,
+    "passage_04": 53.9,
+    "passage_05": 62.1,
+    "passage_06": 73.5,
+    "passage_07": 79.5,
+    "passage_08": 94.3,
+    "passage_09": 99.6,
+    "closing_cta": 112.35
+  },
+  "scene_ends": {
+    "passage_01": 12.5,
+    "passage_02": 21.5,
+    "passage_03": 53.8,
+    "passage_04": 62,
+    "passage_05": 73.5,
+    "passage_06": 79.5,
+    "passage_07": 94.2,
+    "passage_08": 99.5,
+    "passage_09": 105.5,
+    "closing_cta": 115.8
+  },
+  "scenes": [
+    {
+      "id": "opening",
+      "start": 0,
+      "end": 375
+    },
+    {
+      "id": "setup",
+      "start": 375,
+      "end": 645
+    },
+    {
+      "id": "original-demo",
+      "start": 645,
+      "end": 1395
+    },
+    {
+      "id": "six-tests",
+      "start": 1395,
+      "end": 1614
+    },
+    {
+      "id": "change-of-direction",
+      "start": 1614,
+      "end": 1860
+    },
+    {
+      "id": "profile",
+      "start": 1860,
+      "end": 2019
+    },
+    {
+      "id": "planning",
+      "start": 2019,
+      "end": 2217
+    },
+    {
+      "id": "training",
+      "start": 2217,
+      "end": 2382
+    },
+    {
+      "id": "technique",
+      "start": 2382,
+      "end": 2826
+    },
+    {
+      "id": "retest",
+      "start": 2826,
+      "end": 2985
+    },
+    {
+      "id": "closing-passage",
+      "start": 2985,
+      "end": 3165
+    },
+    {
+      "id": "connected-cycle",
+      "start": 3165,
+      "end": 3351
+    },
+    {
+      "id": "identity",
+      "start": 3351,
+      "end": 3480
+    }
+  ],
+  "transitions": [
+    12.5,
+    21.5,
+    46.5,
+    53.8,
+    62.0,
+    67.3,
+    73.9,
+    79.4,
+    94.2,
+    99.5,
+    105.5,
+    111.7
+  ],
+  "transition_frames": 15,
+  "visual_only_coda": {
+    "start": 105.5,
+    "cycle_end": 111.7,
+    "identity_end": 116
+  },
+  "delivery_target_ratio": 1.1,
+  "motion": {
+    "phone_reflow": [
+      1191,
+      1215
+    ],
+    "result_reveal": [
+      1274,
+      1287
+    ],
+    "result_to_tests": [
+      1437,
+      1455
+    ],
+    "test_containers": [
+      1575,
+      1599
+    ],
+    "cod_expand": [
+      1599,
+      1614
+    ],
+    "workspace_transition_frames": 18,
+    "technique_settled_frame": 2382,
+    "cod_approach": [
+      1632,
+      1668
+    ],
+    "cod_turn_hold": [
+      1668,
+      1740
+    ],
+    "cod_exit": [
+      1740,
+      1782
+    ],
+    "cod_exit_hold": [
+      1782,
+      1842
+    ],
+    "cod_to_radar": [
+      1842,
+      1860
+    ]
+  },
+  "music": {
+    "continuous": true,
+    "duck_db": 16,
+    "attack_seconds": 0.15,
+    "release_seconds": 0.35,
+    "native_start_sample": 1032000
+  },
+  "technique": {
+    "duration_frames": 444,
+    "ready": [
+      0,
+      18
+    ],
+    "approach_backswing": [
+      18,
+      37
+    ],
+    "backswing": [
+      37,
+      115
+    ],
+    "approach_contact": [
+      115,
+      122
+    ],
+    "support_foot": [
+      122,
+      218
+    ],
+    "arm_balance": [
+      218,
+      314
+    ],
+    "approach_followthrough": [
+      314,
+      339
+    ],
+    "followthrough": [
+      339,
+      414
+    ],
+    "completion": [
+      414,
+      444
+    ],
+    "continue_frames": [
+      114,
+      217,
+      313,
+      413
+    ]
+  },
+  "closing": {
+    "duration_frames": 180,
+    "phone_source_start": 300,
+    "phone_source_end_exclusive": 480,
+    "pose_source_start": 120,
+    "pose_source_end": 360,
+    "pose_source_fps": 120,
+    "pose_replay_frames": 90,
+    "pose_motion_frames": 60,
+    "pose_reset_frames": 12,
+    "platform_profile": [
+      0,
+      45
+    ],
+    "platform_plan": [
+      45,
+      115
+    ],
+    "platform_guided": [
+      115,
+      180
+    ],
+    "internal_transition_frames": 12
+  },
+  "cycle": {
+    "duration_frames": 186,
+    "test": [
+      0,
+      42
+    ],
+    "data": [
+      42,
+      84
+    ],
+    "plan": [
+      84,
+      138
+    ],
+    "retest": [
+      138,
+      186
+    ],
+    "transition_frames": 12,
+    "entry_frames": 18,
+    "identity_frames": 129
+  },
+  "closing_cta": {
+    "text": "PoseTek. Learn more at posetek.net.",
+    "start": 112.35,
+    "end": 115.8
+  }
+}
