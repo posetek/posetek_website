@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { getClubContext } from "../../../lib/organization-data";
 import { accountContext } from "../lib/accountHierarchy";
@@ -12,6 +12,7 @@ const SECTIONS = [
   { path: "/admin/analysis", icon: "edit_note", label: "Technique review" },
   { path: "/admin/drills", icon: "library_books", label: "Drill library" },
   { path: "/admin/ai-incidents", icon: "report", label: "AI incidents" },
+  { path: "/admin/device-performance", icon: "speed", label: "Device performance" },
 ];
 
 export default function AdminHeader({ ready, email, preview = false, onSignOut }: {
@@ -45,6 +46,16 @@ export default function AdminHeader({ ready, email, preview = false, onSignOut }
     }).catch(() => { if (active) setChoices(null); });
     return () => { active = false; };
   }, [ready, preview, context.orgId]);
+
+  // On phones the tabs scroll sideways; keep the active one (for example the
+  // eighth, Device performance) in view instead of leaving it off-screen.
+  const nav = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const row = nav.current, active = row?.querySelector<HTMLElement>(".admin-nav-link.active");
+    if (!row || !active || row.scrollWidth <= row.clientWidth) return;
+    const bounds = row.getBoundingClientRect(), tab = active.getBoundingClientRect();
+    if (tab.left < bounds.left || tab.right > bounds.right) row.scrollLeft += tab.left - bounds.left - (bounds.width - tab.width) / 2;
+  }, [location.pathname, ready]);
 
   const organization = choices?.organizations.find(row => row.id === context.orgId);
   const team = organization?.teams.find(row => row.id === context.teamId);
@@ -107,7 +118,7 @@ export default function AdminHeader({ ready, email, preview = false, onSignOut }
           </div>
         </details>}
       </div>
-      {ready && <nav className="admin-nav" aria-label="Admin sections">
+      {ready && <nav ref={nav} className="admin-nav" aria-label="Admin sections">
         {SECTIONS.map(section => <NavLink key={section.path} end={section.end} className={({ isActive }) => `admin-nav-link${isActive ? " active" : ""}`} to={`${section.path}${scopedSearch}`}>
           <span className="material-symbols-outlined" aria-hidden="true">{section.icon}</span>
           <span>{section.label}</span>

@@ -37,6 +37,8 @@ const AnalysisWorkspace = lazy(() => import("./views/AnalysisWorkspace"));
 const PersonalizedPrograms = lazy(() => import("./views/PersonalizedPrograms"));
 const AiIncidents = lazy(() => import("./views/AiIncidents"));
 const AccountAccess = lazy(() => import("./views/AccountAccess"));
+const DevicePerformance = lazy(() => import("./views/DevicePerformance"));
+const DevicePerformanceDetail = lazy(() => import("./views/DevicePerformanceDetail"));
 
 export default function AdminPage() {
   const location = useLocation();
@@ -122,6 +124,8 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
           <Route path="programs" element={<PersonalizedPrograms />} />
           <Route path="analysis" element={<AnalysisWorkspace />} />
           <Route path="ai-incidents" element={<AiIncidents />} />
+          <Route path="device-performance" element={<DevicePerformance preview={preview} />} />
+          <Route path="device-performance/:installId" element={<DevicePerformanceDetail preview={preview} />} />
           <Route path="programs/personalized" element={<PlannerRedirect />} />
           <Route
             path="accounts/player/:playerId/plan/:planId/workout/:workoutId"
