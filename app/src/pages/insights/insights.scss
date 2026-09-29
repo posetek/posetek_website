@@ -196,18 +196,56 @@
   .coach-player-heading h2 { font-size: 25px; letter-spacing: -.02em; overflow-wrap: anywhere; }
   .coach-player-heading p { margin: 5px 0 0; font-size: 12px; }
   .coach-player-heading .primary-cta { flex-shrink: 0; }
-  .coach-comparison-body { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(280px, 1fr); align-items: center; gap: 26px; }
-  .coach-comparison svg { width: 100%; max-width: 420px; justify-self: center; }
-  .coach-comparison svg text { fill: var(--text-primary); font-size: 12px; }
-  .coach-comparison svg .coach-radar-scale { fill: var(--text-muted); font-size: 9px; }
-  .coach-radar-grid { fill: none; stroke: var(--surface-border); stroke-width: 1; }
-  .coach-radar-result { fill: color-mix(in srgb, var(--accent) 17%, transparent); stroke: var(--accent); stroke-width: 2; }
-  .coach-radar-point { fill: var(--accent); }
-  .coach-comparison .insights-breakdown-table th { color: var(--text-primary); }
-  .coach-comparison .insights-breakdown-table td { color: var(--text-primary); min-width: 70px; }
-  .coach-comparison .insights-breakdown-table td span { display: inline-block; max-width: 155px; color: var(--text-muted); font-size: 11px; }
-  .coach-comparison .insights-breakdown-table thead th { font-size: 11px; color: var(--text-muted); padding-bottom: 10px; text-align: right; }
-  .coach-comparison .insights-breakdown-table thead th:first-child { text-align: left; }
+  .coach-comparison-heading { display: flex; justify-content: space-between; align-items: start; gap: 12px 24px; padding-bottom: 20px; border-bottom: 1px solid var(--surface-border); }
+  .coach-comparison-heading h2 { font-size: 18px; }
+  .coach-comparison-heading p { margin: 5px 0 0; font-size: 12px; }
+  .coach-comparison-context { display: grid; gap: 4px; text-align: right; color: var(--text-muted); font-size: 11px; }
+  .coach-comparison-context span:first-child { color: var(--text-primary); font-size: 12px; }
+  .coach-comparison-body { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.2fr); align-items: center; gap: 24px 38px; padding: 22px 0 18px; }
+  .coach-comparison-radar { width: 100%; max-width: 360px; min-width: 0; margin: 0; justify-self: center; }
+  .coach-comparison svg { display: block; width: 100%; overflow: visible; }
+  .coach-comparison svg text { fill: var(--text-primary); font-size: 13px; }
+  .coach-comparison svg .coach-radar-scale { fill: var(--text-muted); font-size: 10px; }
+  .coach-comparison .coach-radar-grid { fill: none; stroke: var(--surface-border); stroke-width: 1; }
+  .coach-comparison .coach-radar-middle { fill: none; stroke: var(--text-muted); stroke-width: 1.3; stroke-dasharray: 4 4; }
+  .coach-comparison .coach-radar-result { fill: color-mix(in srgb, var(--accent) 15%, transparent); stroke: var(--accent); stroke-width: 2; }
+  .coach-comparison .coach-radar-point { fill: var(--accent); stroke: var(--surface-1); stroke-width: 1.5; }
+  .coach-radar-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px 18px; color: var(--text-muted); font-size: 11px; }
+  .coach-radar-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .coach-radar-player-key { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .coach-radar-middle-key { width: 18px; height: 0; border-top: 1px dashed var(--text-muted); }
+  .coach-comparison-radar figcaption > p { margin: 10px auto 0; max-width: 260px; text-align: center; font-size: 11px; }
+  .coach-radar-empty { display: grid; justify-items: center; gap: 8px; padding: 28px 18px; text-align: center; }
+  .coach-radar-empty > span { color: var(--text-muted); font-size: 30px; }
+  .coach-radar-empty > strong { color: var(--text-primary); font-size: 16px; }
+  .coach-radar-empty > p { max-width: 250px; margin: 0; font-size: 12px; }
+  .coach-comparison-skills { min-width: 0; }
+  .coach-percentile-scale { display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 0 6px 12px; color: var(--text-muted); font-size: 11px; }
+  .coach-percentile-scale span:nth-child(2) { text-align: center; }
+  .coach-percentile-scale span:last-child { text-align: right; }
+  .coach-percentile-list { margin: 0; }
+  .coach-percentile-skill { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: 12px; padding: 9px 0 8px; border-top: 1px solid var(--surface-border); }
+  .coach-percentile-skill dt { color: var(--text-primary); font-size: 13px; font-weight: 650; overflow-wrap: anywhere; }
+  .coach-percentile-skill dd { margin: 0; }
+  .coach-percentile-value { display: flex; align-items: baseline; gap: 5px; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .coach-percentile-value strong { font-size: 19px; line-height: 1; letter-spacing: -.025em; }
+  .coach-percentile-value sup { position: relative; top: -.35em; vertical-align: baseline; margin-left: 1px; font-size: 10px; letter-spacing: 0; }
+  .coach-percentile-value > span { color: var(--text-muted); font-size: 10px; }
+  .coach-percentile-detail { grid-column: 1 / -1; }
+  .coach-percentile-track { position: relative; height: 3px; margin: 10px 6px 8px; border-radius: 3px; background: color-mix(in srgb, var(--text-muted) 60%, var(--surface-1)); }
+  .coach-percentile-track::before { content: ""; position: absolute; left: 50%; top: -3px; height: 9px; border-left: 1px solid var(--text-muted); }
+  .coach-percentile-dot { position: absolute; top: 50%; width: 10px; height: 10px; border: 2px solid var(--surface-1); border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1px var(--accent); transform: translate(-50%, -50%); }
+  .coach-percentile-sample { margin: 0; font-size: 11px; }
+  .coach-percentile-unavailable { margin: 4px 0 3px; color: var(--text-primary); font-size: 12px; }
+  .coach-comparison-guide { border-top: 1px solid var(--surface-border); padding-top: 14px; }
+  .coach-comparison-guide > p { margin: 0; font-size: 12px; }
+  .coach-comparison-guide > p strong { color: var(--text-primary); font-weight: 600; }
+  .coach-comparison-method { margin-top: 2px; font-size: 12px; }
+  .coach-comparison-method > summary { display: flex; align-items: center; gap: 8px; width: fit-content; min-height: 44px; cursor: pointer; color: var(--text-muted); list-style: none; }
+  .coach-comparison-method > summary::-webkit-details-marker { display: none; }
+  .coach-comparison-method > summary::before { content: "+"; font-size: 16px; color: var(--accent); }
+  .coach-comparison-method[open] > summary::before { content: "−"; }
+  .coach-comparison-method p { max-width: 850px; margin: 0 0 10px; }
   .coach-player-training { margin-top: 22px; }
   .coach-player-training > .insights-note { margin-bottom: 12px; }
   .coach-player-training .coachdash-heading { margin-bottom: 18px; }
@@ -234,7 +272,11 @@
     .admin-overview-panels { grid-template-columns: 1fr; gap: 0; }
     .admin-overview-panels > :last-child { grid-column: auto; }
     .insights-tabs { gap: 20px; }
-    .coach-comparison-body { grid-template-columns: 1fr; gap: 0; }
+    .coach-comparison-heading { flex-direction: column; padding-bottom: 16px; }
+    .coach-comparison-context { text-align: left; }
+    .coach-comparison-body { grid-template-columns: 1fr; gap: 24px; padding-top: 20px; }
+    .coach-comparison-skills { order: -1; }
+    .coach-comparison-radar { max-width: 330px; }
     .coach-player-heading { align-items: stretch; flex-direction: column; gap: 12px; }
     .coach-player-heading .primary-cta { width: fit-content; }
     .coach-roster-table, .coach-roster-table tbody { display: block; }

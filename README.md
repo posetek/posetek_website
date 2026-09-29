@@ -10,12 +10,17 @@ the three public/application entries while retaining existing React and Svelte
 interactions. Use `node scripts/build-astro-release.mjs` for a deliberate
 application release; ordinary builds retain the protected live application.
 
-This is live as deployment `6abb9834af8b9c320f64df04`, source `3e41c2a`, published
-September 29, 2026 at 3:55:40 AM PDT. All 1,337 artifact files match the production inventory;
-the baseline protects 1,335 application/public files. Hosted coach checks passed
-73/73, with 30 production browser checks across all account roles and the compiled
-entries. See the [production receipt](deployment/UNIFIED_COACH_WORKSPACE_PRODUCTION.json)
-and [PR #13](https://github.com/posetek/posetek_website/pull/13).
+Coach percentile presentation is live as deployment `6abb9f1e6c2c84772de67005`, source
+`684528b`, published September 29, 2026 at 4:25:34 AM PDT. The card pairs a compact
+radar with readable skill positions, measured-player counts and concise scale
+explanations. Phone layouts show skill positions first. Scoring and access are
+unchanged. All 1,342 artifact files match production inventory; the baseline
+protects 1,340 application/public files. See
+[the presentation release receipt](deployment/COACH_COMPARISON_POLISH_PRODUCTION.json)
+and [PR #14](https://github.com/posetek/posetek_website/pull/14).
+
+The preceding workspace and Astro release is recorded in
+[its production receipt](deployment/UNIFIED_COACH_WORKSPACE_PRODUCTION.json).
 
 Workout email alerts are live for all players from September 28, 2026 at
 4:06:30 PM PDT. Saved outcomes go to `dylank@posetek.net`; web-observed sessions

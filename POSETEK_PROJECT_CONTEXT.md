@@ -4,7 +4,23 @@ Reviewed on September 29, 2026. This guide summarizes the available repository a
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
-## Unified coach workspace and Astro migration (2026-09-29, live)
+## Coach percentile presentation (2026-09-29, live)
+
+Coach percentile presentation is live as deployment `6abb9f1e6c2c84772de67005`, source
+`684528b`, published September 29, 2026 at 4:25:34 AM PDT. The card pairs a compact
+radar with readable skill positions, measured-player counts and concise scale
+explanations. Phone layouts show skill positions first. Scoring and access are
+unchanged. All 1,342 artifact files match production inventory; the baseline
+protects 1,340 application/public files. See
+[the presentation release receipt](deployment/COACH_COMPARISON_POLISH_PRODUCTION.json)
+and [PR #14](https://github.com/posetek/posetek_website/pull/14).
+
+Verification passed 79 Insights tests, 30 release guards and 28 synthetic browser
+layout/state checks across four widths. Candidate and production artifact, route
+and signed-out entry checks passed. No production records or accounts were
+created. The ordinary preservation build matched the published artifact.
+
+## Unified coach workspace and Astro migration (2026-09-29)
 
 The user approved Team Insights as the single coach workspace, including
 organization and independent coaches. Overview owns the roster; Testing,
