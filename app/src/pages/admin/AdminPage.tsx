@@ -61,6 +61,7 @@ function AuthenticatedAdminConsole() {
 
 function AdminConsole({ session, preview = false }: { session: AdminSession; preview?: boolean }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   async function signOut() {
     if (preview) return;
@@ -82,7 +83,7 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
         icon="lock"
         title="Sign in with your PoseTek account"
         body="The admin console is for verified @posetek.net accounts."
-        action={<Link className="primary-cta" to="/signin?returnTo=%2Fadmin">Go to sign in</Link>}
+        action={<Link className="primary-cta" to={`/signin?returnTo=${encodeURIComponent(location.pathname + location.search)}`}>Go to sign in</Link>}
       />
     );
   } else if (session.kind === "notAdmin") {

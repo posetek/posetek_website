@@ -7,6 +7,7 @@
 import { metricValue as effectiveMetric, resultUsable } from "../../lib/result-values";
 import * as benchmarks from "../../lib/benchmarks";
 import type { BenchmarkKey } from "../../lib/benchmarks";
+import profileSpec from "../../../../functions/athlete-profile-spec.json";
 
 export const RADAR_CEILING = 130;
 
@@ -18,13 +19,7 @@ export interface StatsAxis {
   drills: string;
 }
 
-export const AXES: StatsAxis[] = [
-  { key: "power", label: "Power", icon: "bolt", drills: "Broad Jump and Jump" },
-  { key: "speed", label: "Speed", icon: "sprint", drills: "Sprint" },
-  { key: "agility", label: "Agility", icon: "switch_access_shortcut", drills: "Change of Direction" },
-  { key: "ballControl", label: "Ball Control", icon: "sports_soccer", drills: "Dribbling" },
-  { key: "striking", label: "Striking", icon: "target", drills: "Shooting" }
-];
+export const AXES: StatsAxis[] = profileSpec.axes;
 
 export interface StatsMetricDefinition {
   key: BenchmarkKey;
@@ -69,24 +64,8 @@ export interface AthleteProfile {
   sections: Record<string, StatsSection>;
 }
 
-export const METRICS: StatsMetricDefinition[] = [
-  definition("ballSpeed", "striking", ["shooting"], ["velocity"]),
-  definition("shotAccuracy", "striking", ["shooting"], []),
-  definition("broadJumpDistance", "power", ["broadJump"], ["broadJumpDistance"]),
-  definition("verticalJumpHeight", "power", ["jump"], ["jumpHeight"]),
-  definition("sprintMaxAcceleration", "speed", ["sprint"], ["max_acceleration", "maxAcceleration"]),
-  definition("sprintMaxSpeed", "speed", ["sprint"], ["max_velocity", "maxVelocity"]),
-  definition("sprintCompletionTime", "speed", ["sprint"], ["totalTime"]),
-  definition("dribbleTotalTime", "ballControl", ["dribbling"], ["totalTime"]),
-  definition("dribbleBallControl", "ballControl", ["dribbling"], ["avgBallDistance"]),
-  definition("dribbleOutboundTime", "ballControl", ["dribbling"], ["phase1Time"]),
-  definition("dribbleTurnTime", "ballControl", ["dribbling"], ["phase2Time"]),
-  definition("dribbleReturnTime", "ballControl", ["dribbling"], ["phase3Time"]),
-  definition("codTotalTime", "agility", ["changeOfDirection"], ["totalTime"]),
-  definition("codOutboundTime", "agility", ["changeOfDirection"], ["phase1Time"]),
-  definition("codTurnTime", "agility", ["changeOfDirection"], ["phase2Time"]),
-  definition("codReturnTime", "agility", ["changeOfDirection"], ["phase3Time"])
-];
+export const METRICS: StatsMetricDefinition[] = profileSpec.metrics.map(metric =>
+  definition(metric.key as BenchmarkKey, metric.axis, metric.drills, metric.fields));
 
 function definition(key: BenchmarkKey, axis: string, drills: string[], fields: string[]): StatsMetricDefinition {
   const benchmark = benchmarks.metrics[key];

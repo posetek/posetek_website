@@ -6,6 +6,7 @@ const { isClubAdmin, activeMember } = require("./club-access");
 const { EXERCISES, testingStatus, demographics } = require("./insights-v2-qualification");
 const { createInsightProjection, completeQuery, mapBounded, PROJECTION_VERSION } = require("./insights-v2-projection");
 const { readPlayerUsage, FEATURES } = require("./insight-usage");
+const { comparePlayer } = require("./insights-axis-scoring");
 const DAY = 86400000;
 const FILTERS = Object.freeze({ division: ["boys", "girls", "unknown"], ageBand: ["under10", "10-12", "13-15", "16-18", "19+", "unknown"],
   testingStatus: ["fullyTested", "partiallyTested", "noSuccessfulTests", "noRecordedTests"],
@@ -103,13 +104,18 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
   }
   const projection = suppliedProjection || createInsightProjection({ db, bucket, HttpsError, now, ...projectionOptions });
   const ref = path => db.doc(path);
+  // Directory internals never enter the allowlisted callable response.
+  const independentAuthorities = new WeakMap();
   async function directory(caller, transaction) {
     const admin = isClubAdmin(caller), read = reference => transaction ? transaction.get(reference) : reference.get();
     const organizations = await completeQuery(db.collection("organizations"), maxOrganizations, HttpsError, 250, read);
+    let managed = false;
     const result = await mapBounded(organizations.filter(doc => doc.data()?.schemaVersion === 2), 8, async doc => {
       const org = transaction ? await read(doc.ref) : doc;
       if (!org.exists || org.data()?.schemaVersion !== 2) return null;
       const member = admin ? null : (await read(ref(`organizations/${doc.id}/members/${caller.uid}`))).data();
+      // An inactive or malformed club membership cannot turn into legacy access.
+      if (member) managed = true;
       if (!admin && (!activeMember(member, caller.uid) || !member.teamIds.every(playerSegment))) return null;
       const teamDocs = await completeQuery(db.collection("teams").where("organizationId", "==", doc.id), maxTeams, HttpsError, 250, read);
       const teams = [];
@@ -121,10 +127,26 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
       }
       return { id: doc.id, name: tidy(org.data().name) || "Organization", role: admin ? "admin" : member.role, teams };
     });
-    return { global: admin, organizations: result.filter(Boolean).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)) };
+    const choices = { global: admin, organizations: result.filter(Boolean).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)), coachRoster: null };
+    if (!admin) {
+      const coaches = await completeQuery(db.collection("coaches").where("userUID", "==", caller.uid), 20, HttpsError, 20, read);
+      if (coaches.some(doc => Object.hasOwn(doc.data(), "organizationId") || Object.hasOwn(doc.data(), "organizationRole"))) managed = true;
+      if (!managed && coaches.length === 1) {
+        const coach = coaches[0], members = [...new Set((Array.isArray(coach.data().members) ? coach.data().members : []).filter(playerSegment))];
+        if (members.length > maxPlayers) fail("resource-exhausted", "The complete roster exceeds the current reporting bound.");
+        choices.coachRoster = { coachId: coach.id, label: "My roster" };
+        independentAuthorities.set(choices, { uid: caller.uid, coachId: coach.id, members });
+      }
+    }
+    return choices;
   }
   function resolveScope(input, choices) {
-    if (!input || !["global", "organization", "team"].includes(input.kind)) fail("invalid-argument", "Choose an explicit report scope.");
+    if (!input || !["global", "organization", "team", "coachRoster"].includes(input.kind)) fail("invalid-argument", "Choose an explicit report scope.");
+    if (input.kind === "coachRoster") {
+      if (input.organizationId || input.teamId || input.coachId || input.coachUID) fail("invalid-argument", "My roster is resolved from your signed-in account.");
+      if (!choices.coachRoster) fail("permission-denied", "An independent coach profile with active access is required.");
+      return { kind: "coachRoster", ...choices.coachRoster, access: "coach", assignedTeamsOnly: false };
+    }
     if (input.kind === "global") {
       if (!choices.global) fail("permission-denied", "Global Insights requires administrator access.");
       if (input.organizationId || input.teamId) fail("invalid-argument", "Global scope does not accept team identifiers.");
@@ -138,13 +160,44 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
     return { kind: input.kind, organizationId: org.id, ...(team ? { teamId: team.id } : {}),
       label: team?.name || (org.role === "coach" ? `${org.name} · Assigned teams` : org.name), access: org.role, assignedTeamsOnly: org.role === "coach" };
   }
-  function inScope(profile, scope, choices) {
+  function inScope(profile, scope, choices, playerId) {
+    if (scope.kind === "coachRoster") {
+      const authority = independentAuthorities.get(choices);
+      if (!authority || Object.hasOwn(profile, "organizationId")) return false;
+      // Match the canonical legacyAssignedCoachData rule as well as the
+      // effective-results callable: every listed row must open its profile,
+      // plans and logs through the existing client permissions.
+      const coachDocument = Object.hasOwn(profile, "coachDocId") ? profile.coachDocId : authority.uid;
+      return [profile.coachUID, profile.coachId, profile.coachDocId].includes(authority.uid)
+        || (coachDocument === authority.coachId && authority.members.includes(playerId));
+    }
     const org = choices.organizations.find(row => row.id === profile.organizationId);
     if (!org || (scope.kind !== "global" && org.id !== scope.organizationId)) return false;
     if (scope.kind === "team" && profile.teamId !== scope.teamId) return false;
     return org.role !== "coach" || org.teams.some(team => team.id === profile.teamId);
   }
-  async function getClubInsightsV2(data, caller) {
+  async function rosterFor(scope, choices, read = query => query.get()) {
+    const snapshots = new Map();
+    const append = docs => {
+      for (const doc of docs) if (doc.exists && inScope(doc.data(), scope, choices, doc.id)) snapshots.set(doc.id, doc);
+      if (snapshots.size > maxPlayers) fail("resource-exhausted", "The complete roster exceeds the current reporting bound. No partial total was returned.");
+    };
+    if (scope.kind === "coachRoster") {
+      const authority = independentAuthorities.get(choices);
+      append(await mapBounded(authority.members, 8, id => read(ref(`players/${id}`))));
+      for (const field of ["coachUID", "coachId", "coachDocId"]) for (const id of new Set([authority.uid, authority.coachId])) {
+        append(await completeQuery(db.collection("players").where(field, "==", id), maxPlayers, HttpsError, 250, read));
+      }
+    } else {
+      for (const org of choices.organizations.filter(org => scope.kind === "global" || org.id === scope.organizationId)) {
+        let query = db.collection("players").where("organizationId", "==", org.id);
+        if (scope.kind === "team") query = query.where("teamId", "==", scope.teamId);
+        append(await completeQuery(query, maxPlayers, HttpsError, 250, read));
+      }
+    }
+    return [...snapshots.values()];
+  }
+  async function report(data, caller, comparison = false) {
     if (!caller?.uid || !playerSegment(caller.uid) || caller.isAnonymous === true) fail("unauthenticated", "Sign in to continue.");
     data ||= {};
     const generatedAtMillis = now(), period = periodOf(data, generatedAtMillis, fail), testingMode = data.testingMode ?? "cumulative";
@@ -153,23 +206,19 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
     if (typeof filters !== "object" || Array.isArray(filters) || Object.entries(filters).some(([key, value]) => !Object.hasOwn(FILTERS, key) || !FILTERS[key].includes(value))) fail("invalid-argument", "Choose valid report filters.");
     const pageSize = data.pageSize ?? 50;
     if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) fail("invalid-argument", "Choose a page size between 1 and 100.");
+    if (data.nameSearch !== undefined && (typeof data.nameSearch !== "string" || data.nameSearch.length > 120)) fail("invalid-argument", "Keep roster searches under 120 characters.");
+    const nameSearch = (data.nameSearch || "").trim();
+    if (comparison && (!playerSegment(data.playerId) || !["team", "coachRoster"].includes(data.scope?.kind))) fail("invalid-argument", "Choose a player and a team or independent roster.");
     const choices = await directory(caller), scope = resolveScope(data.scope, choices);
-    const orgs = scope.kind === "global" ? choices.organizations : choices.organizations.filter(org => org.id === scope.organizationId);
-    const snapshots = [];
-    for (const org of orgs) {
-      let query = db.collection("players").where("organizationId", "==", org.id);
-      if (scope.kind === "team") query = query.where("teamId", "==", scope.teamId);
-      const docs = await completeQuery(query, maxPlayers, HttpsError);
-      snapshots.push(...docs.filter(doc => inScope(doc.data(), scope, choices)));
-      if (snapshots.length > maxPlayers) fail("resource-exhausted", "The complete roster exceeds the current reporting bound. No partial total was returned.");
-    }
+    const snapshots = await rosterFor(scope, choices);
+    if (comparison && !snapshots.some(doc => doc.id === data.playerId)) fail("permission-denied", "This player is not in the selected roster.");
     let rebuilds = 0, facts = 0;
     const loaded = await mapBounded(snapshots, 4, async doc => {
       const reporting = (await ref(`players/${doc.id}/insightMetadata/reporting`).get()).data() || {};
       if (reporting.include === false) return { id: doc.id, excluded: true };
       const [history, usage] = await Promise.all([projection.loadInsightPlayer(doc.id, { allowRebuild: () => rebuilds++ < maxRebuilds }),
         usageReader(db, doc.id, period.startMillis, Math.min(period.endMillis, generatedAtMillis), period.timeZone)]);
-      if (!history) return null;
+      if (!history) fail("aborted", "A player changed during loading. Retry to refresh the complete roster.");
       if (usage.complete !== true) fail("failed-precondition", "Usage history is incomplete. Retry after the report is rebuilt.");
       facts += history.testing.length + history.workouts.length + history.failures.length;
       if (facts > 200000) fail("resource-exhausted", "The complete history exceeds the current reporting bound. No partial total was returned.");
@@ -179,14 +228,7 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
     // inclusion in one read-only transaction. Cached ownership is never a grant.
     const fresh = await db.runTransaction(async transaction => {
       const currentChoices = await directory(caller, transaction), currentScope = resolveScope(data.scope, currentChoices);
-      const currentRosterIds = [];
-      for (const organization of currentChoices.organizations.filter(org => currentScope.kind === "global" || org.id === currentScope.organizationId)) {
-        let query = db.collection("players").where("organizationId", "==", organization.id);
-        if (currentScope.kind === "team") query = query.where("teamId", "==", currentScope.teamId);
-        const roster = await completeQuery(query, maxPlayers, HttpsError, 250, query => transaction.get(query));
-        currentRosterIds.push(...roster.filter(doc => inScope(doc.data(), currentScope, currentChoices)).map(doc => doc.id));
-        if (currentRosterIds.length > maxPlayers) fail("resource-exhausted", "The complete roster exceeds the current reporting bound.");
-      }
+      const currentRosterIds = (await rosterFor(currentScope, currentChoices, query => transaction.get(query))).map(doc => doc.id);
       if (hash(currentRosterIds.sort()) !== hash(snapshots.map(doc => doc.id).sort())) fail("aborted", "The roster changed. Retry to refresh every player in the report.");
       const rows = await mapBounded(loaded.filter(Boolean), 8, async row => {
         const [profile, reporting, summary, state] = await Promise.all([
@@ -194,7 +236,7 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
           row.history ? transaction.get(ref(`players/${row.id}/insightSummaries/current`)) : null,
           row.history ? transaction.get(ref(`players/${row.id}/insightSummaries/state`)) : null,
         ]);
-        if (!profile.exists || !inScope(profile.data(), currentScope, currentChoices)) return null;
+        if (!profile.exists || !inScope(profile.data(), currentScope, currentChoices, row.id)) return null;
         if (reporting.data()?.include === false) return { id: row.id, excluded: true };
         if (row.excluded) fail("aborted", "Reporting inclusion changed. Retry to refresh the complete report.");
         if (summary.data()?.revisionId !== row.history.summary.revisionId || (state.data()?.token || null) !== row.history.summary.token) fail("aborted", "Player data changed. Retry to refresh the report.");
@@ -205,7 +247,7 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
     const validEnd = Math.min(period.endMillis, generatedAtMillis + 1);
     const allRows = fresh.rows.filter(row => !row.excluded).map(row => {
       const org = fresh.choices.organizations.find(o => o.id === row.profile.organizationId);
-      const team = org.teams.find(t => t.id === row.profile.teamId);
+      const team = org?.teams.find(t => t.id === row.profile.teamId);
       const selected = row.history.testing.filter(event => event.at !== null && event.at < validEnd
         && (testingMode === "cumulative" || event.at >= period.startMillis));
       const status = testingStatus(selected);
@@ -217,9 +259,20 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
         futureDatedDocuments: row.history.testing.filter(event => event.at > generatedAtMillis).length };
       const workouts = summarizeWorkouts(row.history.workouts, period, generatedAtMillis);
       const usage = { ...row.usage, status: !row.usage.collected ? "notCollected" : row.usage.returning ? "returning" : row.usage.totalMillis > 0 ? "active" : "inactive" };
-      return { ...row, organizationId: org.id, organizationName: org.name, teamId: team?.id || null, teamName: team?.name || null,
+      return { ...row, organizationId: org?.id || "", organizationName: org?.name || "", teamId: team?.id || null, teamName: team?.name || null,
         firstName: tidy(row.profile.firstName), lastName: tidy(row.profile.lastName), ...demographics(row.profile, row.reporting, generatedAtMillis), testing, workouts, usage, selected };
     });
+    if (comparison) {
+      const player = allRows.find(row => row.id === data.playerId);
+      if (!player) fail("permission-denied", "This player is unavailable in the selected report.");
+      const rebuilt = allRows.map(row => row.history.summary.rebuiltAtMillis);
+      return { schemaVersion: 1, scope: fresh.scope, period, testingMode, generatedAtMillis,
+        freshness: { complete: true, projectionVersion: PROJECTION_VERSION, oldestRebuiltAtMillis: rebuilt.length ? Math.min(...rebuilt) : null,
+          newestRebuiltAtMillis: rebuilt.length ? Math.max(...rebuilt) : null, qualification: "verified-artifacts", historicalOwnership: "current" },
+        player: { id: player.id, firstName: player.firstName, lastName: player.lastName, age: player.age },
+        roster: { total: fresh.rows.length, included: allRows.length, excluded: fresh.rows.filter(row => row.excluded).length },
+        axes: comparePlayer(allRows, data.playerId) };
+    }
     const rows = allRows.filter(row => Object.entries(filters).every(([key, value]) => {
       if (key === "division" || key === "ageBand") return row[key] === value;
       if (key === "teamAssignment") return (row.teamId ? "assigned" : "unassigned") === value;
@@ -227,10 +280,11 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
       if (key === "usageFeature") return (row.usage.featureMillis[value] || 0) > 0;
       return row[key.replace("Status", "")].status === value;
     })).sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`) || a.id.localeCompare(b.id));
-    const fingerprint = hash([caller.uid, fresh.scope, period, testingMode, filters, rows.map(row => [row.id, row.history.summary.revisionId, row.usage.latestAtMillis, row.division, row.ageBand, row.teamId])]);
+    const rosterRows = rows.filter(row => `${row.firstName} ${row.lastName}`.toLocaleLowerCase("en-US").includes(nameSearch.toLocaleLowerCase("en-US")));
+    const fingerprint = hash([caller.uid, fresh.scope, period, testingMode, filters, nameSearch, rows.map(row => [row.id, row.history.summary.revisionId, row.usage.latestAtMillis, row.division, row.ageBand, row.teamId])]);
     let offset = 0;
     if (data.cursor !== undefined) {
-      try { const parsed = JSON.parse(Buffer.from(data.cursor, "base64url").toString()); if (parsed.fingerprint !== fingerprint || !Number.isSafeInteger(parsed.offset) || parsed.offset < 0 || parsed.offset >= rows.length) throw new Error(); offset = parsed.offset; }
+      try { const parsed = JSON.parse(Buffer.from(data.cursor, "base64url").toString()); if (parsed.fingerprint !== fingerprint || !Number.isSafeInteger(parsed.offset) || parsed.offset < 0 || parsed.offset >= rosterRows.length) throw new Error(); offset = parsed.offset; }
       catch { fail("failed-precondition", "The report changed. Refresh the first page."); }
     }
     const dates = [];
@@ -292,8 +346,9 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
           activeMinutes: collectedPlayers ? totals?.activeMinutes || 0 : null, webMinutes: webCollectedPlayers ? totals?.webMinutes || 0 : null,
           iosMinutes: iosCollectedPlayers ? totals?.iosMinutes || 0 : null };
       }) };
-    const page = rows.slice(offset, offset + pageSize).map(row => ({ id: row.id, firstName: row.firstName, lastName: row.lastName,
+    const page = rosterRows.slice(offset, offset + pageSize).map(row => ({ id: row.id, firstName: row.firstName, lastName: row.lastName,
       organizationId: row.organizationId, organizationName: row.organizationName, teamId: row.teamId, teamName: row.teamName,
+      registered: row.profile.registered === true || Boolean(row.profile.authenticationUID || row.profile.userUID), signupInvitationReady: row.profile.signupInvitationReady === true,
       division: row.division, age: row.age, ageBand: row.ageBand, testing: row.testing,
       workouts: Object.fromEntries(["status", "started", "completed", "outcomeEvents", "timerRecords", "estimatedRecords", "unknownDuration", "knownPrescription", "timerMinutes", "estimatedMinutes", "allPrescribedSetsCompleted", "unknownPrescription"].map(key => [key, row.workouts[key]])),
       usage: { status: row.usage.status, collected: row.usage.collected, webCollected: row.usage.webCollected, iosCollected: row.usage.iosCollected,
@@ -302,19 +357,21 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
     const testingParticipants = new Set(rows.filter(row => row.history.testing.some(event => event.at !== null
       && event.at >= period.startMillis && event.at < validEnd)).map(row => row.id));
     const workoutParticipants = new Set(rows.filter(row => row.workouts.events.some(event => event.startedInPeriod || event.endedInPeriod)).map(row => row.id));
-    return { schemaVersion: 2, scope: fresh.scope, choices: fresh.choices, period, testingMode, filters, generatedAtMillis,
+    return { schemaVersion: 2, scope: fresh.scope, choices: fresh.choices, period, testingMode, filters, nameSearch, generatedAtMillis,
       freshness: { complete: true, projectionVersion: PROJECTION_VERSION, oldestRebuiltAtMillis: rebuilt.length ? Math.min(...rebuilt) : null,
         newestRebuiltAtMillis: rebuilt.length ? Math.max(...rebuilt) : null, qualification: "verified-artifacts", historicalOwnership: "current" },
-      roster: { total: fresh.rows.length, included: allRows.length, excluded: fresh.rows.filter(r => r.excluded).length, filtered: rows.length },
+      roster: { total: fresh.rows.length, included: allRows.length, excluded: fresh.rows.filter(r => r.excluded).length, filtered: rows.length, ...(nameSearch ? { matched: rosterRows.length } : {}) },
       participation: { testingPlayers: testingParticipants.size, workoutPlayers: workoutParticipants.size,
         anyPlayers: new Set([...testingParticipants, ...workoutParticipants]).size },
       demographics: { division: counts(FILTERS.division, rows, row => row.division), ageBand: counts(FILTERS.ageBand, rows, row => row.ageBand) },
       scopeBreakdown: { organizations: fresh.choices.organizations.map(org => ({ id: org.id, name: org.name, count: rows.filter(row => row.organizationId === org.id).length })),
         teams: fresh.choices.organizations.filter(org => fresh.scope.kind === "global" || org.id === fresh.scope.organizationId)
           .flatMap(org => [...org.teams, ...(org.role === "coach" ? [] : [{ id: null, name: "Unassigned" }])].map(team => ({ id: team.id, organizationId: org.id, name: team.name, count: rows.filter(row => row.organizationId === org.id && row.teamId === team.id).length }))) },
-      testing, workouts, usage, players: page, pagination: { total: rows.length, pageSize,
-        nextCursor: offset + pageSize < rows.length ? Buffer.from(JSON.stringify({ offset: offset + pageSize, fingerprint })).toString("base64url") : null } };
+      testing, workouts, usage, players: page, pagination: { total: rosterRows.length, pageSize,
+        nextCursor: offset + pageSize < rosterRows.length ? Buffer.from(JSON.stringify({ offset: offset + pageSize, fingerprint })).toString("base64url") : null } };
   }
-  return { getClubInsightsV2, ...projection };
+  const getClubInsightsV2 = (data, caller) => report(data, caller);
+  const getCoachPlayerComparison = (data, caller) => report({ ...data, filters: {}, nameSearch: "", cursor: undefined, pageSize: 1 }, caller, true);
+  return { getClubInsightsV2, getCoachPlayerComparison, ...projection };
 }
 module.exports = { createInsightsV2, periodOf, localDate, midnight, shiftDate, summarizeWorkouts, verifiedProgress, FILTERS };

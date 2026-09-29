@@ -96,7 +96,7 @@
   .insights-tile > span { color: var(--text-muted); font-size: 12px; }
   .insights-tile strong { color: var(--text-primary); font-size: 24px; line-height: 1.2; font-variant-numeric: tabular-nums; }
   .insights-tile em { color: var(--text-muted); font-style: normal; font-size: 11px; }
-  .insights-tile-value { display: flex; align-items: end; justify-content: space-between; gap: 10px; }
+  .insights-tile-value { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 10px; }
   .insights-sparkline { width: 94px; height: 26px; overflow: visible; }
   .insights-sparkline polyline { fill: none; stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
 
@@ -171,6 +171,55 @@
   .insights-preview-controls { display: flex; gap: 10px; margin-bottom: 20px; }
   .insights-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 
+  .coach-tab-row { display: flex; align-items: center; min-width: 0; }
+  .coach-tab-row .insights-tabs { flex: 1; min-width: 0; }
+  .coach-tab-row .insights-tabs button { flex: 0 0 auto; min-height: 44px; }
+  .coach-tab-row .insights-tabs button:last-child { max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
+  .coach-close-player { flex: 0 0 44px; min-height: 44px; margin: 12px 0 0 8px; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--text-muted); font-size: 23px; cursor: pointer; }
+  .coach-roster { margin-top: 10px; }
+  .coach-roster .insights-section-title .insights-note { margin: 5px 0 0; }
+  .coach-roster-search { display: flex; align-items: end; justify-content: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+  .coach-roster-search label { flex: 1; max-width: 360px; }
+  .coach-roster-search input { min-height: 44px; }
+  .coach-roster button, .coach-player-panel button { min-height: 44px; }
+  .coach-roster-table th, .coach-roster-table td { white-space: normal; }
+  .coach-roster-table thead th { line-height: 1.4; }
+  .coach-roster-table tbody th { min-width: 140px; }
+  .coach-roster-table tbody th a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; text-decoration: none; font-weight: 650; }
+  .coach-roster-table tbody th a span { color: var(--text-muted); }
+  .coach-roster-signup { min-width: 210px; max-width: 270px; }
+  .coach-roster-signup .club-player-invitation { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+  .coach-roster-signup .admin-code-unavailable { color: var(--text-muted); font-size: 11px; }
+  .coach-roster-signup code { flex-basis: 100%; color: var(--text-muted); font-size: 12px; }
+  .coach-roster-signup .admin-copy-error { color: var(--status-danger); font-size: 11px; }
+  .coach-player-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 20px; }
+  .coach-player-heading h2 { font-size: 25px; letter-spacing: -.02em; overflow-wrap: anywhere; }
+  .coach-player-heading p { margin: 5px 0 0; font-size: 12px; }
+  .coach-player-heading .primary-cta { flex-shrink: 0; }
+  .coach-comparison-body { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(280px, 1fr); align-items: center; gap: 26px; }
+  .coach-comparison svg { width: 100%; max-width: 420px; justify-self: center; }
+  .coach-comparison svg text { fill: var(--text-primary); font-size: 12px; }
+  .coach-comparison svg .coach-radar-scale { fill: var(--text-muted); font-size: 9px; }
+  .coach-radar-grid { fill: none; stroke: var(--surface-border); stroke-width: 1; }
+  .coach-radar-result { fill: color-mix(in srgb, var(--accent) 17%, transparent); stroke: var(--accent); stroke-width: 2; }
+  .coach-radar-point { fill: var(--accent); }
+  .coach-comparison .insights-breakdown-table th { color: var(--text-primary); }
+  .coach-comparison .insights-breakdown-table td { color: var(--text-primary); min-width: 70px; }
+  .coach-comparison .insights-breakdown-table td span { display: inline-block; max-width: 155px; color: var(--text-muted); font-size: 11px; }
+  .coach-comparison .insights-breakdown-table thead th { font-size: 11px; color: var(--text-muted); padding-bottom: 10px; text-align: right; }
+  .coach-comparison .insights-breakdown-table thead th:first-child { text-align: left; }
+  .coach-player-training { margin-top: 22px; }
+  .coach-player-training > .insights-note { margin-bottom: 12px; }
+  .coach-player-training .coachdash-heading { margin-bottom: 18px; }
+  .coach-player-training .coachdash-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .coach-player-training .program-editor { margin-top: 16px; }
+  .coach-personal-workouts > details { margin-top: 12px; border-top: 1px solid var(--surface-border); }
+  .coach-personal-workouts summary { padding: 12px 0; min-height: 44px; cursor: pointer; font-weight: 650; color: var(--text-primary); }
+  .coach-personal-workouts summary span { color: var(--text-muted); font-size: 12px; font-weight: 400; }
+  .coach-personal-workouts ul { padding: 0; margin: 0; list-style: none; }
+  .coach-personal-workouts li { display: grid; gap: 4px; padding: 10px 0; border-top: 1px solid var(--surface-border); }
+  .coach-personal-workouts li span { color: var(--text-muted); font-size: 12px; }
+
   @media (max-width: 1000px) {
     .insights-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .admin-overview-panels { grid-template-columns: 1fr 1fr; }
@@ -185,6 +234,17 @@
     .admin-overview-panels { grid-template-columns: 1fr; gap: 0; }
     .admin-overview-panels > :last-child { grid-column: auto; }
     .insights-tabs { gap: 20px; }
+    .coach-comparison-body { grid-template-columns: 1fr; gap: 0; }
+    .coach-player-heading { align-items: stretch; flex-direction: column; gap: 12px; }
+    .coach-player-heading .primary-cta { width: fit-content; }
+    .coach-roster-table, .coach-roster-table tbody { display: block; }
+    .coach-roster-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .coach-roster-table tr { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; padding: 15px 0; border-bottom: 1px solid var(--surface-border); }
+    .coach-roster-table th, .coach-roster-table td { display: block; padding: 0; border: 0; min-width: 0; }
+    .coach-roster-table tbody th { grid-column: 1 / -1; }
+    .coach-roster-table tbody th a { min-height: 32px; }
+    .coach-roster-table td::before { content: attr(data-label); display: block; color: var(--text-muted); font-size: 11px; margin-bottom: 3px; }
+    .coach-roster-table .coach-roster-signup { grid-column: 1 / -1; max-width: none; }
   }
   @media (max-width: 520px) {
     h1 { font-size: 24px; }
