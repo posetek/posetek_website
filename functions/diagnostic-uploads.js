@@ -1,35 +1,15 @@
 "use strict";
-const { isClubAdmin, activeMember, memberCanAccessPlayer } = require("./club-access");
+const { isClubAdmin, activeMember } = require("./club-access");
 const { playerSegment } = require("./athlete-storage-paths");
+const { createDiagnosticAccess, registeredReporter, originalReporter, retentionActive } = require("./diagnostic-access");
 
 // A fresh resumable upload is issued only after current authorization is checked.
 // Clients never receive download URLs, bucket credentials or a reusable role grant.
 function createDiagnosticUploads({ db, bucket, FieldValue, HttpsError }) {
   const denied = () => new HttpsError("permission-denied", "Diagnostic upload is not authorized.");
-  async function read(path) {
-    const snap = await db.doc(path).get();
-    return snap.exists ? snap.data() : null;
-  }
-  async function athleteAccess(id, auth) {
-    if (!playerSegment(id)) return false;
-    const player = await read(`players/${id}`);
-    if (!player) return false;
-    if (isClubAdmin(auth)) return true;
-    const own = (player.authenticationUID ?? auth.uid) === auth.uid && (player.userUID ?? auth.uid) === auth.uid
-      && (player.authenticationUID === auth.uid || player.userUID === auth.uid || id === auth.uid);
-    if (own) return true;
-    if (Object.hasOwn(player, "organizationId")) {
-      if (!playerSegment(player.organizationId)) return false;
-      return memberCanAccessPlayer(await read(`organizations/${player.organizationId}/members/${auth.uid}`), auth.uid, player);
-    }
-    if ([player.coachUID, player.coachId, player.coachDocId].includes(auth.uid)) return true;
-    const coachId = player.coachDocId || auth.uid;
-    if (!playerSegment(coachId)) return false;
-    const coach = await read(`coaches/${coachId}`);
-    return coach?.userUID === auth.uid && Array.isArray(coach.members) && coach.members.includes(id);
-  }
+  const { read, athleteAccess } = createDiagnosticAccess({ db });
   async function authorize(data, auth) {
-    if (!auth?.uid || auth.isAnonymous === true || !playerSegment(auth.uid)) throw denied();
+    if (!registeredReporter(auth)) throw denied();
     const path = data.path;
     if (typeof path !== "string" || path.length > 512) throw denied();
     let record, name, recordPath, observationId;
@@ -52,8 +32,7 @@ function createDiagnosticUploads({ db, bucket, FieldValue, HttpsError }) {
       }
       if (record?.storage?.prefix !== `failure_cases/${incident[1]}`) throw denied();
     } else throw denied();
-    if (record?.schemaVersion !== 2 || record.reportedByUid !== auth.uid
-        || (record.retentionState && record.retentionState !== "active")) throw denied();
+    if (!originalReporter(record, auth) || !retentionActive(record)) throw denied();
     const scope = record.scope || "attempt";
     if (scope === "actor") {
       if (record.kind !== "system_diagnostic" || record.playerDocumentID != null || record.attemptId != null

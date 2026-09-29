@@ -16,6 +16,7 @@ exports.acknowledgeDiagnosticArtifacts = functions.firestore.document("failureCa
 exports.acknowledgeDiagnosticAttempt = functions.firestore.document("processingAttempts/{attemptId}").onWrite((_, context) => diagnosticRetention.acknowledge(context.params.attemptId, "processingAttempts"));
 exports.setDiagnosticInvestigationHold = functions.https.onCall((data, context) => diagnosticRetention.protect(data || {}, requireCaller(context)));
 exports.cleanupDiagnosticArtifacts = functions.runWith({ timeoutSeconds: 120, memory: "256MB" }).pubsub.schedule("every 24 hours").onRun(() => diagnosticRetention.sweep());
+exports.ingestDevicePerformanceV1 = require("./device-performance-ingestion").createIngestDevicePerformanceV1(functions, admin, requireCaller);
 
 // Additive reporting and engagement endpoints; existing callables stay intact.
 const insightEntrypoints = require("./insights-entrypoints").createInsightsEntrypoints(functions, admin, requireCaller);

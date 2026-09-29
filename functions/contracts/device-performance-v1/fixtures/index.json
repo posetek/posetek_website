@@ -1,0 +1,132 @@
+{
+  "contract": "device-performance-v1",
+  "description": "Fixture manifest. target is a JSON Pointer into schema.json; expect is valid or invalid; violates names the rule an invalid fixture breaks; check is schema (JSON Schema plus x-maxEncodedBytes) or semantic (README rules a validator adds).",
+  "fixtures": [
+    {
+      "file": "attempt-summary.valid.json",
+      "target": "#",
+      "expect": "valid",
+      "check": "schema",
+      "violates": null
+    },
+    {
+      "file": "attempt-summary-pre-admission-failure.valid.json",
+      "target": "#",
+      "expect": "valid",
+      "check": "schema",
+      "violates": null
+    },
+    {
+      "file": "run-summary.valid.json",
+      "target": "#",
+      "expect": "valid",
+      "check": "schema",
+      "violates": null
+    },
+    {
+      "file": "run-summary-evaluation-origin.valid.json",
+      "target": "#",
+      "expect": "valid",
+      "check": "schema",
+      "violates": null
+    },
+    {
+      "file": "upload-group-summary.valid.json",
+      "target": "#",
+      "expect": "valid",
+      "check": "schema",
+      "violates": null
+    },
+    {
+      "file": "upload-group-summary-video-unavailable.valid.json",
+      "target": "#",
+      "expect": "valid",
+      "check": "schema",
+      "violates": null
+    },
+    {
+      "file": "transfer-invocation.valid.json",
+      "target": "#",
+      "expect": "valid",
+      "check": "schema",
+      "violates": null
+    },
+    {
+      "file": "device-status.valid.json",
+      "target": "#",
+      "expect": "valid",
+      "check": "schema",
+      "violates": null
+    },
+    {
+      "file": "batch.valid.json",
+      "target": "#/$defs/batchV1",
+      "expect": "valid",
+      "check": "schema",
+      "violates": null
+    },
+    {
+      "file": "run-summary-oversized.invalid.json",
+      "target": "#",
+      "expect": "invalid",
+      "check": "schema",
+      "violates": "x-maxEncodedBytes 16384 (record size)"
+    },
+    {
+      "file": "run-summary-too-many-pass-ids.invalid.json",
+      "target": "#",
+      "expect": "invalid",
+      "check": "schema",
+      "violates": "body.passIds maxItems 8"
+    },
+    {
+      "file": "run-summary-negative-duration.invalid.json",
+      "target": "#",
+      "expect": "invalid",
+      "check": "schema",
+      "violates": "stage elapsedMs minimum 0 (the -1 sentinel is not a V1 value)"
+    },
+    {
+      "file": "evaluation-origin-without-run-id.invalid.json",
+      "target": "#",
+      "expect": "invalid",
+      "check": "schema",
+      "violates": "origin=evaluation requires evaluationRunId"
+    },
+    {
+      "file": "field-origin-with-evaluation-run-id.invalid.json",
+      "target": "#",
+      "expect": "invalid",
+      "check": "schema",
+      "violates": "origin=field requires evaluationRunId null"
+    },
+    {
+      "file": "stage-nested-without-parent.invalid.json",
+      "target": "#",
+      "expect": "invalid",
+      "check": "schema",
+      "violates": "nestedOperation requires parentStageId"
+    },
+    {
+      "file": "attempt-summary-invalid-verdict-without-reason.invalid.json",
+      "target": "#",
+      "expect": "invalid",
+      "check": "schema",
+      "violates": "measurementVerdict invalid requires a verdictReason"
+    },
+    {
+      "file": "missing-reason-points-at-value.invalid.json",
+      "target": "#",
+      "expect": "invalid",
+      "check": "semantic",
+      "violates": "missingReasons field must point at a null value"
+    },
+    {
+      "file": "batch-too-many-records.invalid.json",
+      "target": "#/$defs/batchV1",
+      "expect": "invalid",
+      "check": "schema",
+      "violates": "records maxItems 16"
+    }
+  ]
+}
