@@ -3,6 +3,27 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
+Workout email alerts are live for all players from September 28, 2026 at
+4:06:30 PM PDT. Saved outcomes go to `dylank@posetek.net`; web-observed sessions
+also qualify for an inactivity notice after 30 minutes, processed every five
+minutes. Emails include the player, recorded time/progress and a protected link
+to the exact workout history. Native-only sessions have saved-ending coverage.
+There is no historical backfill. All seven scoped functions, the verified
+Resend sender and signed delivery webhook are live. Three synthetic emails
+received delivery receipts, and the final quiet email was confirmed in Outlook
+Inbox. Test records were removed before a fresh all-player activation cutoff.
+
+Website source `d814225` is published as `6abadd8abff0a78fde2fbe28`; the reconciled
+baseline protects 1,207 application/public files. The preservation build,
+22 release checks, 30 production routes and all 1,049 JS/CSS assets passed.
+See the [production receipt](deployment/WORKOUT_NOTIFICATIONS_PRODUCTION.json),
+[notification handoff](docs/WORKOUT_NOTIFICATIONS.md) and
+[scoped release guide](deployments/workout-notifications/README.md).
+Source and handoff changes are shared in
+[PR #11](https://github.com/posetek/posetek_website/pull/11).
+
+The following release summaries describe earlier checkpoints.
+
 Email-free coach and administrator access is live on [posetek.net](https://posetek.net).
 Source `f9f10e0` was published as deployment `6ab8679ccbfca079f8997124` on
 September 26, 2026 at 5:50:52 PM PDT. Organization managers create private staff

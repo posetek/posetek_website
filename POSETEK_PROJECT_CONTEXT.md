@@ -1,8 +1,46 @@
 # PoseTek website project context
 
-Reviewed on September 26, 2026. This guide summarizes the available repository and
+Reviewed on September 28, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
+
+## Workout email alerts (2026-09-28, live)
+
+All-player workout alerts are enabled from September 28, 2026 at 4:06:30 PM PDT
+(`activatedAtMillis: 1790636790868`), with no historical backfill or pilot allowlist.
+Resend sends saved workout outcomes to `dylank@posetek.net` from
+`PoseTek Workouts <workouts@alerts.posetek.net>`. Website sessions also qualify for
+one inactivity notice after 30 minutes without meaningful activity, processed by
+a five-minute sweep. Native coverage uses existing saved endings; native-only
+inactivity is not inferred. Emails include recorded progress, time and a protected
+link to the exact workout history, where administrators can inspect delivery status.
+
+Website source `d814225368976c97e8184eabb8953779d139bc1c` was published as deployment
+`6abadd8abff0a78fde2fbe28` at 3:56:54 PM PDT by promoting the reviewed draft without
+rebuilding. All 1,239 artifact files match the candidate; the reconciled baseline
+protects 1,207 application/public files (125,432,039 bytes). The ordinary
+preservation build, 22 release checks, 30 production routes and all 1,049 JS/CSS
+assets passed. All 32 approved marketing files remain unchanged.
+
+All seven scoped Firebase functions and the scheduler are live and audited.
+The verified Resend domain uses one DKIM TXT, two DNS-only CNAMEs and a
+subdomain-only initial DMARC policy; root mail records remain unchanged. The
+sending-only key is domain restricted and both secrets use Secret Manager.
+Three synthetic emails received signed delivery receipts; the post-DMARC quiet
+message was also confirmed in Outlook Inbox. The first two messages have provider
+delivery evidence only. Natural quiet timing, resume cancellation, exact protected
+links and sign-in return passed. Synthetic cleanup and final quiescence checks
+passed before global activation. A bounded post-activation audit found exact
+settings, no synthetic roots and zero sampled new jobs or activity; this is not
+a claim of real-player usage or a complete historical scan.
+
+Read the [production receipt](deployment/WORKOUT_NOTIFICATIONS_PRODUCTION.json),
+[notification handoff](docs/WORKOUT_NOTIFICATIONS.md) and
+[scoped release guide](deployments/workout-notifications/README.md).
+The implementation preserves existing workout logs, canonical rules, gateway,
+native source, training catalog and the false whole-body mobile acceptance gate.
+Changes are shared in [PR #11](https://github.com/posetek/posetek_website/pull/11).
+The following sections record preceding releases.
 
 ## Email-free staff and administrator access (2026-09-26)
 

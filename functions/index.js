@@ -6,6 +6,8 @@ const { playerSegment, storageFolderCandidates } = require("./athlete-storage-pa
 
 admin.initializeApp();
 const db = admin.firestore();
+// Private workout delivery is additive and disabled until its settings are enabled.
+Object.assign(exports, require("./workout-notifications-entrypoints").createWorkoutNotificationEntrypoints(functions, admin, requireCaller));
 const { createDiagnosticUploads } = require("./diagnostic-uploads");
 const diagnosticUploads = createDiagnosticUploads({ db, bucket: admin.storage().bucket("kickai-69dd0.firebasestorage.app"), FieldValue: admin.firestore.FieldValue, HttpsError: functions.https.HttpsError });
 exports.beginDiagnosticUpload = functions.https.onCall((data, context) => diagnosticUploads.authorize(data || {}, requireCaller(context)));

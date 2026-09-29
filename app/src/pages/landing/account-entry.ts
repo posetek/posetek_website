@@ -10,7 +10,7 @@ export function accountDestination(role: AccountRole, playerId: string | null, s
   if (!target) return home;
   const path = new URL(target).pathname;
   const staff = role === "admin" || role === "manager" || role === "coach" || role === "independent";
-  if (path === "/admin" || path === "/admin/access") return role === "admin" ? target : home;
+  if (path === "/admin" || path.startsWith("/admin/")) return role === "admin" ? target : home;
   if (role === "pending") return path === "/join" ? target : home;
   if (path === "/insights" && role === "independent") return home;
   if (["/insights", "/organization", "/roster"].includes(path) || path.endsWith("/coachesview.html")) {

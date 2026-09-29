@@ -40,6 +40,7 @@ that entrypoint with Node directly instead of a shell shim.
 |---|---|---|
 | `adminRules` | Firestore | Admin predicate, catalog authoring, plan-edit closure, staff test recording |
 | `insightsRules` | Firestore | Insight usage and summary projections are server-only |
+| `workoutNotifications` | Firestore | Notification settings, activity and outbox deny direct client access |
 | `personalizedRules` | Firestore | Personalized planner capabilities, draft views, private context |
 | `socialRules` | Firestore + Storage | Feed roots, protected invitations, recording media |
 | `testingEventRules` | Firestore | Testing events and their stations |
