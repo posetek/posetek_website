@@ -28,18 +28,25 @@ function canonicalDirectory() {
   return path.join(repo, "tools", "contracts", "device-performance-v1");
 }
 
-// The error code each invalid fixture must produce through the ingestion validator.
-const INVALID_FIXTURE_CODES = {
-  "run-summary-oversized.invalid.json": "oversizedRecord",
-  "run-summary-too-many-pass-ids.invalid.json": "invalidSchema",
-  "run-summary-negative-duration.invalid.json": "invalidSchema",
-  "evaluation-origin-without-run-id.invalid.json": "invalidSchema",
-  "field-origin-with-evaluation-run-id.invalid.json": "invalidSchema",
-  "stage-nested-without-parent.invalid.json": "invalidSchema",
-  "attempt-summary-invalid-verdict-without-reason.invalid.json": "invalidSchema",
-  "missing-reason-points-at-value.invalid.json": "invalidSchema",
-  "batch-too-many-records.invalid.json": "oversizedBatch",
+// The error code each invalid fixture must produce through the ingestion
+// validator, and the rule (the manifest's `violates`) every reported error must
+// name, so a fixture can never pass by failing for an unrelated reason.
+const INVALID_FIXTURES = {
+  "run-summary-oversized.invalid.json": ["oversizedRecord", /^\$: \d+ bytes exceeds 16384$/],
+  "run-summary-too-many-pass-ids.invalid.json": ["invalidSchema", /^\$\.body\.passIds: more than 8 items$/],
+  "run-summary-negative-duration.invalid.json": ["invalidSchema", /^\$\.body\.stages\[\d+\]\.elapsedMs: below minimum 0$/],
+  "evaluation-origin-without-run-id.invalid.json": ["invalidSchema", /^\$\.evaluationRunId: type is not string$/],
+  "field-origin-with-evaluation-run-id.invalid.json": ["invalidSchema", /^\$\.evaluationRunId: type is not null$/],
+  "stage-nested-without-parent.invalid.json": ["invalidSchema", /^\$\.body\.stages\[\d+\]\.parentStageId: type is not string$/],
+  "attempt-summary-invalid-verdict-without-reason.invalid.json": ["invalidSchema", /^\$\.body\.verdictReason: value is not in the enum$/],
+  "missing-reason-points-at-value.invalid.json": ["invalidSchema", /^\$\.missingReasons\[\d+\]: points at a present value$/],
+  "batch-too-many-records.invalid.json": ["oversizedBatch", /^\$\.records: more than 16 items$/],
 };
+function assertFailingRule(file, errors) {
+  const [, rule] = INVALID_FIXTURES[file];
+  assert.ok(errors.length > 0, `${file} reports its violation`);
+  for (const error of errors) assert.match(error, rule, `${file} fails only for its declared rule`);
+}
 
 test("the pinned schema and fixtures match the contract's digest table", () => {
   const digests = readmeDigests(fs.readFileSync(path.join(PINNED, "README.md"), "utf8"));
@@ -69,7 +76,7 @@ test("every fixture meets its manifest expectation through the ingestion validat
   for (const entry of manifest.fixtures) {
     const doc = fixture(entry.file);
     const valid = entry.expect === "valid";
-    if (!valid) assert.ok(INVALID_FIXTURE_CODES[entry.file], `${entry.file} has an expected error code`);
+    if (!valid) assert.ok(INVALID_FIXTURES[entry.file], `${entry.file} has an expected error code and rule`);
     if (entry.target === "#") {
       const result = contract.validateRecord(doc);
       assert.equal(result.ok, valid, `${entry.file}: ${result.errors.join("; ")}`);
@@ -78,18 +85,21 @@ test("every fixture meets its manifest expectation through the ingestion validat
       if (valid) {
         assert.equal(result.digest, crypto.createHash("sha256").update(contract.canonicalJson(doc), "utf8").digest("hex"));
       } else {
-        assert.equal(result.outcome.errorCode, INVALID_FIXTURE_CODES[entry.file], entry.file);
+        assert.equal(result.outcome.errorCode, INVALID_FIXTURES[entry.file][0], entry.file);
         assert.equal(result.outcome.status, "rejected", entry.file);
         assert.equal(result.outcome.retryable, false, entry.file);
+        assertFailingRule(entry.file, result.errors);
       }
     } else if (entry.target === "#/$defs/batchV1") {
-      assert.equal(contract.validateSchema(entry.target, doc).valid, valid, `${entry.file} schema check`);
+      const shape = contract.validateSchema(entry.target, doc);
+      assert.equal(shape.valid, valid, `${entry.file} schema check`);
       if (valid) {
         const batch = contract.inspectBatch(doc);
         for (const record of batch.records) assert.ok(contract.validateRecord(record).ok, entry.file);
       } else {
+        assertFailingRule(entry.file, shape.errors);
         assert.throws(() => contract.inspectBatch(doc), (error) => error instanceof contract.BatchError
-          && error.errorCode === INVALID_FIXTURE_CODES[entry.file]);
+          && error.errorCode === INVALID_FIXTURES[entry.file][0] && /at most 16 records/.test(error.message));
       }
     } else {
       assert.fail(`${entry.file}: unknown target ${entry.target}`);
@@ -304,6 +314,20 @@ test("batch envelopes: itemizable or refused without rejecting any record", () =
     assert.throws(() => contract.inspectBatch(batch), (error) => error instanceof contract.BatchError && error.errorCode === code);
   }
   assert.equal(contract.inspectBatch({ ...valid, performanceSchemaVersion: 2, future: true }).unsupportedVersion, true);
+});
+
+test("refusal messages carry client-chosen key names only as hashes", () => {
+  const secretKey = "athleteJaneDoePhone5551234";
+  const record = run();
+  record[secretKey] = null;
+  record.body.userName = null;
+  const result = contract.validateRecord(record);
+  assert.equal(result.outcome.errorCode, "invalidSchema");
+  const text = result.errors.join("\n");
+  assert.doesNotMatch(text, /JaneDoe|5551234|userName/);
+  assert.match(text, new RegExp(`unexpected property ${contract.clientKey(secretKey)}`));
+  assert.match(text, new RegExp(`unexpected property ${contract.clientKey("userName")}`));
+  assert.match(contract.clientKey(secretKey), /^#[0-9a-f]{12}$/);
 });
 
 test("JSON Pointer lookup into body", () => {

@@ -106,6 +106,10 @@ function serialize(value, depth) {
 function sha256Hex(text) {
   return crypto.createHash("sha256").update(text, "utf8").digest("hex");
 }
+// Refusal messages reach logs; a client-chosen key name appears only as a hash.
+function clientKey(key) {
+  return `#${sha256Hex(key).slice(0, 12)}`;
+}
 // SHA-256 of the UTF-8 RFC 8785 canonical JSON (contract §8.6).
 function digest(value) {
   return sha256Hex(canonicalJson(value));
@@ -238,8 +242,8 @@ function createSchemaValidator(root) {
       if (node.additionalProperties !== undefined) {
         for (const key of Object.keys(instance)) {
           if (node.properties && Object.hasOwn(node.properties, key)) continue;
-          if (node.additionalProperties === false) fail(`unexpected property ${JSON.stringify(key.slice(0, 48))}`);
-          else if (!check(instance[key], node.additionalProperties, `${path}.${key.slice(0, 48)}`, errors)) ok = false;
+          if (node.additionalProperties === false) fail(`unexpected property ${clientKey(key)}`);
+          else if (!check(instance[key], node.additionalProperties, `${path}.${clientKey(key)}`, errors)) ok = false;
         }
       }
     }
@@ -306,9 +310,10 @@ function forbiddenContent(value, path, errors, depth = 0) {
   } else if (Array.isArray(value)) {
     value.forEach((item, index) => forbiddenContent(item, `${path}[${index}]`, errors, depth + 1));
   } else if (isPlainObject(value)) {
+    // Keys reaching here passed the closed schema; a forbidden one is still logged only as a hash.
     for (const [key, item] of Object.entries(value)) {
-      if (FORBIDDEN_KEY.test(key)) errors.push(`${path}: forbidden key ${JSON.stringify(key.slice(0, 48))}`);
-      forbiddenContent(item, `${path}.${key.slice(0, 48)}`, errors, depth + 1);
+      if (FORBIDDEN_KEY.test(key)) errors.push(`${path}: forbidden key ${clientKey(key)}`);
+      forbiddenContent(item, `${path}.${FORBIDDEN_KEY.test(key) ? clientKey(key) : key}`, errors, depth + 1);
     }
   }
 }
@@ -467,7 +472,7 @@ function responseItem(index, evaluation, fields) {
 
 module.exports = {
   PERFORMANCE_SCHEMA_VERSION, LIMITS, RECORD_KINDS, ROOTS, STATUSES, ERROR_CODES, OUTCOME_FOR_CODE, TERMINAL_RUN_OUTCOMES,
-  ContractError, BatchError, schema, isPlainObject, canonicalJson, digest, encodedBytes, jsonEqual,
+  ContractError, BatchError, schema, isPlainObject, canonicalJson, digest, encodedBytes, jsonEqual, clientKey,
   createSchemaValidator, validateSchema, pointerGet, entityId, validateRecord, checkIngestible, inspectBatch,
   batchEncodedBytes, outcome, responseItem,
 };

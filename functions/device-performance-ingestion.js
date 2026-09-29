@@ -9,9 +9,11 @@
 // - its originReporterUid is the authenticated caller;
 // - when it names an attempt, that attempt's processingAttempts index was
 //   reported by the caller, who still has access to the athlete (the shared
-//   diagnostics helpers). An install id is never authorization.
+//   diagnostics helpers), and the fact agrees with the drill, rep and capture
+//   launch the index records. An install id is never authorization.
 // Idempotency is (recordKind, recordId, revision) plus a server-computed
-// RFC 8785 SHA-256 digest. Terminal run outcomes never change.
+// RFC 8785 SHA-256 digest. A terminal run is frozen apart from a small
+// allowlist. Review rulings: decision D-2026-09-29-21.
 
 const contract = require("./device-performance-contract");
 const { createDiagnosticAccess, registeredReporter, originalReporter } = require("./diagnostic-access");
@@ -36,8 +38,38 @@ const RUN_LINEAGE = Object.freeze(["processingRunId", "retryOfRunId"]);
 // Origin facts are immutable once known (a retry or update never rewrites what
 // originally recorded the clip); an unknown (null) origin may be filled in.
 const ORIGIN_FACTS = Object.freeze(["originInstallId", "originLaunchId", "originPlatform", "captureOccurredAtClient"]);
-// A terminal run's compute outcome: .failed(failure), .cancelled(reason) and the stages.
-const TERMINAL_RUN_FIELDS = Object.freeze(["outcome", "failure", "cancellationReason", "stages"]);
+// Once a run's outcome is terminal, a later revision may change only these;
+// every measurement and every attribution field is frozen (D-21 F2).
+const POST_TERMINAL_MUTABLE = Object.freeze({
+  envelope: Object.freeze(["revision", "completeness", "missingReasons", "droppedDetailCount"]),
+  totals: Object.freeze(["journalFinalizeMs"]),
+  resources: Object.freeze(["released"]),
+});
+// Attempt identity the processingAttempts index records; a fact may not
+// contradict it (D-21 F7).
+const ATTEMPT_INDEX_FACTS = Object.freeze(["drillType", "repId", "originLaunchId"]);
+
+function omit(object, keys) {
+  return Object.fromEntries(Object.entries(object).filter(([key]) => !keys.includes(key)));
+}
+function frozenRunView(record) {
+  const { body } = record;
+  return {
+    ...omit(record, [...POST_TERMINAL_MUTABLE.envelope, "body"]),
+    body: {
+      ...omit(body, ["totals", "resources"]),
+      totals: omit(body.totals, POST_TERMINAL_MUTABLE.totals),
+      resources: omit(body.resources, POST_TERMINAL_MUTABLE.resources),
+    },
+  };
+}
+// A terminal run measurement never changes, so a retry's success can never
+// replace a failed run (a retry is a new processingRunId). interruptedUnknown
+// is not terminal.
+function illegalTransition(previous, record) {
+  if (record.recordKind !== "runSummary" || !contract.TERMINAL_RUN_OUTCOMES.includes(previous.body?.outcome)) return false;
+  return !contract.jsonEqual(frozenRunView(previous), frozenRunView(record));
+}
 
 function sameIdentity(stored, record, authority) {
   const previous = stored.record;
@@ -48,11 +80,21 @@ function sameIdentity(stored, record, authority) {
   return ORIGIN_FACTS.every((key) => previous[key] === null || contract.jsonEqual(previous[key], record[key]));
 }
 
-// A later revision may never change a terminal run measurement, so a retry's
-// success can never replace a failed run (a retry is a new processingRunId).
-function illegalTransition(previous, record) {
-  if (record.recordKind !== "runSummary" || !contract.TERMINAL_RUN_OUTCOMES.includes(previous.body?.outcome)) return false;
-  return TERMINAL_RUN_FIELDS.some((key) => !contract.jsonEqual(previous.body[key], record.body[key]));
+// Interim rule until contract v1.2 makes the client id install-scoped (D-21 F1):
+// a `system:<category>` upload group has no attempt, so the same recordId comes
+// from every install and account. Its stored identity and idempotency key are
+// scoped to the reporting install and account.
+function storageKey(record) {
+  const key = `${record.recordKind}:${record.recordId}`;
+  return record.recordKind === "uploadGroupSummary" && record.recordId.startsWith("system:")
+    ? `${key}:${record.originInstallId ?? "null"}:${record.originReporterUid}`
+    : key;
+}
+
+// A stored fact written by a newer (or unknown) storage shape is never judged
+// by this code: the record stays pending until a compatible build runs (D-21 F3).
+function unknownStorage(stored) {
+  return !(Number.isSafeInteger(stored.storageVersion) && stored.storageVersion <= STORAGE_VERSION);
 }
 
 function serverClockQuality(record, current) {
@@ -74,27 +116,52 @@ function createDevicePerformanceIngestion({ db, FieldValue, Timestamp, HttpsErro
     if (!originalReporter(index, auth)) return { errorCode: "unauthorizedReporter" };
     if ((index.scope || "attempt") !== "attempt" || index.attemptId !== attemptId) return { errorCode: "identityMismatch" };
     if (!await access.athleteAccess(index.playerDocumentID, auth)) return { errorCode: "unauthorizedReporter" };
-    return { basis: "processingAttempt", reporterUid: auth.uid, attemptId, playerDocumentID: index.playerDocumentID };
+    const facts = Object.fromEntries(ATTEMPT_INDEX_FACTS
+      .filter((key) => typeof index[key] === "string" && index[key] !== "").map((key) => [key, index[key]]));
+    return { authority: { basis: "processingAttempt", reporterUid: auth.uid, attemptId, playerDocumentID: index.playerDocumentID }, facts };
   }
-  function authorityFor(record, auth, cache) {
-    if (record.attemptId === null) return { basis: "reporter", reporterUid: auth.uid, attemptId: null, playerDocumentID: null };
-    if (!cache.has(record.attemptId)) cache.set(record.attemptId, verifyAttempt(record.attemptId, auth));
-    return cache.get(record.attemptId);
+  async function authorize(record, auth, attempts) {
+    if (record.attemptId === null) {
+      return { authority: { basis: "reporter", reporterUid: auth.uid, attemptId: null, playerDocumentID: null }, facts: {} };
+    }
+    if (!attempts.has(record.attemptId)) attempts.set(record.attemptId, verifyAttempt(record.attemptId, auth));
+    const verified = await attempts.get(record.attemptId);
+    if (verified.errorCode) return verified;
+    // A value the fact leaves null makes no claim; a present value must agree.
+    if (Object.entries(verified.facts).some(([key, value]) => record[key] !== null && record[key] !== value)) {
+      return { errorCode: "identityMismatch" };
+    }
+    return verified;
   }
 
-  // Bounded per caller and per executing install (insight-usage.js pattern).
-  async function rateLimited(uid, installIds) {
+  // One fixed-minute counter (insight-usage.js pattern). A malformed counter
+  // fails closed: the current minute is sealed as exhausted and the next
+  // minute starts clean (D-21 F8).
+  async function consumeRate(key, limit) {
     const current = now();
     const window = Math.floor(current / RATE_LIMITS.windowMs);
-    const limits = [[`caller:${uid}`, RATE_LIMITS.callsPerCaller], ...installIds.map((id) => [`install:${id}`, RATE_LIMITS.callsPerInstall])];
+    const ref = db.collection(RATE_LIMIT_ROOT).doc(key);
     return db.runTransaction(async (tx) => {
-      const refs = limits.map(([key]) => db.collection(RATE_LIMIT_ROOT).doc(key));
-      const snapshots = await Promise.all(refs.map((ref) => tx.get(ref)));
-      const counts = snapshots.map((snapshot) => (snapshot.data()?.window === window ? snapshot.data().count : 0));
-      if (counts.some((count, index) => count >= limits[index][1])) return true;
-      refs.forEach((ref, index) => tx.set(ref, { window, count: counts[index] + 1, expiresAt: Timestamp.fromMillis(current + DAY) }));
+      const snapshot = await tx.get(ref);
+      const data = snapshot.exists ? snapshot.data() : null;
+      const expiresAt = Timestamp.fromMillis(current + DAY);
+      const malformed = data !== null && (!Number.isSafeInteger(data.window)
+        || (data.window === window && !(Number.isSafeInteger(data.count) && data.count >= 0)));
+      if (malformed) {
+        tx.set(ref, { window, count: limit, expiresAt });
+        return true;
+      }
+      const count = data?.window === window ? data.count : 0;
+      if (count >= limit) return true;
+      tx.set(ref, { window, count: count + 1, expiresAt });
       return false;
     });
+  }
+  // Each executing install is charged once per call, and only for a record
+  // whose caller may report it (D-21 F4).
+  function installLimited(installId, installs) {
+    if (!installs.has(installId)) installs.set(installId, consumeRate(`install:${installId}`, RATE_LIMITS.callsPerInstall));
+    return installs.get(installId);
   }
 
   function factFields(record, evaluation, authority, current, batchId) {
@@ -117,31 +184,42 @@ function createDevicePerformanceIngestion({ db, FieldValue, Timestamp, HttpsErro
     };
   }
 
-  async function ingestOne(index, record, evaluation, auth, cache, batchId) {
+  async function ingestOne(index, record, evaluation, auth, call, batchId) {
     const reply = (fields) => contract.responseItem(index, evaluation, fields);
+    // A refusal carries a stored revision only when the caller owns that entity (D-21 F5).
     const refuse = (errorCode, acceptedRevision = null) => reply({ ...contract.outcome(errorCode), acceptedRevision });
+    const duplicate = (revision) => reply({ status: "duplicate", retryable: false, acceptedRevision: revision });
     if (record.originReporterUid !== auth.uid) return refuse("unauthorizedReporter");
-    const authority = await authorityFor(record, auth, cache);
-    if (authority.errorCode) return refuse(authority.errorCode);
-    const ref = db.collection(contract.ROOTS[record.recordKind]).doc(`${record.recordKind}:${record.recordId}`);
+    const ref = db.collection(contract.ROOTS[record.recordKind]).doc(storageKey(record));
+    // An exact replay of the caller's own accepted revision is acknowledged
+    // before current access is re-checked, so revocation never turns an
+    // accepted fact into a dropped one (D-21 F6).
+    const existing = await ref.get();
+    const known = existing.exists ? existing.data() : null;
+    if (known && unknownStorage(known)) return refuse("unsupportedVersion");
+    if (known && known.authority?.reporterUid === auth.uid && known.revision === record.revision && known.digest === evaluation.digest) {
+      return duplicate(known.revision);
+    }
+    const verified = await authorize(record, auth, call.attempts);
+    if (verified.errorCode) return refuse(verified.errorCode);
+    if (record.executorInstallId !== null && await installLimited(record.executorInstallId, call.installs)) return refuse("rateLimited");
     return db.runTransaction(async (tx) => {
       const snapshot = await tx.get(ref);
       const stored = snapshot.exists ? snapshot.data() : null;
       const current = now();
       if (stored) {
-        if (!sameIdentity(stored, record, authority)) return refuse("identityMismatch", stored.revision);
+        if (unknownStorage(stored)) return refuse("unsupportedVersion");
+        if (!sameIdentity(stored, record, verified.authority)) return refuse("identityMismatch");
         if (record.revision === stored.revision) {
-          return stored.digest === evaluation.digest
-            ? reply({ status: "duplicate", retryable: false, acceptedRevision: stored.revision })
-            : refuse("revisionConflict", stored.revision);
+          return stored.digest === evaluation.digest ? duplicate(stored.revision) : refuse("revisionConflict", stored.revision);
         }
         if (record.revision < stored.revision) return refuse("staleRevision", stored.revision);
         if (illegalTransition(stored.record, record)) return refuse("illegalTransition", stored.revision);
         // firstReceivedAtServer is set once and never reset on replay.
-        tx.update(ref, { ...factFields(record, evaluation, authority, current, batchId), updatedAtServer: FieldValue.serverTimestamp() });
+        tx.update(ref, { ...factFields(record, evaluation, verified.authority, current, batchId), updatedAtServer: FieldValue.serverTimestamp() });
       } else {
         tx.create(ref, {
-          ...factFields(record, evaluation, authority, current, batchId),
+          ...factFields(record, evaluation, verified.authority, current, batchId),
           firstReceivedAtServer: FieldValue.serverTimestamp(), updatedAtServer: FieldValue.serverTimestamp(),
         });
       }
@@ -152,7 +230,7 @@ function createDevicePerformanceIngestion({ db, FieldValue, Timestamp, HttpsErro
   function logRefusal(index, evaluation) {
     const { errorCode } = evaluation.outcome;
     if (!["invalidSchema", "identityMismatch", "oversizedRecord"].includes(errorCode)) return;
-    // Error paths only, never values: facts can carry athlete-linked ids.
+    // Error paths only, never values; client-chosen key names appear hashed.
     logger.warn("ingestDevicePerformanceV1 refused a record", {
       index, errorCode, recordKind: evaluation.recordKind, errors: evaluation.errors.slice(0, 3),
     });
@@ -185,12 +263,12 @@ function createDevicePerformanceIngestion({ db, FieldValue, Timestamp, HttpsErro
     const bytes = contract.batchEncodedBytes(batch.batchId, batch.records, evaluations.map((evaluation) => evaluation.canonical));
     // Records within their own limit stay pending for a smaller batch.
     if (bytes > contract.LIMITS.batchBytes) return settle("oversizedBatch");
-    const installIds = [...new Set(pending.map((index) => batch.records[index].executorInstallId).filter((id) => id !== null))];
-    if (await rateLimited(auth.uid, installIds)) return settle("rateLimited");
-    const cache = new Map();
+    // The per-caller bound comes first; per-install bounds follow actor binding.
+    if (await consumeRate(`caller:${auth.uid}`, RATE_LIMITS.callsPerCaller)) return settle("rateLimited");
+    const call = { attempts: new Map(), installs: new Map() };
     for (const index of pending) {
       try {
-        results[index] = await ingestOne(index, batch.records[index], evaluations[index], auth, cache, batch.batchId);
+        results[index] = await ingestOne(index, batch.records[index], evaluations[index], auth, call, batch.batchId);
       } catch (error) {
         logger.error("ingestDevicePerformanceV1 record failed", { index, recordKind: evaluations[index].recordKind, message: error?.message });
         results[index] = item(index, evaluations[index], "internal");
@@ -213,6 +291,7 @@ function createIngestDevicePerformanceV1(functions, admin, requireCaller) {
 }
 
 module.exports = {
-  createDevicePerformanceIngestion, createIngestDevicePerformanceV1,
-  RATE_LIMIT_ROOT, RATE_LIMITS, RETENTION_DAYS, EXACT_IDENTITY, RUN_LINEAGE, ORIGIN_FACTS, TERMINAL_RUN_FIELDS,
+  createDevicePerformanceIngestion, createIngestDevicePerformanceV1, storageKey, frozenRunView,
+  RATE_LIMIT_ROOT, RATE_LIMITS, RETENTION_DAYS, STORAGE_VERSION, EXACT_IDENTITY, RUN_LINEAGE, ORIGIN_FACTS,
+  POST_TERMINAL_MUTABLE, ATTEMPT_INDEX_FACTS,
 };
