@@ -310,7 +310,9 @@ function compactTransfer(fact, attemptId) {
   return {
     kind: "transfer",
     attemptId,
-    category: body.groupId.slice(body.groupId.lastIndexOf(":") + 1),
+    // First two separators (contract.groupParts): a v1.2 system group id
+    // system:<category>:<originInstallId> never yields its install as the category.
+    category: contract.groupParts(body.groupId).category,
     executor: record.executorInstallId,
     outcome: body.outcome,
     bytes: body.payloadBytes,
@@ -1044,7 +1046,7 @@ function createDevicePerformanceProjection({ db, HttpsError, FieldValue, Timesta
 }
 
 module.exports = {
-  createDevicePerformanceProjection, compactAttempt, placement, attemptPlacementFields, phaseOf, choiceKey, buildRef, millisOf,
+  createDevicePerformanceProjection, compactAttempt, compactTransfer, placement, attemptPlacementFields, phaseOf, choiceKey, buildRef, millisOf,
   timeOrder, utcDay, narrowRange, rebuilding, usableFact,
   PROJECTION_VERSION, PROJECTION_ROOT, PROJECTION_DOC, COLLECTIONS, LIMITS, DRILLS, PHASES, UNKNOWN_INSTALL, FUTURE_TOLERANCE_MS,
   TRANSFER_RETENTION_MS, TRANSFER_FIELDS,

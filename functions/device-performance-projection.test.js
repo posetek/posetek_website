@@ -351,6 +351,20 @@ test("device status merges per install by the latest client report (D-18)", asyn
   assert.deepEqual(report.totals.cloudBacklog, { pendingJobs: 2, failedJobs: 0, installsReporting: 1, oldestReportAt: new Date(START - 5000).toISOString() });
 });
 
+test("compactTransfer takes its category from the first two groupId separators, never a v1.2 system group's install", () => {
+  const { compactTransfer, usableFact } = projectionModule;
+  const fact = (record) => usableFact(stored(record), "transferInvocation");
+  const attemptTransfer = transfer({ attemptId: uuid("a", 1), invocationId: uuid("t", 70), category: "optionalVideo" });
+  assert.equal(compactTransfer(fact(attemptTransfer), uuid("a", 1)).category, "optionalVideo");
+  const install = uuid("i", 7);
+  const system = { ...transfer({ attemptId: uuid("a", 1), invocationId: uuid("t", 71), category: "diagnostics" }), attemptId: null };
+  system.body = { ...system.body, groupId: `system:diagnostics:${install}`, logicalObjectId: `system/diagnosticArtifact.slot/${"1".repeat(64)}` };
+  assert.equal(contract.validateRecord(system).ok, true, contract.validateRecord(system).errors.join("; "));
+  const compact = compactTransfer(fact(system), null);
+  assert.equal(compact.category, "diagnostics");
+  assert.notEqual(compact.category, install);
+});
+
 test("device status merge falls back to server receipt order when a client time is missing, unreliable or tied (v1.2.1)", async () => {
   const h = harness();
   const put = (record, updatedAt, extra = {}) => h.db.docs.set(`devicePerformanceDevices/deviceStatus:${record.recordId}`,
