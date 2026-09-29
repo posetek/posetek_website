@@ -4,13 +4,16 @@
 // live callables.
 
 import { readFileSync } from "node:fs";
-import type { ReactNode } from "react";
+import { isValidElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
-import DevicePerformance, { FilterBar, FleetReportView, PageHeading, ReportSkeleton, SummaryTiles } from "./DevicePerformance";
-import { describeLoadFailure, fleetRequest, parseDevicePerformanceQuery, parseFleetReport } from "../lib/devicePerformance";
-import type { FleetReportV1, ReportState } from "../lib/devicePerformance";
+import DevicePerformance, { AttemptList, FilterBar, FleetReportView, LoadError, PageHeading, ReportSkeleton, SummaryTiles } from "./DevicePerformance";
+import {
+  describeLoadFailure, devicePerformanceSearch, fleetRequest, parseDevicePerformanceQuery, parseFleetReport, recoverFromFailure, recoveryLabel,
+} from "../lib/devicePerformance";
+import type { FleetReportV1, QueryPatch, ReportState } from "../lib/devicePerformance";
 import { previewFleet } from "../lib/devicePerformancePreview";
 
 const NOW = new Date("2026-09-29T18:00:00Z");
@@ -153,6 +156,107 @@ describe("fleet states", () => {
 
   it("refuses a newer response format rather than drawing it", () => {
     expect(() => report("", "newerFormat")).toThrow(/format version 2/);
+  });
+});
+
+// A plain walk over a React element tree (no rendering), so a button's onClick can be invoked in node.
+function findElement(node: unknown, match: (element: ReactElement<Record<string, unknown>>) => boolean): ReactElement<Record<string, unknown>> | null {
+  if (Array.isArray(node)) {
+    for (const child of node) { const found = findElement(child, match); if (found) return found; }
+    return null;
+  }
+  if (!isValidElement(node)) return null;
+  const element = node as ReactElement<Record<string, unknown>>;
+  return match(element) ? element : findElement(element.props.children, match);
+}
+
+describe("review fixes (D-26)", () => {
+  it("A: a stale cursor offers Load the first page, and that action clears both cursors instead of resending them", () => {
+    const failure = describeLoadFailure({ code: "functions/failed-precondition" });
+    const query = parseDevicePerformanceQuery("cursor=p2&acursor=a1&drill=jump", NOW);
+    const html = markup(<FleetReportView state={{ status: "error", report: null, failure, stale: false }} query={query} search="?cursor=p2&acursor=a1&drill=jump"
+      onChange={() => {}} onRetry={() => {}} retryLabel={recoveryLabel(failure, true)} />);
+    expect(html).toContain("The report changed");
+    expect(html).toContain(">Load the first page</button>");
+    expect(html).not.toContain(">Retry</button>");
+
+    const patches: QueryPatch[] = [];
+    let refreshed = 0;
+    const onRetry = () => recoverFromFailure(failure, true, { refresh: () => { refreshed += 1; }, change: patch => { patches.push(patch); } });
+    const tree = LoadError({ failure, onRetry, retryLabel: recoveryLabel(failure, true) });
+    const button = findElement(tree, element => element.type === "button" && element.props.children === "Load the first page");
+    (button!.props.onClick as () => void)();
+    expect(patches).toEqual([{ cursor: null, acursor: null }]);
+    expect(refreshed).toBe(0);
+    expect(devicePerformanceSearch("?cursor=p2&acursor=a1&drill=jump", patches[0])).toBe("?drill=jump");
+
+    const partial = view("cursor=preview-page-50", "normal", { status: "error", failure, stale: true });
+    expect(partial).toContain(">Retry</button>"); // FleetReportView's default label; the page passes recoveryLabel
+  });
+
+  it("B: a report whose scope leaks an upload filter is refused with a visible scope-mismatch state", () => {
+    const { query } = report("net=cellular");
+    const leaky = previewFleet(fleetRequest(query)) as unknown as Record<string, Record<string, string[]>>;
+    leaky.effectiveFilters.processing = ["networkInterface"];
+    let failure = null;
+    try { parseFleetReport(leaky); } catch (error) { failure = describeLoadFailure(error); }
+    const html = markup(<FleetReportView state={{ status: "error", report: null, failure, stale: false }} query={query} search="?net=cellular" onChange={() => {}} onRetry={() => {}} />);
+    expect(html).toContain("<h2>Report scope mismatch</h2>");
+    expect(html).toContain("network reached processing time and failures");
+    expect(html).toContain("none of this report is shown");
+    expect(html).toContain("Clear filters");
+    expect(html).not.toContain("<h2>Processing failures</h2>");
+  });
+
+  it("C: usable results carry their own scope line, never the processing one", () => {
+    const html = view("pmode=recovery&drill=sprint");
+    const tile = html.slice(html.indexOf("<h2>Processing failures</h2>"));
+    const processing = tile.slice(0, tile.indexOf('aria-label="Usable results"'));
+    const usable = tile.slice(tile.indexOf('aria-label="Usable results"'), tile.indexOf("</section>"));
+    expect(processing).toContain("Filtered by drill, processing mode");
+    expect(usable).toContain("Usable results:");
+    expect(usable).toContain("Filtered by drill");
+    expect(usable).not.toContain("processing mode");
+  });
+
+  it("D: attempt rows show the executing install on retries when the server supplies it", () => {
+    const html = view("focus=stage:kick.denseBall");
+    expect(html).toContain("Processed on another install, 6db25a74 (retry)");
+    const { report: value } = report("focus=stage:kick.denseBall");
+    const rows = value.attempts!.map(row => ({ ...row, executorInstallId: undefined }));
+    expect(markup(<AttemptList rows={rows} timeZone="America/Los_Angeles" search="" locationState={null} />)).not.toContain("Processed on another install");
+  });
+
+  it("J: renders the inner-model cumulative call time table only when the response carries it", () => {
+    const html = view();
+    expect(html).toContain("Inner model timing: cumulative call time");
+    expect(html).toContain("Loading a model");
+    expect(html).toContain("First model prediction");
+    expect(html).toContain("never added to them");
+    const table = html.slice(html.indexOf("Inner model timing"), html.indexOf("Inner model timing") + 6000);
+    expect(table).toContain("Broad jump");
+    expect(table).toContain("Limited data");
+    expect(view("", "oldBuilds")).not.toContain("Inner model timing");
+  });
+
+  it("K: says weighted effective throughput and shows the app-observed caveat on the tile", () => {
+    const html = view();
+    const tile = html.slice(html.indexOf("<h2>Upload speed</h2>"));
+    const body = tile.slice(0, tile.indexOf("</section>"));
+    expect(body).toContain("Weighted effective throughput");
+    expect(body).toContain("App-observed payload throughput");
+    expect(body).toContain("not the network&#x27;s capacity");
+  });
+
+  it("G: an unusable custom range is reported and nothing is loaded in its place", () => {
+    const html = renderToStaticMarkup(<MemoryRouter initialEntries={["/admin/device-performance?start=2026-09-01&end=2099-01-01"]}><DevicePerformance /></MemoryRouter>);
+    expect(html).toContain("This date range cannot be used");
+    expect(html).toContain("The range ends after today");
+    expect(html).not.toContain("Loading report");
+    expect(html).toContain('value="custom" selected=""');
+    expect(html).toContain('value="2099-01-01"');
+    const form = markup(<FilterBar query={parseDevicePerformanceQuery("start=2026-09-01&end=2026-09-10", NOW)} choices={null} onChange={() => {}} />);
+    expect(form).toMatch(/max="\d{4}-\d{2}-\d{2}"/);
   });
 });
 

@@ -112,7 +112,8 @@ export default function DevicePerformanceAttemptDrawer({ attemptId, source, time
         )}
         {current.status === "ready" && (
           <AttemptDetailView detail={current.detail} timeZone={timeZone} more={current.more.status === "error" ? current.more.failure : current.more.status}
-            onLoadMore={() => loadMore(current.detail)} />
+            onLoadMore={() => loadMore(current.detail)}
+            onRestart={() => { setState({ key: attemptId, value: { status: "loading" } }); setRetry(value => value + 1); }} />
         )}
       </aside>
     </div>
@@ -136,8 +137,8 @@ function Field({ name, children }: { name: string; children: ReactNode }) {
   return <div><dt>{name}</dt><dd>{children}</dd></div>;
 }
 
-export function AttemptDetailView({ detail, timeZone, more = "idle", onLoadMore }: {
-  detail: AttemptDetailV1; timeZone: string; more?: "idle" | "loading" | LoadFailure; onLoadMore?: () => void;
+export function AttemptDetailView({ detail, timeZone, more = "idle", onLoadMore, onRestart }: {
+  detail: AttemptDetailV1; timeZone: string; more?: "idle" | "loading" | LoadFailure; onLoadMore?: () => void; onRestart?: () => void;
 }) {
   const attempt = detail.attempt;
   const timeline = attemptTimeline(detail);
@@ -236,10 +237,18 @@ export function AttemptDetailView({ detail, timeZone, more = "idle", onLoadMore 
         <h3>Transfers</h3>
         <TransfersTable transfers={detail.transfers} />
         <p className="dp-counts">{formatCount(detail.transfers.length)} of {formatCount(detail.transferPagination.totalRows)} transfers shown. Firestore record writes are timed, never given a speed.</p>
-        {detail.transferPagination.nextCursor && onLoadMore && (
-          <button className="quiet-button small" type="button" disabled={more === "loading"} onClick={onLoadMore}>{more === "loading" ? "Loading…" : "Load more transfers"}</button>
-        )}
-        {typeof more === "object" && <p className="dp-inline-error" role="alert">{more.title}: {more.message} The transfers above are kept.</p>}
+        {/* A stale transfer cursor never recovers by resending it (D-26 A): start again from the first page. */}
+        {typeof more === "object" && more.problem === "staleCursor"
+          ? <>
+            <p className="dp-inline-error" role="alert">The transfer list changed while you were paging. The transfers above may be out of date.</p>
+            {onRestart && <button className="quiet-button small" type="button" onClick={onRestart}>Reload transfers from the first page</button>}
+          </>
+          : <>
+            {detail.transferPagination.nextCursor && onLoadMore && (
+              <button className="quiet-button small" type="button" disabled={more === "loading"} onClick={onLoadMore}>{more === "loading" ? "Loading…" : "Load more transfers"}</button>
+            )}
+            {typeof more === "object" && <p className="dp-inline-error" role="alert">{more.title}: {more.message} The transfers above are kept.</p>}
+          </>}
       </section>
 
       <section className="dp-drawer-section">

@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import DevicePerformanceDetail, { DeviceReportView } from "./DevicePerformanceDetail";
-import { describeLoadFailure, detailRequest, parseDeviceReport, parseDevicePerformanceQuery } from "../lib/devicePerformance";
+import { describeLoadFailure, detailRequest, parseDeviceReport, parseDevicePerformanceQuery, recoveryLabel } from "../lib/devicePerformance";
 import type { DeviceReportV1, ReportState } from "../lib/devicePerformance";
 import { previewDevice } from "../lib/devicePerformancePreview";
 
@@ -78,6 +78,22 @@ describe("device report", () => {
     const html = route("/admin/device-performance/not-an-install?orgId=club", <Routes><Route path="/admin/device-performance/:installId" element={<DevicePerformanceDetail />} /></Routes>);
     expect(html).toContain("No such device");
     expect(html).toContain('href="/admin/device-performance?orgId=club"');
+  });
+
+  it("reports an unusable custom range instead of loading another period (D-26 G)", () => {
+    const html = route(`/admin/device-performance/${STATION_2}?start=2026-09-20&end=2026-09-01`, <Routes><Route path="/admin/device-performance/:installId" element={<DevicePerformanceDetail />} /></Routes>);
+    expect(html).toContain("This date range cannot be used");
+    expect(html).toContain("The start date is after the end date.");
+    expect(html).not.toContain("Loading report");
+  });
+
+  it("shows the inner-model table and a stale-cursor recovery label on the device report", () => {
+    expect(detail(STATION_2).html).toContain("Inner model timing: cumulative call time");
+    const query = parseDevicePerformanceQuery("cursor=p2", NOW);
+    const failure = describeLoadFailure({ code: "functions/failed-precondition" }, "device");
+    const html = route(`/admin/device-performance/${STATION_2}?cursor=p2`, <DeviceReportView state={{ status: "error", report: null, failure, stale: false }}
+      query={query} search="?cursor=p2" onChange={() => {}} onRetry={() => {}} retryLabel={recoveryLabel(failure, true)} />);
+    expect(html).toContain(">Load the first page</button>");
   });
 
   it("renders the page shell with the short install id and both attribution choices before data arrives", () => {

@@ -15,15 +15,16 @@ import {
   LIMITED_DATA_MIN_SAMPLES, MAIN_PHASES, METRIC_DEFINITIONS, NETWORK_INTERFACES, NETWORK_LABELS, OUTCOME_LABELS, PARAMS,
   PERIOD_PRESETS, PHASE_LABELS, PROCESSING_MODES, PROCESSING_MODE_LABELS, RECORDING_MODES, RECORDING_MODE_LABELS,
   SAVE_STATE_LABELS, TIME_ZONES, UPLOAD_ROLES, UPLOAD_ROLE_LABELS, VERDICT_LABELS,
-  allocationView, devicePath, devicePerformanceSearch, failureRate, fleetRequest, focusDescription, focusParam, formatBytes,
-  formatCount, formatDateTime, formatDuration, formatMBps, formatPercent, label, missingReasonLabel,
-  parseDevicePerformanceQuery, shortInstallId, stageLabel, statView, statedScope, uploadSpeed, usableYield,
-  useDevicePerformanceReport, useDevicePerformanceSource, useFocusHeadingOnChange, useScrollMemory,
+  allocationView, customRangeProblem, dateInZone, devicePath, devicePerformanceSearch, failureRate, fleetRequest,
+  focusDescription, focusParam, formatBytes, formatCount, formatDateTime, formatDuration, formatMBps, formatPercent, label,
+  missingReasonLabel, parseDevicePerformanceQuery, recoverFromFailure, recoveryLabel, shortInstallId, stageLabel, statView,
+  statedScope, uploadSpeed, usableYield, useDevicePerformanceReport, useDevicePerformanceSource, useFocusHeadingOnChange,
+  useScrollMemory,
 } from "../lib/devicePerformance";
 import type {
   AttemptRowV1, ChoicesV1, DevicePerformanceQuery, DevicePerformanceSource, DeviceRowV1, DistributionStatV1, DrillRowV1,
-  DrillType, FailureStageRowV1, FleetReportV1, FleetRequestV1, FocusV1, LoadFailure, MainPhase, MetricGroup, PaginationV1,
-  ParamName, QueryPatch, ReportEnvelopeV1, ReportState, UploadRole,
+  DrillType, FailureStageRowV1, FleetReportV1, FleetRequestV1, FocusV1, InnerModelRowV1, LoadFailure, MainPhase, MetricGroup,
+  PaginationV1, ParamName, QueryPatch, ReportEnvelopeV1, ReportState, UploadRole,
 } from "../lib/devicePerformance";
 import DevicePerformanceAttemptDrawer from "./DevicePerformanceAttemptDrawer";
 import "../device-performance.scss";
@@ -37,12 +38,16 @@ export default function DevicePerformance({ preview = false }: { preview?: boole
   const source = useDevicePerformanceSource(preview, scenario);
   const request = useMemo(() => fleetRequest(query), [query]);
   const shape = useMemo(() => ({ ...request, cursor: null, focus: null, attemptsCursor: null }), [request]);
-  const { state, refresh } = useDevicePerformanceReport({ source, kind: "fleet", request, shape, scenario, load: loadFleet });
+  // An unusable custom range requests nothing (D-26 G).
+  const rangeProblem = query.period.problem;
+  const { state, refresh } = useDevicePerformanceReport({ source: rangeProblem ? null : source, preview, kind: "fleet", request, shape, scenario, load: loadFleet });
   useScrollMemory(location.pathname + location.search, state.report !== null);
   useEffect(() => { document.title = "Device performance | PoseTek admin"; }, []);
   useFocusHeadingOnChange(focusParam(query.focus), "dp-matching-heading");
 
   const update = (patch: QueryPatch) => navigate({ pathname: location.pathname, search: devicePerformanceSearch(location.search, patch) }, { state: location.state });
+  const hasCursor = Boolean(query.cursor || query.attemptsCursor);
+  const recover = () => recoverFromFailure(state.failure, hasCursor, { refresh, change: update });
   const closeDrawer = () => {
     if ((location.state as { fromList?: boolean } | null)?.fromList) navigate(-1);
     else navigate({ pathname: location.pathname, search: devicePerformanceSearch(location.search, { [PARAMS.attempt]: null }) }, { replace: true, state: location.state });
@@ -50,12 +55,14 @@ export default function DevicePerformance({ preview = false }: { preview?: boole
 
   return (
     <div className="dp-page">
-      <PageHeading report={state.report} loading={state.status === "loading"} onRefresh={refresh}
+      <PageHeading report={rangeProblem ? null : state.report} loading={!rangeProblem && state.status === "loading"} onRefresh={recover}
         title="Device performance"
         intro="How long drills take on each phone, which step takes the time, and where attempts fail. Numbers come from the phones' own measurements." />
       {source?.kind === "preview" && <PreviewControls source={source} scenario={scenario} onChange={value => update({ [PARAMS.scenario]: value })} />}
       <FilterBar key={`${query.period.startDate}:${query.period.endDate}`} query={query} choices={state.report?.choices ?? null} onChange={update} />
-      <FleetReportView state={state} query={query} search={location.search} locationState={location.state} onChange={update} onRetry={refresh} />
+      {rangeProblem
+        ? <RangeProblem problem={rangeProblem} />
+        : <FleetReportView state={state} query={query} search={location.search} locationState={location.state} onChange={update} onRetry={recover} retryLabel={recoveryLabel(state.failure, hasCursor)} />}
       {query.attempt && source && (
         <DevicePerformanceAttemptDrawer attemptId={query.attempt} source={source} timeZone={query.period.timeZone} scenario={scenario} onClose={closeDrawer} />
       )}
@@ -65,18 +72,19 @@ export default function DevicePerformance({ preview = false }: { preview?: boole
 
 // MARK: - The report body (pure: renders a loaded state; tested with static markup)
 
-export function FleetReportView({ state, query, search, locationState = null, onChange, onRetry }: {
+export function FleetReportView({ state, query, search, locationState = null, onChange, onRetry, retryLabel = "Retry" }: {
   state: ReportState<FleetReportV1>;
   query: DevicePerformanceQuery;
   search: string;
   locationState?: unknown;
   onChange: (patch: QueryPatch) => void;
   onRetry: () => void;
+  retryLabel?: string;
 }) {
   const report = state.report;
   if (!report) {
     return state.status === "error" && state.failure
-      ? <LoadError failure={state.failure} onRetry={onRetry} onChange={onChange} query={query} />
+      ? <LoadError failure={state.failure} onRetry={onRetry} retryLabel={retryLabel} onChange={onChange} query={query} />
       : <ReportSkeleton />;
   }
   const busy = state.status === "loading";
@@ -85,11 +93,12 @@ export function FleetReportView({ state, query, search, locationState = null, on
   const onFocus = (focus: FocusV1 | null) => onChange({ [PARAMS.focus]: focusParam(focus) });
   return (
     <div className="dp-report" aria-busy={busy || undefined}>
-      {state.failure && <PartialFailure failure={state.failure} onRetry={onRetry} />}
+      {state.failure && <PartialFailure failure={state.failure} onRetry={onRetry} retryLabel={retryLabel} />}
       {!collected ? <NotCollectedState /> : !matching ? <NoMatchState report={report} query={query} onChange={onChange} /> : <>
         <CoverageNotices report={report} query={query} onChange={onChange} />
         <SummaryTiles report={report} role={query.filters.uploadRole} onRole={role => onChange({ [PARAMS.uploadRole]: role })} />
         <WhereTimeGoes rows={report.perDrill} report={report} focus={query.focus} onFocus={onFocus} />
+        {report.innerModel?.rows.length ? <InnerModelTable rows={report.innerModel.rows} /> : null}
         <FailuresByStep rows={report.failureStages} focus={query.focus} onFocus={onFocus} />
         {query.focus && <MatchingAttempts report={report} query={query} search={search} locationState={locationState} busy={busy} onClear={() => onFocus(null)} />}
         <DeviceTable key={query.search} report={report} query={query} search={search} locationState={locationState} busy={busy} onChange={onChange} />
@@ -125,7 +134,10 @@ export function PageHeading({ report, loading, onRefresh, title, intro, children
       <div className="admin-heading-actions dp-heading-actions">
         <p className="dp-freshness" aria-live="polite">
           {report
-            ? <>Last report received {formatDateTime(report.freshness.lastReportReceivedAt, zone)}<br />Generated {formatDateTime(report.generatedAt, zone)}</>
+            ? <>
+              Showing {report.period.startDate} to {report.period.endDate} ({zone.replace("America/", "").replaceAll("_", " ")}{report.period.dateBasis === "serverReceipt" ? ", by server receipt date" : ""})<br />
+              Last report received {formatDateTime(report.freshness.lastReportReceivedAt, zone)}<br />Generated {formatDateTime(report.generatedAt, zone)}
+            </>
             : loading ? "Loading the latest complete report…" : ""}
         </p>
         <button className="quiet-button" type="button" onClick={onRefresh} disabled={loading}>
@@ -163,31 +175,47 @@ export function ReportSkeleton() {
   );
 }
 
-export function LoadError({ failure, onRetry, onChange, query }: { failure: LoadFailure; onRetry: () => void; onChange?: (patch: QueryPatch) => void; query?: DevicePerformanceQuery }) {
+export function LoadError({ failure, onRetry, retryLabel = "Retry", onChange, query }: {
+  failure: LoadFailure; onRetry: () => void; retryLabel?: string; onChange?: (patch: QueryPatch) => void; query?: DevicePerformanceQuery;
+}) {
   return (
     <section className="dp-state dp-error" role="alert">
-      <Icon name={failure.problem === "oversized" ? "filter_alt" : "error"} />
+      <Icon name={failure.problem === "oversized" ? "filter_alt" : failure.problem === "scopeMismatch" ? "rule" : "error"} />
       <h2>{failure.title}</h2>
       <p>{failure.message}</p>
       <div className="dp-actions">
-        <button className="primary-cta small" type="button" onClick={onRetry}>Retry</button>
+        <button className="primary-cta small" type="button" onClick={onRetry}>{retryLabel}</button>
         {failure.problem === "oversized" && onChange && query && query.period.preset !== 7 && (
           <button className="quiet-button small" type="button" onClick={() => onChange({ [PARAMS.days]: "7" })}>Use the last 7 days</button>
         )}
+        {failure.problem === "scopeMismatch" && onChange && query && activeFilterText(query) && (
+          <button className="quiet-button small" type="button" onClick={() => onChange(clearFilterPatch())}>Clear filters</button>
+        )}
       </div>
-      <p className="dp-muted">Your filters are kept.</p>
+      <p className="dp-muted">{retryLabel === "Retry" ? "Your filters are kept." : "Your filters are kept; only the page goes back to the first one."}</p>
     </section>
   );
 }
 
 /** A page, focus or section failed; the complete totals already on screen stay. */
-export function PartialFailure({ failure, onRetry }: { failure: LoadFailure; onRetry: () => void }) {
+export function PartialFailure({ failure, onRetry, retryLabel = "Retry" }: { failure: LoadFailure; onRetry: () => void; retryLabel?: string }) {
   return (
     <div className="admin-banner danger dp-partial" role="alert">
       <Icon name="error" />
       <p><strong>{failure.title}.</strong> {failure.message} The totals shown are still the complete report for these filters; the rows below are from the last page that loaded.</p>
-      <button className="quiet-button small" type="button" onClick={onRetry}>Retry</button>
+      <button className="quiet-button small" type="button" onClick={onRetry}>{retryLabel}</button>
     </div>
+  );
+}
+
+/** An unusable custom range in the URL or the form: nothing is requested and nothing is substituted (D-26 G). */
+export function RangeProblem({ problem }: { problem: string }) {
+  return (
+    <section className="dp-state dp-error" role="alert">
+      <Icon name="event_busy" />
+      <h2>This date range cannot be used</h2>
+      <p>{problem} No report is loaded until the range is fixed. Correct the dates above, or choose one of the preset periods.</p>
+    </section>
   );
 }
 
@@ -264,7 +292,9 @@ const enumOptions = (values: readonly string[], labels: Record<string, string>) 
 export function FilterBar({ query, choices, onChange }: { query: DevicePerformanceQuery; choices: ChoicesV1 | null; onChange: (patch: QueryPatch) => void }) {
   const [customOpen, setCustomOpen] = useState(query.period.preset === "custom");
   const [dates, setDates] = useState({ start: query.period.startDate, end: query.period.endDate });
-  const [dateError, setDateError] = useState("");
+  // A range from the URL that cannot be used is shown as an error here too, never swapped for a preset.
+  const [dateError, setDateError] = useState(query.period.problem ?? "");
+  const today = dateInZone(new Date(), query.period.timeZone);
   const filters = query.filters;
   const advanced = [filters.recordingMode, filters.captureMachine, filters.processingMode, filters.executionBuild, filters.executionMachine, filters.networkInterface, filters.payloadSizeBand]
     .filter(value => value !== null).length + (query.dateBasis !== "capture" ? 1 : 0) + (query.period.timeZone !== DEFAULT_TIME_ZONE ? 1 : 0);
@@ -273,8 +303,8 @@ export function FilterBar({ query, choices, onChange }: { query: DevicePerforman
 
   function applyCustom(event: { preventDefault(): void }) {
     event.preventDefault();
-    const days = Math.round((Date.parse(`${dates.end}T12:00:00Z`) - Date.parse(`${dates.start}T12:00:00Z`)) / 86_400_000) + 1;
-    if (!dates.start || !dates.end || dates.start > dates.end || days > 90) { setDateError("Choose a range of up to 90 days that ends today or earlier."); return; }
+    const problem = customRangeProblem(dates.start, dates.end, today);
+    if (problem) { setDateError(problem); return; }
     setDateError("");
     onChange({ [PARAMS.start]: dates.start, [PARAMS.end]: dates.end });
   }
@@ -332,8 +362,8 @@ export function FilterBar({ query, choices, onChange }: { query: DevicePerforman
       </div>
       {(customOpen || query.period.preset === "custom") && (
         <form className="dp-custom" onSubmit={applyCustom}>
-          <label className="dp-field"><span>From</span><input type="date" value={dates.start} max={dates.end} onChange={event => setDates(value => ({ ...value, start: event.target.value }))} /></label>
-          <label className="dp-field"><span>Through</span><input type="date" value={dates.end} min={dates.start} onChange={event => setDates(value => ({ ...value, end: event.target.value }))} /></label>
+          <label className="dp-field"><span>From</span><input type="date" value={dates.start} max={dates.end && dates.end < today ? dates.end : today} onChange={event => setDates(value => ({ ...value, start: event.target.value }))} /></label>
+          <label className="dp-field"><span>Through</span><input type="date" value={dates.end} min={dates.start || undefined} max={today} onChange={event => setDates(value => ({ ...value, end: event.target.value }))} /></label>
           <button className="quiet-button small" type="submit">Apply dates</button>
           {dateError && <p className="dp-inline-error" role="alert">{dateError}</p>}
         </form>
@@ -421,7 +451,7 @@ export function StatBlock({ stat, empty = "No matching measurements in this peri
 }
 
 export function LimitedData({ what = "samples" }: { what?: string }) {
-  return <span className="dp-limited"><Icon name="info" />Limited data<span className="admin-sr-only">: fewer than {LIMITED_DATA_MIN_SAMPLES} measured {what}, so no slow value is shown</span></span>;
+  return <span className="dp-limited"><Icon name="info" />Limited data<span className="admin-sr-only">: fewer than {LIMITED_DATA_MIN_SAMPLES} eligible or measured {what}, so no slow value is shown</span></span>;
 }
 
 function ScopeLine({ report, group }: { report: ReportEnvelopeV1; group: MetricGroup }) {
@@ -470,9 +500,10 @@ export function SummaryTiles({ report, role, onRole }: { report: ReportEnvelopeV
           : speed.stat.invocations === 0 ? <p className="dp-stat-note"><Icon name="remove" /><span>No {UPLOAD_ROLE_LABELS[role].toLowerCase()} uploads in this period.</span></p>
           : <>
             <dl className={`dp-stat${smallPayload ? " dp-latency-first" : ""}`}>
-              <div><dt>Typical upload time</dt><dd>{formatDuration(speed.stat.duration.typicalMs)}</dd></div>
-              <div><dt>Weighted throughput</dt><dd>{formatMBps(speed.mbps)}</dd></div>
+              <div><dt>Typical upload time</dt><dd>{uploadTime(speed.stat.duration)}</dd></div>
+              <div><dt>Weighted effective throughput</dt><dd>{formatMBps(speed.mbps)}</dd></div>
             </dl>
+            <p className="dp-counts dp-caveat"><Icon name="info" />App-observed payload throughput: all successful bytes over all measured seconds. It is not the network's capacity and not the exact bytes sent over the air.</p>
             {smallPayload && <p className="dp-counts">Small files: most of the time is per-upload overhead, so upload time says more than MB/s.</p>}
             <p className="dp-counts">
               {formatCount(speed.stat.succeeded)} of {formatCount(speed.stat.invocations)} uploads succeeded · {formatCount(speed.stat.failed)} failed · {formatCount(speed.stat.cancelled + speed.stat.interrupted)} stopped · {formatCount(speed.stat.pending)} pending
@@ -483,25 +514,76 @@ export function SummaryTiles({ report, role, onRole }: { report: ReportEnvelopeV
         <ScopeLine report={report} group="upload" />
       </>)}
       {tile("report", "Processing failures", "Failed runs out of runs with a known outcome", <>
-        <p className="dp-big">
-          <strong>{formatCount(rate.failed)}</strong> <span>of {formatCount(rate.knownOutcomes)} known outcomes</span>
-          {rate.knownOutcomes > 0 && <span className="dp-rate">{formatPercent(rate.failed, rate.knownOutcomes)}</span>}
-        </p>
-        {rate.knownOutcomes > 0 && rate.knownOutcomes < LIMITED_DATA_MIN_SAMPLES && <LimitedData what="outcomes" />}
-        <p className="dp-counts">
-          Known outcomes include {formatCount(totals.outcomes.partial)} partial and {formatCount(totals.outcomes.noMeasurement)} with no measurement.
-          Not counted: {formatCount(rate.excluded.cancelled)} cancelled, {formatCount(rate.excluded.interruptedUnknown)} interrupted, {formatCount(rate.excluded.pending)} pending, {formatCount(rate.excluded.preAdmissionFailures)} stopped before processing started.
-        </p>
-        <p className="dp-counts dp-yield">
-          <strong>Usable results:</strong>{" "}
-          {yieldCounts.finalized
-            ? `${formatCount(yieldCounts.valid)} of ${formatCount(yieldCounts.finalized)} final attempts (${formatPercent(yieldCounts.valid, yieldCounts.finalized)}), ${formatPercent(totals.yield.firstRunValid, yieldCounts.finalized)} on the first run`
-            : "no attempt has a final measurement yet"}
-          {`; ${formatCount(yieldCounts.pending)} still recoverable, ${formatCount(yieldCounts.userDiscarded)} discarded by the user.`}
-        </p>
-        <ScopeLine report={report} group="processing" />
+        <div className="dp-tile-part">
+          <p className="dp-big">
+            <strong>{formatCount(rate.failed)}</strong> <span>of {formatCount(rate.knownOutcomes)} known outcomes</span>
+            {rate.knownOutcomes > 0 && <span className="dp-rate">{formatPercent(rate.failed, rate.knownOutcomes)}</span>}
+          </p>
+          {rate.knownOutcomes > 0 && rate.knownOutcomes < LIMITED_DATA_MIN_SAMPLES && <LimitedData what="outcomes" />}
+          <p className="dp-counts">
+            Known outcomes include {formatCount(totals.outcomes.partial)} partial and {formatCount(totals.outcomes.noMeasurement)} with no measurement.
+            Not counted: {formatCount(rate.excluded.cancelled)} cancelled, {formatCount(rate.excluded.interruptedUnknown)} interrupted, {formatCount(rate.excluded.pending)} pending, {formatCount(rate.excluded.preAdmissionFailures)} stopped before processing started.
+          </p>
+          <ScopeLine report={report} group="processing" />
+        </div>
+        {/* Yield is an attempt metric with its own scope (plan 07 §3): run filters do not apply to it (D-26 C). */}
+        <div className="dp-tile-part dp-yield" role="group" aria-label="Usable results">
+          <p className="dp-counts">
+            <strong>Usable results:</strong>{" "}
+            {yieldCounts.finalized
+              ? `${formatCount(yieldCounts.valid)} of ${formatCount(yieldCounts.finalized)} final attempts (${formatPercent(yieldCounts.valid, yieldCounts.finalized)}), ${formatPercent(totals.yield.firstRunValid, yieldCounts.finalized)} on the first run`
+              : "no attempt has a final measurement yet"}
+            {`; ${formatCount(yieldCounts.pending)} still recoverable, ${formatCount(yieldCounts.userDiscarded)} discarded by the user.`}
+          </p>
+          <ScopeLine report={report} group="yield" />
+        </div>
       </>)}
     </div>
+  );
+}
+
+function uploadTime(stat: DistributionStatV1): ReactNode {
+  const view = statView(stat);
+  if (view.kind === "value") return <>{formatDuration(view.typicalMs)}{view.limited && <LimitedData />}</>;
+  return view.kind === "missing" ? "Not measured" : "No measurements";
+}
+
+// MARK: - Inner model timing (plan 07 §3; optional response block, D-26 J)
+
+export function InnerModelTable({ rows }: { rows: InnerModelRowV1[] }) {
+  const headingId = useId();
+  const ordered = [...rows].sort((a, b) => DRILL_TYPES.indexOf(a.drillType) - DRILL_TYPES.indexOf(b.drillType) || a.stageId.localeCompare(b.stageId));
+  return (
+    <section className="admin-card dp-section" aria-labelledby={headingId}>
+      <div className="dp-section-head">
+        <h2 id={headingId}>Inner model timing: cumulative call time</h2>
+        <p>Time spent inside model operations such as loading a model or its first prediction, summed per run. These calls happen inside the steps above, so this time overlaps those steps and is never added to them.</p>
+      </div>
+      <div className="dp-table-wrap">
+        <table className="dp-table">
+          <caption className="admin-sr-only">Cumulative call time per run for each model operation and drill</caption>
+          <thead>
+            <tr><th scope="col">Drill</th><th scope="col">Operation</th><th scope="col">Inside step</th><th scope="col">Runs</th><th scope="col">Calls</th><th scope="col">Typical per run</th><th scope="col">Slow per run</th></tr>
+          </thead>
+          <tbody>
+            {ordered.map(row => {
+              const view = statView(row.cumulativeMs);
+              return (
+                <tr key={`${row.drillType}:${row.stageId}:${row.parentStageId ?? ""}`}>
+                  <th scope="row">{DRILL_LABELS[row.drillType]}</th>
+                  <td>{stageLabel(row.stageId)}<small><code>{row.stageId}</code></small></td>
+                  <td>{row.parentStageId ? stageLabel(row.parentStageId) : "—"}</td>
+                  <td>{formatCount(row.runs)}</td>
+                  <td>{formatCount(row.invocations)}</td>
+                  <td>{view.kind === "value" ? formatDuration(view.typicalMs) : view.kind === "missing" ? `Not measured: ${view.reason.toLowerCase()}` : "No measurements"}</td>
+                  <td>{view.kind === "value" ? view.limited ? <LimitedData /> : formatDuration(view.slowMs) : "—"}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
@@ -676,6 +758,14 @@ export function FailuresByStep({ rows, focus, onFocus, title = "Failures by step
 
 // MARK: - Attempts and devices
 
+/** Plan 07 §3: "executor shown on retries". Only when the server supplies it (optional field, D-26 D). */
+function executorText(row: AttemptRowV1): string | null {
+  const executor = row.executorInstallId;
+  if (!executor) return null;
+  if (executor !== row.originInstallId) return `Processed on another install, ${shortInstallId(executor)}${row.runCount > 1 ? " (retry)" : ""}`;
+  return row.runCount > 1 ? `Retried on the recording install, ${shortInstallId(executor)}` : null;
+}
+
 export function AttemptList({ rows, timeZone, search, locationState }: { rows: AttemptRowV1[]; timeZone: string; search: string; locationState: unknown }) {
   if (!rows.length) return <p className="dp-stat-note"><Icon name="remove" /><span>No attempts match.</span></p>;
   const baseState = typeof locationState === "object" && locationState ? locationState : {};
@@ -692,6 +782,7 @@ export function AttemptList({ rows, timeZone, search, locationState }: { rows: A
               <span className="dp-attempt-main">
                 <strong>{label(DRILL_LABELS, row.drillType)}{row.recordingMode === "station" ? " · station" : ""}</strong>
                 <span>{row.deviceLabel ?? row.machine ?? "Unknown device"}{row.originInstallId ? ` · ${shortInstallId(row.originInstallId)}` : ""} · {row.captureBuild ?? "unknown build"}{row.executionBuilds.some(build => build !== row.captureBuild) ? ` → processed on ${row.executionBuilds.join(", ")}` : ""}</span>
+                {executorText(row) && <span className="dp-executor"><Icon name="swap_horiz" />{executorText(row)}</span>}
               </span>
               <span className="dp-attempt-numbers">
                 <span className={`admin-chip ${row.measurementVerdict === "valid" ? "accent" : row.measurementVerdict === "invalid" ? "danger" : "warn"}`}>

@@ -140,6 +140,9 @@
     .dp-rate { color: var(--text-primary); font-weight: 700; }
   }
   .dp-yield strong { color: var(--text-primary); }
+  .dp-tile-part { .dp-scope-line { margin-top: 0; padding-top: 6px; } }
+  .dp-tile-part + .dp-tile-part { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--surface-border); }
+  .dp-caveat { display: flex; gap: 6px; align-items: flex-start; .material-symbols-outlined { font-size: 15px; color: var(--status-neutral); } }
   .dp-scope-line { margin: auto 0 0; padding-top: 10px; color: var(--text-muted); font-size: 11.5px; font-style: italic; }
   .dp-role { margin-bottom: 10px; select { min-height: 40px; } }
 
@@ -230,6 +233,7 @@
   }
   .dp-attempt-when { display: grid; gap: 2px; color: var(--text-muted); .admin-chip { margin-left: 0; justify-self: start; } }
   .dp-attempt-main { display: grid; gap: 2px; span { color: var(--text-muted); } }
+  .dp-attempt-main .dp-executor { display: inline-flex; gap: 4px; align-items: center; color: var(--text-primary); .material-symbols-outlined { font-size: 15px; color: var(--accent); } }
   .dp-attempt-numbers { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; color: var(--text-muted); .admin-chip { margin-left: 0; } }
   .dp-attempt-step { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .dp-failure-rows {

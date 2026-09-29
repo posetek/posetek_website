@@ -9,15 +9,17 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   CALLABLES, DEFAULT_FILTERS, DevicePerformanceResponseError, FILTER_SCOPE, LIMITED_DATA_MIN_SAMPLES, PARAMS, UPLOAD_FILTERS,
-  allocationView, appliedFilters, attemptTimeline, createDevicePerformanceClient, createReportCache, describeLoadFailure,
-  devicePath, devicePerformanceSearch, failureRate, fleetPath, fleetRequest, formatBytes, formatDuration, formatMBps,
-  isLimitedData, loadDevicePerformanceSource, parseAttemptDetail, parseDevicePerformanceQuery, parseFleetReport,
-  parsePerformanceRecord, reportStateFor, stageLabel, statView, statedScope, usableYield, weightedThroughputMBps,
+  allocationView, appliedFilters, attemptTimeline, createDevicePerformanceClient, createReportCache, customRangeProblem,
+  dateInZone, describeLoadFailure, detailRequest, devicePath, devicePerformanceSearch, failureRate, fleetPath, fleetRequest,
+  forgetCachedReports, formatBytes, formatDuration, formatMBps, isLimitedData, loadDevicePerformanceSource,
+  parseAttemptDetail, parseDeviceReport, parseDevicePerformanceQuery, parseFleetReport, parsePerformanceRecord,
+  recoverFromFailure, recoveryLabel, reportCacheFor, reportKeys, reportModeFor, reportStateFor, scopeMismatches,
+  stageLabel, statView, statedScope, usableYield, weightedThroughputMBps,
 } from "./devicePerformance";
 import type {
   AttemptSummaryRecordV1, DistributionStatV1, FleetReportV1, RunSummaryRecordV1, UploadGroupRecordV1,
 } from "./devicePerformance";
-import { PREVIEW_SCENARIOS, previewFleet } from "./devicePerformancePreview";
+import { PREVIEW_SCENARIOS, previewDevice, previewFleet } from "./devicePerformancePreview";
 
 // MARK: - Fixture copy (fail, never skip, when the canonical checkout is absent)
 
@@ -102,6 +104,7 @@ describe("contract record parsing", () => {
 
 const baseQuery = parseDevicePerformanceQuery("", new Date("2026-09-29T18:00:00Z"));
 const normalReport = () => previewFleet(fleetRequest(baseQuery)) as unknown as Record<string, unknown>;
+const previewDeviceRaw = () => previewDevice(detailRequest("0d5c9a1e-2b3f-4c6d-8e7f-a0b1c2d3e4f5", baseQuery)) as unknown;
 
 describe("report parsing refuses what it does not understand", () => {
   it("accepts the preview fleet report and every preview scenario that returns data", () => {
@@ -123,6 +126,29 @@ describe("report parsing refuses what it does not understand", () => {
     const totals = raw.totals as Record<string, Record<string, unknown>>;
     delete totals.timeToResult.sample;
     expect(() => parseFleetReport(raw)).toThrow(/report\.totals\.timeToResult\.sample/);
+  });
+
+  it("accepts the optional executor install id on attempt rows, absent, null or present (D-26 D)", () => {
+    const focused = () => previewFleet(fleetRequest(parseDevicePerformanceQuery("focus=stage:kick.denseBall", new Date("2026-09-29T18:00:00Z")))) as unknown as { attempts: Record<string, unknown>[] };
+    const withIds = focused();
+    expect(parseFleetReport(withIds).attempts!.map(row => row.executorInstallId)).toContain("6db25a74-8b9f-4c23-a4d5-a6b7c8d9e0f1");
+    const absent = focused();
+    for (const row of absent.attempts) delete row.executorInstallId;
+    expect(parseFleetReport(absent).attempts![0].executorInstallId).toBeUndefined();
+    const wrong = focused();
+    wrong.attempts[0].executorInstallId = 42;
+    expect(() => parseFleetReport(wrong)).toThrow(/attempts\[0\]\.executorInstallId/);
+  });
+
+  it("accepts the optional inner-model block, absent, null or complete, and checks its rows (D-26 J)", () => {
+    const raw = normalReport();
+    expect(parseFleetReport(raw).innerModel?.rows.length).toBeGreaterThan(0);
+    delete raw.innerModel;
+    expect(parseFleetReport(raw).innerModel).toBeUndefined();
+    expect(parseFleetReport({ ...normalReport(), innerModel: null }).innerModel).toBeNull();
+    const broken = normalReport();
+    delete ((broken.innerModel as { rows: Record<string, unknown>[] }).rows[0]).cumulativeMs;
+    expect(() => parseFleetReport(broken)).toThrow(/innerModel\.rows\[0\]\.cumulativeMs/);
   });
 
   it("refuses a negative duration (the telemetry -1 sentinel is not a value)", () => {
@@ -198,10 +224,13 @@ const stat = (sample: number, extra: Partial<DistributionStatV1> = {}): Distribu
 });
 
 describe("Limited data and missing values", () => {
-  it("marks fewer than 20 measured samples as Limited data and hides the slow tail", () => {
+  it("marks fewer than 20 eligible or measured samples as Limited data and hides the slow tail (D-26 E)", () => {
     expect(LIMITED_DATA_MIN_SAMPLES).toBe(20);
     expect(isLimitedData(stat(19))).toBe(true);
     expect(isLimitedData(stat(20))).toBe(false);
+    expect(isLimitedData(stat(5, { eligible: 100, missing: 95 }))).toBe(true);
+    // An inconsistent statistic with fewer eligible than measured samples is still limited.
+    expect(isLimitedData(stat(25, { eligible: 10 }))).toBe(true);
     expect(statView(stat(19))).toMatchObject({ kind: "value", limited: true, typicalMs: 1200, slowMs: null });
     expect(statView(stat(20))).toMatchObject({ kind: "value", limited: false, slowMs: 3400 });
     // 100 eligible but only 5 measured is still 5 values.
@@ -283,9 +312,35 @@ describe("filter scope (plan 07 §3)", () => {
     expect(appliedFilters("capture", filters)).toEqual(["drill"]);
   });
 
-  it("drops an upload filter the server claims it applied to a processing metric", () => {
-    const leaky = { filters, effectiveFilters: { capture: [], processing: ["drill", "networkInterface"], yield: [], cloudSave: [], upload: [] } } as unknown as FleetReportV1;
-    expect(statedScope(leaky, "processing")).toEqual(["drill"]);
+  // Inverted by review ruling D-26 B: a leaked filter is a contract violation, refused, never dropped from the label.
+  it("refuses a report whose stated scope puts an upload filter on a processing metric", () => {
+    const raw = normalReport();
+    (raw.effectiveFilters as Record<string, string[]>).processing = ["drill", "networkInterface"];
+    expect(() => parseFleetReport(raw)).toThrow(/Report scope mismatch: the server says network reached processing time and failures/);
+    let failure = null;
+    try { parseFleetReport(raw); } catch (error) { failure = describeLoadFailure(error); }
+    expect(failure).toMatchObject({ problem: "scopeMismatch", title: "Report scope mismatch" });
+  });
+
+  it("names every filter that reached a metric it must not change, including unknown keys", () => {
+    expect(scopeMismatches({
+      capture: ["drill", "processingMode"], processing: ["executionBuild"], yield: ["uploadRole"], cloudSave: ["payloadSizeBand"], upload: ["networkInterface", "teamId"],
+    })).toEqual([
+      { group: "capture", key: "processingMode" },
+      { group: "yield", key: "uploadRole" },
+      { group: "cloudSave", key: "payloadSizeBand" },
+      { group: "upload", key: "teamId" },
+    ]);
+    expect(scopeMismatches({ capture: ["drill"], processing: ["drill", "processingMode"], yield: [], cloudSave: [], upload: ["networkInterface", "uploadRole"] })).toEqual([]);
+    const device = { ...(previewDeviceRaw() as Record<string, unknown>) };
+    (device.effectiveFilters as Record<string, string[]>).yield = ["networkInterface"];
+    expect(() => parseDeviceReport(device)).toThrow(/network reached usable results/);
+  });
+
+  it("shows the server's stated scope unchanged for a valid report", () => {
+    const valid = { filters, effectiveFilters: { capture: ["drill"], processing: ["drill", "processingMode"], yield: ["drill"], cloudSave: ["drill"], upload: ["drill", "networkInterface", "uploadRole"] } } as unknown as FleetReportV1;
+    expect(statedScope(valid, "processing")).toEqual(["drill", "processingMode"]);
+    expect(statedScope(valid, "yield")).toEqual(["drill"]);
   });
 
   it("keeps processing totals identical when only upload filters change (preview contract)", () => {
@@ -303,17 +358,28 @@ describe("query state", () => {
 
   it("defaults to the last seven local days, all drills and the Result files role", () => {
     const query = parseDevicePerformanceQuery("", now);
-    expect(query.period).toEqual({ preset: 7, startDate: "2026-09-23", endDate: "2026-09-29", timeZone: "America/Los_Angeles" });
+    expect(query.period).toEqual({ preset: 7, startDate: "2026-09-23", endDate: "2026-09-29", timeZone: "America/Los_Angeles", problem: null });
     expect(query.filters).toEqual(DEFAULT_FILTERS);
     expect(query).toMatchObject({ dateBasis: "capture", sort: "attention", cursor: null, focus: null, attempt: null, attribution: "origin", section: "processing" });
   });
 
-  it("accepts a custom range up to 90 days ending today, and falls back otherwise", () => {
-    expect(parseDevicePerformanceQuery("start=2026-07-02&end=2026-09-29", now).period.preset).toBe("custom");
-    expect(parseDevicePerformanceQuery("start=2026-07-01&end=2026-09-29", now).period.preset).toBe(7);
-    expect(parseDevicePerformanceQuery("start=2026-09-01&end=2026-10-02", now).period.preset).toBe(7);
-    expect(parseDevicePerformanceQuery("start=2026-02-30&end=2026-03-02", now).period.preset).toBe(7);
-    expect(parseDevicePerformanceQuery("days=30", now).period).toMatchObject({ preset: 30, startDate: "2026-08-31" });
+  // D-26 G: an unusable custom range is named, never silently replaced by the last 7 days.
+  it("accepts a custom range up to 90 days ending today and names the problem with any other range", () => {
+    const period = (search: string) => parseDevicePerformanceQuery(search, now).period;
+    expect(period("start=2026-07-02&end=2026-09-29")).toMatchObject({ preset: "custom", startDate: "2026-07-02", endDate: "2026-09-29", problem: null });
+    expect(period("start=2026-07-01&end=2026-09-29")).toMatchObject({ preset: "custom", startDate: "2026-07-01", problem: "The range is longer than 90 days." });
+    expect(period("start=2026-09-01&end=2026-10-02").problem).toBe("The range ends after today (2026-09-29 in the selected time zone).");
+    expect(period("start=2026-02-30&end=2026-03-02").problem).toBe("Use real calendar dates (YYYY-MM-DD).");
+    expect(period("start=2026-09-10&end=2026-09-01").problem).toBe("The start date is after the end date.");
+    expect(period("start=2026-09-10").problem).toBe("Choose both a start and an end date.");
+    expect(period("days=30")).toMatchObject({ preset: 30, startDate: "2026-08-31", problem: null });
+  });
+
+  it("judges 'after today' in the report's time zone", () => {
+    const lateEvening = new Date("2026-09-30T05:00:00Z"); // 22:00 on the 29th in Los Angeles, 01:00 on the 30th in New York
+    expect(customRangeProblem("2026-09-24", "2026-09-30", dateInZone(lateEvening, "America/Los_Angeles"))).toMatch(/ends after today/);
+    expect(customRangeProblem("2026-09-24", "2026-09-30", dateInZone(lateEvening, "America/New_York"))).toBeNull();
+    expect(parseDevicePerformanceQuery("start=2026-09-24&end=2026-09-30&tz=America/New_York", lateEvening).period.problem).toBeNull();
   });
 
   it("ignores unknown values instead of sending them", () => {
@@ -421,6 +487,38 @@ describe("callable client", () => {
     const guarded = /if \(import\.meta\.env\.DEV && preview\) \{\s*const module = await import\("\.\/devicePerformancePreview"\);/;
     expect(source).toMatch(guarded);
     expect(source).not.toMatch(/catch[^}]*devicePerformancePreview/);
+  });
+
+  it("keeps preview and live reports in separate caches with separate keys (D-26 F)", () => {
+    expect(reportModeFor(true)).toBe("preview"); // Vitest runs as a DEV build
+    expect(reportModeFor(false)).toBe("live");
+    reportCacheFor("preview").set("same-request", "synthetic");
+    expect(reportCacheFor("live").get("same-request")).toBeNull();
+    expect(reportCacheFor("preview").get("same-request")).toBe("synthetic");
+    const request = fleetRequest(baseQuery);
+    expect(reportKeys("preview", "fleet", request, request, null)).not.toEqual(reportKeys("live", "fleet", request, request, null));
+    forgetCachedReports();
+    expect(reportCacheFor("preview").get("same-request")).toBeNull();
+  });
+
+  it("recovers from a stale cursor by loading the first page, never by resending the cursor (D-26 A)", () => {
+    const stale = describeLoadFailure({ code: "functions/failed-precondition" });
+    const patches: Record<string, string | null>[] = [];
+    let refreshed = 0;
+    const actions = { refresh: () => { refreshed += 1; }, change: (patch: Record<string, string | null>) => { patches.push(patch); } };
+    reportCacheFor("live").set("page-2", "old");
+    expect(recoveryLabel(stale, true)).toBe("Load the first page");
+    expect(recoverFromFailure(stale, true, actions)).toBe("firstPage");
+    expect(patches).toEqual([{ cursor: null, acursor: null }]);
+    expect(refreshed).toBe(0);
+    expect(reportCacheFor("live").get("page-2")).toBeNull();
+    expect(devicePerformanceSearch("?orgId=club&drill=jump&cursor=p2&focus=stage:kick.denseBall&acursor=a1", patches[0])).toBe("?orgId=club&drill=jump&focus=stage%3Akick.denseBall");
+    // Without a cursor, or for any other failure, the same request is retried.
+    expect(recoverFromFailure(stale, false, actions)).toBe("retry");
+    expect(recoveryLabel(stale, false)).toBe("Retry");
+    expect(recoverFromFailure(describeLoadFailure({ code: "functions/unavailable" }), true, actions)).toBe("retry");
+    expect(refreshed).toBe(2);
+    expect(patches).toHaveLength(1);
   });
 
   it("keeps the loaded totals while a page loads or fails, but never across a filter change", () => {

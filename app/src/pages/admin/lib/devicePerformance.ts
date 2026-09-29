@@ -210,12 +210,12 @@ export const METRIC_DEFINITIONS: MetricDefinition[] = [
   { key: "cloudSave", label: "Cloud save time", definition: "From the durable result job being queued to the required result files and the rep and session records being confirmed in the cloud. Video archive, sidecar and diagnostics delivery are separate." },
   { key: "waitingToUpload", label: "Waiting to upload", definition: "From an upload being queued to its first actual transfer starting. Time the app spent waiting to retry is a separate total." },
   { key: "uploadDuration", label: "Upload duration", definition: "One Storage upload task or PUT, from its start to its final callback." },
-  { key: "uploadSpeed", label: "Upload speed", definition: "Successful payload bytes divided by measured seconds, in decimal MB/s, for one upload role at a time. The total is weighted effective throughput: all bytes over all seconds, never an average of device speeds. Failed transfers and zero or unknown durations are left out and counted. It is what the app observed, not the radio's capacity." },
+  { key: "uploadSpeed", label: "Upload speed", definition: "Successful payload bytes divided by measured seconds, in decimal MB/s, for one upload role at a time. The total is weighted effective throughput: all bytes over all seconds, never an average of device speeds. Failed transfers and zero or unknown durations are left out and counted. It is application-observed payload throughput, not the radio's capacity or the exact bytes sent over the network." },
   { key: "saveConfirmed", label: "Save confirmed after recording", definition: "From the video file being finalized to the required cloud save, only when both ends were measured in the same app launch. Across a relaunch the time between launches is shown as an unknown gap." },
   { key: "failureRate", label: "Processing failures", definition: "Failed runs divided by known outcomes: valid, partial, no measurement and failed runs. Cancelled, interrupted and pending runs, and failures before processing started, are shown beside it but not counted." },
   { key: "yield", label: "Usable results", definition: "Attempts with a valid measurement divided by attempts whose measurement is final, leaving out attempts the user discarded. First-run and eventual results are shown separately." },
   { key: "failureAtStep", label: "Failures by step", definition: "Failures attributed to a step divided by the runs that entered it. When the phone only reported the last step it reached, that is shown separately and is not a confirmed failure." },
-  { key: "typicalSlow", label: "Typical and slow", definition: "Typical is the median and slow is the 90th percentile, both pooled across every matching observation. With fewer than 20 measured samples the value is marked Limited data and no slow value is shown." },
+  { key: "typicalSlow", label: "Typical and slow", definition: "Typical is the median and slow is the 90th percentile, both pooled across every matching observation. With fewer than 20 eligible samples, or fewer than 20 that were actually measured, the value is marked Limited data and no slow value is shown." },
 ];
 
 // MARK: - Statistics and formatting
@@ -240,9 +240,14 @@ export type StatView =
   | { kind: "missing"; reason: string; stat: DistributionStatV1 }
   | { kind: "none"; stat: DistributionStatV1 };
 
-/** Limited data counts measured samples: a median of 5 values out of 100 eligible is still 5 values. */
-export function isLimitedData(stat: Pick<DistributionStatV1, "sample">): boolean {
-  return stat.sample < LIMITED_DATA_MIN_SAMPLES;
+/**
+ * Limited data when fewer than 20 samples are eligible OR fewer than 20 were
+ * measured (ruling D-26 E): a median of 5 values out of 100 eligible is still
+ * 5 values. The contract text says "eligible"; the measured half is a
+ * deliberate, recorded deviation for the v1.2 wording.
+ */
+export function isLimitedData(stat: Pick<DistributionStatV1, "sample" | "eligible">): boolean {
+  return stat.eligible < LIMITED_DATA_MIN_SAMPLES || stat.sample < LIMITED_DATA_MIN_SAMPLES;
 }
 
 /**
@@ -467,6 +472,11 @@ export interface AttemptRowV1 {
   failureStageId: string | null;
   lastReportedStageId: string | null;
   completeness: Completeness;
+  /**
+   * Optional (D-26 D): the install that executed the accepted or latest run.
+   * Shown on retries and whenever it differs from the recording install.
+   */
+  executorInstallId?: string | null;
 }
 export interface UploadRowV1 {
   attemptId: string;
@@ -502,6 +512,23 @@ export interface FailureRowV1 {
 export interface PaginationV1 { pageSize: number; nextCursor: string | null; totalRows: number }
 export type FocusV1 = { kind: "stage"; stageId: string } | { kind: "phase"; drill: DrillType; phase: MainPhase | "unattributed" };
 
+/**
+ * Optional (D-26 J; plan 07 §3 "Inner model timing has a separate table
+ * labeled cumulative call time"): nested operations such as model.create and
+ * model.firstPrediction, per drill. cumulativeMs is each run's summed call time
+ * for that operation, pooled across runs; it overlaps its parent step's time and
+ * is never added to it.
+ */
+export interface InnerModelRowV1 {
+  drillType: DrillType;
+  stageId: string;
+  parentStageId: string | null;
+  runs: number;
+  invocations: number;
+  cumulativeMs: DistributionStatV1;
+}
+export interface InnerModelV1 { rows: InnerModelRowV1[] }
+
 export interface ReportEnvelopeV1 {
   schemaVersion: 1;
   generatedAt: string;
@@ -517,6 +544,8 @@ export interface ReportEnvelopeV1 {
   perDrill: DrillRowV1[];
   trends: TrendPointV1[];
   failureStages: FailureStageRowV1[];
+  /** Optional; absent or null when the server does not supply it. */
+  innerModel?: InnerModelV1 | null;
 }
 export interface FleetReportV1 extends ReportEnvelopeV1 {
   devices: DeviceRowV1[];
@@ -711,7 +740,7 @@ export interface LabelResultV1 { schemaVersion: 1; installId: string; label: str
 
 // MARK: - Response parsing: refuse unknown versions, never guess a shape
 
-export type ResponseProblem = "unsupportedVersion" | "malformed";
+export type ResponseProblem = "unsupportedVersion" | "malformed" | "scopeMismatch";
 export class DevicePerformanceResponseError extends Error {
   readonly reason: ResponseProblem;
   readonly path: string;
@@ -734,6 +763,8 @@ const anyNumber: Check = (value, path) => { if (typeof value !== "number" || !Nu
 const text: Check = (value, path) => { if (typeof value !== "string") malformed(path, "a string"); };
 const flag: Check = (value, path) => { if (typeof value !== "boolean") malformed(path, "true or false"); };
 const nullable = (check: Check): Check => (value, path) => { if (value !== null) check(value, path); };
+/** For the few keys the backend may omit entirely (D-26 D and J). */
+const optional = (check: Check): Check => (value, path) => { if (value !== undefined) check(value, path); };
 const oneOf = (values: readonly string[]): Check => (value, path) => { if (typeof value !== "string" || !values.includes(value)) malformed(path, `one of ${values.join(", ")}`); };
 const list = (check: Check, max = 100_000): Check => (value, path) => {
   if (!Array.isArray(value) || value.length > max) malformed(path, `a list of at most ${max}`);
@@ -771,6 +802,7 @@ const attemptRow = shape({
   verdictReason: nullable(text), runCount: count, timeToResultMs: nullable(measure), timeToResultMissing: nullable(text),
   cloudSaveMs: nullable(measure), cloudSaveMissing: nullable(text), requiredSaveState: text, archiveState: text,
   failureStageId: nullable(text), lastReportedStageId: nullable(text), completeness: text,
+  executorInstallId: optional(nullable(text)),
 });
 const focusCheck: Check = (value, path) => {
   if (value === null) return;
@@ -807,6 +839,9 @@ const envelopeFields: Record<string, Check> = {
   }), DRILL_TYPES.length),
   trends: list(shape({ date: text, attempts: count, timeToResult: stat, failed: count, knownOutcomes: count, newBuilds: list(text, 16) }), 400),
   failureStages: list(shape({ stageId: text, failures: count, entered: count, cancelled: count, unavailable: count, lastReportedOnly: count, drills: list(text, 16) }), 200),
+  innerModel: optional(nullable(shape({ rows: list(shape({
+    drillType: oneOf(DRILL_TYPES), stageId: text, parentStageId: nullable(text), runs: count, invocations: count, cumulativeMs: stat,
+  }), 200) }))),
 };
 
 function requireVersion(raw: unknown, what: string): Record<string, unknown> {
@@ -819,6 +854,33 @@ function requireVersion(raw: unknown, what: string): Record<string, unknown> {
   return raw;
 }
 
+const METRIC_GROUP_LABELS: Record<MetricGroup, string> = {
+  capture: "time to result and readiness",
+  processing: "processing time and failures",
+  yield: "usable results",
+  cloudSave: "cloud save time",
+  upload: "upload measurements",
+};
+/** Every filter the server says it applied to a metric group where plan 07 §3 does not allow it. */
+export function scopeMismatches(effective: Partial<Record<MetricGroup, readonly string[]>>): { group: MetricGroup; key: string }[] {
+  return (Object.keys(FILTER_SCOPE) as MetricGroup[]).flatMap(group => (effective[group] ?? [])
+    .filter(key => !(FILTER_SCOPE[group] as readonly string[]).includes(key))
+    .map(key => ({ group, key })));
+}
+/**
+ * The UI cannot keep upload filters away from processing numbers: the server
+ * computes every tile. So a report whose stated scope breaks plan 07 §3 is
+ * refused as a whole (D-26 B), never shown with the offending key dropped.
+ */
+function requireExpectedScope(value: Record<string, unknown>, what: string) {
+  const leaks = scopeMismatches(value.effectiveFilters as Record<MetricGroup, string[]>);
+  if (!leaks.length) return;
+  const detail = leaks.map(leak => `${FILTER_LABELS[leak.key as FilterKey] ?? leak.key} reached ${METRIC_GROUP_LABELS[leak.group]}`).join("; ");
+  throw new DevicePerformanceResponseError("scopeMismatch",
+    `Report scope mismatch: the server says ${detail}. Those numbers may be filtered by a setting that must not change them, so none of this report is shown.`,
+    `${what}.effectiveFilters`);
+}
+
 export function parseFleetReport(raw: unknown): FleetReportV1 {
   const value = requireVersion(raw, "report");
   shape({ ...envelopeFields, devices: list(shape({
@@ -826,6 +888,7 @@ export function parseFleetReport(raw: unknown): FleetReportV1 {
     attempts: count, runs: count, lastReportAt: nullable(text), notRecentlyReporting: flag,
     timeToResult: stat, cloudSave: stat, uploadWait: stat, outcomes,
   }), 100), pagination, focus: focusCheck, attempts: nullable(list(attemptRow, 100)), attemptPagination: nullable(pagination) })(value, "report");
+  requireExpectedScope(value, "report");
   return value as unknown as FleetReportV1;
 }
 
@@ -862,6 +925,7 @@ export function parseDeviceReport(raw: unknown): DeviceReportV1 {
     rows: rowsCheck,
     pagination,
   })(value, "device report");
+  requireExpectedScope(value, "device report");
   return value as unknown as DeviceReportV1;
 }
 
@@ -1040,11 +1104,10 @@ export function appliedFilters(group: MetricGroup, filters: DevicePerformanceFil
   return FILTER_SCOPE[group].filter(key => key === "uploadRole" ? group === "upload" : filters[key] !== null);
 }
 
-/** Server-stated scope wins when it is present; a scope that leaks an upload filter is dropped. */
+/** The server-stated scope for one metric group (falling back to the local rule when absent). */
 export function statedScope(report: Pick<ReportEnvelopeV1, "effectiveFilters" | "filters">, group: MetricGroup): FilterKey[] {
-  const stated = report.effectiveFilters?.[group];
-  const allowed = new Set(FILTER_SCOPE[group]);
-  return (stated ?? appliedFilters(group, report.filters)).filter(key => allowed.has(key));
+  // Parsed reports have already passed requireExpectedScope, so nothing is filtered out here.
+  return report.effectiveFilters?.[group] ?? appliedFilters(group, report.filters);
 }
 
 export const PERIOD_PRESETS = [7, 14, 30, 90] as const;
@@ -1076,8 +1139,23 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const isDate = (value: string | null): value is string => !!value && DATE.test(value) && !Number.isNaN(Date.parse(`${value}T12:00:00Z`)) && shiftDate(value, 0) === value;
 const daysBetween = (start: string, end: string) => Math.round((Date.parse(`${end}T12:00:00Z`) - Date.parse(`${start}T12:00:00Z`)) / 86_400_000);
 
+/** Why a custom range cannot be used, or null. `today` is the date in the report's time zone. */
+export function customRangeProblem(start: string, end: string, today: string): string | null {
+  if (!start || !end) return "Choose both a start and an end date.";
+  if (!isDate(start) || !isDate(end)) return "Use real calendar dates (YYYY-MM-DD).";
+  if (start > end) return "The start date is after the end date.";
+  if (end > today) return `The range ends after today (${today} in the selected time zone).`;
+  if (daysBetween(start, end) >= MAX_PERIOD_DAYS) return `The range is longer than ${MAX_PERIOD_DAYS} days.`;
+  return null;
+}
+
 export interface DevicePerformanceQuery {
-  period: { preset: typeof PERIOD_PRESETS[number] | "custom"; startDate: string; endDate: string; timeZone: string };
+  /**
+   * problem is non-null when the URL carries a custom range that cannot be
+   * used (D-26 G). The page then shows the problem and requests nothing; it
+   * never quietly substitutes another period.
+   */
+  period: { preset: typeof PERIOD_PRESETS[number] | "custom"; startDate: string; endDate: string; timeZone: string; problem: string | null };
   dateBasis: DateBasis;
   filters: DevicePerformanceFilters;
   search: string;
@@ -1145,12 +1223,13 @@ export function parseDevicePerformanceQuery(search: string | URLSearchParams, no
   const today = dateInZone(now, timeZone);
   const start = params.get(PARAMS.start), end = params.get(PARAMS.end);
   let period: DevicePerformanceQuery["period"];
-  if (isDate(start) && isDate(end) && start <= end && end <= today && daysBetween(start, end) < MAX_PERIOD_DAYS) {
-    period = { preset: "custom", startDate: start, endDate: end, timeZone };
+  if (start !== null || end !== null) {
+    const problem = customRangeProblem(start ?? "", end ?? "", today);
+    period = { preset: "custom", startDate: (start ?? "").slice(0, 10), endDate: (end ?? "").slice(0, 10), timeZone, problem };
   } else {
     const days = Number(params.get(PARAMS.days));
     const preset = (PERIOD_PRESETS as readonly number[]).includes(days) ? days as typeof PERIOD_PRESETS[number] : 7;
-    period = { preset, startDate: shiftDate(today, 1 - preset), endDate: today, timeZone };
+    period = { preset, startDate: shiftDate(today, 1 - preset), endDate: today, timeZone, problem: null };
   }
   const key = (name: ParamName) => { const value = params.get(name); return value && KEY.test(value) ? value : null; };
   const filters: DevicePerformanceFilters = {
@@ -1269,13 +1348,13 @@ export function normalizeDeviceLabel(value: string): string | null {
 
 // MARK: - Errors shown to the admin
 
-export type LoadProblem = "oversized" | "staleCursor" | "denied" | "unsupportedVersion" | "malformed" | "notFound" | "timeout" | "failed";
+export type LoadProblem = "oversized" | "staleCursor" | "denied" | "unsupportedVersion" | "malformed" | "scopeMismatch" | "notFound" | "timeout" | "failed";
 export interface LoadFailure { problem: LoadProblem; title: string; message: string }
 export function describeLoadFailure(error: unknown, subject: "report" | "device" | "attempt" | "rename" = "report"): LoadFailure {
   if (error instanceof DevicePerformanceResponseError) {
-    return error.reason === "unsupportedVersion"
-      ? { problem: "unsupportedVersion", title: "Newer report format", message: error.message }
-      : { problem: "malformed", title: "Could not read the report", message: "The report arrived in a shape this page does not recognize, so nothing from it is shown." };
+    if (error.reason === "unsupportedVersion") return { problem: "unsupportedVersion", title: "Newer report format", message: error.message };
+    if (error.reason === "scopeMismatch") return { problem: "scopeMismatch", title: "Report scope mismatch", message: `${error.message} This is a reporting defect to raise with the backend owner.` };
+    return { problem: "malformed", title: "Could not read the report", message: "The report arrived in a shape this page does not recognize, so nothing from it is shown." };
   }
   const code = String((error as { code?: unknown })?.code ?? "").split("/").at(-1);
   const details = (error as { details?: unknown })?.details;
@@ -1372,8 +1451,41 @@ export const requestKey = (kind: string, request: unknown, scenario: string | nu
 
 // MARK: - React hooks shared by the device-performance views
 
-const reportCache = createReportCache<unknown>();
-export function forgetCachedReports() { reportCache.clear(); }
+// Preview and live reports never share a cache (D-26 F): in a DEV build a
+// synthetic report must not reappear as live data, or the reverse.
+export type ReportMode = "live" | "preview";
+const reportCaches: Record<ReportMode, ReturnType<typeof createReportCache<unknown>>> = {
+  live: createReportCache<unknown>(),
+  preview: createReportCache<unknown>(),
+};
+export const reportCacheFor = (mode: ReportMode) => reportCaches[mode];
+export const reportModeFor = (preview: boolean): ReportMode => (import.meta.env.DEV && preview ? "preview" : "live");
+export function forgetCachedReports() { reportCaches.live.clear(); reportCaches.preview.clear(); }
+/** Cache and state keys; the mode is part of both so a preview report can never be kept for a live view. */
+export function reportKeys(mode: ReportMode, kind: string, request: unknown, shape: unknown, scenario: string | null) {
+  return { key: requestKey(`${mode}:${kind}`, request, scenario), shapeKey: requestKey(`${mode}:${kind}:shape`, shape, scenario) };
+}
+
+// MARK: - Recovering from a failed request (D-26 A)
+
+/** The label for the retry action: a stale cursor can only recover from the first page. */
+export function recoveryLabel(failure: LoadFailure | null, hasCursor: boolean): string {
+  return failure?.problem === "staleCursor" && hasCursor ? "Load the first page" : "Retry";
+}
+/**
+ * Retry and Refresh. A stale cursor is bound to a projection generation that no
+ * longer exists, so resending it fails forever: drop both cursors (and the
+ * cached pages) and load the first page. Anything else is retried as it was.
+ */
+export function recoverFromFailure(failure: LoadFailure | null, hasCursor: boolean, actions: { refresh(): void; change(patch: QueryPatch): void }): "firstPage" | "retry" {
+  if (failure?.problem === "staleCursor" && hasCursor) {
+    forgetCachedReports();
+    actions.change({ [PARAMS.cursor]: null, [PARAMS.attemptsCursor]: null });
+    return "firstPage";
+  }
+  actions.refresh();
+  return "retry";
+}
 
 export function useDevicePerformanceSource(preview: boolean, scenario: string | null): DevicePerformanceSource | null {
   const key = `${preview}:${scenario ?? ""}`;
@@ -1415,15 +1527,17 @@ export function reportStateFor<T>(key: string, shape: string, settled: Settled<T
  * the loaded totals while it loads, and keeps them if it fails. Any other
  * change starts from an empty (skeleton) state.
  */
-export function useDevicePerformanceReport<Q, T>({ source, kind, request, shape, scenario, load }: {
+export function useDevicePerformanceReport<Q, T>({ source, preview, kind, request, shape, scenario, load }: {
   source: DevicePerformanceSource | null;
+  preview: boolean;
   kind: "fleet" | "device";
   request: Q;
   shape: unknown;
   scenario: string | null;
   load: (source: DevicePerformanceSource, request: Q) => Promise<T>;
 }): { state: ReportState<T>; refresh: () => void } {
-  const key = requestKey(kind, request, scenario), shapeKey = requestKey(`${kind}:shape`, shape, scenario);
+  const mode = reportModeFor(preview), reportCache = reportCaches[mode];
+  const { key, shapeKey } = reportKeys(mode, kind, request, shape, scenario);
   const [settled, setSettled] = useState<Settled<T>>(() => {
     const cached = reportCache.get(key) as T | null;
     return { good: cached ? { key, shape: shapeKey, report: cached } : null, failed: null };
@@ -1442,12 +1556,12 @@ export function useDevicePerformanceReport<Q, T>({ source, kind, request, shape,
       if (live) setSettled(previous => ({ ...previous, failed: { key, failure: describeLoadFailure(error, kind === "device" ? "device" : "report") } }));
     });
     return () => { live = false; };
-  }, [source, kind, request, load, key, shapeKey, generation]);
+  }, [source, kind, request, load, key, shapeKey, generation, reportCache]);
   const refresh = useCallback(() => {
     reportCache.delete(key);
     setSettled(previous => ({ good: previous.good && { ...previous.good, key: null }, failed: null }));
     setGeneration(value => value + 1);
-  }, [key]);
+  }, [key, reportCache]);
   return { state: reportStateFor(key, shapeKey, settled, reportCache.get(key) as T | null), refresh };
 }
 

@@ -107,6 +107,14 @@ const STAGE_ROWS: FailureStageRowV1[] = [
   { stageId: "repUpload.restorePayload", failures: 2, entered: 581, cancelled: 0, unavailable: 3, lastReportedOnly: 0, drills: ["deadballShot", "sprint"] },
 ];
 
+const INNER_MODEL: { drillType: DrillType; stageId: string; parentStageId: string; runs: number; callsPerRun: number; typicalMs: number; slowMs: number }[] = [
+  { drillType: "deadballShot", stageId: "model.create", parentStageId: "kick.extract", runs: 186, callsPerRun: 2, typicalMs: 182, slowMs: 410 },
+  { drillType: "deadballShot", stageId: "model.firstPrediction", parentStageId: "kick.extract", runs: 186, callsPerRun: 2, typicalMs: 64, slowMs: 131 },
+  { drillType: "sprint", stageId: "model.create", parentStageId: "sprint.extract", runs: 143, callsPerRun: 1, typicalMs: 121, slowMs: 290 },
+  { drillType: "jump", stageId: "model.firstPrediction", parentStageId: "jump.extract", runs: 120, callsPerRun: 1, typicalMs: 41, slowMs: 88 },
+  { drillType: "broadJump", stageId: "model.create", parentStageId: "broadJump.extract", runs: 12, callsPerRun: 1, typicalMs: 139, slowMs: 260 },
+];
+
 // MARK: - Reports
 
 function uploadStats(filters: DevicePerformanceFilters, factor: number): UploadRoleStatV1[] {
@@ -215,6 +223,11 @@ function reportBase(request: ReportRequestBaseV1, scenario: PreviewScenario, fac
     perDrill,
     trends,
     failureStages: empty || old ? [] : STAGE_ROWS.filter(row => !request.filters.drill || row.drills.includes(request.filters.drill)).map(row => ({ ...row, failures: scaleCount(row.failures, factor), entered: scaleCount(row.entered, factor) || 1 })),
+    // Optional block (D-26 J); absent from the old-build and empty states on purpose.
+    innerModel: empty || old ? null : { rows: INNER_MODEL.filter(row => !request.filters.drill || row.drillType === request.filters.drill).map(row => {
+      const runs = scaleCount(row.runs, factor);
+      return { drillType: row.drillType, stageId: row.stageId, parentStageId: row.parentStageId, runs, invocations: scaleCount(row.runs * row.callsPerRun, factor), cumulativeMs: dist(runs, row.typicalMs, row.slowMs) };
+    }) },
   };
 }
 
@@ -274,6 +287,8 @@ function attemptRows(filterDrill: DrillType | null, stageId: string | null, coun
       failureStageId: variant === 2 ? stageId ?? "input.calibration" : null,
       lastReportedStageId: variant === 3 ? stageId ?? "kick.denseBall" : null,
       completeness: variant === 0 ? "complete" : "partial",
+      // Variant 1 was retried on another install after a relaunch; variant 2 never had a run.
+      executorInstallId: variant === 1 ? namedDevices[6].installId : variant === 2 ? null : device.installId,
     };
   });
 }
@@ -377,7 +392,7 @@ export function previewAttempt(attemptId: string) {
       attemptBody({ spans: { timeToResultMs: null, readyForNextRepMs: 30_004, saveConfirmedAfterRecordingMs: null }, continuousSpans: { timeToResultMs: null, readyForNextRepMs: 30_004, saveConfirmedAfterRecordingMs: null }, runCount: 2, acceptedRunId: run2, launchSegmentCount: 2, archiveState: "notRequested" }, [...captureStages, ...acceptStages.slice(0, 2)]));
     runs = [
       envelope("runSummary", run1, attemptId, { processingRunId: run1, processingMode: "liveCapture", executorPlatform: platform(BUILDS[0]), completeness: "complete" }, runBody("failed", kickStages("kick.denseBall"), "kick.denseBall")),
-      envelope("runSummary", run2, attemptId, { processingRunId: run2, retryOfRunId: run1, processingMode: "recovery", executionLaunchId: LAUNCH_B, executorPlatform: platform(BUILDS[1]) }, runBody("valid", kickStages(null), null)),
+      envelope("runSummary", run2, attemptId, { processingRunId: run2, retryOfRunId: run1, processingMode: "recovery", executionLaunchId: LAUNCH_B, executorInstallId: namedDevices[6].installId, executorPlatform: platform(BUILDS[1], "iPhone14,2") }, runBody("valid", kickStages(null), null)),
     ];
     groups = [envelope("uploadGroupSummary", `${attemptId}:resultFiles`, attemptId, { executionLaunchId: LAUNCH_B }, groupBody(attemptId, "resultFiles", "committed", 9_880, { knownBackoffMs: 35_000, failedTransferCount: 2, lifetimeRetryCount: 2, transferAttemptCount: 8 }))];
     transfers = [transfer(attemptId, 0, "resultArtifact", "resultFiles", 1_520_311, null, "failed", LAUNCH_B), transfer(attemptId, 1, "resultArtifact", "resultFiles", 1_520_311, 2_910, "succeeded", LAUNCH_B)];

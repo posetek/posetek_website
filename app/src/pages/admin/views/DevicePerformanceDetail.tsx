@@ -14,16 +14,17 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   DEVICE_LABEL_MAX, DRILL_LABELS, PARAMS, SAVE_STATE_LABELS, UPLOAD_ROLE_LABELS, describeLoadFailure, detailRequest,
   devicePerformanceSearch, failureExplanation, focusDescription, focusParam, formatBytes, formatCount, formatDateTime, formatDuration,
-  isInstallId, label, normalizeDeviceLabel, parseDevicePerformanceQuery, shortInstallId, stageLabel, statView,
-  forgetCachedReports, useDevicePerformanceReport, useDevicePerformanceSource, useFocusHeadingOnChange, useScrollMemory,
+  isInstallId, label, normalizeDeviceLabel, parseDevicePerformanceQuery, recoverFromFailure, recoveryLabel, shortInstallId,
+  stageLabel, statView, forgetCachedReports, useDevicePerformanceReport, useDevicePerformanceSource, useFocusHeadingOnChange,
+  useScrollMemory,
 } from "../lib/devicePerformance";
 import type {
   DetailRequestV1, DeviceHeaderV1, DevicePerformanceQuery, DevicePerformanceSource, DeviceReportV1, DeviceSection,
   FailureRowV1, FocusV1, LoadFailure, QueryPatch, ReportState, TrendPointV1, UploadRowV1,
 } from "../lib/devicePerformance";
 import {
-  AttemptList, CoverageNotices, Definitions, FailuresByStep, FilterBar, Icon, LimitedData, LoadError, MeasurementsTable,
-  PageHeading, Pager, PartialFailure, PreviewControls, ReportSkeleton, SummaryTiles, WhereTimeGoes,
+  AttemptList, CoverageNotices, Definitions, FailuresByStep, FilterBar, Icon, InnerModelTable, LimitedData, LoadError,
+  MeasurementsTable, PageHeading, Pager, PartialFailure, PreviewControls, RangeProblem, ReportSkeleton, SummaryTiles, WhereTimeGoes,
 } from "./DevicePerformance";
 import DevicePerformanceAttemptDrawer from "./DevicePerformanceAttemptDrawer";
 import "../device-performance.scss";
@@ -43,7 +44,8 @@ export default function DevicePerformanceDetail({ preview = false }: { preview?:
   const valid = isInstallId(installId);
   const request = useMemo(() => detailRequest(installId, query), [installId, query]);
   const shape = useMemo(() => ({ ...request, cursor: null, section: null, focus: null }), [request]);
-  const { state, refresh } = useDevicePerformanceReport({ source: valid ? source : null, kind: "device", request, shape, scenario, load: loadDevice });
+  const rangeProblem = query.period.problem;
+  const { state, refresh } = useDevicePerformanceReport({ source: valid && !rangeProblem ? source : null, preview, kind: "device", request, shape, scenario, load: loadDevice });
   useScrollMemory(location.pathname + location.search, state.report !== null);
   useFocusHeadingOnChange(focusParam(query.focus), "dp-matching-heading");
   const title = state.report ? deviceTitle(state.report.device) : null;
@@ -58,6 +60,8 @@ export default function DevicePerformanceDetail({ preview = false }: { preview?:
   }, [title, location.pathname, location.search, location.state, navigate]);
 
   const update = (patch: QueryPatch) => navigate({ pathname: location.pathname, search: devicePerformanceSearch(location.search, patch) }, { state: location.state });
+  const hasCursor = Boolean(query.cursor || query.attemptsCursor);
+  const recover = () => recoverFromFailure(state.failure, hasCursor, { refresh, change: update });
   const closeDrawer = () => {
     if ((location.state as { fromList?: boolean } | null)?.fromList) navigate(-1);
     else navigate({ pathname: location.pathname, search: devicePerformanceSearch(location.search, { [PARAMS.attempt]: null }) }, { replace: true, state: location.state });
@@ -78,7 +82,7 @@ export default function DevicePerformanceDetail({ preview = false }: { preview?:
 
   return (
     <div className="dp-page">
-      <PageHeading report={state.report} loading={state.status === "loading"} onRefresh={refresh}
+      <PageHeading report={rangeProblem ? null : state.report} loading={!rangeProblem && state.status === "loading"} onRefresh={recover}
         title={title ?? `Device ${shortInstallId(installId)}`}
         intro="One app install's measurements. Labels are admin aliases; an install is not proof of a physical phone, and a reinstall starts a new one.">
         {state.report && source && <DeviceHeader device={state.report.device} report={state.report} source={source} onRenamed={() => { forgetCachedReports(); refresh(); }} />}
@@ -86,7 +90,9 @@ export default function DevicePerformanceDetail({ preview = false }: { preview?:
       {source?.kind === "preview" && <PreviewControls source={source} scenario={scenario} onChange={value => update({ [PARAMS.scenario]: value })} />}
       <AttributionToggle value={query.attribution} onChange={value => update({ [PARAMS.attribution]: value === "origin" ? null : value })} />
       <FilterBar key={`${query.period.startDate}:${query.period.endDate}`} query={query} choices={state.report?.choices ?? null} onChange={update} />
-      <DeviceReportView state={state} query={query} search={location.search} locationState={location.state} onChange={update} onRetry={refresh} />
+      {rangeProblem
+        ? <RangeProblem problem={rangeProblem} />
+        : <DeviceReportView state={state} query={query} search={location.search} locationState={location.state} onChange={update} onRetry={recover} retryLabel={recoveryLabel(state.failure, hasCursor)} />}
       {query.attempt && source && (
         <DevicePerformanceAttemptDrawer attemptId={query.attempt} source={source} timeZone={query.period.timeZone} scenario={scenario} onClose={closeDrawer} />
       )}
@@ -188,13 +194,14 @@ const SECTIONS: { key: DeviceSection; label: string; icon: string }[] = [
   { key: "failures", label: "Failures", icon: "report" },
 ];
 
-export function DeviceReportView({ state, query, search, locationState = null, onChange, onRetry }: {
-  state: ReportState<DeviceReportV1>; query: DevicePerformanceQuery; search: string; locationState?: unknown; onChange: (patch: QueryPatch) => void; onRetry: () => void;
+export function DeviceReportView({ state, query, search, locationState = null, onChange, onRetry, retryLabel = "Retry" }: {
+  state: ReportState<DeviceReportV1>; query: DevicePerformanceQuery; search: string; locationState?: unknown;
+  onChange: (patch: QueryPatch) => void; onRetry: () => void; retryLabel?: string;
 }) {
   const report = state.report;
   if (!report) {
     return state.status === "error" && state.failure
-      ? <LoadError failure={state.failure} onRetry={onRetry} onChange={onChange} query={query} />
+      ? <LoadError failure={state.failure} onRetry={onRetry} retryLabel={retryLabel} onChange={onChange} query={query} />
       : <ReportSkeleton />;
   }
   const busy = state.status === "loading";
@@ -207,7 +214,7 @@ export function DeviceReportView({ state, query, search, locationState = null, o
   const rowsCurrent = report.rows.kind === query.section;
   return (
     <div className="dp-report" aria-busy={busy || undefined}>
-      {state.failure && <PartialFailure failure={state.failure} onRetry={onRetry} />}
+      {state.failure && <PartialFailure failure={state.failure} onRetry={onRetry} retryLabel={retryLabel} />}
       <CoverageNotices report={report} query={query} onChange={onChange} />
       <DeviceStatus report={report} />
       {report.coverage.attemptsIndexed === 0
@@ -215,6 +222,7 @@ export function DeviceReportView({ state, query, search, locationState = null, o
         : <>
           <SummaryTiles report={report} role={query.filters.uploadRole} onRole={role => onChange({ [PARAMS.uploadRole]: role })} />
           <WhereTimeGoes rows={report.perDrill} report={report} focus={query.focus} onFocus={onFocus} />
+          {report.innerModel?.rows.length ? <InnerModelTable rows={report.innerModel.rows} /> : null}
           <DeviceTrend points={report.trends} timeZone={report.period.timeZone} />
           <FailuresByStep rows={report.failureStages} focus={query.focus} onFocus={onFocus} title="Failures by step on this phone" />
         </>}

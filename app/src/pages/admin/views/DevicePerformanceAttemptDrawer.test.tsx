@@ -9,7 +9,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import DevicePerformanceAttemptDrawer, { AttemptDetailView } from "./DevicePerformanceAttemptDrawer";
-import { createDevicePerformanceClient, focusTrapTarget, parseAttemptDetail } from "../lib/devicePerformance";
+import { createDevicePerformanceClient, describeLoadFailure, focusTrapTarget, parseAttemptDetail } from "../lib/devicePerformance";
 import { ATTEMPT_IDS, previewAttempt } from "../lib/devicePerformancePreview";
 
 const ZONE = "America/Los_Angeles";
@@ -86,6 +86,24 @@ describe("attempt timeline", () => {
     expect(html).toContain("1 of 3 transfers shown");
     expect(html).toContain("Load more transfers");
     expect(html).toContain("Not measured: still uploading");
+  });
+});
+
+describe("transfer paging after the list changed (D-26 A)", () => {
+  it("offers a reload from the first page instead of resending a stale transfer cursor", () => {
+    const detail = parseAttemptDetail({ ...previewAttempt(ATTEMPT_IDS[0]), transferPagination: { pageSize: 3, nextCursor: "stale-cursor", totalRows: 9 } });
+    const stale = describeLoadFailure({ code: "functions/failed-precondition" }, "attempt");
+    const html = renderToStaticMarkup(<AttemptDetailView detail={detail} timeZone={ZONE} more={stale} onLoadMore={() => {}} onRestart={() => {}} />);
+    expect(html).toContain("The transfer list changed while you were paging");
+    expect(html).toContain("Reload transfers from the first page");
+    expect(html).not.toContain("Load more transfers");
+    const other = renderToStaticMarkup(<AttemptDetailView detail={detail} timeZone={ZONE} more={describeLoadFailure({ code: "functions/unavailable" }, "attempt")} onLoadMore={() => {}} onRestart={() => {}} />);
+    expect(other).toContain("Load more transfers");
+    expect(other).toContain("The transfers above are kept.");
+  });
+
+  it("names the other install that processed a retry", () => {
+    expect(render(1)).toContain("a different install (6db25a74)");
   });
 });
 
