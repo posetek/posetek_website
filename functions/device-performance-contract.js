@@ -318,32 +318,43 @@ function forbiddenContent(value, path, errors, depth = 0) {
   }
 }
 
-// recordId must equal the entity id for its kind (contract §8.6).
+// recordId must equal the entity id for its kind (contract §8.6, v1.2):
+// - an upload group is <attemptId>:<category>, or system:<category>:<originInstallId>
+//   for a group with no attempt (D-21);
+// - a device status is <executorInstallId>:<originReporterUid>, one per install
+//   and account (D-18).
 function entityId(record) {
   switch (record.recordKind) {
     case "attemptSummary": return record.attemptId;
     case "runSummary": return record.processingRunId;
-    case "uploadGroupSummary": return record.body?.groupId;
+    case "uploadGroupSummary":
+      return typeof record.recordId === "string" && record.recordId.startsWith("system:")
+        ? `system:${record.body?.category}:${record.originInstallId}`
+        : `${record.attemptId}:${record.body?.category}`;
     case "transferInvocation": return record.body?.invocationId;
-    case "deviceStatus": return record.executorInstallId;
+    case "deviceStatus": return `${record.executorInstallId}:${record.originReporterUid}`;
     default: return undefined;
   }
 }
+// An upload-group id splits on its FIRST two separators (R4-2):
+// <attemptId>:<category> or system:<category>:<originInstallId>.
 function groupParts(groupId) {
-  const split = groupId.lastIndexOf(":");
-  return { owner: groupId.slice(0, split), category: groupId.slice(split + 1) };
+  const first = groupId.indexOf(":");
+  const owner = groupId.slice(0, first), rest = groupId.slice(first + 1);
+  const second = rest.indexOf(":");
+  return second === -1
+    ? { owner, category: rest, install: null }
+    : { owner, category: rest.slice(0, second), install: rest.slice(second + 1) };
 }
 // The attempt a fact names is the attempt that authorizes it, so the ids a
-// fact derives from its attempt (groupId = <attemptId|system>:<category>,
-// logicalObjectId = <attemptId|system>/…) must name the same attempt.
+// fact derives from its attempt (groupId, logicalObjectId = <attemptId|system>/…)
+// must name the same attempt.
 function identityErrors(record) {
   const errors = [];
   if (record.recordId !== entityId(record)) errors.push(`$.recordId: does not equal the ${record.recordKind} entity id`);
   const owner = record.attemptId ?? "system";
-  if (record.recordKind === "uploadGroupSummary") {
-    const group = groupParts(record.body.groupId);
-    if (group.owner !== owner) errors.push("$.body.groupId: names a different attempt");
-    if (group.category !== record.body.category) errors.push("$.body.category: differs from the groupId category");
+  if (record.recordKind === "uploadGroupSummary" && record.body.groupId !== record.recordId) {
+    errors.push("$.body.groupId: differs from recordId");
   }
   if (record.recordKind === "transferInvocation") {
     if (groupParts(record.body.groupId).owner !== owner) errors.push("$.body.groupId: names a different attempt");
@@ -473,6 +484,6 @@ function responseItem(index, evaluation, fields) {
 module.exports = {
   PERFORMANCE_SCHEMA_VERSION, LIMITS, RECORD_KINDS, ROOTS, STATUSES, ERROR_CODES, OUTCOME_FOR_CODE, TERMINAL_RUN_OUTCOMES,
   ContractError, BatchError, schema, isPlainObject, canonicalJson, digest, encodedBytes, jsonEqual, clientKey,
-  createSchemaValidator, validateSchema, pointerGet, entityId, validateRecord, checkIngestible, inspectBatch,
+  createSchemaValidator, validateSchema, pointerGet, entityId, groupParts, validateRecord, checkIngestible, inspectBatch,
   batchEncodedBytes, outcome, responseItem,
 };

@@ -6,8 +6,10 @@ metric and limit is defined in
 [docs/plans/PROCESSING_PERF_CONTRACTS_V1.md §8](../../../docs/plans/PROCESSING_PERF_CONTRACTS_V1.md#8-device-performance-schema-v1-plan-07-4).
 This directory defines its shape.
 
-**Status:** frozen v1.1 — 2026-09-29 (R1+R2 approved; amendments N1–N8 applied). The v1.1 amendments changed no
-schema or fixture bytes. Nothing implements the schema yet.
+**Status:** frozen v1.2 — 2026-09-29. v1.2 changes schema and fixture bytes: the per-reporter `deviceStatus` id
+(D-18) and the install-scoped system upload-group id (D-21). The website ingests the schema (T1.3a, website
+`bf4c9ff`), and the mobile app implements the contract's Swift types (T1.1a, `d6ba132`); no mobile code emits
+records yet (T1.1c).
 
 ## Files
 
@@ -15,8 +17,8 @@ schema or fixture bytes. Nothing implements the schema yet.
 |---|---|
 | `schema.json` | JSON Schema draft 2020-12. The root validates one record. `$defs/batchV1` validates an ingestion request; `$defs/ingestResponseV1` validates its per-item response. |
 | `fixtures/index.json` | Each fixture's file, target (`#` or a `$defs` pointer), expected result, the check that must reject an invalid fixture (`schema` or `semantic`), and the rule it breaks. |
-| `fixtures/*.valid.json` | Records of every fact kind, with these variants: attempt summaries (normal, and one whose invocation failed before admission), run summaries (field and evaluation origin), upload groups (result files, and a video archive that is `unavailable`), a transfer invocation, a device status, and a two-record batch. |
-| `fixtures/*.invalid.json` | An oversized record (> 16 KiB); nine pass ids; a negative duration (the telemetry `-1` sentinel); evaluation origin without a run id; field origin with a run id; a nested operation without a parent; an `invalid` verdict without a reason; a missing reason that points at a present value; a 17-record batch. |
+| `fixtures/*.valid.json` | Records of every fact kind, with these variants: attempt summaries (normal, and one whose invocation failed before admission), run summaries (field and evaluation origin), upload groups (result files, a video archive that is `unavailable`, and a system diagnostics group with no attempt), a transfer invocation, a device status, and a two-record batch. |
+| `fixtures/*.invalid.json` | An oversized record (> 16 KiB); nine pass ids; a negative duration (the telemetry `-1` sentinel); evaluation origin without a run id; field origin with a run id; a nested operation without a parent; an `invalid` verdict without a reason; a missing reason that points at a present value; a system group without its install and one whose id names another install; a device status without a reporter and one whose id names another account; a 17-record batch. |
 
 Fixture identifiers, hashes and measurements are illustrative placeholders, not real devices, athletes or
 builds.
@@ -33,11 +35,12 @@ builds.
   |---|---|
   | `attemptSummary` | `attemptId` |
   | `runSummary` | `processingRunId` |
-  | `uploadGroupSummary` | `body.groupId` |
+  | `uploadGroupSummary` | `body.groupId`, which is `<attemptId>:<body.category>`, or `system:<body.category>:<originInstallId>` for a group with no attempt (v1.2, D-21) |
   | `transferInvocation` | `body.invocationId` |
-  | `deviceStatus` | `executorInstallId` |
+  | `deviceStatus` | `<executorInstallId>:<originReporterUid>` (v1.2, D-18) |
 
-  Ingestion rejects a mismatch with `identityMismatch`.
+  Ingestion rejects a mismatch with `identityMismatch`. The server stores a `system:` group under the composite
+  key `${recordKind}:${recordId}:${originInstallId}:${originReporterUid}` (contract §8.6 transition rule).
 - **Server fields.** A client record never contains `firstReceivedAtServer`, `updatedAtServer` or a digest.
   `additionalProperties: false` rejects them.
 - **Evaluation origin.** Production ingestion rejects `origin: "evaluation"` with `evaluationOriginRejected`,
@@ -49,27 +52,30 @@ builds.
   document.
 - The website keeps a **pinned, byte-identical** copy at `posetek_website/functions/contracts/device-performance-v1/`
   (`schema.json` and `fixtures/`). Its SHA-256 digests must equal the table below.
+- **Pinned-copy tests hash `schema.json` and the fixtures only (D-24).** This README is copied along but never
+  hashed, because its status prose changes with every amendment.
 - **A test on each side checks it.**
   - Mobile (owner T1.1c): decode every `*.valid.json` with the Swift `Codable` types, reject every `*.invalid.json`,
     and compare `schema.json`'s SHA-256 with this table.
-  - Website (owner T1.3): compare the pinned files with this table and, when a sibling mobile checkout is present,
-    with the canonical files (the sibling convention the rules tests use for `RULES_PATH`). Run the ingestion
-    validator, including the semantic rules above, on every fixture.
+  - Website (owner T1.3): compare the pinned `schema.json` and fixtures with this table and, when a sibling mobile
+    checkout is present, with the canonical files (the sibling convention the rules tests use for `RULES_PATH`).
+    Run the ingestion validator, including the semantic rules above, on every fixture.
 - A schema change updates the canonical files, this table, the pinned copy and both tests in one release.
 
 ## Pinned digests (SHA-256)
 
 | File | SHA-256 |
 |---|---|
-| `schema.json` | `906c843cc446a29bcc8e8f2947e9ed11246f03929b1b93731e3273042fba1f49` |
+| `schema.json` | `95343aae5a16f66e3e0d31e3096beb6ced9db12c6f26af0610875acb4b3997db` |
 | `fixtures/attempt-summary.valid.json` | `e2d80f5d9743cad38a5563547770b81cdc44c92aeb19096ae3ad629985ddba55` |
 | `fixtures/attempt-summary-pre-admission-failure.valid.json` | `0f39e5bdadf30b9d7f52e799ce908f24c66ec4732c92f69172cdc1490ff4bfb2` |
 | `fixtures/run-summary.valid.json` | `626aa20b983ef95b25e02aadff744516e2477f79034681d8c1a1c19a1bf8d009` |
 | `fixtures/run-summary-evaluation-origin.valid.json` | `114c3b6d4f03a8a2aa443f62213aaabdf3d880f56ef7beae9d60d863975b8e09` |
 | `fixtures/upload-group-summary.valid.json` | `4beaa4ce628f245769adb4fc9fde2b7aeacf8ae3fac68d96222e4a866a6d36ac` |
 | `fixtures/upload-group-summary-video-unavailable.valid.json` | `5c03d4128f0cd089ffae0a6aaa4e72c1554d194fec621071aa00e26cf31b75ff` |
+| `fixtures/upload-group-summary-system.valid.json` | `664eff8adcf682845058fe4da6f4b870fa9c072105bf85eb4733959becdd51c6` |
 | `fixtures/transfer-invocation.valid.json` | `64092da635118247ca9ba8f618132c5489cbf84ddbe04ff944898f1ae19b4027` |
-| `fixtures/device-status.valid.json` | `07d2deed950bcd2382a04dfbcb205fea57062aa3b634b105aad5085fd67316b1` |
+| `fixtures/device-status.valid.json` | `c3227ba24babbf76025d1e90cc34be8bf9d464fa8bab0873b87a281d71b40259` |
 | `fixtures/batch.valid.json` | `913468ad1173634ad0d50db2265573ace8f6aada789328b3ca4ee072485b575f` |
 | `fixtures/run-summary-oversized.invalid.json` | `9d8fe20f5a8d89256479b0dd8beda2fd36bdba819fe15f57e0d2b84f9898fdea` |
 | `fixtures/run-summary-too-many-pass-ids.invalid.json` | `4487ed8035b8964e3a4a5b928f8914e71d9406813f583bb646637b2d4780c0fb` |
@@ -79,9 +85,16 @@ builds.
 | `fixtures/stage-nested-without-parent.invalid.json` | `22b63bdc6676f21b21493bdf7ca091e4dfae90f98aea57384aac5bbed5f877ef` |
 | `fixtures/attempt-summary-invalid-verdict-without-reason.invalid.json` | `286d7be1079b3246440b7f2c491fc423b84fa8085e7b9d852f7e05f21cc71d29` |
 | `fixtures/missing-reason-points-at-value.invalid.json` | `c611c2a0a0c24c2a56e8de718cb98f9989bf694d4a00a11d321a9333049dcaf1` |
+| `fixtures/upload-group-summary-system-without-install.invalid.json` | `f43bb7263bb1a60471d8d9ba25e4088afe64e7fe2750550a316709c5c6ef8cb3` |
+| `fixtures/upload-group-summary-system-foreign-install.invalid.json` | `1cb45da6b7a9a204ee62fedb4ffd6c36589e157dddeccfefcab35ad3c7128a15` |
+| `fixtures/device-status-without-reporter.invalid.json` | `a3257a28ca1bdf83809bbf2c7dec013e3aa7e4befaca7f2ce438b0fe286421cf` |
+| `fixtures/device-status-record-id-other-reporter.invalid.json` | `9348000e7067795fcb2f45c9cd23a686a272c7e3cb91281ae7e48ea2809f27f4` |
 | `fixtures/batch-too-many-records.invalid.json` | `c05547ee6a85dfc95267f7f716b89ebfd2649b0a52e5216ef08f3b72eb985257` |
 
 `fixtures/index.json` is a manifest, not a contract file, and is not pinned.
+
+Superseded by v1.2: `schema.json` `906c843cc446a29bcc8e8f2947e9ed11246f03929b1b93731e3273042fba1f49` and
+`fixtures/device-status.valid.json` `07d2deed950bcd2382a04dfbcb205fea57062aa3b634b105aad5085fd67316b1` (v1.1).
 
 ## Test vectors
 

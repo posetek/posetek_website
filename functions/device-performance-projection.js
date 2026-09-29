@@ -310,7 +310,9 @@ function compactTransfer(fact, attemptId) {
   return {
     kind: "transfer",
     attemptId,
-    category: body.groupId.slice(body.groupId.lastIndexOf(":") + 1),
+    // First two separators (contract.groupParts): a v1.2 system group id
+    // system:<category>:<originInstallId> never yields its install as the category.
+    category: contract.groupParts(body.groupId).category,
     executor: record.executorInstallId,
     outcome: body.outcome,
     bytes: body.payloadBytes,
@@ -987,6 +989,16 @@ function createDevicePerformanceProjection({ db, HttpsError, FieldValue, Timesta
   }
 
   // -- Device status (not partitioned; latest per install, D-18 merge).
+  // v1.2 keys one status per install and account; the reports merge per
+  // install. Client report times decide only when both reports carry one and
+  // both clocks are reliable; otherwise, or on a tie, server receipt order
+  // decides and the latest received revision wins (contract §8.6, v1.2.1).
+  const reliableTime = (entry) => (entry.clock === "reliable" ? clientTime(entry.record.occurredAtClient) : null);
+  function newerStatus(candidate, current) {
+    const [a, b] = [reliableTime(candidate), reliableTime(current)];
+    if (a !== null && b !== null && a !== b) return a > b;
+    return (candidate.updatedAt ?? -Infinity) > (current.updatedAt ?? -Infinity);
+  }
   async function readDeviceStatuses() {
     const docs = await bounded(factRoot("deviceStatus"), limits.maxDevices, "devices");
     const byInstall = new Map();
@@ -994,16 +1006,11 @@ function createDevicePerformanceProjection({ db, HttpsError, FieldValue, Timesta
       const fact = usableFact(doc.data(), "deviceStatus");
       const install = fact?.record.executorInstallId;
       if (!install) continue;
-      // Merge per install by the latest client report time (D-18; v1.2 keys one
-      // status per install and reporter).
-      const at = clientTime(fact.record.occurredAtClient) ?? fact.updatedAt ?? 0;
+      const entry = { record: fact.record, clock: fact.clock, updatedAt: fact.updatedAt, receivedAt: fact.receivedAt };
       const previous = byInstall.get(install);
       const firstReceivedAt = Math.min(previous?.firstReceivedAt ?? Infinity, fact.receivedAt ?? Infinity);
-      if (!previous || at > previous.at || (at === previous.at && (fact.updatedAt ?? 0) > (previous.updatedAt ?? 0))) {
-        byInstall.set(install, { at, record: fact.record, updatedAt: fact.updatedAt, receivedAt: fact.receivedAt, firstReceivedAt, reporters: (previous?.reporters ?? 0) + 1 });
-      } else {
-        byInstall.set(install, { ...previous, firstReceivedAt, reporters: previous.reporters + 1 });
-      }
+      const reporters = (previous?.reporters ?? 0) + 1;
+      byInstall.set(install, !previous || newerStatus(entry, previous) ? { ...entry, firstReceivedAt, reporters } : { ...previous, firstReceivedAt, reporters });
     }
     return byInstall;
   }
@@ -1039,7 +1046,7 @@ function createDevicePerformanceProjection({ db, HttpsError, FieldValue, Timesta
 }
 
 module.exports = {
-  createDevicePerformanceProjection, compactAttempt, placement, attemptPlacementFields, phaseOf, choiceKey, buildRef, millisOf,
+  createDevicePerformanceProjection, compactAttempt, compactTransfer, placement, attemptPlacementFields, phaseOf, choiceKey, buildRef, millisOf,
   timeOrder, utcDay, narrowRange, rebuilding, usableFact,
   PROJECTION_VERSION, PROJECTION_ROOT, PROJECTION_DOC, COLLECTIONS, LIMITS, DRILLS, PHASES, UNKNOWN_INSTALL, FUTURE_TOLERANCE_MS,
   TRANSFER_RETENTION_MS, TRANSFER_FIELDS,

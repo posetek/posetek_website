@@ -183,12 +183,15 @@ function transfer(o) {
   return checked(record);
 }
 
+// One device status per install and account: recordId <executorInstallId>:<originReporterUid> (v1.2, D-18).
 function deviceStatus(o) {
   const record = fixture("device-status.valid.json");
+  const reporter = o.reporter ?? REPORTER;
   Object.assign(record, {
-    recordId: o.install, executorInstallId: o.install, revision: o.revision ?? 1, originReporterUid: o.reporter ?? REPORTER,
+    recordId: `${o.install}:${reporter}`, executorInstallId: o.install, revision: o.revision ?? 1, originReporterUid: reporter,
     executorPlatform: platform(o.build ?? "215", o.machine ?? "iPhone14,7", o.appVersion ?? "1.4.1"),
-    occurredAtClient: isoAt(o.occurredAt ?? START - 3600000), stationDeviceId: null,
+    occurredAtClient: o.occurredAt === null ? null : isoAt(o.occurredAt ?? START - 3600000), clockQuality: o.clock ?? "reliable",
+    stationDeviceId: null,
   });
   record.body = { ...record.body, repQueuePending: o.pending ?? 1, repQueueFailed: o.failed ?? 0 };
   return checked(record);

@@ -8,7 +8,7 @@ const contract = require("./device-performance-contract");
 
 const PINNED = path.join(__dirname, "contracts", "device-performance-v1");
 // Frozen V1 schema digest (mobile tools/contracts/device-performance-v1/README.md).
-const SCHEMA_SHA256 = "906c843cc446a29bcc8e8f2947e9ed11246f03929b1b93731e3273042fba1f49";
+const SCHEMA_SHA256 = "95343aae5a16f66e3e0d31e3096beb6ced9db12c6f26af0610875acb4b3997db";
 const sha256File = (file) => crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
 const readJson = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 const fixture = (name) => readJson(path.join(PINNED, "fixtures", name));
@@ -40,6 +40,10 @@ const INVALID_FIXTURES = {
   "stage-nested-without-parent.invalid.json": ["invalidSchema", /^\$\.body\.stages\[\d+\]\.parentStageId: type is not string$/],
   "attempt-summary-invalid-verdict-without-reason.invalid.json": ["invalidSchema", /^\$\.body\.verdictReason: value is not in the enum$/],
   "missing-reason-points-at-value.invalid.json": ["invalidSchema", /^\$\.missingReasons\[\d+\]: points at a present value$/],
+  "upload-group-summary-system-without-install.invalid.json": ["invalidSchema", /^\$\.originInstallId: type is not string$/],
+  "upload-group-summary-system-foreign-install.invalid.json": ["identityMismatch", /^\$\.recordId: does not equal the uploadGroupSummary entity id$/],
+  "device-status-without-reporter.invalid.json": ["invalidSchema", /^\$\.originReporterUid: type is not string$/],
+  "device-status-record-id-other-reporter.invalid.json": ["identityMismatch", /^\$\.recordId: does not equal the deviceStatus entity id$/],
   "batch-too-many-records.invalid.json": ["oversizedBatch", /^\$\.records: more than 16 items$/],
 };
 function assertFailingRule(file, errors) {
@@ -277,7 +281,13 @@ test("records over 16 KiB are oversized; a whole-record missing reason is allowe
   assert.equal(contract.validateRecord(whole).ok, true);
 });
 
-test("derived identities must name the record's own attempt", () => {
+test("upload-group ids split on their first two separators (v1.2, R4-2)", () => {
+  const install = "b7e2c1d4-5f6a-4b8c-9d0e-1f2a3b4c5d6e";
+  assert.deepEqual(contract.groupParts(`${install}:resultFiles`), { owner: install, category: "resultFiles", install: null });
+  assert.deepEqual(contract.groupParts(`system:diagnostics:${install}`), { owner: "system", category: "diagnostics", install });
+});
+
+test("derived identities must name the record's own attempt, install and account (v1.2)", () => {
   const group = fixture("upload-group-summary.valid.json");
   const other = "00000000-0000-4000-8000-000000000000";
   group.recordId = group.body.groupId = `${other}:resultFiles`;
@@ -285,11 +295,37 @@ test("derived identities must name the record's own attempt", () => {
   const category = fixture("upload-group-summary.valid.json");
   category.body.category = "optionalVideo";
   assert.equal(contract.validateRecord(category).outcome.errorCode, "identityMismatch");
-  const system = fixture("upload-group-summary.valid.json");
-  system.recordId = system.body.groupId = "system:resultFiles";
-  assert.equal(contract.validateRecord(system).outcome.errorCode, "identityMismatch", "a system group has no attempt");
-  system.attemptId = null;
+  const divergent = fixture("upload-group-summary.valid.json");
+  divergent.body.groupId = divergent.recordId.replace("resultFiles", "optionalVideo");
+  divergent.body.category = "optionalVideo";
+  assert.deepEqual(contract.validateRecord(divergent).errors, ["$.recordId: does not equal the uploadGroupSummary entity id", "$.body.groupId: differs from recordId"]);
+  // System groups: system:<category>:<originInstallId>, no attempt (D-21).
+  const system = fixture("upload-group-summary-system.valid.json");
   assert.equal(contract.validateRecord(system).ok, true);
+  assert.equal(contract.validateRecord({ ...system, originInstallId: other }).outcome.errorCode, "identityMismatch", "the id names another install");
+  assert.equal(contract.validateRecord({ ...system, body: { ...system.body, category: "resultFiles" } }).outcome.errorCode, "identityMismatch");
+  assert.equal(contract.validateRecord({ ...system, attemptId: other }).outcome.errorCode, "invalidSchema", "a system group has no attempt");
+  const legacy = fixture("upload-group-summary-system.valid.json");
+  legacy.recordId = legacy.body.groupId = "system:diagnostics";
+  assert.equal(contract.validateRecord(legacy).outcome.errorCode, "invalidSchema", "the v1.1 system id is no longer accepted");
+  const attemptless = fixture("upload-group-summary.valid.json");
+  attemptless.attemptId = null;
+  assert.equal(contract.validateRecord(attemptless).outcome.errorCode, "invalidSchema", "an attempt group requires its attempt");
+  // A system transfer: its group and logical object name no attempt.
+  const install = system.originInstallId;
+  const systemTransfer = fixture("transfer-invocation.valid.json");
+  Object.assign(systemTransfer, { attemptId: null });
+  systemTransfer.body = { ...systemTransfer.body, groupId: `system:diagnostics:${install}`, objectRole: "diagnosticArtifact",
+    logicalObjectId: systemTransfer.body.logicalObjectId.replace(systemTransfer.body.logicalObjectId.split("/")[0], "system") };
+  assert.equal(contract.validateRecord(systemTransfer).ok, true, contract.validateRecord(systemTransfer).errors.join("; "));
+  assert.equal(contract.validateRecord({ ...systemTransfer, attemptId: fixture("transfer-invocation.valid.json").attemptId }).outcome.errorCode, "identityMismatch");
+  // Device status: <executorInstallId>:<originReporterUid> (D-18).
+  const status = fixture("device-status.valid.json");
+  assert.equal(status.recordId, `${status.executorInstallId}:${status.originReporterUid}`);
+  assert.equal(contract.validateRecord({ ...status, originReporterUid: "someoneElse" }).outcome.errorCode, "identityMismatch");
+  assert.equal(contract.validateRecord({ ...status, recordId: status.executorInstallId }).outcome.errorCode, "invalidSchema", "the v1.1 install-only id");
+  const longUid = "u".repeat(92);
+  assert.equal(contract.validateRecord({ ...status, originReporterUid: longUid, recordId: `${status.executorInstallId}:${longUid}` }).outcome.errorCode, "invalidSchema");
   const transfer = fixture("transfer-invocation.valid.json");
   transfer.body.logicalObjectId = transfer.body.logicalObjectId.replace(transfer.attemptId, other);
   assert.equal(contract.validateRecord(transfer).outcome.errorCode, "identityMismatch");
@@ -299,9 +335,6 @@ test("derived identities must name the record's own attempt", () => {
   const invocation = fixture("transfer-invocation.valid.json");
   invocation.recordId = other;
   assert.equal(contract.validateRecord(invocation).outcome.errorCode, "identityMismatch");
-  const device = fixture("device-status.valid.json");
-  device.recordId = other;
-  assert.equal(contract.validateRecord(device).outcome.errorCode, "identityMismatch");
   const attempt = fixture("attempt-summary.valid.json");
   attempt.recordId = other;
   assert.equal(contract.validateRecord(attempt).outcome.errorCode, "identityMismatch");

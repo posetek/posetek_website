@@ -6,7 +6,7 @@
   "x-posetekContract": {
     "name": "device-performance-v1",
     "performanceSchemaVersion": 1,
-    "status": "frozen v1 - 2026-09-29 (pending independent review)",
+    "status": "frozen v1.2 - 2026-09-29",
     "canonicalCopy": "PoseTek-mobile-app/tools/contracts/device-performance-v1/schema.json",
     "pinnedCopy": "posetek_website/functions/contracts/device-performance-v1/schema.json",
     "document": "PoseTek-mobile-app/docs/plans/PROCESSING_PERF_CONTRACTS_V1.md"
@@ -30,6 +30,11 @@
     "sha256Hex": {
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
+    },
+    "uploadGroupId": {
+      "description": "Upload group id (contract section 8.6): <attemptId>:<category> for an attempt's group, or system:<category>:<originInstallId> for a group with no attempt (v1.2, D-21).",
+      "type": "string",
+      "pattern": "^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:(resultFiles|optionalVideo|legacyVideo|diagnostics)|system:(resultFiles|optionalVideo|legacyVideo|diagnostics):[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$"
     },
     "clientTimestamp": {
       "description": "Client wall-clock date, UTC, millisecond precision. Never used to compute a local duration.",
@@ -423,7 +428,7 @@
         "firestoreWriteMs"
       ],
       "properties": {
-        "groupId": {"type": "string", "pattern": "^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|system):(resultFiles|optionalVideo|legacyVideo|diagnostics)$"},
+        "groupId": {"$ref": "#/$defs/uploadGroupId"},
         "category": {"enum": ["resultFiles", "optionalVideo", "legacyVideo", "diagnostics"]},
         "jobState": {"enum": ["notRequested", "queued", "inProgress", "committed", "failed", "cancelled", "unavailable"]},
         "uniqueObjectCount": {"type": "integer", "minimum": 0, "maximum": 10000},
@@ -471,7 +476,7 @@
       "properties": {
         "invocationId": {"$ref": "#/$defs/uuidLower"},
         "logicalObjectId": {"type": "string", "maxLength": 200, "pattern": "^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|system)/[A-Za-z0-9._-]{1,64}/[0-9a-f]{64}$"},
-        "groupId": {"type": "string", "pattern": "^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|system):(resultFiles|optionalVideo|legacyVideo|diagnostics)$"},
+        "groupId": {"$ref": "#/$defs/uploadGroupId"},
         "outerCommitOrdinal": {"type": "integer", "minimum": 1, "maximum": 10000},
         "objectOrdinal": {"type": "integer", "minimum": 0, "maximum": 10000},
         "objectRole": {"enum": ["resultArtifact", "reprocessSidecar", "videoArchive", "freeRecordVideo", "stationFailureVideo", "diagnosticManifest", "diagnosticArtifact"]},
@@ -635,7 +640,15 @@
         },
         {
           "if": {"properties": {"recordKind": {"const": "uploadGroupSummary"}}, "required": ["recordKind"]},
-          "then": {"properties": {"body": {"$ref": "#/$defs/uploadGroupSummaryBodyV1"}}}
+          "then": {
+            "properties": {
+              "recordId": {"$ref": "#/$defs/uploadGroupId"},
+              "body": {"$ref": "#/$defs/uploadGroupSummaryBodyV1"}
+            },
+            "if": {"properties": {"recordId": {"type": "string", "pattern": "^system:"}}, "required": ["recordId"]},
+            "then": {"properties": {"attemptId": {"type": "null"}, "originInstallId": {"$ref": "#/$defs/uuidLower"}}},
+            "else": {"properties": {"attemptId": {"$ref": "#/$defs/uuidLower"}}}
+          }
         },
         {
           "if": {"properties": {"recordKind": {"const": "transferInvocation"}}, "required": ["recordKind"]},
@@ -645,9 +658,11 @@
           "if": {"properties": {"recordKind": {"const": "deviceStatus"}}, "required": ["recordKind"]},
           "then": {
             "properties": {
+              "recordId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:.{1,91}$"},
               "attemptId": {"type": "null"},
               "processingRunId": {"type": "null"},
               "executorInstallId": {"$ref": "#/$defs/uuidLower"},
+              "originReporterUid": {"type": "string", "minLength": 1, "maxLength": 91},
               "body": {"$ref": "#/$defs/deviceStatusBodyV1"}
             }
           }
