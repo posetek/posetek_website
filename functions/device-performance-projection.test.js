@@ -351,6 +351,49 @@ test("device status merges per install by the latest client report (D-18)", asyn
   assert.deepEqual(report.totals.cloudBacklog, { pendingJobs: 2, failedJobs: 0, installsReporting: 1, oldestReportAt: new Date(START - 5000).toISOString() });
 });
 
+test("device status merge falls back to server receipt order when a client time is missing, unreliable or tied (v1.2.1)", async () => {
+  const h = harness();
+  const put = (record, updatedAt, extra = {}) => h.db.docs.set(`devicePerformanceDevices/deviceStatus:${record.recordId}`,
+    { ...storedFact(record, { receivedAt: updatedAt - 1000, updatedAt }), ...extra });
+  const hour = 3600000;
+  const cases = [
+    // [label, install, reports: [reporter, occurredAt, clock, updatedAt, extra], expected winner]
+    ["both reliable: the later client time wins over the later receipt", 41,
+      [["uidA", START - hour, "reliable", START - 9000], ["uidB", START - 2 * hour, "reliable", START - 1000]], "uidA"],
+    ["an uncertain clock never outranks by client time: receipt order decides", 42,
+      [["uidA", START - hour, "uncertain", START - 9000], ["uidB", START - 2 * hour, "reliable", START - 1000]], "uidB"],
+    ["a missing client time: receipt order decides", 43,
+      [["uidA", null, "reliable", START - 1000], ["uidB", START - hour, "reliable", START - 9000]], "uidA"],
+    ["a tie on client time: the latest received revision wins", 44,
+      [["uidA", START - hour, "reliable", START - 9000], ["uidB", START - hour, "reliable", START - 1000]], "uidB"],
+    ["a server-downgraded future clock is not reliable: receipt order decides", 45,
+      [["uidA", START + hour, "reliable", START - 9000, { serverClockQuality: "future" }], ["uidB", START - hour, "reliable", START - 1000]], "uidB"],
+  ];
+  for (const [, n, reports] of cases) {
+    for (const [reporter, occurredAt, clock, updatedAt, extra] of reports) put(deviceStatus({ install: uuid("i", n), reporter, occurredAt, clock }), updatedAt, extra);
+  }
+  const statuses = await h.projection.readDeviceStatuses();
+  for (const [label, n, , winner] of cases) {
+    const merged = statuses.get(uuid("i", n));
+    assert.equal(merged.record.originReporterUid, winner, label);
+    assert.equal(merged.reporters, 2, label);
+    assert.equal(merged.firstReceivedAt, Math.min(...cases.find((row) => row[1] === n)[2].map((report) => report[3] - 1000)), label);
+  }
+  // Reads page by document id; swapping the reporter names swaps which report
+  // is read first, and the same report must still win.
+  const swap = { uidA: "uidB", uidB: "uidA" };
+  const swapped = harness();
+  for (const [, n, reports] of cases) {
+    for (const [reporter, occurredAt, clock, updatedAt, extra] of reports) {
+      const record = deviceStatus({ install: uuid("i", n), reporter: swap[reporter], occurredAt, clock });
+      swapped.db.docs.set(`devicePerformanceDevices/deviceStatus:${record.recordId}`,
+        { ...storedFact(record, { receivedAt: updatedAt - 1000, updatedAt }), ...extra });
+    }
+  }
+  const again = await swapped.projection.readDeviceStatuses();
+  for (const [label, n, , winner] of cases) assert.equal(again.get(uuid("i", n)).record.originReporterUid, swap[winner], `${label} (read order swapped)`);
+});
+
 test("the change scanner pages through every root, never moves backwards, and locates each attempt once per change", async () => {
   const h = harness({ limits: { scanPageSize: 3 } });
   for (let n = 1; n <= 7; n++) h.putAll(completeAttempt(n));

@@ -6,7 +6,7 @@ const { test } = require("node:test");
 const { FakeFirestore, FakeTimestamp, FieldValue } = require("./test-support/fake-firestore");
 const contract = require("./device-performance-contract");
 const {
-  createDevicePerformanceIngestion, createIngestDevicePerformanceV1, RATE_LIMIT_ROOT, RATE_LIMITS,
+  createDevicePerformanceIngestion, createIngestDevicePerformanceV1, storageKey, RATE_LIMIT_ROOT, RATE_LIMITS, ATTEMPT_CAPS, ATTEMPT_CAP_WIRE_CODE,
 } = require("./device-performance-ingestion");
 
 class HttpsError extends Error {
@@ -61,6 +61,7 @@ function harness(seed = {}) {
       return response.results;
     },
     doc: (kind, id) => db.snapshot(`${contract.ROOTS[kind]}/${kind}:${id}`),
+    stored: (record) => db.snapshot(`${contract.ROOTS[record.recordKind]}/${storageKey(record)}`),
     factPaths: () => [...db.docs.keys()].filter((key) => key.startsWith("devicePerformance") && !key.startsWith(RATE_LIMIT_ROOT)).sort(),
     ratePaths: () => [...db.docs.keys()].filter((key) => key.startsWith(RATE_LIMIT_ROOT)),
   };
@@ -79,7 +80,7 @@ const FAILURE = { code: "decode_failed", stage: "kick.extract", disposition: "re
 test("every valid field fact is stored once, under its contract root and document id", async () => {
   const h = harness();
   const coachRecords = ["attempt-summary.valid.json", "attempt-summary-pre-admission-failure.valid.json", "upload-group-summary.valid.json",
-    "upload-group-summary-video-unavailable.valid.json", "transfer-invocation.valid.json"].map(fixture);
+    "upload-group-summary-video-unavailable.valid.json", "upload-group-summary-system.valid.json", "transfer-invocation.valid.json"].map(fixture);
   const staffRecords = [fixture("run-summary.valid.json"), fixture("device-status.valid.json")];
   const coachResults = await h.ingest(coachRecords, actor(COACH));
   const staffResults = await h.ingest(staffRecords, actor(STAFF));
@@ -91,11 +92,14 @@ test("every valid field fact is stored once, under its contract root and documen
       retryable: false, acceptedRevision: record.revision, digest: contract.digest(record), errorCode: null,
     });
   });
-  assert.deepEqual(h.factPaths(), records.map((record) => `${contract.ROOTS[record.recordKind]}/${record.recordKind}:${record.recordId}`).sort());
+  assert.deepEqual(h.factPaths(), records.map((record) => `${contract.ROOTS[record.recordKind]}/${storageKey(record)}`).sort());
+  assert.ok(h.factPaths().includes(`devicePerformanceUploadGroups/uploadGroupSummary:system:diagnostics:${INSTALL}:${INSTALL}:${COACH}`),
+    "a system group keeps the composite transition key (contract §8.6)");
+  assert.ok(h.factPaths().includes(`devicePerformanceDevices/deviceStatus:${INSTALL}:${STAFF}`), "one device status per install and account");
   assert.deepEqual(h.factPaths().map((key) => key.split("/")[0]).filter((root, i, all) => all.indexOf(root) === i).sort(),
     ["devicePerformanceAttempts", "devicePerformanceDevices", "devicePerformanceRuns", "devicePerformanceTransfers", "devicePerformanceUploadGroups"]);
   for (const record of records) {
-    const stored = h.doc(record.recordKind, record.recordId);
+    const stored = h.stored(record);
     assert.deepEqual(stored.record, record, "the client record is stored verbatim");
     assert.equal(stored.revision, record.revision);
     assert.equal(stored.digest, contract.digest(record));
@@ -105,7 +109,7 @@ test("every valid field fact is stored once, under its contract root and documen
     assert.equal(stored.expiresAt.toMillis(), START + days * DAY, record.recordKind);
   }
   assert.deepEqual(h.doc("runSummary", RUN).authority, { basis: "processingAttempt", reporterUid: STAFF, attemptId: STAFF_ATTEMPT, playerDocumentID: "player" });
-  assert.deepEqual(h.doc("deviceStatus", INSTALL).authority, { basis: "reporter", reporterUid: STAFF, attemptId: null, playerDocumentID: null });
+  assert.deepEqual(h.doc("deviceStatus", `${INSTALL}:${STAFF}`).authority, { basis: "reporter", reporterUid: STAFF, attemptId: null, playerDocumentID: null });
   assert.equal(h.logs.length, 0);
 });
 
@@ -330,12 +334,18 @@ test("an entity's identity cannot be taken over or rewritten by a later revision
   assert.deepEqual(statuses(mismatches), [["rejected", "identityMismatch"], ["rejected", "identityMismatch"]]);
   assert.deepEqual(mismatches.map((result) => result.acceptedRevision), [null, null]);
   assert.equal(h.doc("runSummary", RUN).revision, 1);
-  // Another account cannot overwrite an install's status: the install id is not authority,
-  // and the refusal does not reveal the other account's stored revision (D-21 F5).
+  // Another account cannot overwrite an install's status: the install id is not authority, the
+  // id names its account (v1.2, D-18), and the refusal reveals no stored revision (D-21 F5).
   const hijack = { ...fixture("device-status.valid.json"), revision: 42, originReporterUid: COACH };
   const [takeover] = await h.ingest([hijack], actor(COACH));
   assert.deepEqual([takeover.status, takeover.errorCode, takeover.acceptedRevision], ["rejected", "identityMismatch", null]);
-  assert.equal(h.doc("deviceStatus", INSTALL).record.originReporterUid, STAFF);
+  assert.equal(h.doc("deviceStatus", `${INSTALL}:${STAFF}`).record.originReporterUid, STAFF);
+  // A second account on the same (shared Station) phone reports its own status, which the
+  // projection merges per install; the first account's status is untouched (D-18).
+  const shared = { ...fixture("device-status.valid.json"), revision: 1, originReporterUid: COACH, recordId: `${INSTALL}:${COACH}` };
+  assert.deepEqual(statuses(await h.ingest([shared], actor(COACH))), [["accepted", null]]);
+  assert.equal(h.doc("deviceStatus", `${INSTALL}:${COACH}`).record.originReporterUid, COACH);
+  assert.equal(h.doc("deviceStatus", `${INSTALL}:${STAFF}`).revision, 41);
   // Origin facts: unknown may be filled in once, never rewritten.
   const origin = fixture("attempt-summary.valid.json").originPlatform;
   const results = await h.ingest([
@@ -394,13 +404,19 @@ test("a newer batch version keeps every record pending", async () => {
 
 test("rate limits bound calls per caller first, then per executing install, per minute", async () => {
   const h = harness();
-  const status = (revision, executorInstallId = INSTALL) => ({ ...fixture("device-status.valid.json"), revision, executorInstallId, recordId: executorInstallId });
+  const status = (revision, executorInstallId = INSTALL, reporter = STAFF) => ({
+    ...fixture("device-status.valid.json"), revision, executorInstallId, originReporterUid: reporter, recordId: `${executorInstallId}:${reporter}`,
+  });
   for (let call = 0; call < RATE_LIMITS.callsPerInstall; call++) {
     assert.deepEqual(statuses(await h.ingest([status(100 + call)], actor(STAFF))), [["accepted", null]]);
   }
   const [limited] = await h.ingest([status(500)], actor(STAFF));
   assert.deepEqual([limited.status, limited.errorCode, limited.retryable, limited.acceptedRevision], ["retryLater", "rateLimited", true, null]);
-  assert.equal(h.doc("deviceStatus", INSTALL).revision, 100 + RATE_LIMITS.callsPerInstall - 1);
+  assert.equal(h.doc("deviceStatus", `${INSTALL}:${STAFF}`).revision, 100 + RATE_LIMITS.callsPerInstall - 1);
+  // The install counter is per account (D-23): another account on the same phone keeps its own budget.
+  assert.deepEqual(statuses(await h.ingest([status(1, INSTALL, COACH)], actor(COACH))), [["accepted", null]]);
+  assert.equal(h.db.snapshot(`${RATE_LIMIT_ROOT}/install:${INSTALL}:${COACH}`).count, 1);
+  assert.equal(h.db.snapshot(`${RATE_LIMIT_ROOT}/install:${INSTALL}:${STAFF}`).count, RATE_LIMITS.callsPerInstall);
   // A batch the validator refuses outright needs no Firestore work and is answered.
   assert.deepEqual(statuses(await h.ingest([fixture("run-summary-negative-duration.invalid.json")], actor(STAFF))), [["rejected", "invalidSchema"]]);
   // The caller was charged for every call that reached Firestore, including the install-limited one.
@@ -411,12 +427,12 @@ test("rate limits bound calls per caller first, then per executing install, per 
     assert.deepEqual(statuses(await h.ingest([status(1, uuid(1000 + n))], actor(STAFF))), [["accepted", null]]);
   }
   assert.deepEqual(statuses(await h.ingest([status(1, uuid(5000))], actor(STAFF))), [["retryLater", "rateLimited"]]);
-  assert.equal(h.db.snapshot(`${RATE_LIMIT_ROOT}/install:${uuid(5000)}`), undefined, "a caller-limited call charges no install");
+  assert.equal(h.db.snapshot(`${RATE_LIMIT_ROOT}/install:${uuid(5000)}:${STAFF}`), undefined, "a caller-limited call charges no install");
   // Another caller is independent; the next window resets both bounds.
   assert.deepEqual(statuses(await h.ingest([attempt({ executorInstallId: uuid(6000) })], actor(COACH))), [["accepted", null]]);
   h.advance(RATE_LIMITS.windowMs);
   assert.deepEqual(statuses(await h.ingest([status(500)], actor(STAFF))), [["accepted", null]]);
-  const rate = h.db.snapshot(`${RATE_LIMIT_ROOT}/install:${INSTALL}`);
+  const rate = h.db.snapshot(`${RATE_LIMIT_ROOT}/install:${INSTALL}:${STAFF}`);
   assert.equal(rate.count, 1);
   assert.equal(rate.expiresAt.toMillis(), h.now() + DAY);
 });
@@ -433,35 +449,44 @@ test("an install is charged only for records that pass actor binding", async () 
     assert.deepEqual(statuses(await h.ingest(refused, actor(COACH))),
       [["rejected", "unauthorizedReporter"], ["retryLater", "dependencyPending"], ["rejected", "unauthorizedReporter"]]);
   }
-  assert.equal(h.db.snapshot(`${RATE_LIMIT_ROOT}/install:${INSTALL}`), undefined);
+  assert.deepEqual(h.ratePaths().filter((key) => key.includes("install:")), []);
   assert.equal(h.db.snapshot(`${RATE_LIMIT_ROOT}/caller:${COACH}`).count, RATE_LIMITS.callsPerInstall + 5, "the caller counter stays first");
   assert.deepEqual(statuses(await h.ingest([run()], actor(STAFF))), [["accepted", null]]);
-  assert.equal(h.db.snapshot(`${RATE_LIMIT_ROOT}/install:${INSTALL}`).count, 1);
+  assert.equal(h.db.snapshot(`${RATE_LIMIT_ROOT}/install:${INSTALL}:${STAFF}`).count, 1);
+  // Even a record another account may report on its own behalf (a reporter-basis device status naming
+  // STAFF's install) is charged to that account's own install counter, never to STAFF's (D-23).
+  h.advance(RATE_LIMITS.windowMs);
+  const foreign = { ...fixture("device-status.valid.json"), originReporterUid: COACH, recordId: `${INSTALL}:${COACH}` };
+  for (let call = 0; call < RATE_LIMITS.callsPerInstall + 3; call++) await h.ingest([{ ...foreign, revision: call + 1 }], actor(COACH));
+  assert.equal(h.db.snapshot(`${RATE_LIMIT_ROOT}/install:${INSTALL}:${COACH}`).count, RATE_LIMITS.callsPerInstall, "the coach exhausts only its own counter");
+  assert.deepEqual(statuses(await h.ingest([run({ revision: 2, completeness: "partial" })], actor(STAFF))), [["accepted", null]]);
+  assert.equal(h.db.snapshot(`${RATE_LIMIT_ROOT}/install:${INSTALL}:${STAFF}`).count, 1, "STAFF's budget on its own phone is untouched");
 });
 
 test("a malformed rate-limit counter fails closed for the current minute only", async () => {
   const window = Math.floor(START / RATE_LIMITS.windowMs);
   const h = harness({
     [`${RATE_LIMIT_ROOT}/caller:${STAFF}`]: { window: "not-a-window", count: 0 },
-    [`${RATE_LIMIT_ROOT}/install:${INSTALL}`]: { window, count: "7" },
+    [`${RATE_LIMIT_ROOT}/install:${INSTALL}:${COACH}`]: { window, count: "7" },
   });
   assert.deepEqual(statuses(await h.ingest([run()], actor(STAFF))), [["retryLater", "rateLimited"]]);
   assert.deepEqual(h.db.snapshot(`${RATE_LIMIT_ROOT}/caller:${STAFF}`), { window, count: RATE_LIMITS.callsPerCaller,
     expiresAt: FakeTimestamp.fromMillis(START + DAY) });
-  // The coach's own counter is sound, but the install counter is not.
+  // The coach's own caller counter is sound, but its install counter is not.
   assert.deepEqual(statuses(await h.ingest([attempt()], actor(COACH))), [["retryLater", "rateLimited"]]);
-  assert.equal(h.db.snapshot(`${RATE_LIMIT_ROOT}/install:${INSTALL}`).count, RATE_LIMITS.callsPerInstall);
+  assert.equal(h.db.snapshot(`${RATE_LIMIT_ROOT}/install:${INSTALL}:${COACH}`).count, RATE_LIMITS.callsPerInstall);
   assert.deepEqual(h.factPaths(), []);
   h.advance(RATE_LIMITS.windowMs);
   assert.deepEqual(statuses(await h.ingest([run()], actor(STAFF))), [["accepted", null]]);
   assert.deepEqual(statuses(await h.ingest([attempt()], actor(COACH))), [["accepted", null]]);
 });
 
-test("system upload groups are scoped to the reporting install and account (interim rule, D-21 F1)", async () => {
+test("system upload groups: system:<category>:<originInstallId>, stored under the composite transition key (v1.2, D-21)", async () => {
   const h = harness();
   const systemGroup = (overrides = {}) => {
-    const record = { ...fixture("upload-group-summary.valid.json"), recordId: "system:diagnostics", attemptId: null, ...overrides };
-    record.body = { ...record.body, groupId: "system:diagnostics", category: "diagnostics" };
+    const install = overrides.originInstallId ?? INSTALL;
+    const record = { ...fixture("upload-group-summary-system.valid.json"), ...overrides, recordId: `system:diagnostics:${install}` };
+    record.body = { ...record.body, groupId: record.recordId, category: "diagnostics" };
     return record;
   };
   const secondInstall = uuid(90);
@@ -471,18 +496,55 @@ test("system upload groups are scoped to the reporting install and account (inte
     ...await h.ingest([systemGroup({ originInstallId: secondInstall, executorInstallId: secondInstall })], actor(COACH)),
   ];
   assert.deepEqual(statuses(results), Array(3).fill(["accepted", null]));
-  assert.ok(results.every((result) => result.recordId === "system:diagnostics"), "the response echoes the client id");
-  const key = (install, uid) => `devicePerformanceUploadGroups/uploadGroupSummary:system:diagnostics:${install}:${uid}`;
+  assert.deepEqual(results.map((result) => result.recordId), [`system:diagnostics:${INSTALL}`, `system:diagnostics:${INSTALL}`, `system:diagnostics:${secondInstall}`],
+    "the response echoes the client id");
+  const key = (install, uid) => `devicePerformanceUploadGroups/uploadGroupSummary:system:diagnostics:${install}:${install}:${uid}`;
   assert.deepEqual(h.factPaths(), [key(INSTALL, COACH), key(INSTALL, STAFF), key(secondInstall, COACH)].sort());
+  // The v1.1 install-less id and a group naming another install are refused.
+  const legacy = systemGroup();
+  legacy.recordId = legacy.body.groupId = "system:diagnostics";
+  const foreign = fixture("upload-group-summary-system-foreign-install.invalid.json");
+  assert.deepEqual(statuses(await h.ingest([legacy, foreign], actor(COACH))), [["rejected", "invalidSchema"], ["rejected", "identityMismatch"]]);
   // Each scope keeps its own revision history; no account can squat another's group.
-  assert.deepEqual(statuses(await h.ingest([systemGroup(), systemGroup({ revision: 3 })], actor(COACH))), [["duplicate", null], ["accepted", null]]);
-  assert.equal(h.db.snapshot(key(INSTALL, COACH)).revision, 3);
-  assert.equal(h.db.snapshot(key(INSTALL, STAFF)).revision, 2);
-  assert.equal(h.db.snapshot(key(secondInstall, COACH)).revision, 2);
+  const base = fixture("upload-group-summary-system.valid.json").revision;
+  assert.deepEqual(statuses(await h.ingest([systemGroup(), systemGroup({ revision: base + 1 })], actor(COACH))), [["duplicate", null], ["accepted", null]]);
+  assert.equal(h.db.snapshot(key(INSTALL, COACH)).revision, base + 1);
+  assert.equal(h.db.snapshot(key(INSTALL, STAFF)).revision, base);
+  assert.equal(h.db.snapshot(key(secondInstall, COACH)).revision, base);
   assert.equal(h.db.snapshot(key(INSTALL, STAFF)).record.originReporterUid, STAFF);
   // Attempt-linked groups keep the contract's plain key.
   assert.deepEqual(statuses(await h.ingest([fixture("upload-group-summary.valid.json")], actor(COACH))), [["accepted", null]]);
   assert.ok(h.doc("uploadGroupSummary", `${COACH_ATTEMPT}:resultFiles`));
+});
+
+test("per-attempt caps: a 33rd run or 513th transfer is refused permanently; revisions and replays never count (D-31)", async () => {
+  assert.deepEqual(ATTEMPT_CAPS, { runSummary: 32, transferInvocation: 512 });
+  const seed = {};
+  for (let n = 1; n < ATTEMPT_CAPS.runSummary; n++) seed[`devicePerformanceRuns/runSummary:${uuid(300 + n)}`] = { storageVersion: 1, attemptId: STAFF_ATTEMPT };
+  for (let n = 1; n < ATTEMPT_CAPS.transferInvocation; n++) seed[`devicePerformanceTransfers/transferInvocation:${uuid(1000 + n)}`] = { storageVersion: 1, attemptId: COACH_ATTEMPT };
+  const h = harness(seed);
+  // The 32nd run and the 512th transfer of an attempt still fit.
+  assert.deepEqual(statuses(await h.ingest([run()], actor(STAFF))), [["accepted", null]]);
+  const transferFixture = fixture("transfer-invocation.valid.json");
+  assert.deepEqual(statuses(await h.ingest([transferFixture], actor(COACH))), [["accepted", null]]);
+  // The next new entity of either kind is a permanent refusal.
+  const extraRun = run({ recordId: uuid(400), processingRunId: uuid(400) });
+  const extraTransfer = { ...transferFixture, recordId: uuid(2000), body: { ...transferFixture.body, invocationId: uuid(2000) } };
+  const [runRefusal] = await h.ingest([extraRun], actor(STAFF));
+  const [transferRefusal] = await h.ingest([extraTransfer], actor(COACH));
+  for (const refusal of [runRefusal, transferRefusal]) {
+    assert.deepEqual([refusal.status, refusal.retryable, refusal.errorCode, refusal.acceptedRevision], ["rejected", false, ATTEMPT_CAP_WIRE_CODE, null]);
+  }
+  assert.equal(h.doc("runSummary", uuid(400)), undefined);
+  assert.equal(h.doc("transferInvocation", uuid(2000)), undefined);
+  // The wire code is a frozen v1.2.1 code; the typed reason is logged.
+  assert.deepEqual(h.logs.filter(([level]) => level === "warn").map(([, , detail]) => [detail.errorCode, detail.recordKind, detail.cap]),
+    [["attemptCapExceeded", "runSummary", 32], ["attemptCapExceeded", "transferInvocation", 512]]);
+  // Revisions and replays of a stored entity never count against the cap.
+  assert.deepEqual(statuses(await h.ingest([run(), run({ revision: 2, completeness: "partial" })], actor(STAFF))), [["duplicate", null], ["accepted", null]]);
+  // Another attempt is unaffected.
+  await h.db.doc(`processingAttempts/${uuid(500)}`).set(attemptIndex(uuid(500), STAFF));
+  assert.deepEqual(statuses(await h.ingest([run({ attemptId: uuid(500), recordId: uuid(501), processingRunId: uuid(501) })], actor(STAFF))), [["accepted", null]]);
 });
 
 test("a stored fact from a newer storage version keeps the record pending", async () => {

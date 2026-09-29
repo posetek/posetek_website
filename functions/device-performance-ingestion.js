@@ -48,6 +48,14 @@ const POST_TERMINAL_MUTABLE = Object.freeze({
 // Attempt identity the processingAttempts index records; a fact may not
 // contradict it (D-21 F7).
 const ATTEMPT_INDEX_FACTS = Object.freeze(["drillType", "repId", "originLaunchId"]);
+// Per-attempt bounds on new entities (D-31 F1 follow-up), well inside the
+// projection's over-limit exclusion (128 runs / 2,000 transfers per attempt).
+const ATTEMPT_CAPS = Object.freeze({ runSummary: 32, transferInvocation: 512 });
+// Contract v1.2.1 (§8.7, $defs/ingestResponseV1) has no `attemptCapExceeded`
+// error code. Until a contract amendment adds it, the permanent refusal is sent
+// with the closest frozen code and the typed reason is logged; adding the code
+// to the contract makes this a one-line change.
+const ATTEMPT_CAP_WIRE_CODE = "illegalTransition";
 
 function omit(object, keys) {
   return Object.fromEntries(Object.entries(object).filter(([key]) => !keys.includes(key)));
@@ -80,14 +88,16 @@ function sameIdentity(stored, record, authority) {
   return ORIGIN_FACTS.every((key) => previous[key] === null || contract.jsonEqual(previous[key], record[key]));
 }
 
-// Interim rule until contract v1.2 makes the client id install-scoped (D-21 F1):
-// a `system:<category>` upload group has no attempt, so the same recordId comes
-// from every install and account. Its stored identity and idempotency key are
-// scoped to the reporting install and account.
+// Contract §8.6 transition rule (D-21 F1, kept in v1.2): a system upload group
+// (`system:<category>:<originInstallId>`, which already names its install) is
+// stored and keyed under `${recordKind}:${recordId}:${originInstallId}:${originReporterUid}`,
+// so accounts sharing an install never share a document. Every other fact,
+// including the per-reporter deviceStatus id `<executorInstallId>:<originReporterUid>`,
+// is keyed `${recordKind}:${recordId}`.
 function storageKey(record) {
   const key = `${record.recordKind}:${record.recordId}`;
   return record.recordKind === "uploadGroupSummary" && record.recordId.startsWith("system:")
-    ? `${key}:${record.originInstallId ?? "null"}:${record.originReporterUid}`
+    ? `${key}:${record.originInstallId}:${record.originReporterUid}`
     : key;
 }
 
@@ -157,11 +167,24 @@ function createDevicePerformanceIngestion({ db, FieldValue, Timestamp, HttpsErro
       return false;
     });
   }
-  // Each executing install is charged once per call, and only for a record
-  // whose caller may report it (D-21 F4).
-  function installLimited(installId, installs) {
-    if (!installs.has(installId)) installs.set(installId, consumeRate(`install:${installId}`, RATE_LIMITS.callsPerInstall));
+  // Each executing install is charged once per call, only for a record whose
+  // caller may report it (D-21 F4), and on a counter of its own per account, so
+  // another account naming a known install id cannot spend that device's
+  // budget (D-23 low item).
+  function installLimited(installId, uid, installs) {
+    if (!installs.has(installId)) installs.set(installId, consumeRate(`install:${installId}:${uid}`, RATE_LIMITS.callsPerInstall));
     return installs.get(installId);
+  }
+  // True when a NEW run or transfer would take its attempt past the cap. Only
+  // new entities count; revisions and replays of a stored one never do. The
+  // count runs outside the fact transaction, so two concurrent new entities can
+  // overshoot the cap by the concurrency (bounded by the batch and the rate
+  // limits, and far inside the projection's own exclusion bound).
+  async function attemptCapReached(record) {
+    const cap = ATTEMPT_CAPS[record.recordKind];
+    if (cap === undefined || record.attemptId === null) return false;
+    const counted = await db.collection(contract.ROOTS[record.recordKind]).where("attemptId", "==", record.attemptId).count().get();
+    return counted.data().count >= cap;
   }
 
   function factFields(record, evaluation, authority, current, batchId) {
@@ -202,7 +225,13 @@ function createDevicePerformanceIngestion({ db, FieldValue, Timestamp, HttpsErro
     }
     const verified = await authorize(record, auth, call.attempts);
     if (verified.errorCode) return refuse(verified.errorCode);
-    if (record.executorInstallId !== null && await installLimited(record.executorInstallId, call.installs)) return refuse("rateLimited");
+    if (!known && await attemptCapReached(record)) {
+      logger.warn("ingestDevicePerformanceV1 refused a record", {
+        index, errorCode: "attemptCapExceeded", recordKind: record.recordKind, cap: ATTEMPT_CAPS[record.recordKind],
+      });
+      return refuse(ATTEMPT_CAP_WIRE_CODE);
+    }
+    if (record.executorInstallId !== null && await installLimited(record.executorInstallId, auth.uid, call.installs)) return refuse("rateLimited");
     return db.runTransaction(async (tx) => {
       const snapshot = await tx.get(ref);
       const stored = snapshot.exists ? snapshot.data() : null;
@@ -293,5 +322,5 @@ function createIngestDevicePerformanceV1(functions, admin, requireCaller) {
 module.exports = {
   createDevicePerformanceIngestion, createIngestDevicePerformanceV1, storageKey, frozenRunView,
   RATE_LIMIT_ROOT, RATE_LIMITS, RETENTION_DAYS, STORAGE_VERSION, EXACT_IDENTITY, RUN_LINEAGE, ORIGIN_FACTS,
-  POST_TERMINAL_MUTABLE, ATTEMPT_INDEX_FACTS,
+  POST_TERMINAL_MUTABLE, ATTEMPT_INDEX_FACTS, ATTEMPT_CAPS, ATTEMPT_CAP_WIRE_CODE,
 };
