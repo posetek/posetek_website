@@ -249,27 +249,31 @@ const pageOf = <T,>(rows: T[], cursor: string | null, pageSize: number) => {
   return { rows: rows.slice(offset, next), pagination: { pageSize, nextCursor: next < rows.length ? `preview-page-${next}` : null, totalRows: rows.length } };
 };
 
-const ATTEMPT_IDS = Array.from({ length: 30 }, (_, index) => `9f${index.toString(16).padStart(6, "0")}-1a2b-4c3d-8e4f-${(index * 104_729 + 7).toString(16).padStart(12, "0").slice(-12)}`);
+/** Attempt ids cycle through four timelines: healthy, failed then retried after a relaunch, stopped before processing, interrupted. */
+export const ATTEMPT_IDS = Array.from({ length: 30 }, (_, index) => `9f${index.toString(16).padStart(6, "0")}-1a2b-4c3d-8e4f-${(index * 104_729 + 7).toString(16).padStart(12, "0").slice(-12)}`);
 function attemptRows(filterDrill: DrillType | null, stageId: string | null, count = 24, installId: string | null = null): AttemptRowV1[] {
   return ATTEMPT_IDS.slice(0, count).map((attemptId, index) => {
+    // Rows follow the drawer's four timelines (previewAttempt): 0 healthy, 1 failed then retried after a
+    // relaunch, 2 stopped before processing, 3 interrupted.
+    const variant = index % 4;
     const drill = filterDrill ?? (["deadballShot", "sprint", "jump", "changeOfDirection", "broadJump", "freeRecord"] as DrillType[])[index % 6];
-    const failed = stageId !== null || index % 7 === 3;
     const device = installId ? allDevices.find(row => row.installId === installId) ?? namedDevices[0] : namedDevices[index % 7];
-    const uncertain = index % 11 === 5, crossLaunch = index % 9 === 4;
+    const uncertain = index % 11 === 5, usable = variant <= 1;
     return {
       attemptId, originInstallId: device.installId, deviceLabel: device.label, machine: device.machine, drillType: drill,
       recordingMode: index % 2 ? "station" : "ordinary",
       captureOccurredAt: uncertain ? "2031-01-01T00:00:00.000Z" : `2026-09-${String(23 + index % 7).padStart(2, "0")}T${String(14 + index % 8).padStart(2, "0")}:${String((index * 7) % 60).padStart(2, "0")}:00.000Z`,
       clockQuality: uncertain ? "future" : "reliable", receivedAt: `2026-09-${String(23 + index % 7).padStart(2, "0")}T${String(15 + index % 8).padStart(2, "0")}:00:00.000Z`,
-      captureBuild: BUILDS[index % 2].label, executionBuilds: crossLaunch ? [BUILDS[0].label, BUILDS[1].label] : [BUILDS[index % 2].label],
-      measurementVerdict: failed ? (index % 2 ? "invalid" : "pending") : "valid", verdictReason: failed ? (index % 2 ? "processingFailed" : "awaitingRetry") : null,
-      runCount: failed ? 2 : 1,
-      timeToResultMs: failed || crossLaunch ? null : 14_000 + (index * 1_931) % 20_000, timeToResultMissing: failed ? "notReached" : crossLaunch ? "crossLaunch" : null,
-      cloudSaveMs: failed ? null : 2_800 + (index * 613) % 9_000, cloudSaveMissing: failed ? "notReached" : null,
-      requiredSaveState: failed ? "notQueued" : index % 5 === 0 ? "queued" : "committed", archiveState: index % 4 === 0 ? "uploaded" : index % 4 === 1 ? "pending" : "notRequested",
-      failureStageId: failed && index % 3 !== 2 ? stageId ?? "kick.denseBall" : null,
-      lastReportedStageId: failed && index % 3 === 2 ? stageId ?? "kick.extract" : null,
-      completeness: failed || crossLaunch ? "partial" : "complete",
+      captureBuild: BUILDS[variant === 1 ? 0 : index % 2].label, executionBuilds: variant === 1 ? [BUILDS[0].label, BUILDS[1].label] : [BUILDS[index % 2].label],
+      measurementVerdict: usable ? "valid" : "pending", verdictReason: variant === 2 ? "awaitingRetry" : variant === 3 ? "interrupted" : null,
+      runCount: variant === 1 ? 2 : variant === 2 ? 0 : 1,
+      timeToResultMs: variant === 0 ? 14_000 + (index * 1_931) % 20_000 : null,
+      timeToResultMissing: variant === 1 ? "crossLaunch" : variant === 2 ? "notReached" : variant === 3 ? "interrupted" : null,
+      cloudSaveMs: usable ? 2_800 + (index * 613) % 9_000 : null, cloudSaveMissing: usable ? null : "notReached",
+      requiredSaveState: usable ? "committed" : "notQueued", archiveState: variant === 0 ? "uploaded" : "notRequested",
+      failureStageId: variant === 2 ? stageId ?? "input.calibration" : null,
+      lastReportedStageId: variant === 3 ? stageId ?? "kick.denseBall" : null,
+      completeness: variant === 0 ? "complete" : "partial",
     };
   });
 }
@@ -344,8 +348,9 @@ const transfer = (attemptId: string, index: number, role: string, category: stri
     normalizedFailureCode: outcome === "failed" ? "networkUnavailable" : null, failureStage: null,
   });
 
-function previewAttempt(attemptId: string) {
-  const variant = (ATTEMPT_IDS.indexOf(attemptId) + 30) % 4; // unknown ids use the healthy variant
+export function previewAttempt(attemptId: string) {
+  const position = ATTEMPT_IDS.indexOf(attemptId);
+  const variant = position < 0 ? 0 : position % 4; // unknown ids use the healthy variant
   const run1 = "8c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f", run2 = "8c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e50";
   const attemptBody = (extra: Record<string, unknown>, stages: StageSummaryV1[]) => ({
     stages, spans: { timeToResultMs: 21_874, readyForNextRepMs: 31_305, saveConfirmedAfterRecordingMs: 27_902 },
@@ -415,9 +420,11 @@ function detailRows(request: DetailRequestV1, device: PreviewDevice) {
     return { kind: "uploads", ...pageOf(uploads, request.cursor, request.pageSize) };
   }
   if (request.section === "failures") {
-    const failures: FailureRowV1[] = all.filter(row => row.failureStageId || row.lastReportedStageId).map(row => ({
-      attemptId: row.attemptId, processingRunId: row.failureStageId ? "8c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f" : null, stageId: (row.failureStageId ?? row.lastReportedStageId)!,
-      failureCode: row.failureStageId ? "memory_pressure" : null, failureLayer: row.failureStageId ? "resource" : null, confirmed: !!row.failureStageId,
+    const stage = request.focus?.kind === "stage" ? request.focus.stageId : null;
+    const failures: FailureRowV1[] = all.filter(row => (row.failureStageId || row.lastReportedStageId) && (!stage || row.failureStageId === stage || row.lastReportedStageId === stage)).map(row => ({
+      // Variant 2 stopped before a run existed; variant 3 was interrupted inside its run.
+      attemptId: row.attemptId, processingRunId: row.failureStageId ? null : "8c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f", stageId: (row.failureStageId ?? row.lastReportedStageId)!,
+      failureCode: row.failureStageId ? "calibration_unavailable" : null, failureLayer: row.failureStageId ? "input" : null, confirmed: !!row.failureStageId,
       occurredAt: row.captureOccurredAt, clockQuality: row.clockQuality, drillType: row.drillType, build: row.captureBuild,
     }));
     return { kind: "failures", ...pageOf(failures, request.cursor, request.pageSize) };
@@ -475,6 +482,7 @@ export function createPreviewSource(scenarioName: string | null): DevicePerforma
   };
   return {
     kind: "preview",
+    scenarios: PREVIEW_SCENARIOS,
     async fleet(request) {
       const paged = Boolean(request.cursor || request.attemptsCursor);
       await gate(paged, paged || Boolean(request.focus));

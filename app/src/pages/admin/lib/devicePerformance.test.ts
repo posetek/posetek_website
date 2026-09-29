@@ -12,7 +12,7 @@ import {
   allocationView, appliedFilters, attemptTimeline, createDevicePerformanceClient, createReportCache, describeLoadFailure,
   devicePath, devicePerformanceSearch, failureRate, fleetPath, fleetRequest, formatBytes, formatDuration, formatMBps,
   isLimitedData, loadDevicePerformanceSource, parseAttemptDetail, parseDevicePerformanceQuery, parseFleetReport,
-  parsePerformanceRecord, stageLabel, statView, statedScope, usableYield, weightedThroughputMBps,
+  parsePerformanceRecord, reportStateFor, stageLabel, statView, statedScope, usableYield, weightedThroughputMBps,
 } from "./devicePerformance";
 import type {
   AttemptSummaryRecordV1, DistributionStatV1, FleetReportV1, RunSummaryRecordV1, UploadGroupRecordV1,
@@ -421,6 +421,19 @@ describe("callable client", () => {
     const guarded = /if \(import\.meta\.env\.DEV && preview\) \{\s*const module = await import\("\.\/devicePerformancePreview"\);/;
     expect(source).toMatch(guarded);
     expect(source).not.toMatch(/catch[^}]*devicePerformancePreview/);
+  });
+
+  it("keeps the loaded totals while a page loads or fails, but never across a filter change", () => {
+    const good = { key: "page-1", shape: "filters-a", report: "report-a" };
+    const failure = describeLoadFailure({ code: "functions/unavailable" });
+    expect(reportStateFor("page-1", "filters-a", { good, failed: null }, null)).toMatchObject({ status: "ready", report: "report-a", stale: false });
+    expect(reportStateFor("page-2", "filters-a", { good, failed: null }, null)).toMatchObject({ status: "loading", report: "report-a", stale: true });
+    expect(reportStateFor("page-2", "filters-a", { good, failed: { key: "page-2", failure } }, null)).toMatchObject({ status: "error", report: "report-a", stale: true, failure });
+    expect(reportStateFor("other", "filters-b", { good, failed: null }, null)).toMatchObject({ status: "loading", report: null });
+    expect(reportStateFor("other", "filters-b", { good, failed: { key: "other", failure } }, null)).toMatchObject({ status: "error", report: null });
+    expect(reportStateFor("other", "filters-b", { good, failed: null }, "cached-b")).toMatchObject({ status: "ready", report: "cached-b" });
+    // After Refresh the old report stays visible as stale until the new one arrives.
+    expect(reportStateFor("page-1", "filters-a", { good: { ...good, key: null }, failed: null }, null)).toMatchObject({ status: "loading", report: "report-a", stale: true });
   });
 
   it("expires cached reports and keeps the cache bounded", () => {

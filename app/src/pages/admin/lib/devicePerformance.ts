@@ -18,6 +18,9 @@
 // - the preview module is reachable only from a DEV build, and a live
 //   failure is reported as a failure, never replaced with preview data.
 
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigationType } from "react-router-dom";
+
 // MARK: - Contract vocabularies (schema.json $defs; tolerant: unknown values render verbatim)
 
 export const PERFORMANCE_SCHEMA_VERSION = 1;
@@ -1240,6 +1243,8 @@ export interface DetailRequestV1 extends ReportRequestBaseV1 {
   installId: string;
   attribution: Attribution;
   section: DeviceSection;
+  /** Narrows the section rows only; totals never depend on it. */
+  focus: FocusV1 | null;
   pageSize: number;
   cursor: string | null;
 }
@@ -1254,7 +1259,7 @@ export function fleetRequest(query: DevicePerformanceQuery, pageSize = PAGE_SIZE
   return { ...base(query), search: query.search.trim() || null, sort: query.sort, pageSize: Math.min(MAX_PAGE_SIZE, Math.max(1, pageSize)), cursor: query.cursor, focus: query.focus, attemptsCursor: query.focus ? query.attemptsCursor : null };
 }
 export function detailRequest(installId: string, query: DevicePerformanceQuery, pageSize = PAGE_SIZE): DetailRequestV1 {
-  return { ...base(query), installId, attribution: query.attribution, section: query.section, pageSize: Math.min(MAX_PAGE_SIZE, Math.max(1, pageSize)), cursor: query.cursor };
+  return { ...base(query), installId, attribution: query.attribution, section: query.section, focus: query.focus, pageSize: Math.min(MAX_PAGE_SIZE, Math.max(1, pageSize)), cursor: query.cursor };
 }
 export const DEVICE_LABEL_MAX = 48;
 export function normalizeDeviceLabel(value: string): string | null {
@@ -1302,6 +1307,8 @@ export function describeLoadFailure(error: unknown, subject: "report" | "device"
 export type CallableTransport = (name: string, payload: unknown) => Promise<unknown>;
 export interface DevicePerformanceSource {
   kind: "live" | "preview";
+  /** Preview only: the synthetic states the preview can show. */
+  scenarios?: readonly { key: string; label: string }[];
   fleet(request: FleetRequestV1): Promise<FleetReportV1>;
   device(request: DetailRequestV1): Promise<DeviceReportV1>;
   attempt(request: AttemptRequestV1): Promise<AttemptDetailV1>;
@@ -1357,10 +1364,132 @@ export function createReportCache<T>(ttlMs = 60_000, max = 8) {
       entries.set(key, { value, at: now });
       while (entries.size > max) entries.delete(entries.keys().next().value!);
     },
+    delete(key: string) { entries.delete(key); },
     clear() { entries.clear(); },
   };
 }
 export const requestKey = (kind: string, request: unknown, scenario: string | null = null) => JSON.stringify([kind, scenario, request]);
+
+// MARK: - React hooks shared by the device-performance views
+
+const reportCache = createReportCache<unknown>();
+export function forgetCachedReports() { reportCache.clear(); }
+
+export function useDevicePerformanceSource(preview: boolean, scenario: string | null): DevicePerformanceSource | null {
+  const key = `${preview}:${scenario ?? ""}`;
+  const [loaded, setLoaded] = useState<{ key: string; source: DevicePerformanceSource } | null>(null);
+  useEffect(() => {
+    let live = true;
+    void loadDevicePerformanceSource(preview, scenario).then(source => { if (live) setLoaded({ key, source }); });
+    return () => { live = false; };
+  }, [key, preview, scenario]);
+  return loaded?.key === key ? loaded.source : null;
+}
+
+export interface ReportState<T> {
+  status: "loading" | "ready" | "error";
+  /** The last complete report for the same filters and period; kept while a page, focus or section loads or fails. */
+  report: T | null;
+  failure: LoadFailure | null;
+  /** true when report belongs to an earlier page or section of the same filters. */
+  stale: boolean;
+}
+interface Settled<T> {
+  /** The last complete report, with the request and shape it answered (key null after Refresh). */
+  good: { key: string | null; shape: string; report: T } | null;
+  failed: { key: string; failure: LoadFailure } | null;
+}
+
+/** What to draw for one request, derived from the cache and the last settled responses. */
+export function reportStateFor<T>(key: string, shape: string, settled: Settled<T>, cached: T | null): ReportState<T> {
+  if (settled.good?.key === key) return { status: "ready", report: settled.good.report, failure: null, stale: false };
+  if (cached) return { status: "ready", report: cached, failure: null, stale: false };
+  const kept = settled.good?.shape === shape ? settled.good.report : null;
+  if (settled.failed?.key === key) return { status: "error", report: kept, failure: settled.failed.failure, stale: kept !== null };
+  return { status: "loading", report: kept, failure: null, stale: kept !== null };
+}
+
+/**
+ * One report request. Totals never depend on paging, so a request that
+ * differs from the loaded one only in cursor, focus or section keeps showing
+ * the loaded totals while it loads, and keeps them if it fails. Any other
+ * change starts from an empty (skeleton) state.
+ */
+export function useDevicePerformanceReport<Q, T>({ source, kind, request, shape, scenario, load }: {
+  source: DevicePerformanceSource | null;
+  kind: "fleet" | "device";
+  request: Q;
+  shape: unknown;
+  scenario: string | null;
+  load: (source: DevicePerformanceSource, request: Q) => Promise<T>;
+}): { state: ReportState<T>; refresh: () => void } {
+  const key = requestKey(kind, request, scenario), shapeKey = requestKey(`${kind}:shape`, shape, scenario);
+  const [settled, setSettled] = useState<Settled<T>>(() => {
+    const cached = reportCache.get(key) as T | null;
+    return { good: cached ? { key, shape: shapeKey, report: cached } : null, failed: null };
+  });
+  const [generation, setGeneration] = useState(0);
+  useEffect(() => {
+    if (!source) return;
+    let live = true;
+    // A cached report is adopted asynchronously too, so it stays on screen after the cache entry expires.
+    const cached = reportCache.get(key) as T | null;
+    (cached ? Promise.resolve(cached) : load(source, request)).then(report => {
+      if (!live) return;
+      reportCache.set(key, report);
+      setSettled({ good: { key, shape: shapeKey, report }, failed: null });
+    }, error => {
+      if (live) setSettled(previous => ({ ...previous, failed: { key, failure: describeLoadFailure(error, kind === "device" ? "device" : "report") } }));
+    });
+    return () => { live = false; };
+  }, [source, kind, request, load, key, shapeKey, generation]);
+  const refresh = useCallback(() => {
+    reportCache.delete(key);
+    setSettled(previous => ({ good: previous.good && { ...previous.good, key: null }, failed: null }));
+    setGeneration(value => value + 1);
+  }, [key]);
+  return { state: reportStateFor(key, shapeKey, settled, reportCache.get(key) as T | null), refresh };
+}
+
+const scrollPositions = new Map<string, number>();
+/**
+ * Back navigation returns to the same scroll position once the (cached)
+ * report is drawn; entering a page any other way starts at the top.
+ */
+export function useScrollMemory(pageKey: string, ready: boolean) {
+  const navigationType = useNavigationType();
+  const settled = useRef(false);
+  useEffect(() => () => { scrollPositions.set(pageKey, window.scrollY); }, [pageKey]);
+  useEffect(() => {
+    if (!ready || settled.current) return;
+    settled.current = true;
+    const saved = scrollPositions.get(pageKey);
+    if (navigationType === "POP" && saved) window.scrollTo(0, saved);
+    else if (navigationType !== "POP") window.scrollTo(0, 0);
+  }, [ready, pageKey, navigationType]);
+}
+
+/** Moves keyboard focus to a section heading when the user changes what it shows (never on first load). */
+export function useFocusHeadingOnChange(value: string | null, headingId: string) {
+  const previous = useRef(value);
+  useEffect(() => {
+    if (previous.current === value) return;
+    previous.current = value;
+    if (value) requestAnimationFrame(() => document.getElementById(headingId)?.focus());
+  }, [value, headingId]);
+}
+
+export function focusDescription(focus: FocusV1): string {
+  return focus.kind === "stage" ? `Attempts that failed or last reported at “${stageLabel(focus.stageId)}”`
+    : `${DRILL_LABELS[focus.drill]} attempts, ordered by time in “${PHASE_LABELS[focus.phase]}”`;
+}
+
+/** Next element index for a Tab press inside a focus trap. */
+export function focusTrapTarget(current: number, count: number, backwards: boolean): number {
+  if (count <= 0) return -1;
+  if (current < 0) return backwards ? count - 1 : 0;
+  return backwards ? (current - 1 + count) % count : (current + 1) % count;
+}
 
 // MARK: - Attempt timeline (plan 07 §7 "Attempt detail")
 
