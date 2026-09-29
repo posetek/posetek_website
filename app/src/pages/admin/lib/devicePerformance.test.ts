@@ -24,7 +24,8 @@ import { PREVIEW_SCENARIOS, previewDevice, previewFleet } from "./devicePerforma
 
 // MARK: - Fixture copy (fail, never skip, when the canonical checkout is absent)
 
-const SCHEMA_SHA256 = "906c843cc446a29bcc8e8f2947e9ed11246f03929b1b93731e3273042fba1f49";
+// Contracts v1.2.1 (mobile main 6b112ca); v1.0 was 906c843c….
+const SCHEMA_SHA256 = "95343aae5a16f66e3e0d31e3096beb6ced9db12c6f26af0610875acb4b3997db";
 const CANONICAL = path.join("tools", "contracts", "device-performance-v1");
 const localCopy = fileURLToPath(new URL("./__fixtures__/device-performance-v1/", import.meta.url));
 const websiteRoot = fileURLToPath(new URL("../../../../../", import.meta.url));
@@ -80,6 +81,8 @@ const VALID_RECORDS: [string, string][] = [
   ["run-summary-evaluation-origin.valid.json", "runSummary"],
   ["upload-group-summary.valid.json", "uploadGroupSummary"],
   ["upload-group-summary-video-unavailable.valid.json", "uploadGroupSummary"],
+  // v1.2: a group with no attempt, id system:<category>:<originInstallId>; ids stay opaque to the UI.
+  ["upload-group-summary-system.valid.json", "uploadGroupSummary"],
   ["transfer-invocation.valid.json", "transferInvocation"],
 ];
 
