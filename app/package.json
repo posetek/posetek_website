@@ -3,15 +3,19 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": { "node": ">=22.19.0" },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node scripts/copy-legacy.mjs",
+    "build": "tsc -b && astro build",
+    "build:legacy": "tsc -b && vite build && node scripts/copy-legacy.mjs",
+    "dev:astro": "astro dev",
     "lint": "oxlint",
     "test": "vitest run",
     "screenshot:admin": "node scripts/capture-admin-dashboard.mjs",
     "preview": "vite preview",
     "check:player-parity": "node ../scripts/check-player-parity.mjs",
-    "build:marketing": "vite build --config vite.marketing.config.ts",
+    "build:marketing": "astro build",
+    "build:marketing:legacy": "vite build --config vite.marketing.config.ts",
     "check:svelte": "svelte-check --tsconfig ./tsconfig.app.json"
   },
   "dependencies": {
@@ -30,6 +34,8 @@
     "three": "^0.186.0"
   },
   "devDependencies": {
+    "@astrojs/react": "7.0.0",
+    "@astrojs/svelte": "9.0.1",
     "@firebase/rules-unit-testing": "^5.0.2",
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "@tailwindcss/vite": "^4.3.3",
@@ -38,6 +44,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "^6.0.4",
+    "astro": "7.3.5",
     "oxlint": "^1.75.0",
     "playwright": "^1.63.0",
     "sass": "^1.103.1",

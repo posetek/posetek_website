@@ -2,6 +2,7 @@
 // Authenticated editing/activation requires a separate authorized account pass.
 const fs = require('node:fs'), path = require('node:path'), http = require('node:http'), assert = require('node:assert/strict');
 const httpOnly = process.argv.includes('--http-only');
+const applicationRelease = process.argv.includes('--application-release');
 const root = path.resolve(__dirname, '..'), dist = path.join(root, 'production-dist');
 const out = path.join(root, 'app/node_modules/.cache/planner-entry-tests');
 const cases = ['/signin', '/privacy', '/profile.html', '/insights', '/insights?orgId=club&teamId=team&weeks=12', '/dashboard', '/admin', '/admin/', '/admin/programs', '/admin/programs/personalized?orgId=club&players=p',
@@ -38,6 +39,15 @@ const cases = ['/signin', '/privacy', '/profile.html', '/insights', '/insights?o
       base = 'http://127.0.0.1:' + server.address().port;
     }
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'deployment/homepage-baseline.json'), 'utf8'));
+    let reviewedApplication;
+    if (applicationRelease) {
+      const receipt = JSON.parse(fs.readFileSync(path.join(root, '.netlify/application-release-build.json'), 'utf8'));
+      assert.equal(receipt.baselineDeploymentId, manifest.deploymentId, 'Release receipt belongs to another baseline');
+      reviewedApplication = receipt.application;
+      assert.equal(reviewedApplication?.path, '/application.html', 'Release receipt must name the application document');
+      assert.match(reviewedApplication.sha, /^[a-f0-9]{40}$/, 'Release receipt needs a SHA-1');
+      assert.ok(Number.isSafeInteger(reviewedApplication.size) && reviewedApplication.size > 0, 'Release receipt needs an exact positive size');
+    }
     const applicationPath = manifest.applicationPath ?? '/index.html';
     const preserveApplicationEntry = applicationPath === '/application.html';
     assert.ok(applicationPath === '/index.html' || preserveApplicationEntry, 'Unsupported baseline application path');
@@ -46,10 +56,11 @@ const cases = ['/signin', '/privacy', '/profile.html', '/insights', '/insights?o
     assert.ok(!manifest.files.some(file => file.path === '/coaches' || file.path.startsWith('/coaches/')), 'Preservation baseline overlaps coaches output');
     const hash = bytes => require('node:crypto').createHash('sha1').update(bytes).digest('hex');
     for (const file of manifest.files) {
+      const expected = reviewedApplication && file.path === '/application.html' ? reviewedApplication : file;
       let bytes = fs.readFileSync(path.join(dist, !preserveApplicationEntry && file.path === '/index.html' ? 'application.html' : file.path.slice(1)));
       if (!preserveApplicationEntry && file.path === '/index.html') bytes = bytes.toString('utf8').replace(/\n<!-- homepage-navigation:start -->[\s\S]*?<!-- homepage-navigation:end -->\n/g, '');
-      assert.equal(typeof bytes === 'string' ? Buffer.byteLength(bytes) : bytes.length, file.size, 'Preserved file size changed: ' + file.path);
-      assert.equal(hash(bytes), file.sha, 'Preserved file changed: ' + file.path);
+      assert.equal(typeof bytes === 'string' ? Buffer.byteLength(bytes) : bytes.length, expected.size, 'Verified file size changed: ' + file.path);
+      assert.equal(hash(bytes), expected.sha, 'Verified file changed: ' + file.path);
     }
     const marketingPages = [
       { routes: ['/', '/index.html'], marker: '<!-- posetek-marketing-entry -->' },
@@ -65,8 +76,8 @@ const cases = ['/signin', '/privacy', '/profile.html', '/insights', '/insights?o
         assert.match(html, /<link\s+rel="canonical"\s+href="https:\/\/posetek\.net\/coaches"/, 'Coaches canonical missing');
         assert.ok(!html.includes('<!-- posetek-marketing-entry -->'), 'Player entry rendered at coaches route');
       }
-      const scripts = [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map(match => match[1]);
-      assert.ok(scripts.some(src => src.startsWith('/marketing/assets/')), 'Marketing bundle missing');
+      const scripts = [...new Set([...html.matchAll(/(?:src|component-url|renderer-url)="(\/(?:marketing\/assets|_astro)\/[^"]+\.js)"/g)].map(match => match[1]))];
+      assert.ok(scripts.length, 'Marketing bundle missing');
       for (const src of scripts) {
         const asset = await fetch(base + src);
         assert.equal(asset.status, 200, src);
@@ -77,18 +88,21 @@ const cases = ['/signin', '/privacy', '/profile.html', '/insights', '/insights?o
     for (const route of cases) {
       const response = await fetch(base + route), html = await response.text();
       assert.equal(response.status, 200, route);
-      const script = html.match(/<script type="module" crossorigin src="([^"]+)"/)?.[1];
-      assert.ok(script?.startsWith('/assets/'), 'Unified entry missing: ' + route);
+      const script = html.includes('<!-- posetek-astro-application-entry -->')
+        ? html.match(/component-url="([^\"]+)"/)?.[1]
+        : html.match(/<script type="module" crossorigin src="([^"]+)"/)?.[1];
+      assert.ok(script?.startsWith('/assets/') || (script?.startsWith('/_astro/') && html.includes('client="only"')), 'Unified entry missing: ' + route);
       entry ??= script;
       assert.equal(script, entry, 'Different app served: ' + route);
       assert.ok(!html.includes('personalized-planner-entry:start'));
       assert.ok(html.includes('/marketing/home-navigation.js'), 'Home navigation bridge missing: ' + route);
     }
     let assets = 0;
-    for (const file of fs.readdirSync(path.join(dist, 'assets')).filter(file => /\.(js|css)$/.test(file))) {
-      const response = await fetch(base + '/assets/' + file);
+    for (const directory of ['assets', '_astro'].filter(directory => fs.existsSync(path.join(dist, directory))))
+    for (const file of fs.readdirSync(path.join(dist, directory)).filter(file => /\.(js|css)$/.test(file))) {
+      const response = await fetch(base + '/' + directory + '/' + file);
       assert.equal(response.status, 200, file);
-      assert.deepEqual(Buffer.from(await response.arrayBuffer()), fs.readFileSync(path.join(dist, 'assets', file)), 'Asset mismatch: ' + file);
+      assert.deepEqual(Buffer.from(await response.arrayBuffer()), fs.readFileSync(path.join(dist, directory, file)), 'Asset mismatch: ' + file);
       assets++;
     }
     if (!httpOnly) {
@@ -114,7 +128,7 @@ const cases = ['/signin', '/privacy', '/profile.html', '/insights', '/insights?o
       await page.close();
     }
     }
-    const report = { base, homepageRoutes: 2, coachesRoutes: 3, preservedFiles: manifest.files.length, applicationRoutes: cases.length, assets, results, browserChecks: httpOnly ? 'checked separately in CUA' : 'passed', authenticatedWorkflows: 'not exercised' };
+    const report = { base, homepageRoutes: 2, coachesRoutes: 3, preservedFiles: manifest.files.length - (reviewedApplication ? 1 : 0), ...(reviewedApplication ? { reviewedApplication } : {}), applicationRoutes: cases.length, assets, results, browserChecks: httpOnly ? 'not exercised by this invocation' : 'passed', authenticatedWorkflows: 'not exercised' };
     fs.writeFileSync(path.join(out, 'production-entry-test-report.json'), JSON.stringify(report, null, 2) + '\n');
     console.log(JSON.stringify(report, null, 2));
   } finally { await browser?.close(); server?.close(); }

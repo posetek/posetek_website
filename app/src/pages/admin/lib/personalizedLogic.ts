@@ -3,6 +3,7 @@ import { planV3JobParams } from "./planJobs";
 import type { PlanIntakeForm } from "./planJobs";
 import { accountContext, accountPlayerPath, accountQuery } from "./accountHierarchy";
 import { activeProvisionalEstimates, type ProvisionalEstimate } from '../../../lib/provisional-estimates';
+import { coachPlannerReturn, coachWorkspacePath } from '../../../lib/coach-navigation';
 
 export const PERSONALIZED_ENGINE = "personalized-v1";
 export const PERSONALIZED_CAPABILITIES = ["generate_personalized_plan", "activate_personalized_plan", "discard_personalized_plan", "assess_personalized_plan"] as const;
@@ -151,8 +152,13 @@ export function plannerPlayerDetailsLink(role: string, player: any, search: stri
   const coachId = (prior.orgId ?? "") === (player.organizationId ?? "") ? prior.coachId : undefined;
   const context = { orgId: player.organizationId || undefined, teamId: player.teamId || undefined,
     coachId: coachId || (!player.organizationId ? player.coachId : undefined) || undefined };
-  return role === "admin" ? accountPlayerPath(player.id, context)
-    : `/athlete?player=${encodeURIComponent(player.id)}${accountQuery(context).replace(/^\?/, "&")}`;
+  if (role === "admin") return accountPlayerPath(player.id, context);
+  if (role === "staff") {
+    const priorWorkspace = new URL(coachPlannerReturn(search), "https://posetek.net");
+    return coachWorkspacePath(priorWorkspace.search, { view: "player", playerId: player.id,
+      orgId: context.orgId, teamId: context.teamId });
+  }
+  return `/athlete?player=${encodeURIComponent(player.id)}${accountQuery(context).replace(/^\?/, "&")}`;
 }
 export function activationParams(draft: any) {
   if (draft?.status !== "ready" || !draft.comparisonToken || !Array.isArray(draft.expectedActivePlans)) {

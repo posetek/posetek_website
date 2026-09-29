@@ -6,7 +6,7 @@ import { stat } from 'node:fs/promises';
 import { resolve, relative, isAbsolute, extname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const marketing = fileURLToPath(new URL('../marketing-dist/', import.meta.url));
+const marketing = fileURLToPath(new URL('../app/astro-dist/', import.meta.url));
 const reference = fileURLToPath(new URL('../.netlify/deployed-reference/6aa9b6f0d8faf6177db8fd97/', import.meta.url));
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.wasm': 'application/wasm', '.woff2': 'font/woff2' };
 
@@ -25,7 +25,9 @@ return createServer(async (req, res) => {
       filePath = '/coaches/index.html';
     } else if (pathname.startsWith('/marketing/assets/')) {
       root = marketingRoot;
-      filePath = pathname.slice('/marketing'.length);
+      filePath = resolve(marketingRoot) === resolve(referenceRoot) ? pathname : pathname.slice('/marketing'.length);
+    } else if (pathname.startsWith('/_astro/')) {
+      root = marketingRoot;
     } else if (/^\/bookperformancetest\/?$/i.test(pathname)) {
       filePath = '/bookPerformanceTest.html';
     }
@@ -35,7 +37,7 @@ return createServer(async (req, res) => {
     let details;
     try { details = await stat(target); if (!details.isFile()) throw new Error('not file'); }
     catch {
-      if (extname(pathname) || root === marketingRoot) { res.writeHead(404); res.end(); return; }
+      if ((extname(pathname) && extname(pathname) !== '.html') || pathname.startsWith('/_astro/') || pathname.startsWith('/marketing/assets/') || pathname === '/' || /^\/coaches(?:\/index\.html|\/)?$/.test(pathname)) { res.writeHead(404); res.end(); return; }
       target = resolve(referenceRoot, 'application.html');
       details = await stat(target);
     }

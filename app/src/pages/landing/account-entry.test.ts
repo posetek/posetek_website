@@ -22,8 +22,8 @@ describe("account entry destinations", () => {
   it("uses current role homes without a return request", () => {
     expect(route("admin")).toBe("/admin");
     expect(route("manager")).toBe("/organization");
-    expect(route("coach")).toBe("/organization");
-    expect(route("independent")).toBe("/roster?userType=coach");
+    expect(route("coach")).toBe("/insights");
+    expect(route("independent")).toBe("/insights");
     expect(route("player")).toBe("/feed?player=canonical-player&userType=player");
     expect(route("pending")).toBe("/join");
   });
@@ -39,7 +39,7 @@ describe("account entry destinations", () => {
     expect(route("player", target)).toBe("/feed?player=canonical-player&userType=player");
   });
   it("does not confuse independent coaches with managed staff", () => {
-    expect(route("independent", "/insights")).toBe("/roster?userType=coach");
+    expect(route("independent", "/insights")).toBe(origin + "/insights");
     expect(route("independent", "/organization")).toBe(origin + "/organization");
     expect(route("independent", "/join")).toBe(origin + "/join");
   });

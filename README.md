@@ -3,6 +3,13 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
+The unified coach workspace and Astro build are documented in
+[the implementation handoff](docs/UNIFIED_COACH_WORKSPACE.md). Team Insights owns
+the coach roster, progress, player details and embedded Community. Astro builds
+the three public/application entries while retaining existing React and Svelte
+interactions. Use `node scripts/build-astro-release.mjs` for a deliberate
+application release; ordinary builds retain the protected live application.
+
 Workout email alerts are live for all players from September 28, 2026 at
 4:06:30 PM PDT. Saved outcomes go to `dylank@posetek.net`; web-observed sessions
 also qualify for an inactivity notice after 30 minutes, processed every five
@@ -141,7 +148,7 @@ older mockup; use `app/src/pages/feed/` for iterations.
 
 ## Set up a fresh clone
 
-Use Node.js 22.18 or later in the Node 22 release line and npm 10. Run from the
+Use Node.js 22.19 or later in the Node 22 release line and npm 10. Run from the
 repository root unless stated otherwise:
 
 ```powershell

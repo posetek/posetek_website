@@ -126,9 +126,19 @@ describe("restored planner context", () => {
     expect(url.pathname).toBe("/admin/accounts/player/player");
     expect(Object.fromEntries(url.searchParams)).toEqual({ orgId: "current-club", teamId: "current-team", coachId: "context-coach" });
     const staff = new URL(plannerPlayerDetailsLink("staff", player, ""), "https://test.invalid");
-    expect(staff.searchParams.get("player")).toBe("player");
+    expect(staff.pathname).toBe("/insights");
+    expect(staff.searchParams.get("view")).toBe("player");
+    expect(staff.searchParams.get("playerId")).toBe("player");
     expect(staff.searchParams.get("orgId")).toBe("current-club");
     expect(staff.searchParams.has("coachId")).toBe(false);
+  });
+  it("returns coach details to the selected workspace window without carrying generation actions", () => {
+    const returnTo = "/insights?view=player&playerId=old&start=2026-09-01&end=2026-09-29&rosterSearch=Taylor";
+    const url = new URL(plannerPlayerDetailsLink("staff", { id: "player", organizationId: "club", teamId: "team" }, new URLSearchParams({ returnTo, activate: "true" }).toString()), "https://test.invalid");
+    expect(url.searchParams.get("start")).toBe("2026-09-01");
+    expect(url.searchParams.get("rosterSearch")).toBe("Taylor");
+    expect(url.searchParams.get("playerId")).toBe("player");
+    expect(url.searchParams.has("activate")).toBe(false);
   });
   it("never converts a canonical player's legacy coach pointer into return navigation", () => {
     const player = { id: "player", organizationId: "club", teamId: "team", coachId: "legacy-manager" };

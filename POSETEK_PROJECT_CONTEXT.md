@@ -1,8 +1,30 @@
 # PoseTek website project context
 
-Reviewed on September 28, 2026. This guide summarizes the available repository and
+Reviewed on September 29, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
+
+## Unified coach workspace and Astro migration (implementation)
+
+The user approved Team Insights as the single coach workspace, including
+organization and independent coaches. Overview owns the roster; Testing,
+Workouts, Active use, Community and one named player tab share its shell. Player
+comparisons use measured team/roster percentiles and recorded age, with explicit
+missing-data states. Existing plans, workout history, published personal workouts,
+signup actions and planner paths remain connected. Canonical staff permissions
+and social audiences remain authoritative.
+
+The user also selected the full-site Astro migration and supplied Astra frontend
+design guidance. Astro builds Players, Coaches and the application documents,
+retaining React interactions, Svelte demonstrations and the protected public
+assets. See [the implementation handoff](docs/UNIFIED_COACH_WORKSPACE.md) and
+[the API contract](docs/insights/COACH_WORKSPACE_CONTRACT.md). The scoped Insights
+release contains nine functions; no gateway, rules, native or catalog release is
+included. The production receipt will record the verified candidate and promotion.
+
+The previously deployed workout-alert source branch was merged before this work,
+preserving the September 28 live functionality that had not yet reached main.
+The following section records that predecessor production state.
 
 ## Workout email alerts (2026-09-28, live)
 
