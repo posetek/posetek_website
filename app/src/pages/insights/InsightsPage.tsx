@@ -103,6 +103,9 @@ export function InsightsControls({ choices, request, scope, loading, hideScope =
 export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embedded?: boolean }) {
   const navigate = useNavigate(), location = useLocation();
   const [query, setQuery] = useSearchParams(), request = expandedRequest(query.toString());
+  // React Router replaces its setter when any query parameter changes. Keep
+  // that presentation-only identity out of the server request lifecycle.
+  const queryWriter = useRef(setQuery); queryWriter.current = setQuery;
   const [response, setResponse] = useState<{ key: string; data: ExpandedInsights } | null>(null);
   const [choices, setChoices] = useState<InsightChoices | null>(null), [context, setContext] = useState<ClubContext | null>(null);
   const [scope, setScope] = useState<InsightScope | null>(null), [role, setRole] = useState<InsightAccess | null>(null);
@@ -154,10 +157,10 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
           if (!teamId) { setAccessDenied(true); return; }
           selected = { kind: "team", organizationId: canonical.id, teamId };
           try { localStorage.setItem(`posetek:insights-team:${uid}:${canonical.id}`, teamId); } catch { /* Storage is optional. */ }
-          if (!request.orgId || !request.teamId) { setQuery(expandedQuery(request, { orgId: canonical.id, teamId }), { replace: true }); return; }
+          if (!request.orgId || !request.teamId) { queryWriter.current(current => expandedQuery(expandedRequest(current.toString()), { orgId: canonical.id, teamId }), { replace: true }); return; }
         }
         setScope(selected);
-        if (selected.kind !== "global" && selected.kind !== "coachRoster" && !request.orgId) { setQuery(expandedQuery(request, { orgId: selected.organizationId }), { replace: true }); return; }
+        if (selected.kind !== "global" && selected.kind !== "coachRoster" && !request.orgId) { queryWriter.current(current => expandedQuery(expandedRequest(current.toString()), { orgId: selected.organizationId }), { replace: true }); return; }
         const result = await completeReport(() => clubCall<ExpandedInsights>("getClubInsightsV2", reportPayload(request, selected, request.cursor)), isCurrent, () => setRebuilding(true));
         if (!result || !isCurrent()) return;
         assertReportScope(result, selected, request);
@@ -174,7 +177,7 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
     return () => guard.cancel();
   // requestKey contains only fields used by the server; view/feed changes preserve state.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestKey, guard, setQuery]);
+  }, [requestKey, guard]);
 
   function change(patch: Partial<ExpandedRequest>) {
     const dataChange = Object.keys(patch).some(key => !["view", "playerId", "extra", "cursor", "page"].includes(key));
