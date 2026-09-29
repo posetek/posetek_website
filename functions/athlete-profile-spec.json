@@ -1,0 +1,27 @@
+{
+  "axes": [
+    {"key":"power","label":"Power","icon":"bolt","drills":"Broad Jump and Jump"},
+    {"key":"speed","label":"Speed","icon":"sprint","drills":"Sprint"},
+    {"key":"agility","label":"Agility","icon":"switch_access_shortcut","drills":"Change of Direction"},
+    {"key":"ballControl","label":"Ball Control","icon":"sports_soccer","drills":"Dribbling"},
+    {"key":"striking","label":"Striking","icon":"target","drills":"Shooting"}
+  ],
+  "metrics": [
+    {"key":"ballSpeed","axis":"striking","drills":["shooting"],"fields":["velocity"],"reference":75,"divisor":2.23694,"direction":"higher"},
+    {"key":"shotAccuracy","axis":"striking","drills":["shooting"],"fields":[],"reference":null,"direction":"higher","placeholder":true},
+    {"key":"broadJumpDistance","axis":"power","drills":["broadJump"],"fields":["broadJumpDistance"],"reference":6,"divisor":3.28084,"direction":"higher"},
+    {"key":"verticalJumpHeight","axis":"power","drills":["jump"],"fields":["jumpHeight"],"reference":18,"divisor":39.37007874015748,"direction":"higher"},
+    {"key":"sprintMaxAcceleration","axis":"speed","drills":["sprint"],"fields":["max_acceleration","maxAcceleration"],"reference":6.2,"direction":"higher"},
+    {"key":"sprintMaxSpeed","axis":"speed","drills":["sprint"],"fields":["max_velocity","maxVelocity"],"reference":14.2,"divisor":2.23694,"direction":"higher"},
+    {"key":"sprintCompletionTime","axis":"speed","drills":["sprint"],"fields":["totalTime"],"reference":1.84,"direction":"lower"},
+    {"key":"dribbleTotalTime","axis":"ballControl","drills":["dribbling"],"fields":["totalTime"],"reference":6.04,"direction":"lower"},
+    {"key":"dribbleBallControl","axis":"ballControl","drills":["dribbling"],"fields":["avgBallDistance"],"reference":2.1,"divisor":3.28084,"direction":"lower"},
+    {"key":"dribbleOutboundTime","axis":"ballControl","drills":["dribbling"],"fields":["phase1Time"],"reference":2.41,"direction":"lower"},
+    {"key":"dribbleTurnTime","axis":"ballControl","drills":["dribbling"],"fields":["phase2Time"],"reference":2.25,"direction":"lower"},
+    {"key":"dribbleReturnTime","axis":"ballControl","drills":["dribbling"],"fields":["phase3Time"],"reference":1.38,"direction":"lower"},
+    {"key":"codTotalTime","axis":"agility","drills":["changeOfDirection"],"fields":["totalTime"],"reference":4.68,"direction":"lower"},
+    {"key":"codOutboundTime","axis":"agility","drills":["changeOfDirection"],"fields":["phase1Time"],"reference":2.10,"direction":"lower"},
+    {"key":"codTurnTime","axis":"agility","drills":["changeOfDirection"],"fields":["phase2Time"],"reference":1.11,"direction":"lower"},
+    {"key":"codReturnTime","axis":"agility","drills":["changeOfDirection"],"fields":["phase3Time"],"reference":1.72,"direction":"lower"}
+  ]
+}
