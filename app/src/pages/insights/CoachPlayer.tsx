@@ -26,20 +26,31 @@ export function assertCoachComparison(data: CoachComparison, scope: InsightScope
 export function CoachPercentile({ data }: { data: CoachComparison }) {
   const title = data.scope.kind === "coachRoster" ? "Roster percentile" : "Team percentile";
   const axes = data.axes, count = axes.length;
-  const point = (index: number, value: number) => { const angle = index * Math.PI * 2 / count - Math.PI / 2; return [180 + Math.cos(angle) * value, 166 + Math.sin(angle) * value]; };
+  const point = (index: number, value: number) => { const angle = index * Math.PI * 2 / count - Math.PI / 2; return [180 + Math.cos(angle) * value, 146 + Math.sin(angle) * value]; };
   const outline = (radius: number) => axes.map((_, index) => point(index, radius).join(",")).join(" ");
-  const complete = axes.every(axis => axis.percentile !== null);
+  const available = axes.filter(axis => axis.percentile !== null).length;
+  const complete = available === count;
   const percent = (value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 1 });
+  const suffix = (value: number) => { const displayed = Math.round(value * 10) / 10; return Number.isInteger(displayed) && (displayed % 100 < 11 || displayed % 100 > 13) ? (["th", "st", "nd", "rd"][displayed % 10] || "th") : "th"; };
   return <section className="insights-card coach-comparison" aria-labelledby="coach-comparison-heading">
-    <div className="insights-section-title"><div><h2 id="coach-comparison-heading">{title}</h2><p className="insights-note">Measured results · {data.testingMode === "cumulative" ? `through ${data.period.endDate}` : `${data.period.startDate}–${data.period.endDate}`}</p></div><span>{data.roster.included} eligible roster members</span></div>
-    <div className="coach-comparison-body"><svg viewBox="0 0 360 330" role="img" aria-label={`${title}: ${axes.map(axis => `${axis.label} ${axis.percentile === null ? "comparison unavailable" : `${percent(axis.percentile)} percentile`}`).join(", ")}`}>
-      {[25, 50, 75, 100].map(value => <polygon key={value} points={outline(value)} className="coach-radar-grid" />)}
-      {axes.map((axis, index) => <line key={axis.key} x1="180" y1="166" x2={point(index, 100)[0]} y2={point(index, 100)[1]} className="coach-radar-grid" />)}
-      {complete && <polygon points={axes.map((axis, index) => point(index, axis.percentile!).join(",")).join(" ")} className="coach-radar-result" />}
-      {axes.map((axis, index) => { const label = point(index, 126), marker = point(index, axis.percentile ?? 0); return <g key={axis.key}><text x={label[0]} y={label[1]} textAnchor="middle" dominantBaseline="middle">{axis.label}</text>{axis.percentile !== null && <circle cx={marker[0]} cy={marker[1]} r="4" className="coach-radar-point" />}</g>; })}
-      <text x="184" y="68" className="coach-radar-scale">100</text><text x="184" y="116" className="coach-radar-scale">50</text>
-    </svg><table className="insights-breakdown-table"><caption className="insights-sr-only">Percentile and comparison sample size by skill</caption><thead><tr><th scope="col">Skill</th><th scope="col">Percentile</th><th scope="col">Measured players</th></tr></thead><tbody>{axes.map(axis => <tr key={axis.key}><th scope="row">{axis.label}</th><td>{axis.percentile === null ? <span>{axis.status === "unmeasured" ? "No measured result" : "Insufficient comparison data"}</span> : percent(axis.percentile)}</td><td>{axis.sampleCount}</td></tr>)}</tbody></table></div>
-    <p className="insights-note">Higher percentiles mean a stronger measured score within this roster. Each skill uses its own measured sample; missing results and provisional estimates are excluded. Name searches and report filters do not change the comparison group. {complete ? "" : "Available skills appear as points; missing comparisons are not plotted as zero."}</p>
+    <div className="coach-comparison-heading"><div><h2 id="coach-comparison-heading">{title}</h2><p>Relative position by skill. Higher means a stronger measured score.</p></div><div className="coach-comparison-context"><span>{data.roster.included} eligible roster members</span><span>Measured results · {data.testingMode === "cumulative" ? `through ${data.period.endDate}` : `${data.period.startDate}–${data.period.endDate}`}</span></div></div>
+    <div className="coach-comparison-body">
+      <figure className="coach-comparison-radar">
+        {available ? <><svg viewBox="0 0 360 280" role="img" aria-label={`${title}: ${axes.map(axis => `${axis.label} ${axis.percentile === null ? "comparison unavailable" : `${percent(axis.percentile)} percentile`}`).join(", ")}`}>
+          {[25, 75, 100].map(value => <polygon key={value} points={outline(value)} className="coach-radar-grid" />)}
+          {axes.map((axis, index) => <line key={axis.key} x1="180" y1="146" x2={point(index, 100)[0]} y2={point(index, 100)[1]} className="coach-radar-grid" />)}
+          {complete && <polygon points={axes.map((axis, index) => point(index, axis.percentile!).join(",")).join(" ")} className="coach-radar-result" />}
+          <polygon points={outline(50)} className="coach-radar-middle" />
+          {axes.map((axis, index) => { const label = point(index, 126), marker = point(index, axis.percentile ?? 0); return <g key={axis.key}><text x={label[0]} y={label[1]} textAnchor="middle" dominantBaseline="middle">{axis.label}</text>{axis.percentile !== null && <circle cx={marker[0]} cy={marker[1]} r="4" className="coach-radar-point" />}</g>; })}
+          <text x="185" y="49" className="coach-radar-scale">100</text>
+        </svg><figcaption><div className="coach-radar-legend"><span><i className="coach-radar-player-key" />Player</span><span><i className="coach-radar-middle-key" />50 · scale midpoint</span></div>{!complete && <p>{available} of {count} skills available. Missing comparisons are not plotted.</p>}</figcaption></> : <div className="coach-radar-empty"><span className="material-symbols-outlined" aria-hidden="true">query_stats</span><strong>No comparisons yet</strong><p>A percentile needs a measured result for this player and at least one other player.</p></div>}
+      </figure>
+      <div className="coach-comparison-skills"><div className="coach-percentile-scale" aria-hidden="true"><span>0 · Lower</span><span>50 · Middle</span><span>100 · Higher</span></div><dl className="coach-percentile-list">{axes.map(axis => <div className={`coach-percentile-skill${axis.percentile === null ? " is-unavailable" : ""}`} key={axis.key}>
+        <dt>{axis.label}</dt><dd className="coach-percentile-value">{axis.percentile === null ? <span aria-hidden="true">—</span> : <><strong>{percent(axis.percentile)}<sup>{suffix(axis.percentile)}</sup></strong><span>percentile</span></>}</dd>
+        <dd className="coach-percentile-detail">{axis.percentile === null ? <p className="coach-percentile-unavailable">{axis.status === "unmeasured" ? "No measured result" : "Insufficient comparison data"}</p> : <div className="coach-percentile-track" aria-hidden="true"><i className="coach-percentile-dot" style={{ left: `${axis.percentile}%` }} /></div>}<p className="coach-percentile-sample">{axis.sampleCount} measured {axis.sampleCount === 1 ? "player" : "players"}{axis.status === "insufficientComparison" ? " · At least 2 needed" : axis.sampleCount === 2 && axis.percentile !== null ? " · Small comparison group" : ""}</p></dd>
+      </div>)}</dl></div>
+    </div>
+    <div className="coach-comparison-guide"><p><strong>50 is the middle of the scale.</strong> 100 is the highest relative position, not a perfect test score.</p><details className="coach-comparison-method"><summary>How this comparison works</summary><p>Each skill compares the player with the roster members who have measured results for that skill, including this player in the count. Equal scores share the same percentile; if everyone is tied, each player is at 50.</p><p>Missing results and provisional estimates are excluded. Name searches and report filters do not change the comparison group. Comparisons are not adjusted for age or division.{!complete && " Available skills appear as points; missing comparisons are not plotted as zero."}</p></details></div>
   </section>;
 }
 

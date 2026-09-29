@@ -30,6 +30,14 @@ the existing planner with the selected player and a validated workspace return.
 The coach header contains branding and Sign out; the planner contains
 Organization (return to the workspace) and Sign out.
 
+The player comparison pairs the radar with one position track per skill and a
+readable percentile label. The 50 guide marks the midpoint of the percentile
+scale; 100 means the highest relative position, not a perfect test score. Each
+skill retains its own measured-player count. Missing results and groups with
+fewer than two measured players remain unavailable, never zero. Detailed
+comparison rules expand in place. Phone layouts prioritize the skill positions
+before the radar. This presentation does not change scoring, cohorts or access.
+
 Community is embedded with the established Insights colors, spacing, cards and
 typography. Activity, Find people and Sharing settings retain the existing social
 API and authorization. Independent coaches without a social organization see an
