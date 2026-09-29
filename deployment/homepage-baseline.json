@@ -1,7 +1,7 @@
 {
-  "deploymentId": "6abb9834af8b9c320f64df04",
-  "sourceCommit": "3e41c2a6c2bc8beba3b0829091a96d441ad0e15c",
-  "url": "https://6abb9834af8b9c320f64df04--posetek.netlify.app",
+  "deploymentId": "6abb9f1e6c2c84772de67005",
+  "sourceCommit": "684528b60b8de3f0a02ca36412590412ca0f923e",
+  "url": "https://6abb9f1e6c2c84772de67005--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
@@ -61,6 +61,16 @@
       "size": 263
     },
     {
+      "path": "/_astro/adminoverview.cswriqqg.js",
+      "sha": "edfa4465b09312e86e9b514975e5c9e63dd60495",
+      "size": 263
+    },
+    {
+      "path": "/_astro/adminpage.b0auhdjn.js",
+      "sha": "54e35a70c1e90c377acf435e4176bb5208bfe42b",
+      "size": 14794
+    },
+    {
       "path": "/_astro/adminpage.mwqrxsur.css",
       "sha": "f21277230d593fd9ed34d63b360dfaafa3db8dac",
       "size": 39538
@@ -108,6 +118,11 @@
     {
       "path": "/_astro/applicationroot.dh_1awai.js",
       "sha": "9b4d207d5b8cc088d1ab5e759f1592641b936e35",
+      "size": 15894
+    },
+    {
+      "path": "/_astro/applicationroot.uwpjlnmc.js",
+      "sha": "63b179499d18f2bba5b2e905d4fc241e6ab362f2",
       "size": 15894
     },
     {
@@ -321,9 +336,19 @@
       "size": 7134
     },
     {
+      "path": "/_astro/insightspage.c40ajk4z.css",
+      "sha": "b1170272e5b11a87e60c6bee93b496f06b0aaa28",
+      "size": 41340
+    },
+    {
       "path": "/_astro/insightspage.cdoeatuh.js",
       "sha": "9deeeb56b31028986ba8ee9c04e2d76912cf8d94",
       "size": 105781
+    },
+    {
+      "path": "/_astro/insightspage.huk8jotj.js",
+      "sha": "44a4c2de6712161fe65f95ad07de54e45dcce33a",
+      "size": 108129
     },
     {
       "path": "/_astro/insightspage.ty4vgerx.css",
@@ -657,7 +682,7 @@
     },
     {
       "path": "/application.html",
-      "sha": "a8334a291ca2b6ce0e7190875e6e7422aa1d28af",
+      "sha": "87c8f567449978dd4ae01774043b1083a0fb97c2",
       "size": 14976
     },
     {

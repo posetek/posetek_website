@@ -48,12 +48,14 @@ default to a sibling `../PoseTek-mobile-app` checkout, and `RULES_PATH` /
 `deployment/*.json`, including the composed `whole-body-firestore.rules`
 (deleted), are historical records of past publishes, not instructions.
 
-The current website release is `6abb9834af8b9c320f64df04`, source `3e41c2a`,
-published September 29, 2026 at 3:55:40 AM PDT. Team Insights is the single coach
+The current website release is `6abb9f1e6c2c84772de67005`, source `684528b`,
+published September 29, 2026 at 4:25:34 AM PDT. This presentation follow-up makes coach
+percentile cards easier to scan without changing calculations, cohorts or access.
+Read `deployment/COACH_COMPARISON_POLISH_PRODUCTION.json`. Team Insights is the single coach
 workspace, including roster, inline player comparisons/training and embedded
 Community. Astro builds the three website documents while retaining React and
-Svelte interactions. The baseline protects 1,335 application/public files; all
-1,337 artifact files match the production inventory. Read
+Svelte interactions. The baseline protects 1,340 application/public files; all
+1,342 artifact files match the production inventory. Read
 `deployment/UNIFIED_COACH_WORKSPACE_PRODUCTION.json`,
 `docs/UNIFIED_COACH_WORKSPACE.md` and `docs/insights/COACH_WORKSPACE_CONTRACT.md`.
 Nine scoped Insights functions are live. Preserve canonical membership/social

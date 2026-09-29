@@ -1,7 +1,10 @@
 # Unified coach workspace
 
-Live September 29, 2026 as website deployment `6abb9834af8b9c320f64df04`, source
-`3e41c2a`, with nine scoped Insights functions. See the
+Current presentation release: `6abb9f1e6c2c84772de67005`, source `684528b`,
+published September 29, 2026 at 4:25:34 AM PDT. See the
+[comparison polish receipt](../deployment/COACH_COMPARISON_POLISH_PRODUCTION.json).
+The workspace foundation shipped as `6abb9834af8b9c320f64df04`, source `3e41c2a`,
+with nine scoped Insights functions. See the
 [production receipt](../deployment/UNIFIED_COACH_WORKSPACE_PRODUCTION.json) for
 exact source, artifact, acceptance, cleanup and recovery records.
 
