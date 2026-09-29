@@ -17,6 +17,10 @@ exports.acknowledgeDiagnosticAttempt = functions.firestore.document("processingA
 exports.setDiagnosticInvestigationHold = functions.https.onCall((data, context) => diagnosticRetention.protect(data || {}, requireCaller(context)));
 exports.cleanupDiagnosticArtifacts = functions.runWith({ timeoutSeconds: 120, memory: "256MB" }).pubsub.schedule("every 24 hours").onRun(() => diagnosticRetention.sweep());
 exports.ingestDevicePerformanceV1 = require("./device-performance-ingestion").createIngestDevicePerformanceV1(functions, admin, requireCaller);
+exports.getDevicePerformanceV1 = require("./device-performance").createDevicePerformanceCallable("getDevicePerformanceV1", functions, admin, requireCaller);
+exports.getDevicePerformanceDetailV1 = require("./device-performance").createDevicePerformanceCallable("getDevicePerformanceDetailV1", functions, admin, requireCaller);
+exports.getDevicePerformanceAttemptV1 = require("./device-performance").createDevicePerformanceCallable("getDevicePerformanceAttemptV1", functions, admin, requireCaller);
+exports.setDevicePerformanceLabelV1 = require("./device-performance").createDevicePerformanceCallable("setDevicePerformanceLabelV1", functions, admin, requireCaller);
 
 // Additive reporting and engagement endpoints; existing callables stay intact.
 const insightEntrypoints = require("./insights-entrypoints").createInsightsEntrypoints(functions, admin, requireCaller);
