@@ -1,5 +1,9 @@
 # Unified coach workspace contract
 
+Released September 29, 2026 through the nine-function scoped package. See
+[the production receipt](../../deployment/UNIFIED_COACH_WORKSPACE_PRODUCTION.json)
+for deployed versions, source/configuration/IAM checks, access tests and cleanup.
+
 Implementation contract; the release receipt records deployment and live acceptance separately.
 Team Insights owns the coach reporting totals, with roster, player tabs and Community sharing its shell.
 

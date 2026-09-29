@@ -1,5 +1,10 @@
 # Unified coach workspace
 
+Live September 29, 2026 as website deployment `6abb9834af8b9c320f64df04`, source
+`3e41c2a`, with nine scoped Insights functions. See the
+[production receipt](../deployment/UNIFIED_COACH_WORKSPACE_PRODUCTION.json) for
+exact source, artifact, acceptance, cleanup and recovery records.
+
 ## Product and design contract
 
 Team Insights is the coach workspace. Organization coaches select only their
@@ -8,7 +13,8 @@ roster. Overview begins with the roster, followed by the existing report.
 Testing, Workouts, Active use and Community share the same shell. Opening a
 player adds one named tab inside the workspace; selecting another player replaces
 that tab. Browser history, selected dates, roster search and planner return links
-retain their context.
+retain their context. Presentation-only tab changes keep the current report and
+player history mounted; changing account or scope invalidates stale callbacks.
 
 The roster shows Player, recorded Age, Testing, Workouts completed, Estimated
 active use and existing signup actions. Team and division remain useful report
@@ -77,7 +83,7 @@ planner return context, Community panels/deep links, legacy aliases, history and
 mobile layouts. Public marketing, athlete navigation, signup, staff activation
 and admin routes need smoke coverage after the framework migration. Live checks
 use isolated temporary accounts with journaled cleanup. The production receipt
-records actual checks and any limits; this document does not claim deployment.
+records the completed checks and their limits.
 
 ## Recovery
 

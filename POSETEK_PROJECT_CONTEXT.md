@@ -4,7 +4,7 @@ Reviewed on September 29, 2026. This guide summarizes the available repository a
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
-## Unified coach workspace and Astro migration (implementation)
+## Unified coach workspace and Astro migration (2026-09-29, live)
 
 The user approved Team Insights as the single coach workspace, including
 organization and independent coaches. Overview owns the roster; Testing,
@@ -20,7 +20,14 @@ retaining React interactions, Svelte demonstrations and the protected public
 assets. See [the implementation handoff](docs/UNIFIED_COACH_WORKSPACE.md) and
 [the API contract](docs/insights/COACH_WORKSPACE_CONTRACT.md). The scoped Insights
 release contains nine functions; no gateway, rules, native or catalog release is
-included. The production receipt will record the verified candidate and promotion.
+included. Website source `3e41c2a6c2bc8beba3b0829091a96d441ad0e15c` was published
+as `6abb9834af8b9c320f64df04` on September 29 at 3:55:40 AM PDT by promoting
+the exact reviewed draft. All 1,337 artifact files match the production inventory;
+the reconciled baseline protects 1,335 application/public files. The ordinary
+preservation build and 30 release guards passed. Hosted coach acceptance passed
+73 checks; production passed 12 coach, 16 athlete/manager/admin, and two compiled
+entry checks. See `deployment/UNIFIED_COACH_WORKSPACE_PRODUCTION.json` for backend,
+served-HTML processing, cleanup and recovery evidence.
 
 The previously deployed workout-alert source branch was merged before this work,
 preserving the September 28 live functionality that had not yet reached main.
