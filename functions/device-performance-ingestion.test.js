@@ -532,12 +532,14 @@ test("per-attempt caps: a 33rd run or 513th transfer is refused permanently; rev
   const extraTransfer = { ...transferFixture, recordId: uuid(2000), body: { ...transferFixture.body, invocationId: uuid(2000) } };
   const [runRefusal] = await h.ingest([extraRun], actor(STAFF));
   const [transferRefusal] = await h.ingest([extraTransfer], actor(COACH));
+  // v1.2.2 (D-36): the typed, permanent attemptCapExceeded code (the response schema validates it).
+  assert.equal(ATTEMPT_CAP_WIRE_CODE, "attemptCapExceeded");
   for (const refusal of [runRefusal, transferRefusal]) {
-    assert.deepEqual([refusal.status, refusal.retryable, refusal.errorCode, refusal.acceptedRevision], ["rejected", false, ATTEMPT_CAP_WIRE_CODE, null]);
+    assert.deepEqual([refusal.status, refusal.retryable, refusal.errorCode, refusal.acceptedRevision], ["rejected", false, "attemptCapExceeded", null]);
   }
   assert.equal(h.doc("runSummary", uuid(400)), undefined);
   assert.equal(h.doc("transferInvocation", uuid(2000)), undefined);
-  // The wire code is a frozen v1.2.1 code; the typed reason is logged.
+  // The reason is also logged with the record kind and the cap.
   assert.deepEqual(h.logs.filter(([level]) => level === "warn").map(([, , detail]) => [detail.errorCode, detail.recordKind, detail.cap]),
     [["attemptCapExceeded", "runSummary", 32], ["attemptCapExceeded", "transferInvocation", 512]]);
   // Revisions and replays of a stored entity never count against the cap.
@@ -545,6 +547,17 @@ test("per-attempt caps: a 33rd run or 513th transfer is refused permanently; rev
   // Another attempt is unaffected.
   await h.db.doc(`processingAttempts/${uuid(500)}`).set(attemptIndex(uuid(500), STAFF));
   assert.deepEqual(statuses(await h.ingest([run({ attemptId: uuid(500), recordId: uuid(501), processingRunId: uuid(501) })], actor(STAFF))), [["accepted", null]]);
+});
+
+test("a system transfer is accepted only when its group names the record's own install (v1.2.2, D-36)", async () => {
+  const h = harness();
+  const system = fixture("transfer-invocation-system.valid.json");
+  const foreign = fixture("transfer-invocation-system-foreign-install.invalid.json");
+  const noInstall = { ...system, recordId: uuid(700), originInstallId: null, body: { ...system.body, invocationId: uuid(700) } };
+  const results = await h.ingest([system, foreign, noInstall], actor(COACH));
+  assert.deepEqual(statuses(results), [["accepted", null], ["rejected", "identityMismatch"], ["rejected", "identityMismatch"]]);
+  assert.deepEqual(h.factPaths(), [`devicePerformanceTransfers/transferInvocation:${system.recordId}`]);
+  assert.deepEqual(h.stored(system).authority, { basis: "reporter", reporterUid: COACH, attemptId: null, playerDocumentID: null });
 });
 
 test("a stored fact from a newer storage version keeps the record pending", async () => {

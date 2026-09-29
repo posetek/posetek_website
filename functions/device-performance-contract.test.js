@@ -8,7 +8,7 @@ const contract = require("./device-performance-contract");
 
 const PINNED = path.join(__dirname, "contracts", "device-performance-v1");
 // Frozen V1 schema digest (mobile tools/contracts/device-performance-v1/README.md).
-const SCHEMA_SHA256 = "95343aae5a16f66e3e0d31e3096beb6ced9db12c6f26af0610875acb4b3997db";
+const SCHEMA_SHA256 = "e8a09d63a84ed2d95130015489e97ce6884f5e8fef0655caf2115ff16d08e0d3";
 const sha256File = (file) => crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
 const readJson = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 const fixture = (name) => readJson(path.join(PINNED, "fixtures", name));
@@ -44,6 +44,7 @@ const INVALID_FIXTURES = {
   "upload-group-summary-system-foreign-install.invalid.json": ["identityMismatch", /^\$\.recordId: does not equal the uploadGroupSummary entity id$/],
   "device-status-without-reporter.invalid.json": ["invalidSchema", /^\$\.originReporterUid: type is not string$/],
   "device-status-record-id-other-reporter.invalid.json": ["identityMismatch", /^\$\.recordId: does not equal the deviceStatus entity id$/],
+  "transfer-invocation-system-foreign-install.invalid.json": ["identityMismatch", /^\$\.body\.groupId: names a different install$/],
   "batch-too-many-records.invalid.json": ["oversizedBatch", /^\$\.records: more than 16 items$/],
 };
 function assertFailingRule(file, errors) {
@@ -319,6 +320,14 @@ test("derived identities must name the record's own attempt, install and account
     logicalObjectId: systemTransfer.body.logicalObjectId.replace(systemTransfer.body.logicalObjectId.split("/")[0], "system") };
   assert.equal(contract.validateRecord(systemTransfer).ok, true, contract.validateRecord(systemTransfer).errors.join("; "));
   assert.equal(contract.validateRecord({ ...systemTransfer, attemptId: fixture("transfer-invocation.valid.json").attemptId }).outcome.errorCode, "identityMismatch");
+  // v1.2.2 (D-36): a system transfer's group names the record's own install; a null install never matches.
+  const canonicalSystemTransfer = fixture("transfer-invocation-system.valid.json");
+  assert.equal(contract.validateRecord(canonicalSystemTransfer).ok, true);
+  assert.equal(contract.groupParts(canonicalSystemTransfer.body.groupId).install, canonicalSystemTransfer.originInstallId);
+  for (const originInstallId of [other, null]) {
+    const result = contract.validateRecord({ ...canonicalSystemTransfer, originInstallId });
+    assert.deepEqual([result.outcome?.errorCode, result.errors], ["identityMismatch", ["$.body.groupId: names a different install"]], String(originInstallId));
+  }
   // Device status: <executorInstallId>:<originReporterUid> (D-18).
   const status = fixture("device-status.valid.json");
   assert.equal(status.recordId, `${status.executorInstallId}:${status.originReporterUid}`);

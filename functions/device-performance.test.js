@@ -715,3 +715,58 @@ test("F3: transfers first received more than 30 days ago never count, whether or
   const cellular = await h.fleet({ startDate: "2026-08-20", endDate: "2026-08-25", filters: { networkInterface: "wifi" } });
   assert.equal(cellular.totals.uploads[0].queueWait.eligible, 0, "a group beyond retention never matches a network filter");
 });
+
+test("report fragments validate against the pinned contract $defs (v1.2.2): retention, omittedReasons, coverage, runsExcludedByMode", async () => {
+  const contract = require("./device-performance-contract");
+  const check = (pointer, value, label) => {
+    const result = contract.validateSchema(pointer, value);
+    assert.ok(result.valid, `${label}: ${result.errors.join("; ")}`);
+  };
+  const h = harness();
+  h.putAll(completeAttempt(1));
+  h.putAll(completeAttempt(2, { run: { processingMode: "debugReview" } }));
+  h.putAll(completeAttempt(3, { install: null }));
+  h.put(attemptSummary({ attemptId: uuid("a", 4), verdict: "pending", runCount: 2, acceptedRunId: null, timeToResult: null, requiredSave: "notQueued", saveConfirmed: null }));
+  // Retention states partial and notRetained (as in the F3 test).
+  const old = START - 35 * DAY;
+  const aged = harness({ now: old });
+  aged.putAll(completeAttempt(1, { captureAt: old - 60000 }));
+  aged.advance(35 * DAY);
+  aged.putAll(completeAttempt(2));
+  const reports = [
+    ["fleet", await h.fleet()],
+    ["fleet processing filter", await h.fleet({ filters: { processingMode: "liveCapture" } })],
+    ["fleet server receipt", await h.fleet({ dateBasis: "serverReceipt" })],
+    ["device executor", await h.detail(INSTALL, { attribution: "executor" })],
+    ["device uploads", await h.detail(INSTALL, { section: "uploads" })],
+    ["fleet partial retention", await aged.fleet({ startDate: "2026-07-02", endDate: "2026-09-29" })],
+    ["fleet not retained", await aged.fleet({ startDate: "2026-08-20", endDate: "2026-08-25" })],
+  ];
+  const seen = { uploads: new Set(), omitted: new Set(), coverage: 0, modes: new Set() };
+  for (const [label, report] of reports) {
+    for (const role of report.totals?.uploads ?? []) {
+      check("#/$defs/reportUploadRetentionV1", role, `${label} upload role ${role.role ?? ""}`);
+      seen.uploads.add(role.retention);
+    }
+    const outcomes = [report.totals?.outcomes, ...(report.perDrill ?? []).map((row) => row.outcomes), ...(report.devices ?? []).map((row) => row.outcomes)];
+    for (const entry of outcomes.filter(Boolean)) {
+      check("#/$defs/reportOmittedReasonsV1", entry.omittedReasons, `${label} omittedReasons`);
+      seen.omitted.add(JSON.stringify(entry.omittedReasons));
+    }
+    if (report.coverage) { check("#/$defs/reportCoverageV1", report.coverage, `${label} coverage`); seen.coverage++; }
+    if (report.totals && Object.hasOwn(report.totals, "runsExcludedByMode")) {
+      check("#/$defs/reportRunsExcludedByModeV1", report.totals.runsExcludedByMode, `${label} runsExcludedByMode`);
+      seen.modes.add(report.totals.runsExcludedByMode === null ? "null" : "counts");
+    }
+  }
+  assert.deepEqual([...seen.uploads].sort(), ["notRetained", "partial", "retained"]);
+  assert.ok(seen.omitted.has(JSON.stringify({ pending: "runFilterActive", preAdmissionFailures: "runFilterActive" })));
+  assert.ok(seen.omitted.has(JSON.stringify({ pending: null, preAdmissionFailures: null })));
+  assert.ok(seen.coverage >= 5, `coverage checked ${seen.coverage} times`);
+  assert.deepEqual([...seen.modes].sort(), ["counts", "null"]);
+  // The pinned $defs refuse what the contract forbids.
+  assert.equal(contract.validateSchema("#/$defs/reportOmittedReasonsV1", { pending: "other", preAdmissionFailures: null }).valid, false);
+  assert.equal(contract.validateSchema("#/$defs/reportRunsExcludedByModeV1", { debugReview: 0, fixture: 0 }).valid, false);
+  assert.equal(contract.validateSchema("#/$defs/reportUploadRetentionV1", { retention: "unknown", groupsBeyondRetention: 0 }).valid, false);
+  assert.equal(contract.validateSchema("#/$defs/reportCoverageV1", { attemptsIndexed: 1 }).valid, false);
+});

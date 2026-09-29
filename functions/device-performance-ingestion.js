@@ -51,11 +51,9 @@ const ATTEMPT_INDEX_FACTS = Object.freeze(["drillType", "repId", "originLaunchId
 // Per-attempt bounds on new entities (D-31 F1 follow-up), well inside the
 // projection's over-limit exclusion (128 runs / 2,000 transfers per attempt).
 const ATTEMPT_CAPS = Object.freeze({ runSummary: 32, transferInvocation: 512 });
-// Contract v1.2.1 (§8.7, $defs/ingestResponseV1) has no `attemptCapExceeded`
-// error code. Until a contract amendment adds it, the permanent refusal is sent
-// with the closest frozen code and the typed reason is logged; adding the code
-// to the contract makes this a one-line change.
-const ATTEMPT_CAP_WIRE_CODE = "illegalTransition";
+// The permanent cap refusal (contract §8.7, v1.2.2, D-36). Until v1.2.2 it was
+// sent as the interim `illegalTransition`.
+const ATTEMPT_CAP_WIRE_CODE = "attemptCapExceeded";
 
 function omit(object, keys) {
   return Object.fromEntries(Object.entries(object).filter(([key]) => !keys.includes(key)));

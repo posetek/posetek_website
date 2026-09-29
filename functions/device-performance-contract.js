@@ -36,7 +36,7 @@ const STATUSES = Object.freeze(["accepted", "duplicate", "superseded", "conflict
 const ERROR_CODES = Object.freeze([
   "invalidSchema", "unsupportedVersion", "oversizedRecord", "oversizedBatch", "evaluationOriginRejected",
   "unauthorizedReporter", "identityMismatch", "dependencyPending", "revisionConflict", "staleRevision",
-  "illegalTransition", "rateLimited", "internal",
+  "illegalTransition", "rateLimited", "internal", "attemptCapExceeded",
 ]);
 // Each error code has exactly one status and retryability. Retryable codes are
 // kept pending by the client (bounded by its spool); the rest are final.
@@ -47,6 +47,8 @@ const OUTCOME_FOR_CODE = Object.freeze({
   unauthorizedReporter: ["rejected", false],
   identityMismatch: ["rejected", false],
   illegalTransition: ["rejected", false],
+  // A new run or transfer beyond its attempt's cap (contract §8.5, §8.7, v1.2.2).
+  attemptCapExceeded: ["rejected", false],
   revisionConflict: ["conflict", false],
   staleRevision: ["superseded", false],
   unsupportedVersion: ["retryLater", true],
@@ -348,7 +350,8 @@ function groupParts(groupId) {
 }
 // The attempt a fact names is the attempt that authorizes it, so the ids a
 // fact derives from its attempt (groupId, logicalObjectId = <attemptId|system>/…)
-// must name the same attempt.
+// must name the same attempt. A system transfer's group names the record's own
+// install instead; a null originInstallId never matches (§8.6, v1.2.2, D-36).
 function identityErrors(record) {
   const errors = [];
   if (record.recordId !== entityId(record)) errors.push(`$.recordId: does not equal the ${record.recordKind} entity id`);
@@ -357,7 +360,11 @@ function identityErrors(record) {
     errors.push("$.body.groupId: differs from recordId");
   }
   if (record.recordKind === "transferInvocation") {
-    if (groupParts(record.body.groupId).owner !== owner) errors.push("$.body.groupId: names a different attempt");
+    const group = groupParts(record.body.groupId);
+    if (group.owner !== owner) errors.push("$.body.groupId: names a different attempt");
+    else if (owner === "system" && (record.originInstallId === null || group.install !== record.originInstallId)) {
+      errors.push("$.body.groupId: names a different install");
+    }
     if (record.body.logicalObjectId.split("/")[0] !== owner) errors.push("$.body.logicalObjectId: names a different attempt");
   }
   return errors;
