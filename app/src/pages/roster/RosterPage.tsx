@@ -221,7 +221,8 @@ export default function RosterPage({ managementOnly = false, organizationId, tea
         if (lastNameRef.current) lastNameRef.current.value = "";
         setProfile(emptyStaffPlayerProfile());
         if (!mounted.current || auth.currentUser?.uid !== user.uid) return;
-        dialogRef.current?.close(); await loadRoster(clubRef.current.teamId); onChanged?.();
+        dialogRef.current?.close(); await loadRoster(clubRef.current.teamId);
+        if (mounted.current && auth.currentUser?.uid === user.uid) onChanged?.();
       } catch (failure: any) { setMessage(failure.message || "The player could not be created."); }
       finally { setCreateBusy(false); }
       return;
@@ -303,7 +304,7 @@ export default function RosterPage({ managementOnly = false, organizationId, tea
       if (codeRef.current) codeRef.current.value = "";
       dialogRef.current?.close();
       await loadRoster();
-      onChanged?.();
+      if (mounted.current && auth.currentUser?.uid === user.uid) onChanged?.();
     } catch (error: any) {
       setMessage(error.message || "The player could not be added.");
     } finally {
