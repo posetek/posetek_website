@@ -98,7 +98,7 @@ export function FleetReportView({ state, query, search, locationState = null, on
         <CoverageNotices report={report} query={query} onChange={onChange} />
         <SummaryTiles report={report} role={query.filters.uploadRole} onRole={role => onChange({ [PARAMS.uploadRole]: role })} />
         <WhereTimeGoes rows={report.perDrill} report={report} focus={query.focus} onFocus={onFocus} />
-        {report.innerModel?.rows.length ? <InnerModelTable rows={report.innerModel.rows} /> : null}
+        {report.innerModel?.rows.length ? <InnerModelTable rows={report.innerModel.rows} report={report} /> : null}
         <FailuresByStep rows={report.failureStages} focus={query.focus} onFocus={onFocus} />
         {query.focus && <MatchingAttempts report={report} query={query} search={search} locationState={locationState} busy={busy} onClear={() => onFocus(null)} />}
         <DeviceTable key={query.search} report={report} query={query} search={search} locationState={locationState} busy={busy} onChange={onChange} />
@@ -550,14 +550,16 @@ function uploadTime(stat: DistributionStatV1): ReactNode {
 
 // MARK: - Inner model timing (plan 07 §3; optional response block, D-26 J)
 
-export function InnerModelTable({ rows }: { rows: InnerModelRowV1[] }) {
+export function InnerModelTable({ rows, report }: { rows: InnerModelRowV1[]; report: ReportEnvelopeV1 }) {
   const headingId = useId();
   const ordered = [...rows].sort((a, b) => DRILL_TYPES.indexOf(a.drillType) - DRILL_TYPES.indexOf(b.drillType) || a.stageId.localeCompare(b.stageId));
   return (
     <section className="admin-card dp-section" aria-labelledby={headingId}>
       <div className="dp-section-head">
         <h2 id={headingId}>Inner model timing: cumulative call time</h2>
-        <p>Time spent inside model operations such as loading a model or its first prediction, summed per run. These calls happen inside the steps above, so this time overlaps those steps and is never added to them.</p>
+        <p>Time spent inside model operations such as loading a model or its first prediction, summed per run over the finished runs in this period. These calls happen inside the steps above, so this time overlaps those steps and is never added to them.</p>
+        {/* D-27 (6): shared and processing filters apply, upload filters never. */}
+        <ScopeLine report={report} group="processing" />
       </div>
       <div className="dp-table-wrap">
         <table className="dp-table">
@@ -569,10 +571,10 @@ export function InnerModelTable({ rows }: { rows: InnerModelRowV1[] }) {
             {ordered.map(row => {
               const view = statView(row.cumulativeMs);
               return (
-                <tr key={`${row.drillType}:${row.stageId}:${row.parentStageId ?? ""}`}>
+                <tr key={`${row.drillType}:${row.stageId}`}>
                   <th scope="row">{DRILL_LABELS[row.drillType]}</th>
                   <td>{stageLabel(row.stageId)}<small><code>{row.stageId}</code></small></td>
-                  <td>{row.parentStageId ? stageLabel(row.parentStageId) : "—"}</td>
+                  <td>{row.parentStageId ? stageLabel(row.parentStageId) : "Top level (not inside a step)"}</td>
                   <td>{formatCount(row.runs)}</td>
                   <td>{formatCount(row.invocations)}</td>
                   <td>{view.kind === "value" ? formatDuration(view.typicalMs) : view.kind === "missing" ? `Not measured: ${view.reason.toLowerCase()}` : "No measurements"}</td>
@@ -941,9 +943,10 @@ export function MeasurementsTable({ report, role }: { report: ReportEnvelopeV1; 
     ["Time to result", totals.timeToResult],
     ["Ready for next rep", totals.readyForNextRep],
     ["Save confirmed after recording", totals.saveConfirmedAfterRecording],
-    [`Processing time: ${OUTCOME_LABELS.valid.toLowerCase()} runs`, totals.processingTime.valid],
-    [`Processing time: ${OUTCOME_LABELS.partial.toLowerCase()} runs`, totals.processingTime.partial],
-    [`Processing time: ${OUTCOME_LABELS.failed.toLowerCase()} runs`, totals.processingTime.failed],
+    [`Processing time: ${OUTCOME_LABELS.valid.toLowerCase()} runs`, totals.processingTime.byOutcome.valid],
+    [`Processing time: ${OUTCOME_LABELS.partial.toLowerCase()} runs`, totals.processingTime.byOutcome.partial],
+    [`Processing time: ${OUTCOME_LABELS.noMeasurement.toLowerCase()} runs`, totals.processingTime.byOutcome.noMeasurement],
+    [`Processing time: ${OUTCOME_LABELS.failed.toLowerCase()} runs`, totals.processingTime.byOutcome.failed],
     ["Processing time: recovery runs", totals.processingTime.recovery],
     ["Cloud save time", totals.cloudSave],
     [`Waiting to upload (${UPLOAD_ROLE_LABELS[role].toLowerCase()})`, upload?.queueWait],

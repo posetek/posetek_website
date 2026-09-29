@@ -110,7 +110,7 @@ function AttributionToggle({ value, onChange }: { value: "origin" | "executor"; 
       <p className="dp-muted">
         {value === "origin"
           ? "Attempts recorded on this phone: time to result, readiness and yield belong to it, wherever a retry ran."
-          : "Runs and uploads this phone executed, including retries of clips recorded elsewhere. These are a different population from captured attempts."}
+          : "Run and upload counts are the runs and transfers this phone executed, including retries of clips recorded elsewhere. Attempt counts still mean attempts recorded on this phone; the two are different populations and are never added."}
       </p>
     </div>
   );
@@ -222,7 +222,7 @@ export function DeviceReportView({ state, query, search, locationState = null, o
         : <>
           <SummaryTiles report={report} role={query.filters.uploadRole} onRole={role => onChange({ [PARAMS.uploadRole]: role })} />
           <WhereTimeGoes rows={report.perDrill} report={report} focus={query.focus} onFocus={onFocus} />
-          {report.innerModel?.rows.length ? <InnerModelTable rows={report.innerModel.rows} /> : null}
+          {report.innerModel?.rows.length ? <InnerModelTable rows={report.innerModel.rows} report={report} /> : null}
           <DeviceTrend points={report.trends} timeZone={report.period.timeZone} />
           <FailuresByStep rows={report.failureStages} focus={query.focus} onFocus={onFocus} title="Failures by step on this phone" />
         </>}

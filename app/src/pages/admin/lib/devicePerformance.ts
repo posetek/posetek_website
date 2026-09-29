@@ -205,7 +205,7 @@ export function failureExplanation(code: string | null | undefined, layer?: stri
 export interface MetricDefinition { key: string; label: string; definition: string }
 export const METRIC_DEFINITIONS: MetricDefinition[] = [
   { key: "timeToResult", label: "Time to result", definition: "From the moment the video file is finalized to the moment the result is saved durably on the phone. Only accepted attempts with both endpoints count. Recording time and cloud delivery are not included." },
-  { key: "processingTime", label: "Processing time", definition: "From the processor admitting the run to the processor returning. Valid, partial, failed and recovery runs are reported separately, and saving the run journal is timed on its own." },
+  { key: "processingTime", label: "Processing time", definition: "From the processor admitting the run to the processor returning. Valid, partial, no-measurement, failed and recovery runs are reported separately, and saving the run journal is timed on its own." },
   { key: "readyForNextRep", label: "Ready for next rep", definition: "From the stop request to the next gate or capture being ready. Correction, speech and progress waits are shown separately." },
   { key: "cloudSave", label: "Cloud save time", definition: "From the durable result job being queued to the required result files and the rep and session records being confirmed in the cloud. Video archive, sidecar and diagnostics delivery are separate." },
   { key: "waitingToUpload", label: "Waiting to upload", definition: "From an upload being queued to its first actual transfer starting. Time the app spent waiting to retry is a separate total." },
@@ -396,7 +396,16 @@ export interface UploadRoleStatV1 {
   knownBackoffMs: number | null;
 }
 export interface CloudBacklogV1 { pendingJobs: number; failedJobs: number; installsReporting: number; oldestReportAt: string | null }
-export interface ProcessingTimeV1 { valid: DistributionStatV1; partial: DistributionStatV1; failed: DistributionStatV1; recovery: DistributionStatV1 }
+/**
+ * D-27 (1): processing time per terminal run outcome, including its own
+ * noMeasurement bucket, plus recovery runs (a mode, not an outcome) apart.
+ */
+export interface ProcessingTimeV1 {
+  byOutcome: { valid: DistributionStatV1; partial: DistributionStatV1; noMeasurement: DistributionStatV1; failed: DistributionStatV1 };
+  recovery: DistributionStatV1;
+}
+/** D-27 (2): server-carried definition per metric id. The page shows its own METRIC_DEFINITIONS text. */
+export interface MetricDefinitionV1 { label: string; definition: string; unit: string; population: string; denominator: string | null }
 export interface TotalsV1 {
   attempts: number;
   timeToResult: DistributionStatV1;
@@ -518,6 +527,10 @@ export type FocusV1 = { kind: "stage"; stageId: string } | { kind: "phase"; dril
  * model.firstPrediction, per drill. cumulativeMs is each run's summed call time
  * for that operation, pooled across runs; it overlaps its parent step's time and
  * is never added to it.
+ * D-27 (6): rows are model-family operations only (stageId "model.*"), unique by
+ * `${drillType}:${stageId}`; parentStageId null means top level; runs counts
+ * terminal runs in the cohort; shared and processing filters apply, upload
+ * filters never.
  */
 export interface InnerModelRowV1 {
   drillType: DrillType;
@@ -546,6 +559,8 @@ export interface ReportEnvelopeV1 {
   failureStages: FailureStageRowV1[];
   /** Optional; absent or null when the server does not supply it. */
   innerModel?: InnerModelV1 | null;
+  /** D-27 (2): optional here; validated when present, not rendered (the page keeps its own wording). */
+  metricDefinitions?: Record<string, MetricDefinitionV1>;
 }
 export interface FleetReportV1 extends ReportEnvelopeV1 {
   devices: DeviceRowV1[];
@@ -812,6 +827,18 @@ const focusCheck: Check = (value, path) => {
   else malformed(`${path}.kind`, "stage or phase");
 };
 const metricGroupList = list(text, 16);
+const modelStage: Check = (value, path) => { text(value, path); if (!(value as string).startsWith("model.")) malformed(path, "a model operation (model.*)"); };
+const innerModelCheck: Check = (value, path) => {
+  shape({ rows: list(shape({
+    drillType: oneOf(DRILL_TYPES), stageId: modelStage, parentStageId: nullable(text), runs: count, invocations: count, cumulativeMs: stat,
+  }), 200) })(value, path);
+  const seen = new Set<string>();
+  (value as { rows: { drillType: string; stageId: string }[] }).rows.forEach((row, index) => {
+    const key = `${row.drillType}:${row.stageId}`;
+    if (seen.has(key)) malformed(`${path}.rows[${index}]`, `a unique drillType:stageId (${key} repeats)`);
+    seen.add(key);
+  });
+};
 const envelopeFields: Record<string, Check> = {
   generatedAt: text,
   projectionRevision: text,
@@ -826,7 +853,7 @@ const envelopeFields: Record<string, Check> = {
   choices: shape({ captureBuilds: list(choice, 500), captureMachines: list(choice, 500), executionBuilds: list(choice, 500), executionMachines: list(choice, 500), payloadSizeBands: list(choice, 32) }),
   totals: shape({
     attempts: count, timeToResult: stat, readyForNextRep: stat, saveConfirmedAfterRecording: stat,
-    processingTime: shape({ valid: stat, partial: stat, failed: stat, recovery: stat }),
+    processingTime: shape({ byOutcome: shape({ valid: stat, partial: stat, noMeasurement: stat, failed: stat }), recovery: stat }),
     cloudSave: stat,
     cloudBacklog: shape({ pendingJobs: count, failedJobs: count, installsReporting: count, oldestReportAt: nullable(text) }),
     uploads: list(uploadRoleStat, UPLOAD_ROLES.length),
@@ -839,9 +866,13 @@ const envelopeFields: Record<string, Check> = {
   }), DRILL_TYPES.length),
   trends: list(shape({ date: text, attempts: count, timeToResult: stat, failed: count, knownOutcomes: count, newBuilds: list(text, 16) }), 400),
   failureStages: list(shape({ stageId: text, failures: count, entered: count, cancelled: count, unavailable: count, lastReportedOnly: count, drills: list(text, 16) }), 200),
-  innerModel: optional(nullable(shape({ rows: list(shape({
-    drillType: oneOf(DRILL_TYPES), stageId: text, parentStageId: nullable(text), runs: count, invocations: count, cumulativeMs: stat,
-  }), 200) }))),
+  innerModel: optional(nullable(innerModelCheck)),
+  metricDefinitions: optional((value, path) => {
+    if (!isRecord(value)) malformed(path, "an object keyed by metric id");
+    for (const [id, definition] of Object.entries(value)) {
+      shape({ label: text, definition: text, unit: text, population: text, denominator: nullable(text) })(definition, `${path}.${id}`);
+    }
+  }),
 };
 
 function requireVersion(raw: unknown, what: string): Record<string, unknown> {

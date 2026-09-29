@@ -9,7 +9,7 @@ import type { ReactElement, ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
-import DevicePerformance, { AttemptList, FilterBar, FleetReportView, LoadError, PageHeading, ReportSkeleton, SummaryTiles } from "./DevicePerformance";
+import DevicePerformance, { AttemptList, FilterBar, FleetReportView, InnerModelTable, LoadError, PageHeading, ReportSkeleton, SummaryTiles } from "./DevicePerformance";
 import {
   describeLoadFailure, devicePerformanceSearch, fleetRequest, parseDevicePerformanceQuery, parseFleetReport, recoverFromFailure, recoveryLabel,
 } from "../lib/devicePerformance";
@@ -237,6 +237,16 @@ describe("review fixes (D-26)", () => {
     expect(table).toContain("Broad jump");
     expect(table).toContain("Limited data");
     expect(view("", "oldBuilds")).not.toContain("Inner model timing");
+  });
+
+  it("D-27: lists no-measurement processing time and a top-level inner-model row under the processing scope", () => {
+    const html = view("pmode=recovery");
+    expect(html).toContain("Processing time: no measurement runs");
+    const table = html.slice(html.indexOf("Inner model timing"), html.indexOf("</section>", html.indexOf("Inner model timing")));
+    expect(table).toContain("Filtered by processing mode");
+    const { report: value } = report();
+    const rows = value.innerModel!.rows.map((row, index) => (index === 0 ? { ...row, parentStageId: null } : row));
+    expect(markup(<InnerModelTable rows={rows} report={value} />)).toContain("Top level (not inside a step)");
   });
 
   it("K: says weighted effective throughput and shows the app-observed caveat on the tile", () => {

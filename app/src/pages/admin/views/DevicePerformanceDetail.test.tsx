@@ -96,6 +96,13 @@ describe("device report", () => {
     expect(html).toContain(">Load the first page</button>");
   });
 
+  it("says under Processed or uploaded here that run and upload counts are executor-based and attempt counts stay origin-based (D-27 5)", () => {
+    const html = route(`/admin/device-performance/${STATION_2}?view=executor`, <Routes><Route path="/admin/device-performance/:installId" element={<DevicePerformanceDetail />} /></Routes>);
+    expect(html).toContain('aria-pressed="true">Processed or uploaded here');
+    expect(html).toContain("Run and upload counts are the runs and transfers this phone executed");
+    expect(html).toContain("Attempt counts still mean attempts recorded on this phone");
+  });
+
   it("renders the page shell with the short install id and both attribution choices before data arrives", () => {
     const html = route(`/admin/device-performance/${STATION_2}`, <Routes><Route path="/admin/device-performance/:installId" element={<DevicePerformanceDetail />} /></Routes>);
     expect(html).toContain("Device 0d5c9a1e");

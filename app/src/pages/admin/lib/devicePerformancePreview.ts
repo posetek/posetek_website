@@ -172,9 +172,12 @@ function reportBase(request: ReportRequestBaseV1, scenario: PreviewScenario, fac
     readyForNextRep: old ? dist(0, null, null, attempts) : dist(measuredAttempts, 21_600, 34_800, scaleCount(31, filterFactor), 0, "interrupted"),
     saveConfirmedAfterRecording: old ? dist(0, null, null, attempts) : dist(scaleCount(measuredAttempts * 0.83, 1), 26_200, 58_900, scaleCount(measuredAttempts * 0.17, 1), 0, "crossLaunch"),
     processingTime: {
-      valid: old ? dist(0, null, null, attempts) : dist(scaleCount(measuredAttempts * 0.95, 1), 15_700, 27_400),
-      partial: dist(outcomeTotals.partial, 16_900, 24_000),
-      failed: dist(outcomeTotals.failed, 8_300, 19_600),
+      byOutcome: {
+        valid: old ? dist(0, null, null, attempts) : dist(scaleCount(measuredAttempts * 0.95, 1), 15_700, 27_400),
+        partial: dist(outcomeTotals.partial, 16_900, 24_000),
+        noMeasurement: dist(outcomeTotals.noMeasurement, 14_200, 21_500),
+        failed: dist(outcomeTotals.failed, 8_300, 19_600),
+      },
       recovery: dist(scaleCount(11, filterFactor), 19_100, 29_300),
     },
     cloudSave: old ? dist(0, null, null, attempts) : dist(scaleCount(measuredAttempts * 0.97, 1), 4_300, 11_900, scaleCount(measuredAttempts * 0.03, 1), 0, "pendingUpload"),

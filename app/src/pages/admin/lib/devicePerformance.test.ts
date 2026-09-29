@@ -151,6 +151,36 @@ describe("report parsing refuses what it does not understand", () => {
     expect(() => parseFleetReport(broken)).toThrow(/innerModel\.rows\[0\]\.cumulativeMs/);
   });
 
+  it("reads processing time by outcome with its own noMeasurement bucket, and refuses the old flat shape (D-27 1)", () => {
+    const raw = normalReport();
+    expect(parseFleetReport(raw).totals.processingTime.byOutcome.noMeasurement.sample).toBeGreaterThan(0);
+    const flat = normalReport();
+    const totals = flat.totals as Record<string, Record<string, unknown>>;
+    totals.processingTime = { valid: totals.timeToResult, partial: totals.timeToResult, failed: totals.timeToResult, recovery: totals.timeToResult };
+    expect(() => parseFleetReport(flat)).toThrow(/processingTime\.byOutcome/);
+    const missing = normalReport();
+    delete ((missing.totals as Record<string, Record<string, Record<string, unknown>>>).processingTime.byOutcome).noMeasurement;
+    expect(() => parseFleetReport(missing)).toThrow(/byOutcome\.noMeasurement/);
+  });
+
+  it("holds inner-model rows to model operations, unique by drill and stage (D-27 6)", () => {
+    const rows = (report: Record<string, unknown>) => (report.innerModel as { rows: Record<string, unknown>[] }).rows;
+    const notModel = normalReport();
+    rows(notModel)[0].stageId = "kick.extract";
+    expect(() => parseFleetReport(notModel)).toThrow(/innerModel\.rows\[0\]\.stageId: expected a model operation/);
+    const duplicate = normalReport();
+    rows(duplicate).push({ ...rows(duplicate)[0] });
+    expect(() => parseFleetReport(duplicate)).toThrow(/unique drillType:stageId \(deadballShot:model\.create repeats\)/);
+  });
+
+  it("validates optional server metric definitions as a map of {label, definition, unit, population, denominator} (D-27 2)", () => {
+    const definitions = { failureRate: { label: "Processing failures", definition: "failed / known outcomes", unit: "ratio", population: "terminal runs", denominator: "valid+partial+noMeasurement+failed" },
+      timeToResult: { label: "Time to result", definition: "movie finalized to result accepted", unit: "ms", population: "accepted attempts", denominator: null } };
+    expect(parseFleetReport({ ...normalReport(), metricDefinitions: definitions }).metricDefinitions?.failureRate.unit).toBe("ratio");
+    expect(() => parseFleetReport({ ...normalReport(), metricDefinitions: { timeToResult: { label: "x", definition: "y" } } })).toThrow(/metricDefinitions\.timeToResult\.unit/);
+    expect(() => parseFleetReport({ ...normalReport(), metricDefinitions: [] })).toThrow(/keyed by metric id/);
+  });
+
   it("refuses a negative duration (the telemetry -1 sentinel is not a value)", () => {
     const raw = normalReport();
     (raw.totals as Record<string, Record<string, unknown>>).cloudSave.typicalMs = -1;
