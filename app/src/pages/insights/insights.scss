@@ -96,7 +96,7 @@
   .insights-tile > span { color: var(--text-muted); font-size: 12px; }
   .insights-tile strong { color: var(--text-primary); font-size: 24px; line-height: 1.2; font-variant-numeric: tabular-nums; }
   .insights-tile em { color: var(--text-muted); font-style: normal; font-size: 11px; }
-  .insights-tile-value { display: flex; align-items: end; justify-content: space-between; gap: 10px; }
+  .insights-tile-value { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 10px; }
   .insights-sparkline { width: 94px; height: 26px; overflow: visible; }
   .insights-sparkline polyline { fill: none; stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
 
