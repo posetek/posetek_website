@@ -6,7 +6,7 @@
   "x-posetekContract": {
     "name": "device-performance-v1",
     "performanceSchemaVersion": 1,
-    "status": "frozen v1.2 - 2026-09-29",
+    "status": "frozen v1.2.2 - 2026-09-29",
     "canonicalCopy": "PoseTek-mobile-app/tools/contracts/device-performance-v1/schema.json",
     "pinnedCopy": "posetek_website/functions/contracts/device-performance-v1/schema.json",
     "document": "PoseTek-mobile-app/docs/plans/PROCESSING_PERF_CONTRACTS_V1.md"
@@ -725,13 +725,60 @@
                   "staleRevision",
                   "illegalTransition",
                   "rateLimited",
-                  "internal"
+                  "internal",
+                  "attemptCapExceeded"
                 ]
               }
             }
           }
         }
       }
+    },
+    "reportUploadRetentionV1": {
+      "description": "Report fragment (contract section 8.4, v1.2.2, D-31 F3): the transfer-retention state that every upload-role statistic in the website's report carries. Only these keys are pinned; the rest of the report object is website-owned.",
+      "type": "object",
+      "required": ["retention", "groupsBeyondRetention"],
+      "properties": {
+        "retention": {"enum": ["retained", "partial", "notRetained"]},
+        "groupsBeyondRetention": {"type": "integer", "minimum": 0}
+      }
+    },
+    "reportOmittedReasonsV1": {
+      "description": "Report fragment (contract section 8.4, v1.2.2, D-27, D-31 F8): why an outcome count's pending runs or pre-admission failures are null. A null reason means the count is present; a non-null reason means the count is null, never 0.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pending", "preAdmissionFailures"],
+      "properties": {
+        "pending": {"enum": ["runFilterActive", "executorAttribution", null]},
+        "preAdmissionFailures": {"enum": ["runFilterActive", null]}
+      }
+    },
+    "reportCoverageV1": {
+      "description": "Report fragment (contract section 8.4, v1.2.2, D-31 F1, F6): the coverage counters the contract names. Other coverage keys are website-owned.",
+      "type": "object",
+      "required": ["attemptsIndexed", "attemptsExcludedOverLimit", "attemptsUnknownDevice", "attemptsDeviceNotYetReported"],
+      "properties": {
+        "attemptsIndexed": {"type": "integer", "minimum": 0},
+        "attemptsExcludedOverLimit": {"type": "integer", "minimum": 0},
+        "attemptsUnknownDevice": {"type": "integer", "minimum": 0},
+        "attemptsDeviceNotYetReported": {"type": "integer", "minimum": 0}
+      }
+    },
+    "reportRunsExcludedByModeV1": {
+      "description": "Report fragment (contract section 8.4, v1.2.2, D-31 F5): totals.runsExcludedByMode, the runs of the modes excluded from fleet processing statistics by default; null when a processing-mode filter selects the population.",
+      "anyOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["debugReview", "fixture", "validation"],
+          "properties": {
+            "debugReview": {"type": "integer", "minimum": 0},
+            "fixture": {"type": "integer", "minimum": 0},
+            "validation": {"type": "integer", "minimum": 0}
+          }
+        }
+      ]
     }
   }
 }

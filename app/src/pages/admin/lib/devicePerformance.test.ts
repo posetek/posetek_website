@@ -8,7 +8,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
-  CALLABLES, DEFAULT_FILTERS, DevicePerformanceResponseError, FILTER_SCOPE, LIMITED_DATA_MIN_SAMPLES, PARAMS, UPLOAD_FILTERS,
+  CALLABLES, CONTRACT_COVERAGE_COUNTERS, DEFAULT_FILTERS, DevicePerformanceResponseError, FILTER_SCOPE, LIMITED_DATA_MIN_SAMPLES,
+  OMITTED_PENDING_REASONS, OMITTED_PRE_ADMISSION_REASONS, PARAMS, RUNS_EXCLUDED_MODES, TRANSFER_RETENTIONS, UPLOAD_FILTERS,
   allocationView, appliedFilters, attemptTimeline, createDevicePerformanceClient, createReportCache, customRangeProblem,
   dateInZone, describeLoadFailure, detailRequest, devicePath, devicePerformanceSearch, failureRate, fleetPath, fleetRequest,
   forgetCachedReports, formatBytes, formatDuration, formatMBps, isLimitedData, loadDevicePerformanceSource,
@@ -24,8 +25,8 @@ import { PREVIEW_SCENARIOS, previewDevice, previewFleet } from "./devicePerforma
 
 // MARK: - Fixture copy (fail, never skip, when the canonical checkout is absent)
 
-// Contracts v1.2.1 (mobile main 6b112ca); v1.0 was 906c843c….
-const SCHEMA_SHA256 = "95343aae5a16f66e3e0d31e3096beb6ced9db12c6f26af0610875acb4b3997db";
+// Contracts v1.2.2 (mobile main 7a0f624); v1.2.1 was 95343aae…, v1.0 was 906c843c….
+const SCHEMA_SHA256 = "e8a09d63a84ed2d95130015489e97ce6884f5e8fef0655caf2115ff16d08e0d3";
 const CANONICAL = path.join("tools", "contracts", "device-performance-v1");
 const localCopy = fileURLToPath(new URL("./__fixtures__/device-performance-v1/", import.meta.url));
 const websiteRoot = fileURLToPath(new URL("../../../../../", import.meta.url));
@@ -83,6 +84,8 @@ const VALID_RECORDS: [string, string][] = [
   ["upload-group-summary-video-unavailable.valid.json", "uploadGroupSummary"],
   // v1.2: a group with no attempt, id system:<category>:<originInstallId>; ids stay opaque to the UI.
   ["upload-group-summary-system.valid.json", "uploadGroupSummary"],
+  // v1.2.2: a transfer in a system group (attemptId null, groupId system:<category>:<originInstallId>).
+  ["transfer-invocation-system.valid.json", "transferInvocation"],
   ["transfer-invocation.valid.json", "transferInvocation"],
 ];
 
@@ -189,6 +192,81 @@ describe("report parsing refuses what it does not understand", () => {
     const raw = normalReport();
     (raw.totals as Record<string, Record<string, unknown>>).cloudSave.typicalMs = -1;
     expect(() => parseFleetReport(raw)).toThrow(/cloudSave\.typicalMs/);
+  });
+});
+
+// Contract v1.2.2 pins four report fragments as $defs. The parser mirrors them;
+// these tests hold the mirror to the pinned bytes and run a small validator for
+// exactly the JSON Schema keywords those $defs use over real parsed fragments.
+describe("contract v1.2.2 report fragments", () => {
+  type Def = { type?: string | string[]; enum?: unknown[]; required?: string[]; properties?: Record<string, Def>; additionalProperties?: boolean; minimum?: number; anyOf?: Def[] };
+  const defs = (JSON.parse(readFileSync(path.join(localCopy, "schema.json"), "utf8")) as { $defs: Record<string, Def> }).$defs;
+  const typeOk = (value: unknown, type: string) => type === "null" ? value === null : type === "integer" ? Number.isInteger(value)
+    : type === "object" ? typeof value === "object" && value !== null && !Array.isArray(value) : typeof value === type;
+  function violations(value: unknown, def: Def, at = ""): string[] {
+    if (def.anyOf) return def.anyOf.some(option => !violations(value, option, at).length) ? [] : [`${at}: matches no anyOf branch`];
+    const errors: string[] = [];
+    if (def.type && ![def.type].flat().some(type => typeOk(value, type))) return [`${at}: not ${def.type}`];
+    if (def.enum && !def.enum.includes(value)) errors.push(`${at}: ${JSON.stringify(value)} not in enum`);
+    if (def.minimum !== undefined && typeof value === "number" && value < def.minimum) errors.push(`${at}: below ${def.minimum}`);
+    if (typeOk(value, "object")) {
+      const record = value as Record<string, unknown>;
+      for (const key of def.required ?? []) if (!(key in record)) errors.push(`${at}.${key}: required`);
+      for (const [key, child] of Object.entries(def.properties ?? {})) if (key in record) errors.push(...violations(record[key], child, `${at}.${key}`));
+      if (def.additionalProperties === false) for (const key of Object.keys(record)) if (!(key in (def.properties ?? {}))) errors.push(`${at}.${key}: not allowed`);
+    }
+    return errors;
+  }
+  const nonNull = (values: unknown[] | undefined) => (values ?? []).filter(value => value !== null);
+
+  it("mirrors the pinned enums and key sets exactly", () => {
+    expect(defs.reportUploadRetentionV1.properties!.retention.enum).toEqual([...TRANSFER_RETENTIONS]);
+    expect(defs.reportUploadRetentionV1.required).toEqual(["retention", "groupsBeyondRetention"]);
+    expect(defs.reportOmittedReasonsV1.additionalProperties).toBe(false);
+    expect(defs.reportOmittedReasonsV1.required).toEqual(["pending", "preAdmissionFailures"]);
+    expect(nonNull(defs.reportOmittedReasonsV1.properties!.pending.enum)).toEqual([...OMITTED_PENDING_REASONS]);
+    expect(nonNull(defs.reportOmittedReasonsV1.properties!.preAdmissionFailures.enum)).toEqual([...OMITTED_PRE_ADMISSION_REASONS]);
+    expect([...defs.reportCoverageV1.required!].sort()).toEqual([...CONTRACT_COVERAGE_COUNTERS].sort());
+    const modes = defs.reportRunsExcludedByModeV1.anyOf!.find(option => option.type === "object")!;
+    expect(modes.additionalProperties).toBe(false);
+    expect([...modes.required!].sort()).toEqual([...RUNS_EXCLUDED_MODES].sort());
+  });
+
+  it("accepts only fragments the pinned $defs accept, across fleet, run-filter, executor and retention reports", () => {
+    const fleets = ["", "pmode=liveCapture&drill=sprint", "xbuild=1.4.1%20(215)", "start=2026-07-10&end=2026-08-20", "days=90"]
+      .map(search => parseFleetReport(previewFleet(fleetRequest(parseDevicePerformanceQuery(search, new Date("2026-09-29T18:00:00Z"))))));
+    const executor = parseDeviceReport(previewDevice({ ...detailRequest("0d5c9a1e-2b3f-4c6d-8e7f-a0b1c2d3e4f5", baseQuery), attribution: "executor" }));
+    for (const report of [...fleets, executor]) {
+      const outcomeRows = [report.totals.outcomes, ...report.perDrill.map(row => row.outcomes), ...("devices" in report ? report.devices.map(row => row.outcomes) : [])];
+      const errors = [
+        ...violations(report.coverage, defs.reportCoverageV1, "coverage"),
+        ...violations(report.totals.runsExcludedByMode, defs.reportRunsExcludedByModeV1, "runsExcludedByMode"),
+        ...report.totals.uploads.flatMap((row, index) => violations(row, defs.reportUploadRetentionV1, `uploads[${index}]`)),
+        ...outcomeRows.flatMap((row, index) => violations(row.omittedReasons, defs.reportOmittedReasonsV1, `outcomes[${index}].omittedReasons`)),
+      ];
+      expect(errors).toEqual([]);
+    }
+    // The validator itself rejects what the parser must reject.
+    expect(violations({ pending: null, preAdmissionFailures: "executorAttribution" }, defs.reportOmittedReasonsV1)).not.toEqual([]);
+    expect(violations({ debugReview: 0, fixture: 0, validation: 0, recovery: 1 }, defs.reportRunsExcludedByModeV1)).not.toEqual([]);
+  });
+
+  it("refuses what the pinned $defs refuse", () => {
+    const executorOnPreAdmission = normalReport() as unknown as Record<string, Record<string, Record<string, unknown>>>;
+    Object.assign(executorOnPreAdmission.totals.outcomes, { preAdmissionFailures: null, omittedReasons: { pending: null, preAdmissionFailures: "executorAttribution" } });
+    expect(() => parseFleetReport(executorOnPreAdmission)).toThrow(/omittedReasons\.preAdmissionFailures: expected one of runFilterActive\./);
+    const extraReason = normalReport() as unknown as Record<string, Record<string, Record<string, Record<string, unknown>>>>;
+    extraReason.totals.outcomes.omittedReasons.cancelled = null;
+    expect(() => parseFleetReport(extraReason)).toThrow(/omittedReasons\.cancelled: expected no key other than pending, preAdmissionFailures/);
+    const extraMode = normalReport() as unknown as Record<string, Record<string, Record<string, unknown>>>;
+    (extraMode.totals.runsExcludedByMode as Record<string, unknown>).recovery = 2;
+    expect(() => parseFleetReport(extraMode)).toThrow(/runsExcludedByMode\.recovery: expected no key other than debugReview, fixture, validation/);
+    const badRetention = normalReport() as unknown as Record<string, Record<string, Record<string, unknown>[]>>;
+    badRetention.totals.uploads[0].retention = "expired";
+    expect(() => parseFleetReport(badRetention)).toThrow(/uploads\[0\]\.retention: expected one of retained, partial, notRetained/);
+    const negativeCoverage = normalReport() as unknown as Record<string, Record<string, unknown>>;
+    negativeCoverage.coverage.attemptsUnknownDevice = -1;
+    expect(() => parseFleetReport(negativeCoverage)).toThrow(/coverage\.attemptsUnknownDevice/);
   });
 });
 

@@ -59,6 +59,13 @@
       "violates": null
     },
     {
+      "file": "transfer-invocation-system.valid.json",
+      "target": "#",
+      "expect": "valid",
+      "check": "schema",
+      "violates": null
+    },
+    {
       "file": "device-status.valid.json",
       "target": "#",
       "expect": "valid",
@@ -155,6 +162,13 @@
       "expect": "invalid",
       "check": "semantic",
       "violates": "deviceStatus recordId must be <executorInstallId>:<originReporterUid> (v1.2, D-18)"
+    },
+    {
+      "file": "transfer-invocation-system-foreign-install.invalid.json",
+      "target": "#",
+      "expect": "invalid",
+      "check": "semantic",
+      "violates": "a system transfer's groupId must name its own originInstallId (v1.2.2, D-36)"
     },
     {
       "file": "batch-too-many-records.invalid.json",

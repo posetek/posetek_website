@@ -370,6 +370,20 @@ export interface ChoicesV1 {
  */
 export const OMITTED_REASONS = ["runFilterActive", "executorAttribution"] as const;
 export type OmittedReason = typeof OMITTED_REASONS[number];
+
+// Report fragments pinned by contract v1.2.2 (schema.json $defs report*V1). These
+// constants mirror the pinned enums and key sets; devicePerformance.test.ts
+// checks them against the byte-copied schema, so a contract change fails a test.
+/** reportOmittedReasonsV1.pending */
+export const OMITTED_PENDING_REASONS = ["runFilterActive", "executorAttribution"] as const;
+/** reportOmittedReasonsV1.preAdmissionFailures: pre-admission failures stay origin-based, so only a run filter omits them. */
+export const OMITTED_PRE_ADMISSION_REASONS = ["runFilterActive"] as const;
+/** reportUploadRetentionV1.retention */
+export const TRANSFER_RETENTIONS = ["retained", "partial", "notRetained"] as const;
+/** reportCoverageV1.required (other coverage keys are website-owned). */
+export const CONTRACT_COVERAGE_COUNTERS = ["attemptsIndexed", "attemptsExcludedOverLimit", "attemptsUnknownDevice", "attemptsDeviceNotYetReported"] as const;
+/** reportRunsExcludedByModeV1 object keys (additionalProperties false). */
+export const RUNS_EXCLUDED_MODES = ["debugReview", "fixture", "validation"] as const;
 export const OMITTED_REASON_LABELS: Record<OmittedReason, string> = {
   runFilterActive: "not shown while a processing filter is active, because they cannot be tied to a processing mode, version or phone model",
   executorAttribution: "not shown under Processed or uploaded here, because they cannot be tied to the phone that processed a run",
@@ -385,12 +399,12 @@ export interface OutcomeCountsV1 {
   pending: number | null;
   /** Invocations that ended before a run existed (contract §8.2); never in the rate. null when omitted. */
   preAdmissionFailures: number | null;
-  omittedReasons: { pending: OmittedReason | null; preAdmissionFailures: OmittedReason | null };
+  omittedReasons: { pending: typeof OMITTED_PENDING_REASONS[number] | null; preAdmissionFailures: typeof OMITTED_PRE_ADMISSION_REASONS[number] | null };
 }
 /** D-31 F5: runs left out of the pooled numbers by processing mode; null when a processing-mode filter is set. */
 export interface RunsExcludedByModeV1 { debugReview: number; fixture: number; validation: number }
 /** D-31 F3: transfer detail is kept 30 days; upload metrics say how much of the period still has it. */
-export type TransferRetention = "retained" | "partial" | "notRetained";
+export type TransferRetention = typeof TRANSFER_RETENTIONS[number];
 export interface YieldCountsV1 {
   valid: number;
   /** invalid verdicts other than userDiscarded */
@@ -822,6 +836,12 @@ const shape = (fields: Record<string, Check>): Check => (value, path) => {
   for (const [key, check] of Object.entries(fields)) check(value[key], `${path}.${key}`);
 };
 const loose: Check = (value, path) => { if (value !== null && !isRecord(value)) malformed(path, "an object or null"); };
+/** shape() plus JSON Schema additionalProperties: false, for the contract-pinned report fragments. */
+const exact = (fields: Record<string, Check>): Check => (value, path) => {
+  shape(fields)(value, path);
+  const extra = Object.keys(value as Record<string, unknown>).find(key => !(key in fields));
+  if (extra !== undefined) malformed(`${path}.${extra}`, `no key other than ${Object.keys(fields).join(", ")}`);
+};
 
 const countedReason = shape({ reason: text, count });
 const stat = shape({
@@ -829,13 +849,17 @@ const stat = shape({
   typicalMs: nullable(measure), slowMs: nullable(measure),
   missingReasons: list(countedReason, 32), excludedReasons: list(countedReason, 32),
 });
-const omittedReason = nullable(oneOf(OMITTED_REASONS));
+// Pinned fragment checks (contract v1.2.2 $defs report*V1).
+const reportOmittedReasons = exact({ pending: nullable(oneOf(OMITTED_PENDING_REASONS)), preAdmissionFailures: nullable(oneOf(OMITTED_PRE_ADMISSION_REASONS)) });
+const reportRunsExcludedByMode = nullable(exact(Object.fromEntries(RUNS_EXCLUDED_MODES.map(mode => [mode, count]))));
+const reportUploadRetention = { retention: oneOf(TRANSFER_RETENTIONS), groupsBeyondRetention: count };
+const reportCoverage = Object.fromEntries(CONTRACT_COVERAGE_COUNTERS.map(key => [key, count]));
 /** D-31 F8: pending and preAdmissionFailures may be null, and a null count must carry its reason (and only then). */
 const outcomes: Check = (value, path) => {
   shape({
     valid: count, partial: count, noMeasurement: count, failed: count, cancelled: count, interruptedUnknown: count,
     pending: nullable(count), preAdmissionFailures: nullable(count),
-    omittedReasons: shape({ pending: omittedReason, preAdmissionFailures: omittedReason }),
+    omittedReasons: reportOmittedReasons,
   })(value, path);
   const row = value as { pending: number | null; preAdmissionFailures: number | null; omittedReasons: Record<string, string | null> };
   for (const key of ["pending", "preAdmissionFailures"] as const) {
@@ -852,7 +876,7 @@ const uploadRoleStat = shape({
   role: oneOf(UPLOAD_ROLES), notRequested: count, invocations: count, succeeded: count, failed: count, cancelled: count,
   interrupted: count, pending: count, excludedZeroOrUnknownDuration: count, payloadBytes: count, elapsedMs: measure,
   duration: stat, queueWait: stat, knownBackoffMs: nullable(measure),
-  retention: oneOf(["retained", "partial", "notRetained"]), groupsBeyondRetention: count,
+  ...reportUploadRetention,
 });
 const pagination = shape({ pageSize: count, nextCursor: nullable(text), totalRows: count });
 const attemptRow = shape({
@@ -892,9 +916,10 @@ const envelopeFields: Record<string, Check> = {
   effectiveFilters: shape({ capture: metricGroupList, processing: metricGroupList, yield: metricGroupList, cloudSave: metricGroupList, upload: metricGroupList }),
   freshness: shape({ sourceUpdatedAt: nullable(text), lastReportReceivedAt: nullable(text) }),
   coverage: shape({
-    collectionStartedAt: nullable(text), installsKnown: count, installsNotRecentlyReporting: count, attemptsIndexed: count,
-    attemptsPartial: count, attemptsNotCollectedByVersion: count, attemptsDateUncertain: count, attemptsUnknownDevice: count,
-    attemptsDeviceNotYetReported: count, attemptsExcludedOverLimit: count, droppedDetailCount: count,
+    // Contract-pinned counters (reportCoverageV1), then the website-owned ones the page also reads.
+    ...reportCoverage,
+    collectionStartedAt: nullable(text), installsKnown: count, installsNotRecentlyReporting: count,
+    attemptsPartial: count, attemptsNotCollectedByVersion: count, attemptsDateUncertain: count, droppedDetailCount: count,
   }),
   choices: shape({ captureBuilds: list(choice, 500), captureMachines: list(choice, 500), executionBuilds: list(choice, 500), executionMachines: list(choice, 500), payloadSizeBands: list(choice, 32) }),
   totals: shape({
@@ -904,7 +929,7 @@ const envelopeFields: Record<string, Check> = {
     cloudBacklog: shape({ pendingJobs: count, failedJobs: count, installsReporting: count, oldestReportAt: nullable(text) }),
     uploads: list(uploadRoleStat, UPLOAD_ROLES.length),
     outcomes,
-    runsExcludedByMode: nullable(shape({ debugReview: count, fixture: count, validation: count })),
+    runsExcludedByMode: reportRunsExcludedByMode,
     yield: shape({ valid: count, invalid: count, pending: count, userDiscarded: count, firstRunValid: count }),
   }),
   perDrill: list(shape({
