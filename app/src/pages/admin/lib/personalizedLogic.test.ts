@@ -126,9 +126,8 @@ describe("restored planner context", () => {
     expect(url.pathname).toBe("/admin/accounts/player/player");
     expect(Object.fromEntries(url.searchParams)).toEqual({ orgId: "current-club", teamId: "current-team", coachId: "context-coach" });
     const staff = new URL(plannerPlayerDetailsLink("staff", player, ""), "https://test.invalid");
-    expect(staff.pathname).toBe("/insights");
-    expect(staff.searchParams.get("view")).toBe("player");
-    expect(staff.searchParams.get("playerId")).toBe("player");
+    expect(staff.pathname).toBe("/athlete");
+    expect(staff.searchParams.get("player")).toBe("player");
     expect(staff.searchParams.get("orgId")).toBe("current-club");
     expect(staff.searchParams.has("coachId")).toBe(false);
   });

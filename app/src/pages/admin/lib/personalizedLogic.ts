@@ -153,7 +153,8 @@ export function plannerPlayerDetailsLink(role: string, player: any, search: stri
   const context = { orgId: player.organizationId || undefined, teamId: player.teamId || undefined,
     coachId: coachId || (!player.organizationId ? player.coachId : undefined) || undefined };
   if (role === "admin") return accountPlayerPath(player.id, context);
-  if (role === "staff") {
+  const returnTo = new URLSearchParams(search).get("returnTo");
+  if (role === "staff" && returnTo && (returnTo === "/insights" || returnTo.startsWith("/insights?")) && coachPlannerReturn(search) === returnTo) {
     const priorWorkspace = new URL(coachPlannerReturn(search), "https://posetek.net");
     return coachWorkspacePath(priorWorkspace.search, { view: "player", playerId: player.id,
       orgId: context.orgId, teamId: context.teamId });

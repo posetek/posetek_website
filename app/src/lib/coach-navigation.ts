@@ -21,3 +21,12 @@ export function coachPlannerReturn(search: string) {
   }
   return coachWorkspacePath("", { orgId: params.get("orgId") || undefined, teamId: params.get("teamId") || undefined });
 }
+
+/** Shared staff planner callers retain Organization unless a coach supplied a workspace return. */
+export function staffPlannerReturn(search: string) {
+  const params = new URLSearchParams(search), target = params.get("returnTo");
+  if (target && (target === "/insights" || target.startsWith("/insights?")) && coachPlannerReturn(search) === target) return target;
+  const query = new URLSearchParams();
+  for (const key of ["orgId", "teamId"]) if (params.get(key)) query.set(key, params.get(key)!);
+  return `/organization${query.size ? `?${query}` : ""}`;
+}

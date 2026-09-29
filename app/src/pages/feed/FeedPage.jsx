@@ -8,6 +8,7 @@ import PlayerShell, { playerTabPath } from "../athlete-portal/player/PlayerShell
 import { communityPanel, communityPanelPath, communityPersonPath } from "./navigation";
 import { coachWorkspacePath } from "../../lib/coach-navigation";
 import { loadAccountAccess } from "../../lib/account-access";
+import { getClubContext } from "../../lib/organization-data";
 import "./feed.css";
 import "../../styles/pose-portal.css";
 import "./feed-cascade.css";
@@ -201,9 +202,17 @@ function FeedPage({ embedded = false, organizationId: workspaceOrganizationId, o
     if (!embedded) document.title = `Community | PoseTek`;
   }, [embedded]);
   React.useEffect(() => {
-    if (!embedded && !preview && context?.staff && !context.admin && !context.playerId && !athletePreview) {
-      navigate(coachWorkspacePath(location.search, { view: `community`, orgId: context.organizationId || undefined, organizationId: undefined }), { replace: true });
-    }
+    if (embedded || preview || !context?.staff || context.admin || context.playerId || athletePreview) return;
+    let current = true;
+    const uid = auth.currentUser?.uid;
+    // Managers retain their existing staff feed; only coaches use the new
+    // workspace's Community tab. Social context groups both roles as staff.
+    void getClubContext(context.organizationId).then(club => {
+      if (current && uid && auth.currentUser?.uid === uid && club.role === `coach`) {
+        navigate(coachWorkspacePath(location.search, { view: `community`, orgId: context.organizationId || undefined, organizationId: undefined }), { replace: true });
+      }
+    }).catch(() => { /* The social endpoint still enforces the current feed scope. */ });
+    return () => { current = false; };
   }, [embedded, preview, context, athletePreview, navigate, location.search]);
   /* oxlint-disable react/set-state-in-effect -- Preserve deployed state resets before loading a different viewer, audience, or directory. */
   /* oxlint-disable react-hooks/exhaustive-deps -- These refs are request counters, not DOM nodes; cleanup must invalidate their latest values. */

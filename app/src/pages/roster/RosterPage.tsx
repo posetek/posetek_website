@@ -441,7 +441,7 @@ export default function RosterPage({ managementOnly = false, organizationId, tea
               <p className="eyebrow">Roster</p>
               <h2>Add a player</h2>
             </div>
-            <button className="icon-button" value="cancel" aria-label="Close">
+            <button className="icon-button" type="button" onClick={() => dialogRef.current?.close()} aria-label="Close">
               <span className="material-symbols-outlined">close</span>
             </button>
           </header>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { auth } from "../../lib/firebase";
-import { coachPlannerReturn } from "../../lib/coach-navigation";
+import { staffPlannerReturn } from "../../lib/coach-navigation";
 import PersonalizedPrograms from "../admin/views/PersonalizedPrograms";
 import "../../styles/pose-portal.css";
 
@@ -10,7 +10,7 @@ export default function ProgramsPage() {
   const navigate = useNavigate(), location = useLocation();
   const [uid, setUid] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const returnPath = coachPlannerReturn(location.search);
+  const returnPath = staffPlannerReturn(location.search);
   useEffect(() => auth.onAuthStateChanged(user => {
     if (!user) { setUid(null); navigate(`/signin?returnTo=${encodeURIComponent(location.pathname + location.search)}`, { replace: true }); }
     else if (user.emailVerified && user.email?.toLowerCase().endsWith("@posetek.net")) navigate(`/admin/programs${location.search}${location.hash}`, { replace: true });
