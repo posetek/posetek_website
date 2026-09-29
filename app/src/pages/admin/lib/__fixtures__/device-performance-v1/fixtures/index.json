@@ -45,6 +45,13 @@
       "violates": null
     },
     {
+      "file": "upload-group-summary-system.valid.json",
+      "target": "#",
+      "expect": "valid",
+      "check": "schema",
+      "violates": null
+    },
+    {
       "file": "transfer-invocation.valid.json",
       "target": "#",
       "expect": "valid",
@@ -120,6 +127,34 @@
       "expect": "invalid",
       "check": "semantic",
       "violates": "missingReasons field must point at a null value"
+    },
+    {
+      "file": "upload-group-summary-system-without-install.invalid.json",
+      "target": "#",
+      "expect": "invalid",
+      "check": "schema",
+      "violates": "system upload group requires originInstallId (v1.2, D-21)"
+    },
+    {
+      "file": "upload-group-summary-system-foreign-install.invalid.json",
+      "target": "#",
+      "expect": "invalid",
+      "check": "semantic",
+      "violates": "system upload group recordId must be system:<category>:<originInstallId> (v1.2, D-21)"
+    },
+    {
+      "file": "device-status-without-reporter.invalid.json",
+      "target": "#",
+      "expect": "invalid",
+      "check": "schema",
+      "violates": "deviceStatus requires originReporterUid (v1.2, D-18)"
+    },
+    {
+      "file": "device-status-record-id-other-reporter.invalid.json",
+      "target": "#",
+      "expect": "invalid",
+      "check": "semantic",
+      "violates": "deviceStatus recordId must be <executorInstallId>:<originReporterUid> (v1.2, D-18)"
     },
     {
       "file": "batch-too-many-records.invalid.json",
