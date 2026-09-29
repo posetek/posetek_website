@@ -357,7 +357,8 @@ test("compactTransfer takes its category from the first two groupId separators, 
   const attemptTransfer = transfer({ attemptId: uuid("a", 1), invocationId: uuid("t", 70), category: "optionalVideo" });
   assert.equal(compactTransfer(fact(attemptTransfer), uuid("a", 1)).category, "optionalVideo");
   const install = uuid("i", 7);
-  const system = { ...transfer({ attemptId: uuid("a", 1), invocationId: uuid("t", 71), category: "diagnostics" }), attemptId: null };
+  // A system transfer's group names the record's own install (v1.2.2, D-36).
+  const system = { ...transfer({ attemptId: uuid("a", 1), invocationId: uuid("t", 71), category: "diagnostics", origin: install }), attemptId: null };
   system.body = { ...system.body, groupId: `system:diagnostics:${install}`, logicalObjectId: `system/diagnosticArtifact.slot/${"1".repeat(64)}` };
   assert.equal(contract.validateRecord(system).ok, true, contract.validateRecord(system).errors.join("; "));
   const compact = compactTransfer(fact(system), null);
