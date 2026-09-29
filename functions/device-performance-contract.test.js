@@ -57,14 +57,24 @@ test("the pinned schema and fixtures match the contract's digest table", () => {
   for (const [file, hash] of digests) assert.equal(sha256File(path.join(PINNED, file)), hash, file);
 });
 
-test("the pinned copy is byte-identical to the canonical mobile contract", () => {
+// The pin covers the executable contract only: schema.json and fixtures/**.
+// README.md is refreshed by copy but never hashed, so a prose-only change on
+// mobile never fails this repository (decision D-2026-09-29-24, as D-20 F2).
+function pinnedContractFiles(root) {
+  return listFiles(root).filter((file) => file === "schema.json" || file.startsWith(`fixtures${path.sep}`));
+}
+
+test("the pinned copy is byte-identical to the canonical mobile contract (schema.json and fixtures only)", () => {
   const canonical = canonicalDirectory();
   if (!fs.existsSync(path.join(canonical, "schema.json"))) {
     assert.fail(`Canonical device-performance contract not found at ${canonical}. Check out PoseTek-mobile-app beside `
       + "this repository or set POSETEK_MOBILE_REPO. The pinned copy cannot be verified without it, so this test fails rather than skips.");
   }
-  assert.deepEqual(listFiles(PINNED), listFiles(canonical), "the pinned and canonical directories hold the same files");
-  for (const file of listFiles(canonical)) {
+  const pinned = pinnedContractFiles(PINNED);
+  assert.ok(pinned.includes("schema.json") && pinned.some((file) => file.startsWith(`fixtures${path.sep}`)), "the pin covers the schema and fixtures");
+  assert.ok(!pinned.includes("README.md"), "README.md is never hashed");
+  assert.deepEqual(pinned, pinnedContractFiles(canonical), "the pinned and canonical directories hold the same schema and fixtures");
+  for (const file of pinned) {
     assert.equal(sha256File(path.join(PINNED, file)), sha256File(path.join(canonical, file)), `${file} differs from the canonical copy`);
   }
 });
