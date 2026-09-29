@@ -32,13 +32,31 @@
 //
 // Evaluation-origin facts are rejected by ingestion; any that exist are ignored
 // here. Transfer invocations are projected only as a compact measured tuple
-// (role, outcome, bytes, elapsed, network, queue wait, executor): the upload
-// tiles need invocation durations and bytes, which no group summary carries.
-// Raw transfer detail (object ids, provider codes, failure stages) stays out.
+// (role, outcome, bytes, elapsed, network, queue wait, executor, receipt): the
+// upload tiles need invocation durations and bytes, which no group summary
+// carries. Raw transfer detail (object ids, provider codes, failure stages)
+// stays out.
+//
+// Review rulings D-2026-09-29-31:
+// - An attempt over its fact limits (runs, groups, transfers) is excluded from
+//   the rebuild and counted (excludedOverLimit); the partition still publishes.
+//   A partition over its attempt limit publishes an overflow generation that a
+//   report surfaces as a typed narrowRange naming the partition (F1).
+// - Each attempt is compacted inside the bounded read, and transfers are read
+//   as a field projection, so raw facts are never all held at once (F2).
+// - Transfer facts are retained 30 days, partitions 90: compaction and reports
+//   ignore transfers first received more than 30 days ago, deterministically,
+//   and upload statistics state their retention (F3).
+//   RELEASE GATE: before a TTL policy or retention sweep deletes any fact, the
+//   sweep must call invalidateAttempts() for every attempt it touches, so no
+//   published generation keeps samples of deleted facts.
+// - A generation is current when it was built from the partition's current
+//   token (or by this request after its own scan); no clocks of different
+//   instances are compared (F7).
 
 const { randomUUID, createHash } = require("node:crypto");
 const contract = require("./device-performance-contract");
-const { STORAGE_VERSION } = require("./device-performance-ingestion");
+const { STORAGE_VERSION, RETENTION_DAYS } = require("./device-performance-ingestion");
 const { completeQuery, mapBounded } = require("./insights-v2-projection");
 
 const PROJECTION_VERSION = 1;
@@ -58,6 +76,15 @@ const DAY_MS = 86400000;
 // ahead of receipt (device-performance-ingestion.js uses the same tolerance).
 const FUTURE_TOLERANCE_MS = 5 * 60000;
 const UNKNOWN_INSTALL = "unknown";
+// Contract §8.9: transfer invocations are kept 30 days, summaries 90.
+const TRANSFER_RETENTION_MS = RETENTION_DAYS.transferInvocation * DAY_MS;
+// The transfer fields compaction needs; read as a projection (F2).
+const TRANSFER_FIELDS = Object.freeze([
+  "storageVersion", "firstReceivedAtServer", "updatedAtServer", "serverClockQuality",
+  "record.performanceSchemaVersion", "record.recordKind", "record.origin", "record.attemptId", "record.executorInstallId",
+  "record.clockQuality", "record.droppedDetailCount", "record.body.groupId", "record.body.outcome", "record.body.payloadBytes",
+  "record.body.invocationElapsedMs", "record.body.networkInterface", "record.body.queueWaitMs", "record.body.knownBackoffMs",
+]);
 
 // Maximum values; a caller may lower (tests), never raise, a bound.
 const LIMITS = Object.freeze({
@@ -273,6 +300,11 @@ function compactGroup(fact, attemptId, transfers) {
   };
 }
 
+// Transfer facts live 30 days, partitions up to 90 (F3). A transfer first
+// received before the retention cutoff is never compacted, and reports drop
+// any older tuple at read time, so upload numbers do not depend on when a
+// partition was last rebuilt or whether TTL has deleted the fact yet.
+const beyondRetention = (receivedAt, nowMillis) => nowMillis !== undefined && receivedAt !== null && receivedAt < nowMillis - TRANSFER_RETENTION_MS;
 function compactTransfer(fact, attemptId) {
   const record = fact.record, body = record.body;
   return {
@@ -286,6 +318,7 @@ function compactTransfer(fact, attemptId) {
     net: body.networkInterface,
     queueWait: finiteOrNull(body.queueWaitMs),
     backoff: finiteOrNull(body.knownBackoffMs),
+    receivedAt: fact.receivedAt,
   };
 }
 
@@ -309,10 +342,14 @@ function attemptPlacementFields(attemptFact, otherFacts) {
   return { summary: false, origin: null, captureAt: null, dateUncertain: true, receivedAt: receipts.length ? Math.min(...receipts) : null };
 }
 
-// facts: { attemptId, attempt, runs[], groups[], transfers[] } as stored docs,
-// index: processingAttempts/{attemptId} or null. Returns null when no usable
-// field-origin fact exists (evaluation-only or expired).
-function compactAttempt({ attemptId, attempt: attemptDoc, runs: runDocs = [], groups: groupDocs = [], transfers: transferDocs = [], index = null }, fallbackMillis = 0) {
+// facts: { attemptId, attempt, runs[], groups[], transfers[], overLimit? } as
+// stored docs, index: processingAttempts/{attemptId} or null. Returns null when
+// no usable field-origin fact exists (evaluation-only or expired). An attempt
+// whose facts exceed the per-attempt limits (overLimit, F1) yields only its
+// attempt sample, flagged excludedOverLimit: reports count it and leave it out.
+// nowMillis (the rebuild time) drops transfers beyond retention (F3).
+function compactAttempt({ attemptId, attempt: attemptDoc, runs: runDocs = [], groups: groupDocs = [], transfers: transferDocs = [], index = null, overLimit = null },
+  fallbackMillis = 0, { nowMillis } = {}) {
   let skipped = 0;
   const take = (doc, kind) => {
     const fact = usableFact(doc, kind);
@@ -322,8 +359,9 @@ function compactAttempt({ attemptId, attempt: attemptDoc, runs: runDocs = [], gr
   const attempt = take(attemptDoc, "attemptSummary");
   const runs = sortRuns(runDocs.map((doc) => take(doc, "runSummary")).filter(Boolean));
   const groups = groupDocs.map((doc) => take(doc, "uploadGroupSummary")).filter(Boolean);
-  const transfers = transferDocs.map((doc) => take(doc, "transferInvocation")).filter(Boolean);
-  if (!attempt && !runs.length && !groups.length && !transfers.length) return null;
+  const receivedTransfers = transferDocs.map((doc) => take(doc, "transferInvocation")).filter(Boolean);
+  const transfers = receivedTransfers.filter((fact) => !beyondRetention(fact.receivedAt, nowMillis));
+  if (!attempt && !runs.length && !groups.length && !receivedTransfers.length && !overLimit) return null;
   const indexFacts = index && index.schemaVersion === 2 && index.attemptId === attemptId ? {
     drillType: DRILLS.includes(index.drillType) ? index.drillType : null,
     build: index.build ?? null,
@@ -331,7 +369,9 @@ function compactAttempt({ attemptId, attempt: attemptDoc, runs: runDocs = [], gr
     lastStage: typeof index.lastStage === "string" && index.lastStage && index.lastStage !== "unknown" ? index.lastStage : null,
   } : null;
   const record = attempt?.record ?? null, body = record?.body ?? null;
-  const place = attemptPlacementFields(attempt, [...runs, ...groups, ...transfers]);
+  // Placement uses every received fact (as the change scanner does), so an
+  // expired transfer never moves an attempt.
+  const place = attemptPlacementFields(attempt, [...runs, ...groups, ...receivedTransfers]);
   const runSamples = runs.map((fact) => compactRun(fact, attemptId, indexFacts));
   const runById = new Map(runSamples.map((run) => [run.runId, run]));
 
@@ -404,26 +444,31 @@ function compactAttempt({ attemptId, attempt: attemptDoc, runs: runDocs = [], gr
     preAdmission: body?.preAdmissionFailure
       ? { stage: body.preAdmissionFailure.stage, code: body.preAdmissionFailure.failureCode, layer: body.preAdmissionFailure.failureLayer } : null,
     indexLastStage: indexFacts?.lastStage ?? null,
+    transfersBeyondRetention: receivedTransfers.length - transfers.length,
+    // { runs, groups, transfers } counts when over the per-attempt limits.
+    excludedOverLimit: overLimit,
   };
-  const samples = [
+  const samples = overLimit ? [attemptSample] : [
     attemptSample,
     ...runSamples,
     ...groups.map((fact) => compactGroup(fact, attemptId, transfers)),
     ...transfers.map((fact) => compactTransfer(fact, attemptId)),
   ];
-  return { attempt: attemptSample, samples, placement: placement(place, fallbackMillis) };
+  return { attempt: attemptSample, samples, placement: placement(place, fallbackMillis), overLimit };
 }
 
 // ---------------------------------------------------------------------------
 // The projection service.
 
-function narrowRange(HttpsError, bound, limit) {
-  const details = { errorCode: "narrowRange", bound };
+// Partitions are day x install, so a narrower range or a single device reduces
+// what a report reads; a drill filter does not (review F4).
+function narrowRange(HttpsError, bound, limit, extra = {}) {
+  const details = { errorCode: "narrowRange", bound, ...extra };
   // The admin UI prints details.limit as a measurement count, so only the
   // sample bound carries it.
   if (bound === "samples") details.limit = limit;
   else details.max = limit;
-  return new HttpsError("resource-exhausted", "This report is too large to compute exactly. Narrow the date range or choose a drill or device. No partial total was returned.", details);
+  return new HttpsError("resource-exhausted", "This report is too large to compute exactly. Narrow the date range or choose a device. No partial total was returned.", details);
 }
 function rebuilding(HttpsError) {
   return new HttpsError("unavailable", "The report is being updated with newly received facts. Retry to continue; each retry advances the update.",
@@ -467,6 +512,36 @@ function createDevicePerformanceProjection({ db, HttpsError, FieldValue, Timesta
     };
   }
 
+  // The facts a rebuild compacts for one attempt (F1, F2). Fact counts are
+  // aggregated first: an attempt over any per-attempt limit is never read in
+  // full, only its summary and index (for its counted, excluded sample).
+  // Transfers are read as a field projection of the compacted fields.
+  async function readForCompaction(attemptId) {
+    const byAttempt = (kind) => factRoot(kind).where("attemptId", "==", attemptId);
+    const [attempt, index, runCount, groupCount, transferCount] = await Promise.all([
+      factRoot("attemptSummary").doc(`attemptSummary:${attemptId}`).get(),
+      db.doc(`processingAttempts/${attemptId}`).get(),
+      ...["runSummary", "uploadGroupSummary", "transferInvocation"].map(async (kind) => (await byAttempt(kind).count().get()).data().count),
+    ]);
+    const base = { attemptId, attempt: attempt.exists ? attempt.data() : null, index: index.exists ? index.data() : null };
+    const maxRuns = limits.maxRunsPerAttempt * 2;
+    if (runCount > maxRuns || groupCount > limits.maxGroupsPerAttempt || transferCount > limits.maxTransfersPerAttempt) {
+      return { ...base, overLimit: { runs: runCount, groups: groupCount, transfers: transferCount } };
+    }
+    try {
+      const [runs, groups, transfers] = await Promise.all([
+        completeQuery(byAttempt("runSummary"), maxRuns, HttpsError),
+        completeQuery(byAttempt("uploadGroupSummary"), limits.maxGroupsPerAttempt, HttpsError),
+        completeQuery(byAttempt("transferInvocation").select(...TRANSFER_FIELDS), limits.maxTransfersPerAttempt, HttpsError),
+      ]);
+      return { ...base, runs: runs.map((doc) => doc.data()), groups: groups.map((doc) => doc.data()), transfers: transfers.map((doc) => doc.data()) };
+    } catch (error) {
+      // Facts arrived between the count and the read and crossed a limit.
+      if (error?.code !== "resource-exhausted") throw error;
+      return { ...base, overLimit: { runs: runCount, groups: groupCount, transfers: transferCount, grewDuringRead: true } };
+    }
+  }
+
   // -- Invalidation.
   async function markDirty(marks) {
     let batch = db.batch(), count = 0;
@@ -498,8 +573,11 @@ function createDevicePerformanceProjection({ db, HttpsError, FieldValue, Timesta
       const attempt = usableFact(attemptDoc.exists ? attemptDoc.data() : null, "attemptSummary");
       let others = [];
       if (!attempt) {
+        // Only what placement needs (F2): usability and first receipt.
         const queries = ["runSummary", "uploadGroupSummary", "transferInvocation"]
-          .map((kind) => tx.get(factRoot(kind).where("attemptId", "==", attemptId).limit(limits.maxTransfersPerAttempt)));
+          .map((kind) => tx.get(factRoot(kind).where("attemptId", "==", attemptId)
+            .select("storageVersion", "firstReceivedAtServer", "record.performanceSchemaVersion", "record.recordKind", "record.origin")
+            .limit(limits.maxTransfersPerAttempt)));
         others = (await Promise.all(queries)).flatMap((result, index) => result.docs
           .map((doc) => usableFact(doc.data(), ["runSummary", "uploadGroupSummary", "transferInvocation"][index])).filter(Boolean));
       }
@@ -613,7 +691,8 @@ function createDevicePerformanceProjection({ db, HttpsError, FieldValue, Timesta
     const executors = [...new Set(samples.filter((sample) => sample.kind !== "attempt").map((sample) => sample.executor).filter(Boolean))].sort();
     const updates = attempts.map((sample) => sample.updatedAt).filter((value) => value !== null);
     const generation = {
-      id: generationId, version: PROJECTION_VERSION, pages: written, samples: samples.length,
+      // The token read before any fact was read (F7: currency is a token match).
+      id: generationId, version: PROJECTION_VERSION, token, pages: written, samples: samples.length,
       bytes: written.reduce((sum, page) => sum + page.bytes, 0), attempts: attempts.length,
       startedAtMillis, publishedAtMillis: null,
       sourceUpdatedAtMillis: updates.length ? Math.max(...updates) : null,
@@ -695,22 +774,87 @@ function createDevicePerformanceProjection({ db, HttpsError, FieldValue, Timesta
     if (!manifest) return null;
     const token = manifest.token ?? null;
     const startedAtMillis = now();
-    const members = await bounded(locators.where("partitionKey", "==", key), limits.maxPartitionAttempts, "partitionAttempts");
-    const bundles = await mapBounded(members, limits.attemptReadConcurrency, (doc) => readCanonical(doc.id));
-    const locatedAt = new Map(members.map((doc) => [doc.id, millisOf(doc.data().locatedAtMillis)]));
+    const where = { dayKey: manifest.dayKey, installKey: manifest.installKey };
+    // A partition over its attempt limit publishes an overflow generation; a
+    // report that selects it fails with a typed narrowRange naming it (F1).
+    const memberQuery = locators.where("partitionKey", "==", key);
+    const memberCount = (await memberQuery.count().get()).data().count;
+    if (memberCount > limits.maxPartitionAttempts) return writeOverflow(key, where, token, memberCount, startedAtMillis);
+    let members;
+    try { members = await completeQuery(memberQuery, limits.maxPartitionAttempts, HttpsError); } catch (error) {
+      if (error?.code !== "resource-exhausted") throw error;
+      return writeOverflow(key, where, token, limits.maxPartitionAttempts + 1, startedAtMillis);
+    }
+    // Each attempt is compacted inside the bounded read, so at most
+    // attemptReadConcurrency raw bundles are alive at once (F2).
+    const compacted = await mapBounded(members, limits.attemptReadConcurrency, async (doc) => {
+      const bundle = await readForCompaction(doc.id);
+      const compact = compactAttempt(bundle, millisOf(doc.data().locatedAtMillis) ?? startedAtMillis, { nowMillis: startedAtMillis });
+      return compact && { attemptId: doc.id, compact };
+    });
     const samples = [], moves = [];
-    for (const bundle of bundles) {
-      const compact = compactAttempt(bundle, locatedAt.get(bundle.attemptId) ?? startedAtMillis);
-      if (!compact) continue;
-      if (compact.placement.key !== key) {
-        moves.push([bundle.attemptId, compact.placement, compact.samples.filter((s) => s.kind !== "attempt").map((s) => s.executor)]);
+    for (const entry of compacted) {
+      if (!entry) continue;
+      const { attemptId, compact } = entry;
+      // An over-limit attempt without a summary was not read in full, so its
+      // earliest receipt is unknown: it stays where the scanner placed it.
+      const stays = compact.overLimit && !compact.attempt.summary;
+      if (!stays && compact.placement.key !== key) {
+        moves.push([attemptId, compact.placement, compact.samples.filter((s) => s.kind !== "attempt").map((s) => s.executor)]);
         continue;
       }
       samples.push(...compact.samples);
     }
     if (moves.length) await relocate(moves, key);
-    const where = { dayKey: manifest.dayKey, installKey: manifest.installKey };
     return writeGeneration(key, where, token, samples, startedAtMillis);
+  }
+
+  // Publish a generation that records only that the partition is over its
+  // attempt limit (token-checked like any generation).
+  async function writeOverflow(key, where, token, attempts, startedAtMillis) {
+    return db.runTransaction(async (tx) => {
+      const ref = partitions.doc(key);
+      const data = (await tx.get(ref)).data() ?? null;
+      if ((data?.token ?? null) !== token) return null;
+      const publishedAtMillis = now();
+      const previous = data?.generation;
+      const retired = [...(data?.retired || [])];
+      if (previous?.id) retired.push({ id: previous.id, pages: (previous.pages || []).map((page) => page.id), retiredAtMillis: publishedAtMillis });
+      // Receipt-time selection: an uncertain partition's receipts are its own
+      // day; a capture day's receipts are that day or later.
+      const dayStart = Date.parse(`${where.dayKey.replace(/^u-/, "")}T00:00:00.000Z`);
+      const next = {
+        key, dayKey: where.dayKey, installKey: where.installKey, version: PROJECTION_VERSION, dirty: false, token,
+        dirtyAtMillis: data?.dirtyAtMillis ?? null, executorInstalls: data?.executorInstalls ?? [],
+        minReceiptMillis: dayStart, maxReceiptMillis: where.dayKey.startsWith("u-") ? dayStart + DAY_MS - 1 : Number.MAX_SAFE_INTEGER,
+        generation: {
+          id: randomUUID(), version: PROJECTION_VERSION, token, overflow: { attempts, limit: limits.maxPartitionAttempts },
+          pages: [], samples: 0, bytes: 0, attempts: 0, startedAtMillis, publishedAtMillis,
+          sourceUpdatedAtMillis: null, minReceiptMillis: null, maxReceiptMillis: null,
+        },
+        retired: retired.slice(-limits.maxRetired),
+      };
+      tx.set(ref, next);
+      return next;
+    });
+  }
+
+  // For the retention sweep (RELEASE GATE, F3): before or after deleting any
+  // fact of these attempts, mark their partitions dirty so no published
+  // generation keeps samples of deleted facts.
+  async function invalidateAttempts(attemptIds) {
+    const marks = new Map();
+    for (let offset = 0; offset < attemptIds.length; offset += 30) {
+      const ids = attemptIds.slice(offset, offset + 30);
+      const docs = await Promise.all(ids.map((id) => locators.doc(id).get()));
+      for (const doc of docs) {
+        if (!doc.exists) continue;
+        const { partitionKey, dayKey, installKey } = doc.data();
+        addMark(marks, { key: partitionKey, dayKey, installKey }, []);
+      }
+    }
+    await markDirty(marks);
+    return [...marks.keys()];
   }
 
   // -- Selection and bounded reading.
@@ -761,8 +905,14 @@ function createDevicePerformanceProjection({ db, HttpsError, FieldValue, Timesta
     return [...found.values()].sort((a, b) => a.key.localeCompare(b.key));
   }
 
-  const usable = (manifest, scanDoneAt) => Boolean(manifest.generation) && manifest.generation.version === PROJECTION_VERSION
-    && (!manifest.dirty || manifest.generation.startedAtMillis >= scanDoneAt);
+  // A generation is current when it was built from the partition's current
+  // token: every invalidation rotates the token, so a match means no fact was
+  // marked after the build began. A generation this request published after
+  // its own scan is also current for this request, even if a concurrent scan
+  // has marked the partition again since (no livelock under steady traffic).
+  // No clock of another instance is compared (F7).
+  const usable = (manifest, own = new Map()) => Boolean(manifest.generation) && manifest.generation.version === PROJECTION_VERSION
+    && ((manifest.generation.token ?? null) === (manifest.token ?? null) || own.get(manifest.key) === manifest.generation.id);
 
   // Bring every selected partition up to date with every fact the scan saw,
   // rebuilding at most what the deadline allows; otherwise refuse (retryable).
@@ -775,18 +925,21 @@ function createDevicePerformanceProjection({ db, HttpsError, FieldValue, Timesta
       throw rebuilding(HttpsError);
     }
     if (!scanned.drained) throw rebuilding(HttpsError);
-    const scanDoneAt = now();
     let manifests = await selectPartitions(spec);
-    const pending = manifests.filter((manifest) => !usable(manifest, scanDoneAt));
+    const pending = manifests.filter((manifest) => !usable(manifest));
+    const own = new Map();
     if (pending.length) {
       await mapBounded(pending, limits.rebuildConcurrency, async (manifest) => {
         if (now() > deadline) return;
-        try { await rebuildPartition(manifest.key); } catch (error) {
+        try {
+          const published = await rebuildPartition(manifest.key);
+          if (published?.generation) own.set(manifest.key, published.generation.id);
+        } catch (error) {
           logger.error?.("device performance rebuild failed", { key: manifest.key, message: error?.message });
         }
       });
       manifests = await selectPartitions(spec);
-      if (manifests.some((manifest) => !usable(manifest, scanDoneAt))) throw rebuilding(HttpsError);
+      if (manifests.some((manifest) => !usable(manifest, own))) throw rebuilding(HttpsError);
     }
     return { manifests, scanned: scanned.processed };
   }
@@ -795,6 +948,11 @@ function createDevicePerformanceProjection({ db, HttpsError, FieldValue, Timesta
   // validated before it is retained; reading stops before the decoded total
   // passes the budget.
   async function loadSamples(manifests, { maxSamples = limits.maxSamples, maxDecodedBytes = limits.maxDecodedBytes } = {}) {
+    const overflow = manifests.find((manifest) => manifest.generation.overflow);
+    if (overflow) {
+      throw narrowRange(HttpsError, "partitionAttempts", overflow.generation.overflow.limit,
+        { partition: overflow.key, attempts: overflow.generation.overflow.attempts });
+    }
     const declaredSamples = manifests.reduce((sum, manifest) => sum + manifest.generation.samples, 0);
     if (declaredSamples > maxSamples) throw narrowRange(HttpsError, "samples", maxSamples);
     const declaredBytes = manifests.reduce((sum, manifest) => sum + manifest.generation.bytes, 0);
@@ -875,7 +1033,7 @@ function createDevicePerformanceProjection({ db, HttpsError, FieldValue, Timesta
 
   return {
     limits, refresh, scanChanges, rebuildPartition, writeGeneration, selectPartitions, loadSamples, projectionRevision,
-    readDeviceStatuses, collectionBounds, readCanonical, installKnown, markDirty,
+    readDeviceStatuses, collectionBounds, readCanonical, readForCompaction, installKnown, markDirty, invalidateAttempts, usable,
     refs: { root, partitions, pages, locators, labels: root.collection(COLLECTIONS.labels), labelAudit: root.collection(COLLECTIONS.labelAudit) },
   };
 }
@@ -884,4 +1042,5 @@ module.exports = {
   createDevicePerformanceProjection, compactAttempt, placement, attemptPlacementFields, phaseOf, choiceKey, buildRef, millisOf,
   timeOrder, utcDay, narrowRange, rebuilding, usableFact,
   PROJECTION_VERSION, PROJECTION_ROOT, PROJECTION_DOC, COLLECTIONS, LIMITS, DRILLS, PHASES, UNKNOWN_INSTALL, FUTURE_TOLERANCE_MS,
+  TRANSFER_RETENTION_MS, TRANSFER_FIELDS,
 };

@@ -407,6 +407,89 @@ test("every query that needs a composite index has one in firestore.indexes.json
   assert.ok(exempt.has("projectionPages.rows"));
 });
 
+// ---------------------------------------------------------------------------
+// Review fixes (D-2026-09-29-31).
+
+test("F1: an attempt with 129 runs and one with 2,001 transfers are excluded and counted; the partition publishes and the report loads", async () => {
+  const h = harness();
+  for (let n = 1; n <= 3; n++) h.putAll(completeAttempt(n));
+  const runs = uuid("a", 10), transfers = uuid("a", 11);
+  h.put(attemptSummary({ attemptId: runs, runCount: 64, acceptedRunId: null, verdict: "pending", timeToResult: null, requiredSave: "notQueued", saveConfirmed: null }));
+  for (let i = 0; i < 129; i++) h.put(runSummary({ attemptId: runs, runId: uuid("r", 1000 + i), outcome: "failed" }));
+  h.putAll(completeAttempt(11));
+  for (let i = 0; i < 2000; i++) h.put(transfer({ attemptId: transfers, invocationId: uuid("t", 5000 + i), bytes: 1 }));
+  let report;
+  for (let i = 0; i < 3 && !report; i++) {
+    try { report = await h.fleet(); } catch (error) { if (error.code !== "unavailable") throw error; } // the scan drains 5,000 facts per call
+  }
+  assert.ok(report, "the report loads");
+  assert.equal(report.coverage.attemptsExcludedOverLimit, 2);
+  assert.equal(report.totals.attempts, 3, "the other attempts are all reported");
+  assert.equal(report.totals.outcomes.failed, 0, "none of the 129 runs is counted");
+  assert.equal(report.totals.uploads[0].invocations, 3);
+  const manifest = partitionsOf(h)[0];
+  assert.equal(manifest.dirty, false);
+  assert.equal(manifest.generation.attempts, 5, "published, with the two over-limit attempts as counted attempt samples only");
+  assert.equal(manifest.generation.samples, 3 * 4 + 2);
+  const excluded = compactAttempt(await h.projection.readForCompaction(runs)).attempt.excludedOverLimit;
+  assert.deepEqual(excluded, { runs: 129, groups: 0, transfers: 0 });
+});
+
+test("F1: a partition over its attempt limit becomes a typed narrowRange naming it; other devices and days still load", async () => {
+  const h = harness({ limits: { maxPartitionAttempts: 3 } });
+  for (let n = 1; n <= 4; n++) h.putAll(completeAttempt(n));
+  h.putAll(completeAttempt(5, { install: uuid("i", 2) }));
+  h.putAll(completeAttempt(6, { captureAt: START - 3 * DAY }));
+  const key = `2026-09-28~${INSTALL}`;
+  await assert.rejects(h.fleet(), (error) => error.code === "resource-exhausted" && error.details.errorCode === "narrowRange"
+    && error.details.bound === "partitionAttempts" && error.details.partition === key && error.details.attempts === 4 && error.details.max === 3
+    && /choose a device/.test(error.message) && !/drill/.test(error.message));
+  const overflow = partitionsOf(h).find((manifest) => manifest.key === key);
+  assert.equal(overflow.dirty, false, "the overflow is published, not left rebuilding");
+  assert.deepEqual(overflow.generation.overflow, { attempts: 4, limit: 3 });
+  // A second call does not rebuild again (typed, stable), and narrower reports load.
+  await assert.rejects(h.fleet(), (error) => error.details?.bound === "partitionAttempts");
+  assert.equal((await h.detail(uuid("i", 2))).totals.attempts, 1);
+  assert.equal((await h.fleet({ startDate: "2026-09-26", endDate: "2026-09-26" })).totals.attempts, 1);
+});
+
+test("F2: a rebuild compacts each attempt as it is read and reads transfers as a field projection with identical samples", async () => {
+  const h = harness();
+  for (let n = 1; n <= 3; n++) h.putAll(completeAttempt(n));
+  h.db.resetStats();
+  await h.fleet();
+  const transferReads = h.db.stats.queries.filter((query) => query.path === "devicePerformanceTransfers" && query.filters.includes("attemptId =="));
+  assert.ok(transferReads.length >= 3);
+  assert.ok(transferReads.every((query) => Array.isArray(query.fields) && query.fields.includes("record.body.invocationElapsedMs")
+    && !query.fields.includes("record")), "never the whole transfer record");
+  const attemptId = uuid("a", 1);
+  const projected = await h.projection.readForCompaction(attemptId);
+  const full = await h.projection.readCanonical(attemptId);
+  const kinds = (compact) => compact.samples.filter((sample) => sample.kind === "transfer");
+  assert.deepEqual(kinds(compactAttempt(projected, 0, { nowMillis: h.now() })), kinds(compactAttempt(full, 0, { nowMillis: h.now() })));
+  assert.deepEqual(compactAttempt(projected).samples, compactAttempt(full).samples, "the compacted attempt is the same either way");
+});
+
+test("F7: currency is a token match, not a clock comparison: a dirty partition with a future-dated generation is rebuilt", async () => {
+  const h = harness();
+  h.putAll(completeAttempt(1));
+  assert.equal((await h.fleet()).totals.attempts, 1);
+  h.putAll(completeAttempt(2));
+  await h.projection.scanChanges({ deadline: h.now() + 60000 });
+  // Another instance's clock runs a day ahead.
+  const path = h.db.paths("devicePerformanceProjections/v1/partitionManifests/")[0];
+  const manifest = h.db.snapshot(path);
+  manifest.generation.startedAtMillis = h.now() + DAY;
+  h.db.docs.set(path, manifest);
+  assert.equal(h.projection.usable(manifest), false, "the token was rotated after the generation began");
+  assert.equal((await h.fleet()).totals.attempts, 2, "rebuilt, so the new attempt is in");
+  const current = partitionsOf(h)[0];
+  assert.equal(h.projection.usable(current), true);
+  assert.equal(h.projection.usable({ ...current, token: "rotated" }), false);
+  assert.equal(h.projection.usable({ ...current, token: "rotated" }, new Map([[current.key, current.generation.id]])), true,
+    "a generation this request published after its own scan stays current for it");
+});
+
 test("limits can be lowered for tests but never raised", () => {
   const db = new FakeFirestore();
   assert.throws(() => projectionModule.createDevicePerformanceProjection({ db, HttpsError, FieldValue, limits: { maxSamples: 50001 } }), /Invalid device performance limit maxSamples/);

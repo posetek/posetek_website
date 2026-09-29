@@ -21,7 +21,7 @@ const { isClubAdmin } = require("./club-access");
 const { localDate, midnight, shiftDate } = require("./insights-v2");
 const { completeQuery } = require("./insights-v2-projection");
 const {
-  createDevicePerformanceProjection, usableFact, narrowRange, buildRef, DRILLS, PHASES, UNKNOWN_INSTALL,
+  createDevicePerformanceProjection, usableFact, narrowRange, buildRef, DRILLS, PHASES, UNKNOWN_INSTALL, TRANSFER_RETENTION_MS,
 } = require("./device-performance-projection");
 
 const REPORT_SCHEMA_VERSION = 1;
@@ -121,21 +121,21 @@ const METRIC_DEFINITIONS = Object.freeze({
   timeToResult: definition("Time to result", "ms", "Accepted attempts (an accepted run or a valid verdict); others are excluded with their verdict.", null,
     "Movie finalized to durable local result accepted, in one app launch (attempt spans.timeToResultMs). A missing value is counted with its reason. Capture filters only. Attempt metric: origin-based in both device views."),
   processingTime: definition("Processing time", "ms", "Terminal runs: byOutcome valid, partial, noMeasurement and failed (each its own bucket); recovery holds recovery-mode runs of those outcomes. Cancelled and interruptedUnknown runs have no bucket.", null,
-    "Admission granted to processor returned (run totals.processingMs); journal finalization is timed separately. The groups are disjoint: a recovery run is only in recovery. Debug review runs are excluded (reason debugReview) unless the processing mode filter selects them. Capture and processing filters apply; executor-based under Processed or uploaded here."),
+    "Admission granted to processor returned (run totals.processingMs); journal finalization is timed separately. The groups are disjoint: a recovery run is only in recovery. Debug review, fixture and validation runs are excluded (reason = the mode) and counted in totals.runsExcludedByMode unless the processing mode filter selects them; validation (free-record pose validation) runs are counted only in the free-record drill row and free-record inner-model rows, never pooled with the six local drills. Capture and processing filters apply; executor-based under Processed or uploaded here."),
   readyForNextRep: definition("Ready for next rep", "ms", "Attempts whose summary arrived; others are excluded (attemptNotReported).", null,
     "Capture stop requested to the next gate or capture ready (spans.readyForNextRepMs). Correction, speech and progress waits are stages inside it, not subtracted. Capture filters only; origin-based."),
   cloudSave: definition("Cloud save time", "ms", "Result-files upload jobs: committed jobs are measured, queued or uploading jobs are missing (pendingUpload), failed, cancelled, unavailable and not-queued jobs are excluded.", null,
     "Durable result job enqueued to required result files and rep/session commit acknowledged (result-files group cloudSaveMs). Archive, sidecar and diagnostics are separate. Capture filters only; under Processed or uploaded here only the jobs this install uploaded."),
   waitingToUpload: definition("Waiting to upload", "ms", "Upload groups of the role that were requested; notRequested and unavailable groups are excluded.", null,
     "Logical upload queued to first transfer start (group queueWaitMs). App retry waiting is the separate knownBackoffMs total. A network filter keeps groups with a transfer on that network; a size band keeps groups by unique object bytes."),
-  uploadDuration: definition("Upload duration", "ms", "Successful transfer invocations of the role; unsuccessful ones are excluded by outcome.", null,
-    "One Storage task or PUT from start to terminal callback (transfer invocationElapsedMs). Network and payload-size filters apply to invocations."),
+  uploadDuration: definition("Upload duration", "ms", "Successful transfer invocations of the role first received within the last 30 days; unsuccessful ones are excluded by outcome.", null,
+    "One Storage task or PUT from start to terminal callback (transfer invocationElapsedMs). Network and payload-size filters apply to invocations. Transfer detail is retained 30 days (summaries 90): each upload role states retention retained, partial or notRetained (Not retained) with groupsBeyondRetention, and older transfers never count."),
   uploadSpeed: definition("Weighted effective throughput", "MB/s", "Successful invocations of one role with a measured, non-zero duration.", "Sum of those invocations' measured seconds",
     "Sum of payloadBytes divided by the sum of elapsedMs (MB/s = bytes / 1e6 / (ms / 1000)). Zero or unknown durations and unsuccessful invocations are left out and counted. Application-observed payload throughput, not radio capacity or wire bytes; never an average of device speeds."),
   saveConfirmed: definition("Save confirmed after recording", "ms", "Attempts whose required save committed.", null,
     "Movie finalized to required cloud commit, only when both ends are in one launch (spans.saveConfirmedAfterRecordingMs); across launches the value is missing (crossLaunch). Origin-based."),
   failureRate: definition("Processing failure rate", "ratio", "Terminal runs.", "valid + partial + noMeasurement + failed runs",
-    "failed / (valid + partial + noMeasurement + failed). Cancelled, interruptedUnknown, pending (runs the phone counted but has not delivered) and pre-admission failures (not runs) are shown beside it, never counted. Pending runs and pre-admission failures are left out while a processing filter is active and pending runs under Processed or uploaded here."),
+    "failed / (valid + partial + noMeasurement + failed). Cancelled, interruptedUnknown, pending (runs the phone counted but has not delivered) and pre-admission failures (not runs) are shown beside it, never counted. They cannot be attributed to a run filter or an executor: while a processing filter is active both are null (omittedReasons runFilterActive), and under Processed or uploaded here pending is null (executorAttribution); null never means zero."),
   yield: definition("Usable-result yield", "ratio", "Attempts with a final verdict, leaving out userDiscarded.", "valid + invalid attempts (userDiscarded excluded)",
     "measurementVerdict valid / (valid + invalid). Pending and userDiscarded are disclosed. Eventual yield uses the latest verdict; firstRunValid counts valid attempts whose accepted run is not a retry. Capture filters only; origin-based."),
   failureAtStep: definition("Failure at a stage", "ratio", "Runs that entered the stage plus pre-admission failures at it.", "entered",
@@ -153,7 +153,7 @@ const METRIC_DEFINITIONS = Object.freeze({
   focus: definition("Focus", "count", "Rows only; never totals.", null,
     "On the fleet report a focus selects the matching-attempts list. On a device report it narrows only the current section's rows: a stage focus on processing lists attempts that failed at, or last reported, that stage; on failures, failures at that stage; a phase focus lists the drill's allocation cohort by time in that phase. Upload rows ignore a focus."),
   coverage: definition("Coverage", "count", "Attempts matching the capture filters only.", "attemptsIndexed",
-    "attemptsIndexed uses the capture (shared) filters, period and date basis only; processing and upload filters never change it. Coverage percentages may use only this denominator; a phone that never reported is not in it."),
+    "attemptsIndexed uses the capture (shared) filters, period and date basis only; processing and upload filters never change it. Coverage percentages may use only this denominator; a phone that never reported is not in it. attemptsExcludedOverLimit counts attempts left out of every statistic because their facts exceed the per-attempt limits (128 runs, 16 upload groups, 2,000 transfers). attemptsUnknownDevice counts attempts whose summary names no install (old builds); attemptsDeviceNotYetReported counts attempts whose summary has not arrived (server-receipt dates), which have no device row yet."),
 });
 
 // ---------------------------------------------------------------------------
@@ -289,13 +289,23 @@ function assemble(samples) {
 const sharedMatch = (a, f) => (!f.drill || a.drill === f.drill) && (!f.recordingMode || a.mode === f.recordingMode)
   && (!f.captureBuild || a.captureBuild?.key === f.captureBuild) && (!f.captureMachine || a.captureMachine?.key === f.captureMachine);
 const runFilterActive = (f) => RUN_FILTERS.some((key) => f[key] !== null);
-const runMatch = (r, f) => (f.processingMode ? r.mode === f.processingMode : r.mode !== "debugReview")
-  && (!f.executionBuild || r.executionBuild?.key === f.executionBuild) && (!f.executionMachine || r.executionMachine?.key === f.executionMachine);
-// Run filters except the default debug-review exclusion (used where debug runs are counted as excluded).
-const runFilterMatch = (r, f) => (!f.processingMode || r.mode === f.processingMode)
-  && (!f.executionBuild || r.executionBuild?.key === f.executionBuild) && (!f.executionMachine || r.executionMachine?.key === f.executionMachine);
+// Run modes left out of pooled statistics unless the processing-mode filter
+// selects them (D-2026-09-29-31 F5): debugReview (admin re-processing), fixture
+// (test harness) and validation (free-record pose validation). Validation runs
+// appear only in free-record rows (drill === "freeRecord"), never pooled with
+// the six local drills.
+const DEFAULT_EXCLUDED_MODES = Object.freeze(["debugReview", "fixture", "validation"]);
+const buildMatch = (r, f) => (!f.executionBuild || r.executionBuild?.key === f.executionBuild) && (!f.executionMachine || r.executionMachine?.key === f.executionMachine);
+const modeIncluded = (r, f, drill) => (f.processingMode ? r.mode === f.processingMode
+  : !DEFAULT_EXCLUDED_MODES.includes(r.mode) || (r.mode === "validation" && drill === "freeRecord"));
+const runMatch = (r, f, drill) => modeIncluded(r, f, drill) && buildMatch(r, f);
+// Run filters without the default mode exclusion (where excluded modes are counted).
+const runFilterMatch = (r, f) => (!f.processingMode || r.mode === f.processingMode) && buildMatch(r, f);
 const transferMatch = (t, f) => (!f.networkInterface || t.net === f.networkInterface) && (!f.payloadSizeBand || sizeBand(t.bytes) === f.payloadSizeBand);
-const groupUploadMatch = (g, f) => (!f.networkInterface || g.networks.includes(f.networkInterface)) && (!f.payloadSizeBand || sizeBand(g.bytes) === f.payloadSizeBand);
+// A group beyond transfer retention has no network evidence left, so a network
+// filter never matches it (deterministic whatever the rebuild time, F3).
+const groupUploadMatch = (g, f) => (!f.networkInterface || (!g.beyondRetention && g.networks.includes(f.networkInterface)))
+  && (!f.payloadSizeBand || sizeBand(g.bytes) === f.payloadSizeBand);
 
 function effectiveFilters(f) {
   const active = (keys) => keys.filter((key) => f[key] !== null);
@@ -348,13 +358,27 @@ function addCloudSave(stat, view) {
   else if (a.requiredSave === "queued" || a.requiredSave === "committed") stat.miss("pendingUpload");
   else stat.exclude(a.requiredSave);
 }
-function processingRuns(view, f) { return view.runs.filter((r) => runMatch(r, f)); }
-function addOutcomes(outcomes, view, f) {
-  for (const r of processingRuns(view, f)) if (r.outcome in outcomes) outcomes[r.outcome]++;
+// drill: the free-record context in which validation runs count (F5).
+function processingRuns(view, f, drill) { return view.runs.filter((r) => runMatch(r, f, drill)); }
+function addOutcomes(outcomes, view, f, drill) {
+  for (const r of processingRuns(view, f, drill)) if (r.outcome in outcomes) outcomes[r.outcome]++;
   if (!runFilterActive(f)) {
     if (view.pendingRuns) outcomes.pending += Math.max(0, view.a.runCount - view.a.runsReceived);
     if (view.preAdmission && view.a.preAdmission) outcomes.preAdmissionFailures++;
   }
+}
+// Pending runs and pre-admission failures cannot be attributed to a run mode,
+// build, machine or executor. When a run filter or the executor view omits
+// them they are null with a reason, never 0 (D-2026-09-29-31 F8).
+function finalizeOutcomes(outcomes, f, scope) {
+  const filtered = runFilterActive(f) ? "runFilterActive" : null;
+  const pendingReason = filtered ?? (scope?.attribution === "executor" ? "executorAttribution" : null);
+  return {
+    ...outcomes,
+    pending: pendingReason ? null : outcomes.pending,
+    preAdmissionFailures: filtered ? null : outcomes.preAdmissionFailures,
+    omittedReasons: { pending: pendingReason, preAdmissionFailures: filtered },
+  };
 }
 
 // processingTime { byOutcome { valid, partial, noMeasurement, failed }, recovery }
@@ -369,22 +393,35 @@ function processingTimes(views, f) {
     for (const r of view.runs) {
       if (!runFilterMatch(r, f) || !TIMED_OUTCOMES.includes(r.outcome)) continue;
       if (r.mode === "recovery") { recovery.add(r.ms, r.msMissing); continue; }
-      if (!f.processingMode && r.mode === "debugReview") { byOutcome[r.outcome].exclude("debugReview"); continue; }
+      // debugReview, fixture and validation runs are counted as excluded.
+      if (!f.processingMode && DEFAULT_EXCLUDED_MODES.includes(r.mode)) { byOutcome[r.outcome].exclude(r.mode); continue; }
       byOutcome[r.outcome].add(r.ms, r.msMissing);
     }
   }
   return { byOutcome: Object.fromEntries(TIMED_OUTCOMES.map((outcome) => [outcome, byOutcome[outcome].build()])), recovery: recovery.build() };
 }
+// Runs of the default-excluded modes in the cohort (F5); null when a
+// processing-mode filter selects the population.
+function runsExcludedByMode(views, f) {
+  if (f.processingMode) return null;
+  const counts = Object.fromEntries(DEFAULT_EXCLUDED_MODES.map((mode) => [mode, 0]));
+  for (const view of views) for (const r of view.runs) if (DEFAULT_EXCLUDED_MODES.includes(r.mode) && buildMatch(r, f)) counts[r.mode]++;
+  return counts;
+}
 
+// Upload statistics state their transfer retention (F3): a group first received
+// before the 30-day transfer cutoff has no transfer detail left.
+// retention: "retained" (no such group) | "partial" | "notRetained" (all such).
 function uploadRoleStats(views, f) {
   return UPLOAD_ROLES.map((role) => {
     const row = { role, notRequested: 0, invocations: 0, succeeded: 0, failed: 0, cancelled: 0, interrupted: 0, pending: 0, excludedZeroOrUnknownDuration: 0, payloadBytes: 0, elapsedMs: 0 };
     const duration = new StatBuilder(), queueWait = new StatBuilder();
-    let backoff = null;
+    let backoff = null, groupsSeen = 0, groupsBeyondRetention = 0;
     for (const view of views) {
       const groups = view.groups.filter((g) => g.category === role);
       if (role === "optionalVideo" && view.countAttempt && view.a.archive === "notRequested" && !groups.length) row.notRequested++;
       for (const g of groups) {
+        if (g.jobState !== "notRequested") { groupsSeen++; if (g.beyondRetention) groupsBeyondRetention++; }
         if (g.jobState === "notRequested") { row.notRequested++; continue; }
         if (g.jobState === "queued" || g.jobState === "inProgress") row.pending++;
         if (!groupUploadMatch(g, f)) continue;
@@ -402,7 +439,11 @@ function uploadRoleStats(views, f) {
         else { row.payloadBytes += t.bytes; row.elapsedMs += t.ms; }
       }
     }
-    return { ...row, elapsedMs: round3(row.elapsedMs), duration: duration.build(), queueWait: queueWait.build(), knownBackoffMs: backoff === null ? null : round3(backoff) };
+    return {
+      ...row, elapsedMs: round3(row.elapsedMs), duration: duration.build(), queueWait: queueWait.build(), knownBackoffMs: backoff === null ? null : round3(backoff),
+      retention: groupsBeyondRetention === 0 ? "retained" : groupsBeyondRetention === groupsSeen ? "notRetained" : "partial",
+      groupsBeyondRetention,
+    };
   });
 }
 
@@ -434,7 +475,8 @@ function innerModelRows(views, f) {
   const rows = new Map();
   for (const view of views) {
     if (!view.a.drill) continue;
-    for (const r of processingRuns(view, f)) {
+    // Rows are per drill, so free-record validation runs count in free-record rows only.
+    for (const r of processingRuns(view, f, view.a.drill)) {
       if (!TIMED_OUTCOMES.includes(r.outcome)) continue;
       const perRun = new Map();
       for (const [stageId, parentStageId, ms, calls] of r.inner) {
@@ -598,7 +640,8 @@ function failureRows(views, f) {
   for (const view of views) {
     const a = view.a;
     const base = { attemptId: a.attemptId, drillType: a.drill ?? "unknown" };
-    for (const r of processingRuns(view, f)) {
+    // Failure rows list one attempt's runs; a free-record attempt keeps its validation runs.
+    for (const r of processingRuns(view, f, a.drill)) {
       if (r.outcome === "failed" && r.failure) {
         rows.push({ ...base, processingRunId: r.runId, stageId: r.failure.stage, failureCode: r.failure.code, failureLayer: r.failure.layer, confirmed: true,
           occurredAt: iso(r.occurredAt), clockQuality: r.clock, build: r.executionBuild?.label ?? a.captureBuild?.label ?? null, sortAt: r.occurredAt ?? r.receivedAt ?? 0 });
@@ -696,12 +739,24 @@ function createDevicePerformanceReports({ db, HttpsError, FieldValue, Timestamp,
       const at = basisTime(a);
       return (basis === "serverReceipt" || !a.dateUncertain) && at !== null && at >= period.startMillis && at < period.endMillis;
     };
-    const views = assemble(samples).map((bundle) => viewOf(bundle, scope)).filter(Boolean);
+    // Transfer retention at read time (F3): a transfer tuple first received more
+    // than 30 days ago is dropped whether or not its partition was rebuilt since
+    // and whether or not TTL has deleted the fact, and a group received before
+    // the cutoff is marked beyond retention.
+    const retentionCutoff = now() - TRANSFER_RETENTION_MS;
+    const bundles = assemble(samples);
+    for (const bundle of bundles) {
+      bundle.transfers = bundle.transfers.filter((t) => t.receivedAt === undefined || t.receivedAt === null || t.receivedAt >= retentionCutoff);
+      for (const g of bundle.groups) g.beyondRetention = g.receivedAt !== null && g.receivedAt < retentionCutoff;
+    }
+    const views = bundles.map((bundle) => viewOf(bundle, scope)).filter(Boolean);
     const periodViews = views.filter((view) => inPeriod(view.a));
     // cohort: every view in the period passing the capture (shared) filters; run,
     // upload and transfer metrics read its runs, groups and transfers. Attempt
-    // counts and attempt metrics read the origin-based attempts only.
-    const cohort = periodViews.filter((view) => sharedMatch(view.a, filters));
+    // counts and attempt metrics read the origin-based attempts only. An attempt
+    // over its fact limits is left out of every statistic and counted (F1).
+    const overLimit = periodViews.filter((view) => view.a.excludedOverLimit && view.countAttempt && sharedMatch(view.a, filters)).length;
+    const cohort = periodViews.filter((view) => !view.a.excludedOverLimit && sharedMatch(view.a, filters));
     const attempts = cohort.filter((view) => view.countAttempt);
     const uncertain = basis === "capture"
       ? views.filter((view) => view.countAttempt && view.a.dateUncertain && view.a.receivedAt !== null && view.a.receivedAt >= period.startMillis
@@ -730,7 +785,8 @@ function createDevicePerformanceReports({ db, HttpsError, FieldValue, Timestamp,
         oldestReportAt: iso(statusRows.length ? Math.min(...statusRows.map(([, s]) => s.updatedAt ?? s.receivedAt ?? Infinity)) : null),
       },
       uploads: uploadRoleStats(cohort, filters),
-      outcomes,
+      outcomes: finalizeOutcomes(outcomes, filters, scope),
+      runsExcludedByMode: runsExcludedByMode(cohort, filters),
       yield: {
         valid: attempts.filter((v) => v.a.verdict === "valid").length,
         invalid: attempts.filter((v) => v.a.verdict === "invalid" && v.a.verdictReason !== "userDiscarded").length,
@@ -743,10 +799,10 @@ function createDevicePerformanceReports({ db, HttpsError, FieldValue, Timestamp,
       const drillViews = cohort.filter((view) => view.a.drill === drill);
       const drillAttempts = drillViews.filter((view) => view.countAttempt);
       const drillOutcomes = emptyOutcomes();
-      for (const view of drillViews) addOutcomes(drillOutcomes, view, filters);
+      for (const view of drillViews) addOutcomes(drillOutcomes, view, filters, drill);
       return {
         drillType: drill, attempts: drillAttempts.length, timeToResult: stat(drillAttempts, (b, v) => addTimeToResult(b, v.a)),
-        allocation: allocationOf(drillAttempts), outcomes: drillOutcomes,
+        allocation: allocationOf(drillAttempts), outcomes: finalizeOutcomes(drillOutcomes, filters, scope),
       };
     });
 
@@ -789,15 +845,20 @@ function createDevicePerformanceReports({ db, HttpsError, FieldValue, Timestamp,
     const touch = (row, at) => { if (at !== null && (row.lastFactAt === null || at > row.lastFactAt)) row.lastFactAt = at; };
     if (!scope) {
       for (const view of cohort) {
-        const a = view.a, origin = device(a.origin);
-        origin.attempts++;
-        addTimeToResult(origin.timeToResult, a);
-        touch(origin, a.updatedAt);
-        if (a.captureBuild) origin.builds.set(a.captureBuild.key, a.captureBuild);
-        if (a.captureMachine) origin.machines.set(a.captureMachine.label, a.captureAt ?? a.receivedAt ?? 0);
-        if (!runFilterActive(filters)) {
-          origin.outcomes.pending += Math.max(0, a.runCount - a.runsReceived);
-          if (a.preAdmission) origin.outcomes.preAdmissionFailures++;
+        const a = view.a;
+        // An attempt whose summary has not arrived has no recording device yet:
+        // it is counted as Device not yet reported, never as Unknown device (F6).
+        if (a.summary) {
+          const origin = device(a.origin);
+          origin.attempts++;
+          addTimeToResult(origin.timeToResult, a);
+          touch(origin, a.updatedAt);
+          if (a.captureBuild) origin.builds.set(a.captureBuild.key, a.captureBuild);
+          if (a.captureMachine) origin.machines.set(a.captureMachine.label, a.captureAt ?? a.receivedAt ?? 0);
+          if (!runFilterActive(filters)) {
+            origin.outcomes.pending += Math.max(0, a.runCount - a.runsReceived);
+            if (a.preAdmission) origin.outcomes.preAdmissionFailures++;
+          }
         }
         for (const r of processingRuns(view, filters)) {
           const executor = device(r.executor ?? a.origin);
@@ -854,7 +915,7 @@ function createDevicePerformanceReports({ db, HttpsError, FieldValue, Timestamp,
           builds: [...row.builds.values()].sort((a, b) => a.label.localeCompare(b.label)).slice(0, LIST_LIMITS.builds).map((b) => ({ key: b.key, label: b.label })),
           attempts: row.attempts, runs: row.runs,
           lastReportAt: Number.isFinite(lastReportAt) ? lastReportAt : null,
-          timeToResult: row.timeToResult.build(), cloudSave: row.cloudSave.build(), uploadWait: row.uploadWait.build(), outcomes: row.outcomes,
+          timeToResult: row.timeToResult.build(), cloudSave: row.cloudSave.build(), uploadWait: row.uploadWait.build(), outcomes: finalizeOutcomes(row.outcomes, filters, null),
         });
       }
     }
@@ -880,7 +941,11 @@ function createDevicePerformanceReports({ db, HttpsError, FieldValue, Timestamp,
         attemptsPartial: attempts.filter((v) => !v.a.summary || v.a.completeness !== "complete" || v.a.runsReceived < v.a.runCount || v.a.skipped > 0).length,
         attemptsNotCollectedByVersion: attempts.filter((v) => v.a.notCollected).length,
         attemptsDateUncertain: uncertain,
-        attemptsUnknownDevice: attempts.filter((v) => v.a.origin === null).length,
+        // Unknown device: a summary with no install id (an old build). A missing
+        // summary is Device not yet reported instead (F6).
+        attemptsUnknownDevice: attempts.filter((v) => v.a.summary && v.a.origin === null).length,
+        attemptsDeviceNotYetReported: attempts.filter((v) => !v.a.summary).length,
+        attemptsExcludedOverLimit: overLimit,
         droppedDetailCount: attempts.reduce((sum, v) => sum + v.a.dropped, 0),
       },
       metricDefinitions: METRIC_DEFINITIONS,

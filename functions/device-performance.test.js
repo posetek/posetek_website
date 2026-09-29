@@ -129,8 +129,9 @@ test("§3 definitions: time to result, readiness, save confirmed and processing 
   assert.equal(totals.saveConfirmedAfterRecording.eligible, 4, "committed required saves only");
   assert.equal(totals.readyForNextRep.sample, 7);
   // Failure rate and yield denominators.
-  assert.deepEqual(totals.outcomes, { valid: 2 + 1, partial: 0, noMeasurement: 1, failed: 1, cancelled: 0, interruptedUnknown: 1, pending: 0, preAdmissionFailures: 0 },
-    "the debug review run is left out; the recovery run counts by its outcome");
+  assert.deepEqual(totals.outcomes, { valid: 2 + 1, partial: 0, noMeasurement: 1, failed: 1, cancelled: 0, interruptedUnknown: 1, pending: 0, preAdmissionFailures: 0,
+    omittedReasons: { pending: null, preAdmissionFailures: null } }, "the debug review run is left out; the recovery run counts by its outcome");
+  assert.deepEqual(totals.runsExcludedByMode, { debugReview: 1, fixture: 0, validation: 0 });
   assert.deepEqual(totals.yield, { valid: 4, invalid: 2, pending: 1, userDiscarded: 0, firstRunValid: 4 });
   // The debug run is the population when the processing mode filter selects it.
   const debug = await h.fleet({ filters: { processingMode: "debugReview" } });
@@ -147,14 +148,23 @@ test("failure rate and yield disclose pending runs, pre-admission failures and d
     preAdmission: { stage: "input.calibration", failureCode: "calibration_unavailable", failureLayer: "input" } }));
   h.put(attemptSummary({ attemptId: uuid("a", 4), verdict: "invalid", reason: "userDiscarded", runCount: 0, acceptedRunId: null, timeToResult: null, requiredSave: "cancelled", saveConfirmed: null }));
   const { totals, failureStages } = await h.fleet();
-  assert.deepEqual(totals.outcomes, { valid: 1, partial: 0, noMeasurement: 0, failed: 0, cancelled: 1, interruptedUnknown: 0, pending: 1, preAdmissionFailures: 1 });
+  assert.deepEqual(totals.outcomes, { valid: 1, partial: 0, noMeasurement: 0, failed: 0, cancelled: 1, interruptedUnknown: 0, pending: 1, preAdmissionFailures: 1,
+    omittedReasons: { pending: null, preAdmissionFailures: null } });
   assert.deepEqual(totals.yield, { valid: 1, invalid: 0, pending: 2, userDiscarded: 1, firstRunValid: 1 });
   const calibration = failureStages.find((row) => row.stageId === "input.calibration");
   assert.deepEqual([calibration.failures, calibration.entered], [1, 3], "entered by two runs and the pre-admission failure");
-  // A processing filter leaves the phone-counted pending runs and pre-admission failures out.
+  // A processing filter omits the phone-counted pending runs and pre-admission
+  // failures: null with a reason, never 0 (D-31 F8).
   const filtered = await h.fleet({ filters: { processingMode: "liveCapture" } });
-  assert.deepEqual([filtered.totals.outcomes.pending, filtered.totals.outcomes.preAdmissionFailures], [0, 0]);
+  assert.deepEqual([filtered.totals.outcomes.pending, filtered.totals.outcomes.preAdmissionFailures], [null, null]);
+  assert.deepEqual(filtered.totals.outcomes.omittedReasons, { pending: "runFilterActive", preAdmissionFailures: "runFilterActive" });
+  assert.ok(filtered.perDrill.every((row) => row.outcomes.pending === null && row.outcomes.preAdmissionFailures === null));
+  assert.ok(filtered.devices.every((row) => row.outcomes.pending === null), "device rows too");
+  assert.equal(filtered.totals.runsExcludedByMode, null, "a mode filter selects the population");
   assert.equal(filtered.failureStages.find((row) => row.stageId === "input.calibration"), undefined);
+  const executor = await h.detail(INSTALL, { attribution: "executor" });
+  assert.deepEqual([executor.totals.outcomes.pending, executor.totals.outcomes.preAdmissionFailures, executor.totals.outcomes.omittedReasons.pending],
+    [null, 1, "executorAttribution"], "pending runs have no executor; pre-admission failures stay origin-based");
 });
 
 test("failure at a stage: entered, confirmed failures, cancelled, unavailable and last-reported-only are separate", async () => {
@@ -598,8 +608,11 @@ test("response shapes carry every key the admin UI parses, with metric definitio
   const fleet = await h.fleet({ focus: { kind: "phase", drill: "sprint", phase: "unattributed" } });
   const envelope = ["schemaVersion", "scope", "generatedAt", "projectionRevision", "period", "filters", "effectiveFilters", "freshness", "coverage", "choices", "totals", "perDrill", "trends", "failureStages", "innerModel", "metricDefinitions"];
   for (const key of [...envelope, "devices", "pagination", "focus", "attempts", "attemptPagination"]) assert.ok(key in fleet, `fleet.${key}`);
-  assert.deepEqual(Object.keys(fleet.totals), ["attempts", "timeToResult", "readyForNextRep", "saveConfirmedAfterRecording", "processingTime", "cloudSave", "cloudBacklog", "uploads", "outcomes", "yield"]);
-  assert.deepEqual(Object.keys(fleet.coverage), ["collectionStartedAt", "installsKnown", "installsNotRecentlyReporting", "attemptsIndexed", "attemptsPartial", "attemptsNotCollectedByVersion", "attemptsDateUncertain", "attemptsUnknownDevice", "droppedDetailCount"]);
+  assert.deepEqual(Object.keys(fleet.totals), ["attempts", "timeToResult", "readyForNextRep", "saveConfirmedAfterRecording", "processingTime", "cloudSave", "cloudBacklog", "uploads", "outcomes", "runsExcludedByMode", "yield"]);
+  assert.deepEqual(Object.keys(fleet.coverage), ["collectionStartedAt", "installsKnown", "installsNotRecentlyReporting", "attemptsIndexed", "attemptsPartial", "attemptsNotCollectedByVersion", "attemptsDateUncertain",
+    "attemptsUnknownDevice", "attemptsDeviceNotYetReported", "attemptsExcludedOverLimit", "droppedDetailCount"]);
+  assert.deepEqual(Object.keys(fleet.totals.outcomes), ["valid", "partial", "noMeasurement", "failed", "cancelled", "interruptedUnknown", "pending", "preAdmissionFailures", "omittedReasons"]);
+  assert.deepEqual(Object.keys(fleet.totals.uploads[0]).slice(-2), ["retention", "groupsBeyondRetention"]);
   assert.deepEqual(Object.keys(fleet.devices[0]), ["installId", "label", "machine", "builds", "attempts", "runs", "lastReportAt", "notRecentlyReporting", "timeToResult", "cloudSave", "uploadWait", "outcomes"]);
   assert.deepEqual(Object.keys(fleet.attempts[0]), ["attemptId", "originInstallId", "deviceLabel", "machine", "drillType", "recordingMode", "captureOccurredAt", "clockQuality", "receivedAt",
     "captureBuild", "executionBuilds", "executorInstallId", "measurementVerdict", "verdictReason", "runCount", "timeToResultMs", "timeToResultMissing", "cloudSaveMs", "cloudSaveMissing",
@@ -632,4 +645,73 @@ test("the callable factory wires 1st-gen onCall handlers with the 512MB / 120 s 
   }
   assert.deepEqual(calls, Array(4).fill({ timeoutSeconds: 120, memory: "512MB" }));
   assert.throws(() => createDevicePerformanceCallable("getSomethingElse", functions, fakeAdmin, () => null), /Unknown/);
+});
+
+// ---------------------------------------------------------------------------
+// Review fixes (D-2026-09-29-31).
+
+test("F5: fixture runs are excluded and counted; validation runs appear only in free-record rows, never pooled with the local drills", async () => {
+  const h = harness();
+  h.putAll(completeAttempt(1));
+  h.putAll(completeAttempt(2, { verdict: "invalid", attempt: { verdict: "invalid", reason: "processingFailed", timeToResult: null, requiredSave: "notQueued", saveConfirmed: null },
+    run: { outcome: "failed", processingMode: "fixture" }, group: { jobState: "notRequested", cloudSave: null } }));
+  h.putAll(completeAttempt(3, { attempt: { drill: "freeRecord" }, run: { drill: "freeRecord", processingMode: "validation", processingMs: 4000 } }));
+  const { totals, perDrill, failureStages, innerModel } = await h.fleet();
+  assert.deepEqual([totals.outcomes.valid, totals.outcomes.failed], [1, 0], "neither the fixture run nor the validation run is pooled");
+  assert.deepEqual(totals.runsExcludedByMode, { debugReview: 0, fixture: 1, validation: 1 });
+  assert.deepEqual(totals.processingTime.byOutcome.failed.excludedReasons, [{ reason: "fixture", count: 1 }]);
+  assert.deepEqual(totals.processingTime.byOutcome.valid.excludedReasons, [{ reason: "validation", count: 1 }]);
+  const row = (drill) => perDrill.find((entry) => entry.drillType === drill);
+  assert.equal(row("freeRecord").outcomes.valid, 1, "the free-record row counts its validation run");
+  assert.deepEqual([row("sprint").outcomes.valid, row("sprint").outcomes.failed], [1, 0], "the fixture run is not in the sprint row");
+  assert.equal(failureStages.some((entry) => entry.stageId.startsWith("poseValidation.")), false);
+  assert.ok(innerModel.rows.some((entry) => entry.drillType === "freeRecord"), "free-record inner-model rows use validation runs");
+  // Selecting a mode makes it the population.
+  const fixture = await h.fleet({ filters: { processingMode: "fixture" } });
+  assert.deepEqual([fixture.totals.outcomes.failed, fixture.totals.processingTime.byOutcome.failed.sample], [1, 1]);
+  const validation = await h.fleet({ filters: { processingMode: "validation" } });
+  assert.equal(validation.totals.outcomes.valid, 1);
+});
+
+test("F6: an attempt whose summary has not arrived is Device not yet reported, not Unknown device", async () => {
+  const h = harness();
+  h.put(runSummary({ attemptId: uuid("a", 1), runId: uuid("r", 1) }));
+  h.putAll(completeAttempt(2, { install: null }));
+  h.putAll(completeAttempt(3));
+  const receipt = await h.fleet({ dateBasis: "serverReceipt", startDate: "2026-09-29", endDate: "2026-09-29" });
+  assert.equal(receipt.totals.attempts, 3);
+  assert.deepEqual([receipt.coverage.attemptsDeviceNotYetReported, receipt.coverage.attemptsUnknownDevice], [1, 1]);
+  const unknown = receipt.devices.find((row) => row.installId === null);
+  assert.equal(unknown.attempts, 1, "only the old-build attempt is in the Unknown device row");
+  assert.equal(receipt.devices.reduce((sum, row) => sum + row.attempts, 0), 2, "the summary-pending attempt has no device row");
+  const devices = Object.fromEntries(receipt.devices.map((row) => [row.installId, row.runs]));
+  assert.equal(devices[INSTALL], 3, "runs stay with their executor: the pending attempt's run ran on INSTALL");
+});
+
+test("F3: transfers first received more than 30 days ago never count, whether or not their partition was rebuilt; upload stats state retention", async () => {
+  const old = START - 35 * DAY;
+  const h = harness({ now: old });
+  h.putAll(completeAttempt(1, { captureAt: old - 60000, transfer: { bytes: 9_000_000, ms: 3000 } }));
+  const early = await h.fleet({ startDate: "2026-08-20", endDate: "2026-08-25" });
+  assert.equal(early.totals.uploads[0].invocations, 1, "within retention the transfer counts");
+  assert.equal(early.totals.uploads[0].retention, "retained");
+  h.advance(35 * DAY);
+  h.putAll(completeAttempt(2, { transfer: { bytes: 1_000_000, ms: 1000 } }));
+  const range = { startDate: "2026-07-02", endDate: "2026-09-29" };
+  const late = await h.fleet(range);
+  const role = late.totals.uploads[0];
+  assert.deepEqual([role.invocations, role.payloadBytes, role.retention, role.groupsBeyondRetention], [1, 1_000_000, "partial", 1],
+    "the old partition was not rebuilt, yet its expired transfer is dropped at read time");
+  assert.equal(late.totals.attempts, 2, "attempt summaries are kept 90 days");
+  // Rebuilding the old partition (as the retention sweep must) changes nothing.
+  const keys = await h.projection.invalidateAttempts([uuid("a", 1)]);
+  assert.equal(keys.length, 1);
+  h.reports.clearCache();
+  const rebuilt = await h.fleet(range);
+  sameJson(rebuilt.totals.uploads, late.totals.uploads);
+  const onlyOld = await h.fleet({ startDate: "2026-08-20", endDate: "2026-08-25" });
+  assert.deepEqual([onlyOld.totals.uploads[0].retention, onlyOld.totals.uploads[0].invocations], ["notRetained", 0]);
+  assert.equal(onlyOld.totals.uploads[0].queueWait.sample, 1, "group summaries (90 days) keep their waiting time");
+  const cellular = await h.fleet({ startDate: "2026-08-20", endDate: "2026-08-25", filters: { networkInterface: "wifi" } });
+  assert.equal(cellular.totals.uploads[0].queueWait.eligible, 0, "a group beyond retention never matches a network filter");
 });

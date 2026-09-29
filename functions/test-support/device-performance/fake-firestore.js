@@ -110,7 +110,22 @@ class Query {
   startAfter(...values) { return this.with({ cursor: values }); }
   // A field projection: only these fields are returned (and decoded).
   select(...fields) { return this.with({ fields }); }
-  count() { const query = this; return { async get() { const result = await query.get(); return { data: () => ({ count: result.size }) }; } }; }
+  // An aggregation: counted without decoding the documents.
+  count() {
+    const query = this;
+    return {
+      async get() {
+        const depth = query.path.split("/").length + 1;
+        let count = 0;
+        for (const [path, data] of query.db.docs) {
+          if (path.split("/").length === depth && path.startsWith(`${query.path}/`) && query.matches(data)) count++;
+        }
+        query.db.stats.counts = (query.db.stats.counts || 0) + 1;
+        await query.db.tick();
+        return { data: () => ({ count }) };
+      },
+    };
+  }
   matches(data) {
     return this.filters.every(([field, op, value]) => {
       const actual = fieldOf(data, field);
@@ -155,11 +170,24 @@ class Query {
         return false;
       });
     }
-    const project = (data) => (this.fields ? Object.fromEntries(this.fields.filter((field) => field in data).map((field) => [field, data[field]])) : data);
+    // A field projection keeps only the selected (dotted) paths, as nested maps.
+    const project = (data) => {
+      if (!this.fields) return data;
+      const out = {};
+      for (const field of this.fields) {
+        const value = fieldOf(data, field);
+        if (value === undefined) continue;
+        const parts = field.split(".");
+        let node = out;
+        for (const part of parts.slice(0, -1)) node = node[part] ??= {};
+        node[parts.at(-1)] = value;
+      }
+      return out;
+    };
     const page = docs.slice(0, this.max).map((doc) => new Snapshot(doc.ref, project(doc._data)));
     this.db.stats.queries.push({
       path: this.path, filters: this.filters.map(([field, op]) => `${field} ${op}`),
-      orders: this.orders.map(([field, direction]) => `${field} ${direction}`), returned: page.length,
+      orders: this.orders.map(([field, direction]) => `${field} ${direction}`), fields: this.fields, returned: page.length,
     });
     for (const doc of page) this.db.account(doc.ref.path, doc._data);
     await this.db.tick();
