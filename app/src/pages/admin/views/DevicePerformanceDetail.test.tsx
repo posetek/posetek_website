@@ -96,6 +96,12 @@ describe("device report", () => {
     expect(html).toContain(">Load the first page</button>");
   });
 
+  it("shows pending as omitted under Processed or uploaded here, with pre-admission failures still counted (D-31 F8)", () => {
+    const { html } = detail(STATION_2, "view=executor");
+    expect(html).toContain("pending not shown under Processed or uploaded here");
+    expect(html).toMatch(/\d+ stopped before processing started/);
+  });
+
   it("says under Processed or uploaded here that run and upload counts are executor-based and attempt counts stay origin-based (D-27 5)", () => {
     const html = route(`/admin/device-performance/${STATION_2}?view=executor`, <Routes><Route path="/admin/device-performance/:installId" element={<DevicePerformanceDetail />} /></Routes>);
     expect(html).toContain('aria-pressed="true">Processed or uploaded here');

@@ -165,7 +165,7 @@ export function AttemptDetailView({ detail, timeZone, more = "idle", onLoadMore,
 
       <dl className="dp-fields">
         <Field name="Recorded">{uncertain ? <>Date uncertain <small>(phone clock {attempt?.clockQuality}); first received {formatDateTime(detail.receivedAt.firstReceivedAtServer, timeZone)}</small></> : formatDateTime(attempt?.captureOccurredAtClient ?? null, timeZone)}</Field>
-        <Field name="Recording phone">{detail.devices.find(device => device.installId === attempt?.originInstallId)?.label ?? attempt?.originPlatform?.machine ?? "Unknown device"}{attempt?.originInstallId ? ` · install ${shortInstallId(attempt.originInstallId)}` : ""}</Field>
+        <Field name="Recording phone">{!attempt ? "Device not yet reported" : detail.devices.find(device => device.installId === attempt.originInstallId)?.label ?? attempt.originPlatform?.machine ?? (attempt.originInstallId ? "Unnamed device" : "Unknown device")}{attempt?.originInstallId ? ` · install ${shortInstallId(attempt.originInstallId)}` : ""}</Field>
         <Field name="Recorded with">{platformText(attempt?.originPlatform ?? null)}</Field>
         <Field name="Time to result">{span("timeToResultMs")}</Field>
         <Field name="Ready for next rep">{span("readyForNextRepMs")}</Field>

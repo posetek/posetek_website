@@ -15,7 +15,8 @@ import {
   LIMITED_DATA_MIN_SAMPLES, MAIN_PHASES, METRIC_DEFINITIONS, NETWORK_INTERFACES, NETWORK_LABELS, OUTCOME_LABELS, PARAMS,
   PERIOD_PRESETS, PHASE_LABELS, PROCESSING_MODES, PROCESSING_MODE_LABELS, RECORDING_MODES, RECORDING_MODE_LABELS,
   SAVE_STATE_LABELS, TIME_ZONES, UPLOAD_ROLES, UPLOAD_ROLE_LABELS, VERDICT_LABELS,
-  allocationView, customRangeProblem, dateInZone, devicePath, devicePerformanceSearch, failureRate, fleetRequest,
+  allocationView, attemptDeviceName, customRangeProblem, dateInZone, devicePath, devicePerformanceSearch, excludedCountText,
+  failureRate, fleetRequest, retentionNote,
   focusDescription, focusParam, formatBytes, formatCount, formatDateTime, formatDuration, formatMBps, formatPercent, label,
   missingReasonLabel, parseDevicePerformanceQuery, recoverFromFailure, recoveryLabel, shortInstallId, stageLabel, statView,
   statedScope, uploadSpeed, usableYield, useDevicePerformanceReport, useDevicePerformanceSource, useFocusHeadingOnChange,
@@ -410,6 +411,12 @@ export function CoverageNotices({ report, query, onChange }: { report: ReportEnv
   if (coverage.attemptsUnknownDevice) {
     items.push({ icon: "device_unknown", text: `${plural(coverage.attemptsUnknownDevice, "attempt")} came from app versions without an install id and ${coverage.attemptsUnknownDevice === 1 ? "is" : "are"} grouped as Unknown device.` });
   }
+  if (coverage.attemptsDeviceNotYetReported) {
+    items.push({ icon: "pending", text: `Device not yet reported: ${plural(coverage.attemptsDeviceNotYetReported, "attempt")} ${coverage.attemptsDeviceNotYetReported === 1 ? "is" : "are"} known only from runs or uploads because the phone's attempt summary has not arrived, so ${coverage.attemptsDeviceNotYetReported === 1 ? "it has" : "they have"} no device row yet. This is not Unknown device.` });
+  }
+  if (coverage.attemptsExcludedOverLimit) {
+    items.push({ icon: "block", tone: "warn", text: `${plural(coverage.attemptsExcludedOverLimit, "attempt")} ${coverage.attemptsExcludedOverLimit === 1 ? "is" : "are"} left out of every number here because ${coverage.attemptsExcludedOverLimit === 1 ? "it reports" : "they report"} more facts than one report can read (over 128 runs, 16 upload groups or 2,000 transfers).` });
+  }
   return (
     <section className="dp-notices" aria-label="Coverage">
       <p className="dp-coverage">
@@ -497,8 +504,10 @@ export function SummaryTiles({ report, role, onRole }: { report: ReportEnvelopeV
         </label>
         {!speed ? <p className="dp-stat-note"><Icon name="help" /><span>This report has no {UPLOAD_ROLE_LABELS[role].toLowerCase()} figures.</span></p>
           : !speed.requested ? <p className="dp-stat-note"><Icon name="block" /><span>Not requested: {formatCount(speed.stat.notRequested)} attempts did not ask for {UPLOAD_ROLE_LABELS[role].toLowerCase()} (for example, saving video to the cloud was off). This is not 0 MB/s.</span></p>
+          : speed.stat.retention === "notRetained" ? <p className="dp-stat-note"><Icon name="history" /><span>{retentionNote(speed.stat)}</span></p>
           : speed.stat.invocations === 0 ? <p className="dp-stat-note"><Icon name="remove" /><span>No {UPLOAD_ROLE_LABELS[role].toLowerCase()} uploads in this period.</span></p>
           : <>
+            {speed.stat.retention === "partial" && <p className="dp-counts dp-caveat"><Icon name="history" />{retentionNote(speed.stat)}</p>}
             <dl className={`dp-stat${smallPayload ? " dp-latency-first" : ""}`}>
               <div><dt>Typical upload time</dt><dd>{uploadTime(speed.stat.duration)}</dd></div>
               <div><dt>Weighted effective throughput</dt><dd>{formatMBps(speed.mbps)}</dd></div>
@@ -522,7 +531,15 @@ export function SummaryTiles({ report, role, onRole }: { report: ReportEnvelopeV
           {rate.knownOutcomes > 0 && rate.knownOutcomes < LIMITED_DATA_MIN_SAMPLES && <LimitedData what="outcomes" />}
           <p className="dp-counts">
             Known outcomes include {formatCount(totals.outcomes.partial)} partial and {formatCount(totals.outcomes.noMeasurement)} with no measurement.
-            Not counted: {formatCount(rate.excluded.cancelled)} cancelled, {formatCount(rate.excluded.interruptedUnknown)} interrupted, {formatCount(rate.excluded.pending)} pending, {formatCount(rate.excluded.preAdmissionFailures)} stopped before processing started.
+            Not counted: {formatCount(rate.excluded.cancelled)} cancelled, {formatCount(rate.excluded.interruptedUnknown)} interrupted,
+            {" "}{excludedCountText(rate.excluded.pending, rate.omittedReasons.pending, "pending")},
+            {" "}{excludedCountText(rate.excluded.preAdmissionFailures, rate.omittedReasons.preAdmissionFailures, "stopped before processing started")}.
+          </p>
+          {/* D-31 F5: validation runs belong only to the free-record row; fixture and debug runs are left out and counted. */}
+          <p className="dp-counts">
+            {totals.runsExcludedByMode
+              ? `Left out by processing mode: ${formatCount(totals.runsExcludedByMode.validation)} validation runs (free record; shown only in its own row), ${formatCount(totals.runsExcludedByMode.debugReview)} debug review, ${formatCount(totals.runsExcludedByMode.fixture)} test fixture.`
+              : "A processing mode filter is active: the selected mode is the whole population."}
           </p>
           <ScopeLine report={report} group="processing" />
         </div>
@@ -783,7 +800,7 @@ export function AttemptList({ rows, timeZone, search, locationState }: { rows: A
               </span>
               <span className="dp-attempt-main">
                 <strong>{label(DRILL_LABELS, row.drillType)}{row.recordingMode === "station" ? " · station" : ""}</strong>
-                <span>{row.deviceLabel ?? row.machine ?? "Unknown device"}{row.originInstallId ? ` · ${shortInstallId(row.originInstallId)}` : ""} · {row.captureBuild ?? "unknown build"}{row.executionBuilds.some(build => build !== row.captureBuild) ? ` → processed on ${row.executionBuilds.join(", ")}` : ""}</span>
+                <span>{attemptDeviceName(row)}{row.originInstallId ? ` · ${shortInstallId(row.originInstallId)}` : ""} · {row.captureBuild ?? "unknown build"}{row.executionBuilds.some(build => build !== row.captureBuild) ? ` → processed on ${row.executionBuilds.join(", ")}` : ""}</span>
                 {executorText(row) && <span className="dp-executor"><Icon name="swap_horiz" />{executorText(row)}</span>}
               </span>
               <span className="dp-attempt-numbers">
@@ -952,6 +969,8 @@ export function MeasurementsTable({ report, role }: { report: ReportEnvelopeV1; 
     [`Waiting to upload (${UPLOAD_ROLE_LABELS[role].toLowerCase()})`, upload?.queueWait],
     [`Upload duration (${UPLOAD_ROLE_LABELS[role].toLowerCase()})`, upload?.duration],
   ];
+  // Upload duration comes from transfer facts, kept 30 days (D-31 F3); waiting comes from groups and stays.
+  const notRetained = upload?.retention === "notRetained" ? `Upload duration (${UPLOAD_ROLE_LABELS[role].toLowerCase()})` : null;
   return (
     <details className="admin-card dp-section dp-measurements">
       <summary><h2>All measurements</h2><span className="dp-muted">Typical, slow and the counts behind each</span></summary>
@@ -962,6 +981,7 @@ export function MeasurementsTable({ report, role }: { report: ReportEnvelopeV1; 
           <tbody>
             {rows.map(([name, stat]) => {
               if (!stat) return <tr key={name}><th scope="row">{name}</th><td colSpan={5}>Not in this report</td></tr>;
+              if (name === notRetained) return <tr key={name}><th scope="row">{name}</th><td colSpan={5}>Not retained: transfer detail is kept for 30 days</td></tr>;
               const view = statView(stat);
               return (
                 <tr key={name}>

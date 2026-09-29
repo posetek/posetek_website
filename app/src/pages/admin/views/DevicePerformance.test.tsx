@@ -143,7 +143,7 @@ describe("fleet states", () => {
     expect(failed).toContain(">Retry</button>");
     expect(failed).toContain("Your filters are kept.");
     const oversized = markup(<FleetReportView state={{ status: "error", report: null, failure: describeLoadFailure({ code: "functions/resource-exhausted", details: { limit: 50_000 } }), stale: false }} query={query} search="" onChange={() => {}} onRetry={() => {}} />);
-    expect(oversized).toContain("Narrow the date range or choose a drill or device.");
+    expect(oversized).toContain("Narrow the date range or choose a device.");
     expect(oversized).toContain("Use the last 7 days");
   });
 
@@ -267,6 +267,43 @@ describe("review fixes (D-26)", () => {
     expect(html).toContain('value="2099-01-01"');
     const form = markup(<FilterBar query={parseDevicePerformanceQuery("start=2026-09-01&end=2026-09-10", NOW)} choices={null} onChange={() => {}} />);
     expect(form).toMatch(/max="\d{4}-\d{2}-\d{2}"/);
+  });
+});
+
+describe("reporting V1 keys (D-31)", () => {
+  const tile = (html: string, title: string) => { const from = html.indexOf(`<h2>${title}</h2>`); return html.slice(from, html.indexOf("</section>", from)); };
+
+  it("F8: shows why pending and pre-admission counts are omitted instead of a zero", () => {
+    const html = tile(view("xbuild=1.4.1%20(215)"), "Processing failures");
+    expect(html).toContain("pending not shown while a processing filter is active");
+    expect(html).toContain("stopped before processing started not shown while a processing filter is active");
+    expect(html).not.toMatch(/ 0 pending/);
+  });
+
+  it("F5: states the runs left out by processing mode, or that a mode filter selects the population", () => {
+    expect(tile(view(), "Processing failures")).toMatch(/Left out by processing mode: \d+ validation runs \(free record; shown only in its own row\), \d+ debug review, \d+ test fixture\./);
+    expect(tile(view("pmode=validation"), "Processing failures")).toContain("A processing mode filter is active: the selected mode is the whole population.");
+  });
+
+  it("F3: shows Not retained, never zero, for upload metrics past the transfer retention", () => {
+    const old = view("start=2026-07-10&end=2026-08-20");
+    expect(tile(old, "Upload speed")).toContain("Not retained: transfer detail is kept for 30 days");
+    expect(tile(old, "Upload speed")).not.toContain("MB/s</dd>");
+    expect(old).toContain("Not retained: transfer detail is kept for 30 days</td>");
+    expect(tile(view("days=90"), "Upload speed")).toMatch(/Partly retained: \d+ upload groups are older than the 30-day transfer detail/);
+    expect(tile(view(), "Upload speed")).not.toContain("retained");
+  });
+
+  it("F1/F6: discloses over-limit attempts and attempts whose device has not reported yet", () => {
+    const html = view();
+    expect(html).toContain("Device not yet reported: 2 attempts are known only from runs or uploads");
+    expect(html).toContain("This is not Unknown device.");
+    expect(html).toContain("1 attempt is left out of every number here because it reports more facts than one report can read");
+    const { report: value } = report("focus=stage:kick.denseBall");
+    const rows = [{ ...value.attempts![0], originInstallId: null, deviceLabel: null, machine: null, completeness: "pending" as const }];
+    const list = markup(<AttemptList rows={rows} timeZone="America/Los_Angeles" search="" locationState={null} />);
+    expect(list).toContain("Device not yet reported");
+    expect(list).not.toContain("Unknown device");
   });
 });
 

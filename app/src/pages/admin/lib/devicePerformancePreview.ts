@@ -46,7 +46,21 @@ const dist = (sample: number, typicalMs: number | null, slowMs: number | null, m
   excludedReasons: excluded ? [{ reason: "failedOrUnmeasured", count: excluded }] : [],
 });
 const outcomes = (valid: number, failed = 0, partial = 0, noMeasurement = 0, cancelled = 0, interruptedUnknown = 0, pending = 0, preAdmissionFailures = 0): OutcomeCountsV1 =>
-  ({ valid, partial, noMeasurement, failed, cancelled, interruptedUnknown, pending, preAdmissionFailures });
+  ({ valid, partial, noMeasurement, failed, cancelled, interruptedUnknown, pending, preAdmissionFailures, omittedReasons: { pending: null, preAdmissionFailures: null } });
+/**
+ * D-31 F8 as the reporting API does it: with a processing filter both counts are
+ * omitted (runFilterActive); under Processed or uploaded here pending is.
+ */
+function withOmissions(value: OutcomeCountsV1, filters: DevicePerformanceFilters, attribution: string | undefined): OutcomeCountsV1 {
+  const runFilter = Boolean(filters.processingMode || filters.executionBuild || filters.executionMachine);
+  const pendingReason = runFilter ? "runFilterActive" : attribution === "executor" ? "executorAttribution" : null;
+  return {
+    ...value,
+    pending: pendingReason ? null : value.pending,
+    preAdmissionFailures: runFilter ? null : value.preAdmissionFailures,
+    omittedReasons: { pending: pendingReason, preAdmissionFailures: runFilter ? "runFilterActive" : null },
+  };
+}
 const scaleCount = (value: number, factor: number) => Math.round(value * factor);
 const scaleDist = (stat: DistributionStatV1, factor: number): DistributionStatV1 => {
   const sample = scaleCount(stat.sample, factor), missing = scaleCount(stat.missing, factor);
@@ -54,8 +68,19 @@ const scaleDist = (stat: DistributionStatV1, factor: number): DistributionStatV1
     typicalMs: sample ? stat.typicalMs : null, slowMs: sample ? stat.slowMs : null,
     missingReasons: missing ? stat.missingReasons.map(row => ({ ...row, count: missing })) : [] };
 };
-const scaleOutcomes = (value: OutcomeCountsV1, factor: number): OutcomeCountsV1 =>
-  Object.fromEntries(Object.entries(value).map(([key, count]) => [key, scaleCount(count, factor)])) as unknown as OutcomeCountsV1;
+const COUNT_KEYS = ["valid", "partial", "noMeasurement", "failed", "cancelled", "interruptedUnknown", "pending", "preAdmissionFailures"] as const;
+const scaleOutcomes = (value: OutcomeCountsV1, factor: number): OutcomeCountsV1 => ({
+  ...value, ...Object.fromEntries(COUNT_KEYS.map(key => [key, value[key] === null ? null : scaleCount(value[key] as number, factor)])),
+}) as OutcomeCountsV1;
+/** Pooled totals over drill rows (raw counts, before omissions). */
+const addOutcomes = (rows: OutcomeCountsV1[]): OutcomeCountsV1 => rows.reduce((total, row) => ({
+  ...total, ...Object.fromEntries(COUNT_KEYS.map(key => [key, (total[key] ?? 0) + (row[key] ?? 0)])),
+}) as OutcomeCountsV1, outcomes(0));
+const runsOf = (value: OutcomeCountsV1) => value.valid + value.partial + value.noMeasurement + value.failed + value.cancelled + value.interruptedUnknown;
+const TRANSFER_CUTOFF = "2026-08-30"; // 30 days of transfer detail before the preview's 2026-09-29 (D-31 F3)
+function retentionFor(request: ReportRequestBaseV1): "retained" | "partial" | "notRetained" {
+  return request.endDate < TRANSFER_CUTOFF ? "notRetained" : request.startDate < TRANSFER_CUTOFF ? "partial" : "retained";
+}
 
 const BUILDS = [
   { key: "1.4.0 (212)", label: "1.4.0 (212)", appVersion: "1.4.0", build: "212" },
@@ -117,7 +142,8 @@ const INNER_MODEL: { drillType: DrillType; stageId: string; parentStageId: strin
 
 // MARK: - Reports
 
-function uploadStats(filters: DevicePerformanceFilters, factor: number): UploadRoleStatV1[] {
+function uploadStats(request: ReportRequestBaseV1, factor: number): UploadRoleStatV1[] {
+  const filters = request.filters, retention = retentionFor(request);
   // Network changes only the upload numbers; processing totals never read it.
   const net = filters.networkInterface === "cellular" ? 0.45 : filters.networkInterface === "wifi" ? 1.25 : 1;
   const base: Record<string, [number, number, number, number, number, number]> = {
@@ -129,15 +155,19 @@ function uploadStats(filters: DevicePerformanceFilters, factor: number): UploadR
   };
   return UPLOAD_ROLES.map(role => {
     const [invocations, succeeded, failed, bytes, ms, notRequested] = base[role];
-    const f = factor;
+    // Transfer-derived numbers exist only for groups inside the 30-day transfer detail; waits (90 days) stay.
+    const f = factor, t = factor * (retention === "notRetained" ? 0 : retention === "partial" ? 0.4 : 1);
+    const groups = Math.round(succeeded / (role === "resultFiles" ? 6 : 1));
     return {
-      role, notRequested: scaleCount(notRequested, f), invocations: scaleCount(invocations, f), succeeded: scaleCount(succeeded, f),
-      failed: scaleCount(failed, f), cancelled: scaleCount(3, f), interrupted: scaleCount(2, f), pending: scaleCount(role === "optionalVideo" ? 9 : 4, f),
-      excludedZeroOrUnknownDuration: scaleCount(role === "resultFiles" ? 16 : 1, f),
-      payloadBytes: scaleCount(bytes, f), elapsedMs: Math.round((ms * f) / net),
-      duration: scaleDist(dist(succeeded, (role === "resultFiles" ? 380 : role === "diagnostics" ? 690 : 5_400) / net, (role === "resultFiles" ? 1_450 : 14_800) / net, 0, failed + 16), f),
+      role, notRequested: scaleCount(notRequested, f), invocations: scaleCount(invocations, t), succeeded: scaleCount(succeeded, t),
+      failed: scaleCount(failed, t), cancelled: scaleCount(3, t), interrupted: scaleCount(2, t), pending: scaleCount(role === "optionalVideo" ? 9 : 4, f),
+      excludedZeroOrUnknownDuration: scaleCount(role === "resultFiles" ? 16 : 1, t),
+      payloadBytes: scaleCount(bytes, t), elapsedMs: Math.round((ms * t) / net),
+      duration: scaleDist(dist(succeeded, (role === "resultFiles" ? 380 : role === "diagnostics" ? 690 : 5_400) / net, (role === "resultFiles" ? 1_450 : 14_800) / net, 0, failed + 16), t),
       queueWait: scaleDist(dist(succeeded, role === "optionalVideo" ? 38_000 : 240, role === "optionalVideo" ? 210_000 : 2_900, 12, 0, "crossLaunch"), f),
       knownBackoffMs: scaleCount(role === "optionalVideo" ? 640_000 : 95_000, f),
+      retention,
+      groupsBeyondRetention: retention === "retained" ? 0 : scaleCount(groups, retention === "partial" ? f * 0.6 : f),
     };
   });
 }
@@ -160,11 +190,13 @@ function reportBase(request: ReportRequestBaseV1, scenario: PreviewScenario, fac
     };
   });
   const sum = (pick: (row: DrillRowV1) => number) => perDrill.reduce((total, row) => total + pick(row), 0);
-  const outcomeTotals = perDrill.reduce((total, row) => scaleOutcomes({
-    valid: total.valid + row.outcomes.valid, partial: total.partial + row.outcomes.partial, noMeasurement: total.noMeasurement + row.outcomes.noMeasurement,
-    failed: total.failed + row.outcomes.failed, cancelled: total.cancelled + row.outcomes.cancelled, interruptedUnknown: total.interruptedUnknown + row.outcomes.interruptedUnknown,
-    pending: total.pending + row.outcomes.pending, preAdmissionFailures: total.preAdmissionFailures + row.outcomes.preAdmissionFailures,
-  }, 1), outcomes(0));
+  // D-31 F5: free-record (validation) runs count only in their own row, never in the pooled totals.
+  const freeRecordRuns = runsOf(perDrill.find(row => row.drillType === "freeRecord")!.outcomes);
+  const outcomeTotals = addOutcomes(perDrill.filter(row => row.drillType !== "freeRecord").map(row => row.outcomes));
+  const attribution = (request as Partial<DetailRequestV1>).attribution;
+  const runsExcludedByMode = request.filters.processingMode ? null
+    : { debugReview: empty ? 0 : scaleCount(3, filterFactor), fixture: empty ? 0 : scaleCount(1, filterFactor), validation: freeRecordRuns };
+  for (const row of perDrill) row.outcomes = withOmissions(row.outcomes, request.filters, attribution);
   const attempts = sum(row => row.attempts), measuredAttempts = old ? 0 : attempts;
   const totals: TotalsV1 = {
     attempts,
@@ -182,9 +214,10 @@ function reportBase(request: ReportRequestBaseV1, scenario: PreviewScenario, fac
     },
     cloudSave: old ? dist(0, null, null, attempts) : dist(scaleCount(measuredAttempts * 0.97, 1), 4_300, 11_900, scaleCount(measuredAttempts * 0.03, 1), 0, "pendingUpload"),
     cloudBacklog: { pendingJobs: empty ? 0 : scaleCount(7, factor), failedJobs: empty ? 0 : scaleCount(1, factor), installsReporting: empty ? 0 : perDevice ? 1 : 58, oldestReportAt: empty ? null : "2026-09-25T19:10:00.000Z" },
-    uploads: uploadStats(request.filters, empty ? 0 : filterFactor),
-    outcomes: outcomeTotals,
-    yield: { valid: scaleCount(outcomeTotals.valid * 0.97, 1), invalid: outcomeTotals.noMeasurement + outcomeTotals.failed, pending: outcomeTotals.pending + outcomeTotals.interruptedUnknown, userDiscarded: scaleCount(6, filterFactor), firstRunValid: scaleCount(outcomeTotals.valid * 0.94, 1) },
+    uploads: uploadStats(request, empty ? 0 : filterFactor),
+    outcomes: withOmissions(outcomeTotals, request.filters, attribution),
+    runsExcludedByMode,
+    yield: { valid: scaleCount(outcomeTotals.valid * 0.97, 1), invalid: outcomeTotals.noMeasurement + outcomeTotals.failed, pending: (outcomeTotals.pending ?? 0) + outcomeTotals.interruptedUnknown, userDiscarded: scaleCount(6, filterFactor), firstRunValid: scaleCount(outcomeTotals.valid * 0.94, 1) },
   };
   const days = Math.max(1, Math.round((Date.parse(`${request.endDate}T12:00:00Z`) - Date.parse(`${request.startDate}T12:00:00Z`)) / 86_400_000) + 1);
   const trends = Array.from({ length: Math.min(days, 90) }, (_, index) => {
@@ -210,6 +243,8 @@ function reportBase(request: ReportRequestBaseV1, scenario: PreviewScenario, fac
       attemptsNotCollectedByVersion: old ? attempts : empty ? 0 : scaleCount(23, filterFactor),
       attemptsDateUncertain: empty ? 0 : scaleCount(5, filterFactor),
       attemptsUnknownDevice: empty || perDevice ? 0 : scaleCount(23, filterFactor),
+      attemptsDeviceNotYetReported: empty || perDevice ? 0 : scaleCount(2, filterFactor),
+      attemptsExcludedOverLimit: empty ? 0 : perDevice ? 0 : 1,
       droppedDetailCount: empty ? 0 : scaleCount(12, filterFactor),
     },
     choices: {
@@ -234,13 +269,13 @@ function reportBase(request: ReportRequestBaseV1, scenario: PreviewScenario, fac
   };
 }
 
-const deviceRow = (device: PreviewDevice) => ({
+const deviceRow = (device: PreviewDevice, filters: DevicePerformanceFilters) => ({
   installId: device.installId, label: device.label, machine: device.machine, builds: device.builds.map(({ key, label }) => ({ key, label })),
   attempts: device.attempts, runs: device.runs, lastReportAt: device.lastReportAt, notRecentlyReporting: device.stale,
   timeToResult: device.installId ? dist(device.attempts - 2, device.resultMs, device.slowMs, 2, 0, "crossLaunch") : dist(0, null, null, device.attempts),
   cloudSave: device.installId ? dist(device.attempts - 3, device.saveMs, device.saveMs * 2.6, 3, 0, "pendingUpload") : dist(0, null, null, device.attempts),
   uploadWait: device.installId ? dist(device.attempts * 6, device.waitMs, device.waitMs * 4.2) : dist(0, null, null, device.attempts),
-  outcomes: device.installId ? outcomes(device.known - device.failed, device.failed, 0, 0, device.runs - device.known > 0 ? 1 : 0, 0, 0) : outcomes(0, 0, 0, 0, 0, 0, 0, 0),
+  outcomes: withOmissions(device.installId ? outcomes(device.known - device.failed, device.failed, 0, 0, device.runs - device.known > 0 ? 1 : 0, 0, 0) : outcomes(0, 0, 0, 0, 0, 0, 0, 0), filters, "origin"),
 });
 
 function sortedDevices(request: FleetRequestV1) {
@@ -452,7 +487,7 @@ function detailRows(request: DetailRequestV1, device: PreviewDevice) {
 
 export function previewFleet(request: FleetRequestV1, scenario: PreviewScenario = "normal") {
   const empty = scenario === "empty" || scenario === "uncollected";
-  const devices = empty ? { rows: [], pagination: { pageSize: request.pageSize, nextCursor: null, totalRows: 0 } } : pageOf(sortedDevices(request).map(deviceRow), request.cursor, request.pageSize);
+  const devices = empty ? { rows: [], pagination: { pageSize: request.pageSize, nextCursor: null, totalRows: 0 } } : pageOf(sortedDevices(request).map(device => deviceRow(device, request.filters)), request.cursor, request.pageSize);
   const focusStage = request.focus?.kind === "stage" ? request.focus.stageId : null;
   const focusDrill = request.focus?.kind === "phase" ? request.focus.drill : request.filters.drill;
   const focused = request.focus && !empty ? pageOf(attemptRows(focusDrill, focusStage), request.attemptsCursor, 10) : null;

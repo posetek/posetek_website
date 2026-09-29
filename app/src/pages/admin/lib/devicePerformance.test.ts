@@ -13,6 +13,7 @@ import {
   dateInZone, describeLoadFailure, detailRequest, devicePath, devicePerformanceSearch, failureRate, fleetPath, fleetRequest,
   forgetCachedReports, formatBytes, formatDuration, formatMBps, isLimitedData, loadDevicePerformanceSource,
   parseAttemptDetail, parseDeviceReport, parseDevicePerformanceQuery, parseFleetReport, parsePerformanceRecord,
+  attemptDeviceName, excludedCountText, retentionNote,
   recoverFromFailure, recoveryLabel, reportCacheFor, reportKeys, reportModeFor, reportStateFor, scopeMismatches,
   stageLabel, statView, statedScope, usableYield, weightedThroughputMBps,
 } from "./devicePerformance";
@@ -188,6 +189,81 @@ describe("report parsing refuses what it does not understand", () => {
   });
 });
 
+describe("reporting V1 review keys (D-31)", () => {
+  const withRunFilter = () => previewFleet(fleetRequest(parseDevicePerformanceQuery("pmode=liveCapture&drill=sprint", new Date("2026-09-29T18:00:00Z")))) as unknown as Record<string, Record<string, Record<string, unknown>>>;
+
+  it("F8: accepts null pending and pre-admission counts in totals, drill rows and device rows, each with its reason", () => {
+    const report = parseFleetReport(withRunFilter());
+    expect(report.totals.outcomes).toMatchObject({ pending: null, preAdmissionFailures: null, omittedReasons: { pending: "runFilterActive", preAdmissionFailures: "runFilterActive" } });
+    expect(report.perDrill.every(row => row.outcomes.pending === null)).toBe(true);
+    expect(report.devices.every(row => row.outcomes.preAdmissionFailures === null)).toBe(true);
+    const executor = parseDeviceReport(previewDevice({ ...detailRequest("0d5c9a1e-2b3f-4c6d-8e7f-a0b1c2d3e4f5", baseQuery), attribution: "executor" }));
+    expect(executor.totals.outcomes).toMatchObject({ pending: null, omittedReasons: { pending: "executorAttribution", preAdmissionFailures: null } });
+    expect(executor.totals.outcomes.preAdmissionFailures).not.toBeNull();
+  });
+
+  it("F8: refuses a null count without a reason, a reason on a present count, and a missing omittedReasons", () => {
+    const silent = withRunFilter();
+    (silent.totals.outcomes.omittedReasons as Record<string, unknown>).pending = null;
+    expect(() => parseFleetReport(silent)).toThrow(/totals\.outcomes\.omittedReasons\.pending: expected a reason exactly when pending is null/);
+    const spurious = normalReport() as unknown as Record<string, Record<string, Record<string, unknown>>>;
+    (spurious.totals.outcomes.omittedReasons as Record<string, unknown>).preAdmissionFailures = "runFilterActive";
+    expect(() => parseFleetReport(spurious)).toThrow(/omittedReasons\.preAdmissionFailures/);
+    const missing = normalReport() as unknown as Record<string, Record<string, Record<string, unknown>>>;
+    delete missing.totals.outcomes.omittedReasons;
+    expect(() => parseFleetReport(missing)).toThrow(/totals\.outcomes\.omittedReasons/);
+    const unknownReason = withRunFilter();
+    (unknownReason.totals.outcomes.omittedReasons as Record<string, unknown>).pending = "tooBusy";
+    expect(() => parseFleetReport(unknownReason)).toThrow(/runFilterActive, executorAttribution/);
+  });
+
+  it("F3/F5/F1/F6: requires retention, runs left out by mode and the new coverage counts", () => {
+    const report = parseFleetReport(normalReport());
+    expect(report.totals.uploads.every(row => row.retention === "retained" && row.groupsBeyondRetention === 0)).toBe(true);
+    expect(report.totals.runsExcludedByMode).toMatchObject({ debugReview: expect.any(Number), fixture: expect.any(Number), validation: expect.any(Number) });
+    expect(report.coverage).toMatchObject({ attemptsExcludedOverLimit: 1, attemptsDeviceNotYetReported: expect.any(Number) });
+    expect(parseFleetReport(withRunFilter()).totals.runsExcludedByMode).toBeNull();
+    const old = parseFleetReport(previewFleet(fleetRequest(parseDevicePerformanceQuery("start=2026-07-10&end=2026-08-20", new Date("2026-09-29T18:00:00Z")))));
+    expect(old.totals.uploads[0]).toMatchObject({ retention: "notRetained", invocations: 0 });
+    for (const [path, mutate] of [
+      ["retention", (raw: Record<string, Record<string, unknown>>) => { delete (raw.totals.uploads as Record<string, unknown>[])[0].retention; }],
+      ["groupsBeyondRetention", (raw: Record<string, Record<string, unknown>>) => { delete (raw.totals.uploads as Record<string, unknown>[])[0].groupsBeyondRetention; }],
+      ["attemptsExcludedOverLimit", (raw: Record<string, Record<string, unknown>>) => { delete raw.coverage.attemptsExcludedOverLimit; }],
+      ["attemptsDeviceNotYetReported", (raw: Record<string, Record<string, unknown>>) => { delete raw.coverage.attemptsDeviceNotYetReported; }],
+      ["runsExcludedByMode", (raw: Record<string, Record<string, unknown>>) => { delete raw.totals.runsExcludedByMode; }],
+    ] as const) {
+      const raw = normalReport() as unknown as Record<string, Record<string, unknown>>;
+      mutate(raw);
+      expect(() => parseFleetReport(raw), path).toThrow(new RegExp(path));
+    }
+  });
+
+  it("F5: pools no free-record (validation) runs and counts them apart", () => {
+    const report = parseFleetReport(normalReport());
+    const local = report.perDrill.filter(row => row.drillType !== "freeRecord").reduce((sum, row) => sum + row.outcomes.valid, 0);
+    const free = report.perDrill.find(row => row.drillType === "freeRecord")!.outcomes;
+    expect(report.totals.outcomes.valid).toBe(local);
+    expect(report.totals.runsExcludedByMode!.validation).toBe(free.valid + free.partial + free.noMeasurement + free.failed + free.cancelled + free.interruptedUnknown);
+  });
+
+  it("F3/F6: explains retention and names a device that has not reported yet", () => {
+    expect(retentionNote({ retention: "retained", groupsBeyondRetention: 0 })).toBeNull();
+    expect(retentionNote({ retention: "partial", groupsBeyondRetention: 3 })).toMatch(/^Partly retained: 3 upload groups are older than the 30-day transfer detail/);
+    expect(retentionNote({ retention: "notRetained", groupsBeyondRetention: 9 })).toMatch(/^Not retained: .*This is not zero\./);
+    const row = { originInstallId: null, deviceLabel: null, machine: null };
+    expect(attemptDeviceName({ ...row, completeness: "pending" })).toBe("Device not yet reported");
+    expect(attemptDeviceName({ ...row, completeness: "partial" })).toBe("Unknown device");
+    expect(attemptDeviceName({ ...row, originInstallId: "b7e2c1d4-5f6a-4b8c-9d0e-1f2a3b4c5d6e", completeness: "complete" })).toBe("Unnamed device");
+  });
+
+  it("F4: uses the reporting API's narrowing wording, naming the partition when given", () => {
+    const failure = describeLoadFailure({ code: "functions/resource-exhausted", details: { errorCode: "narrowRange", bound: "partitionAttempts", partition: "d-2026-09-20", attempts: 4, max: 3 } });
+    expect(failure.message).toMatch(/^Narrow the date range or choose a device\./);
+    expect(failure.message).toContain("(d-2026-09-20) holds more attempts than a report can read exactly");
+    expect(failure.message).not.toMatch(/drill/);
+  });
+});
+
 describe("attempt detail", () => {
   const attempt = fixture("attempt-summary.valid.json") as AttemptSummaryRecordV1;
   // The canonical run fixture belongs to another attempt; re-home a copy for a joined example.
@@ -290,13 +366,25 @@ describe("Limited data and missing values", () => {
 });
 
 describe("rates always carry their denominators", () => {
+  const none = { pending: null, preAdmissionFailures: null };
   it("computes processing failures over known outcomes only", () => {
-    const rate = failureRate({ valid: 90, partial: 3, noMeasurement: 2, failed: 5, cancelled: 7, interruptedUnknown: 4, pending: 6, preAdmissionFailures: 9 });
+    const rate = failureRate({ valid: 90, partial: 3, noMeasurement: 2, failed: 5, cancelled: 7, interruptedUnknown: 4, pending: 6, preAdmissionFailures: 9, omittedReasons: none });
     expect(rate.failed).toBe(5);
     expect(rate.knownOutcomes).toBe(100);
     expect(rate.rate).toBeCloseTo(0.05);
     expect(rate.excluded).toEqual({ cancelled: 7, interruptedUnknown: 4, pending: 6, preAdmissionFailures: 9 });
-    expect(failureRate({ valid: 0, partial: 0, noMeasurement: 0, failed: 0, cancelled: 3, interruptedUnknown: 0, pending: 0, preAdmissionFailures: 0 }).rate).toBeNull();
+    expect(failureRate({ valid: 0, partial: 0, noMeasurement: 0, failed: 0, cancelled: 3, interruptedUnknown: 0, pending: 0, preAdmissionFailures: 0, omittedReasons: none }).rate).toBeNull();
+  });
+
+  it("keeps omitted pending and pre-admission counts null with their reasons, never zero (D-31 F8)", () => {
+    const rate = failureRate({ valid: 90, partial: 3, noMeasurement: 2, failed: 5, cancelled: 7, interruptedUnknown: 4, pending: null, preAdmissionFailures: null,
+      omittedReasons: { pending: "runFilterActive", preAdmissionFailures: "runFilterActive" } });
+    expect(rate.knownOutcomes).toBe(100);
+    expect(rate.excluded).toEqual({ cancelled: 7, interruptedUnknown: 4, pending: null, preAdmissionFailures: null });
+    expect(rate.omittedReasons.pending).toBe("runFilterActive");
+    expect(excludedCountText(rate.excluded.pending, rate.omittedReasons.pending, "pending")).toBe("pending not shown while a processing filter is active, because they cannot be tied to a processing mode, version or phone model");
+    expect(excludedCountText(null, "executorAttribution", "pending")).toMatch(/^pending not shown under Processed or uploaded here/);
+    expect(excludedCountText(0, null, "pending")).toBe("0 pending");
   });
 
   it("leaves user-discarded attempts out of usable-result yield and discloses them", () => {
@@ -475,7 +563,7 @@ describe("load failures", () => {
   it("explains an oversized query and how to narrow it", () => {
     const failure = describeLoadFailure({ code: "functions/resource-exhausted", details: { limit: 50_000 } });
     expect(failure.problem).toBe("oversized");
-    expect(failure.message).toMatch(/Narrow the date range or choose a drill or device/);
+    expect(failure.message).toMatch(/Narrow the date range or choose a device/);
     expect(failure.message).toMatch(/50,000/);
   });
 

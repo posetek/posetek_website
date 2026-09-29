@@ -108,6 +108,7 @@ export const SAVE_STATE_LABELS: Record<string, string> = {
   notQueued: "Not queued", queued: "Queued", committed: "Saved", failed: "Failed", cancelled: "Cancelled", notApplicable: "Not applicable",
   notRequested: "Not requested", pending: "Pending", uploaded: "Uploaded", unavailable: "Unavailable (clip no longer on the phone)",
   inProgress: "Uploading",
+  notReported: "Not reported yet",
 };
 export const EVIDENCE_LABELS: Record<string, string> = {
   available: "Available", pending: "Not uploaded yet", expired: "Expired under the retention policy", notCollected: "Not collected",
@@ -347,7 +348,12 @@ export interface CoverageV1 {
   attemptsPartial: number;
   attemptsNotCollectedByVersion: number;
   attemptsDateUncertain: number;
+  /** A summary that names no install (old builds). */
   attemptsUnknownDevice: number;
+  /** D-31 F6: the attempt summary has not arrived, so there is no device row yet ("Device not yet reported"). */
+  attemptsDeviceNotYetReported: number;
+  /** D-31 F1: left out of every statistic because the attempt's facts exceed the per-attempt read limits. */
+  attemptsExcludedOverLimit: number;
   droppedDetailCount: number;
 }
 export interface ChoicesV1 {
@@ -357,6 +363,17 @@ export interface ChoicesV1 {
   executionMachines: ChoiceV1[];
   payloadSizeBands: ChoiceV1[];
 }
+/**
+ * Why a count is omitted (D-31 F8): pending runs and pre-admission failures
+ * cannot be attributed to a run filter (runFilterActive) or, for pending runs,
+ * to the executing phone (executorAttribution). null never means zero.
+ */
+export const OMITTED_REASONS = ["runFilterActive", "executorAttribution"] as const;
+export type OmittedReason = typeof OMITTED_REASONS[number];
+export const OMITTED_REASON_LABELS: Record<OmittedReason, string> = {
+  runFilterActive: "not shown while a processing filter is active, because they cannot be tied to a processing mode, version or phone model",
+  executorAttribution: "not shown under Processed or uploaded here, because they cannot be tied to the phone that processed a run",
+};
 export interface OutcomeCountsV1 {
   valid: number;
   partial: number;
@@ -364,10 +381,16 @@ export interface OutcomeCountsV1 {
   failed: number;
   cancelled: number;
   interruptedUnknown: number;
-  pending: number;
-  /** Invocations that ended before a run existed (contract §8.2); never in the rate. */
-  preAdmissionFailures: number;
+  /** null when omitted; omittedReasons.pending says why. */
+  pending: number | null;
+  /** Invocations that ended before a run existed (contract §8.2); never in the rate. null when omitted. */
+  preAdmissionFailures: number | null;
+  omittedReasons: { pending: OmittedReason | null; preAdmissionFailures: OmittedReason | null };
 }
+/** D-31 F5: runs left out of the pooled numbers by processing mode; null when a processing-mode filter is set. */
+export interface RunsExcludedByModeV1 { debugReview: number; fixture: number; validation: number }
+/** D-31 F3: transfer detail is kept 30 days; upload metrics say how much of the period still has it. */
+export type TransferRetention = "retained" | "partial" | "notRetained";
 export interface YieldCountsV1 {
   valid: number;
   /** invalid verdicts other than userDiscarded */
@@ -394,6 +417,14 @@ export interface UploadRoleStatV1 {
   duration: DistributionStatV1;
   queueWait: DistributionStatV1;
   knownBackoffMs: number | null;
+  /**
+   * D-31 F3: transfer facts are kept 30 days. notRetained: no transfer detail
+   * is left for this role in the period (shown "Not retained", never 0);
+   * partial: groupsBeyondRetention upload groups are past it and left out.
+   * Queue waiting comes from upload groups (kept 90 days) and stays.
+   */
+  retention: TransferRetention;
+  groupsBeyondRetention: number;
 }
 export interface CloudBacklogV1 { pendingJobs: number; failedJobs: number; installsReporting: number; oldestReportAt: string | null }
 /**
@@ -417,6 +448,7 @@ export interface TotalsV1 {
   /** All four roles, always present. */
   uploads: UploadRoleStatV1[];
   outcomes: OutcomeCountsV1;
+  runsExcludedByMode: RunsExcludedByModeV1 | null;
   yield: YieldCountsV1;
 }
 export interface PhaseMeanV1 { phase: MainPhase; meanMs: number | null }
@@ -797,7 +829,19 @@ const stat = shape({
   typicalMs: nullable(measure), slowMs: nullable(measure),
   missingReasons: list(countedReason, 32), excludedReasons: list(countedReason, 32),
 });
-const outcomes = shape({ valid: count, partial: count, noMeasurement: count, failed: count, cancelled: count, interruptedUnknown: count, pending: count, preAdmissionFailures: count });
+const omittedReason = nullable(oneOf(OMITTED_REASONS));
+/** D-31 F8: pending and preAdmissionFailures may be null, and a null count must carry its reason (and only then). */
+const outcomes: Check = (value, path) => {
+  shape({
+    valid: count, partial: count, noMeasurement: count, failed: count, cancelled: count, interruptedUnknown: count,
+    pending: nullable(count), preAdmissionFailures: nullable(count),
+    omittedReasons: shape({ pending: omittedReason, preAdmissionFailures: omittedReason }),
+  })(value, path);
+  const row = value as { pending: number | null; preAdmissionFailures: number | null; omittedReasons: Record<string, string | null> };
+  for (const key of ["pending", "preAdmissionFailures"] as const) {
+    if ((row[key] === null) !== (row.omittedReasons[key] !== null)) malformed(`${path}.omittedReasons.${key}`, `a reason exactly when ${key} is null`);
+  }
+};
 const choice = shape({ key: text, label: text, count });
 const filtersCheck = shape({
   drill: nullable(oneOf(DRILL_TYPES)), recordingMode: nullable(text), captureBuild: nullable(text), captureMachine: nullable(text),
@@ -808,6 +852,7 @@ const uploadRoleStat = shape({
   role: oneOf(UPLOAD_ROLES), notRequested: count, invocations: count, succeeded: count, failed: count, cancelled: count,
   interrupted: count, pending: count, excludedZeroOrUnknownDuration: count, payloadBytes: count, elapsedMs: measure,
   duration: stat, queueWait: stat, knownBackoffMs: nullable(measure),
+  retention: oneOf(["retained", "partial", "notRetained"]), groupsBeyondRetention: count,
 });
 const pagination = shape({ pageSize: count, nextCursor: nullable(text), totalRows: count });
 const attemptRow = shape({
@@ -848,7 +893,8 @@ const envelopeFields: Record<string, Check> = {
   freshness: shape({ sourceUpdatedAt: nullable(text), lastReportReceivedAt: nullable(text) }),
   coverage: shape({
     collectionStartedAt: nullable(text), installsKnown: count, installsNotRecentlyReporting: count, attemptsIndexed: count,
-    attemptsPartial: count, attemptsNotCollectedByVersion: count, attemptsDateUncertain: count, attemptsUnknownDevice: count, droppedDetailCount: count,
+    attemptsPartial: count, attemptsNotCollectedByVersion: count, attemptsDateUncertain: count, attemptsUnknownDevice: count,
+    attemptsDeviceNotYetReported: count, attemptsExcludedOverLimit: count, droppedDetailCount: count,
   }),
   choices: shape({ captureBuilds: list(choice, 500), captureMachines: list(choice, 500), executionBuilds: list(choice, 500), executionMachines: list(choice, 500), payloadSizeBands: list(choice, 32) }),
   totals: shape({
@@ -858,6 +904,7 @@ const envelopeFields: Record<string, Check> = {
     cloudBacklog: shape({ pendingJobs: count, failedJobs: count, installsReporting: count, oldestReportAt: nullable(text) }),
     uploads: list(uploadRoleStat, UPLOAD_ROLES.length),
     outcomes,
+    runsExcludedByMode: nullable(shape({ debugReview: count, fixture: count, validation: count })),
     yield: shape({ valid: count, invalid: count, pending: count, userDiscarded: count, firstRunValid: count }),
   }),
   perDrill: list(shape({
@@ -1051,7 +1098,14 @@ export function parseLabelResult(raw: unknown): LabelResultV1 {
 
 // MARK: - Derived numbers (always with their denominators)
 
-export interface FailureRate { failed: number; knownOutcomes: number; rate: number | null; excluded: { cancelled: number; interruptedUnknown: number; pending: number; preAdmissionFailures: number } }
+export interface FailureRate {
+  failed: number;
+  knownOutcomes: number;
+  rate: number | null;
+  /** pending / preAdmissionFailures stay null when the server omitted them (D-31 F8); never read as 0. */
+  excluded: { cancelled: number; interruptedUnknown: number; pending: number | null; preAdmissionFailures: number | null };
+  omittedReasons: OutcomeCountsV1["omittedReasons"];
+}
 /** failed ÷ (valid + partial + noMeasurement + failed) terminal runs (contract §8.4). */
 export function failureRate(outcome: OutcomeCountsV1): FailureRate {
   const knownOutcomes = outcome.valid + outcome.partial + outcome.noMeasurement + outcome.failed;
@@ -1059,8 +1113,34 @@ export function failureRate(outcome: OutcomeCountsV1): FailureRate {
     failed: outcome.failed,
     knownOutcomes,
     rate: knownOutcomes ? outcome.failed / knownOutcomes : null,
-    excluded: { cancelled: outcome.cancelled, interruptedUnknown: outcome.interruptedUnknown, pending: outcome.pending, preAdmissionFailures: outcome.preAdmissionFailures },
+    excluded: { cancelled: outcome.cancelled, interruptedUnknown: outcome.interruptedUnknown, pending: outcome.pending ?? null, preAdmissionFailures: outcome.preAdmissionFailures ?? null },
+    omittedReasons: outcome.omittedReasons ?? { pending: null, preAdmissionFailures: null },
   };
+}
+
+/**
+ * The recording phone for an attempt row. An attempt whose summary has not
+ * arrived (no install, completeness pending) is "Device not yet reported",
+ * never "Unknown device", which means an old build that sent no install id (D-31 F6).
+ */
+export function attemptDeviceName(row: Pick<AttemptRowV1, "originInstallId" | "deviceLabel" | "machine" | "completeness">): string {
+  if (row.deviceLabel) return row.deviceLabel;
+  if (row.machine) return row.machine;
+  if (!row.originInstallId) return row.completeness === "pending" ? "Device not yet reported" : "Unknown device";
+  return "Unnamed device";
+}
+
+/** What an upload role's retention means for the transfer-derived numbers (D-31 F3). */
+export function retentionNote(stat: Pick<UploadRoleStatV1, "retention" | "groupsBeyondRetention">): string | null {
+  if (stat.retention === "notRetained") return "Not retained: transfer detail is kept for 30 days and every upload of this role in the period is older, so upload time, speed and transfer counts are not shown. This is not zero.";
+  if (stat.retention === "partial") return `Partly retained: ${formatCount(stat.groupsBeyondRetention)} upload group${stat.groupsBeyondRetention === 1 ? " is" : "s are"} older than the 30-day transfer detail and left out of upload time, speed and transfer counts. Waiting times are kept for 90 days and still count.`;
+  return null;
+}
+
+/** One not-counted figure: the count, or why it is omitted (never 0 for an omission). */
+export function excludedCountText(count: number | null, reason: OmittedReason | null, noun: string): string {
+  if (count !== null) return `${formatCount(count)} ${noun}`;
+  return `${noun} ${reason ? OMITTED_REASON_LABELS[reason] : "not reported"}`;
 }
 
 export interface UsableYield { valid: number; finalized: number; rate: number | null; firstRunRate: number | null; pending: number; userDiscarded: number }
@@ -1390,8 +1470,11 @@ export function describeLoadFailure(error: unknown, subject: "report" | "device"
   const code = String((error as { code?: unknown })?.code ?? "").split("/").at(-1);
   const details = (error as { details?: unknown })?.details;
   if (code === "resource-exhausted") {
+    // Wording matches the reporting API's narrowRange message (D-31 F4).
     const limit = isRecord(details) && typeof details.limit === "number" ? ` It matches more than ${details.limit.toLocaleString("en-US")} measurements.` : "";
-    return { problem: "oversized", title: "This report is too large to compute exactly", message: `Narrow the date range or choose a drill or device.${limit} Totals are never estimated from part of the data.` };
+    const partition = isRecord(details) && details.bound === "partitionAttempts"
+      ? ` One stored part of this period${typeof details.partition === "string" ? ` (${details.partition})` : ""} holds more attempts than a report can read exactly.` : "";
+    return { problem: "oversized", title: "This report is too large to compute exactly", message: `Narrow the date range or choose a device.${limit}${partition} Totals are never estimated from part of the data.` };
   }
   if (code === "failed-precondition" || code === "aborted") {
     return subject === "rename"

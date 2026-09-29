@@ -102,6 +102,13 @@ describe("transfer paging after the list changed (D-26 A)", () => {
     expect(other).toContain("The transfers above are kept.");
   });
 
+  it("says Device not yet reported when only runs or uploads have arrived (D-31 F6)", () => {
+    const raw = previewAttempt(ATTEMPT_IDS[0]);
+    const html = renderToStaticMarkup(<AttemptDetailView detail={parseAttemptDetail({ ...raw, attempt: null })} timeZone={ZONE} />);
+    expect(html).toContain("Device not yet reported");
+    expect(html).not.toContain("Unknown device");
+  });
+
   it("names the other install that processed a retry", () => {
     expect(render(1)).toContain("a different install (6db25a74)");
   });
