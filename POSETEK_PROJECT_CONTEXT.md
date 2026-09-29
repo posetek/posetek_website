@@ -4,6 +4,16 @@ Reviewed on September 26, 2026. This guide summarizes the available repository a
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
+## Device performance plan handoff (2026-09-29, not started)
+
+Plan 07 of the mobile processing-performance series adds phone timing/upload
+measurements and an admin **Device performance** tab. Its website half is
+ingestion, projection and read functions, the `/admin/device-performance` routes,
+indexes and rules tests against the canonical mobile rules. Implementation was
+authorized on 2026-09-29 and has not started; nothing is deployed. Read
+[the handoff](docs/DEVICE_PERFORMANCE_PLAN_HANDOFF.md); the canonical plan is in
+`PoseTek-mobile-app/docs/plans/`. This does not change the recorded production release.
+
 ## Email-free staff and administrator access (2026-09-26)
 
 Website deployment `6ab8679ccbfca079f8997124`, from source
@@ -1198,6 +1208,8 @@ Initial preparation verification (before the scrolling update):
 9. `docs/FEED_SOURCE_HANDOFF.md`, `app/src/pages/feed/PROVENANCE.md`, and
    `functions/SOCIAL_RECOVERY.md`: recovered feed stack, setup, contracts and
    source provenance. This source handoff is not a production release.
+10. `docs/DEVICE_PERFORMANCE_PLAN_HANDOFF.md`: plan-07 device-performance scope for
+    this repository (not started); the canonical plan in the mobile repository wins.
 
 Earlier September 9 integration notes describe a unified build with no homepage
 bridge; the later homepage release notes and current build script supersede
