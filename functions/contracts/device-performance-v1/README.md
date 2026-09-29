@@ -6,8 +6,8 @@ metric and limit is defined in
 [docs/plans/PROCESSING_PERF_CONTRACTS_V1.md §8](../../../docs/plans/PROCESSING_PERF_CONTRACTS_V1.md#8-device-performance-schema-v1-plan-07-4).
 This directory defines its shape.
 
-**Status:** frozen v1 — 2026-09-29. Review fixes F1–F16 are applied; a delta re-review is pending. Nothing
-implements the schema yet.
+**Status:** frozen v1.1 — 2026-09-29 (R1+R2 approved; amendments N1–N8 applied). The v1.1 amendments changed no
+schema or fixture bytes. Nothing implements the schema yet.
 
 ## Files
 

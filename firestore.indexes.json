@@ -283,7 +283,104 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "partitionManifests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "installKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dayKey",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "partitionManifests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "executorInstalls",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "dayKey",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "partitionManifests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "installKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "maxReceiptMillis",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "partitionManifests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "executorInstalls",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "maxReceiptMillis",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "devicePerformanceAttempts",
+      "fieldPath": "record",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "devicePerformanceRuns",
+      "fieldPath": "record",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "devicePerformanceUploadGroups",
+      "fieldPath": "record",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "devicePerformanceTransfers",
+      "fieldPath": "record",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "devicePerformanceDevices",
+      "fieldPath": "record",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "projectionPages",
+      "fieldPath": "rows",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "partitionManifests",
+      "fieldPath": "generation",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "partitionManifests",
+      "fieldPath": "retired",
+      "indexes": []
+    }
+  ]
 }
