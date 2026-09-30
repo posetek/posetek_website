@@ -58,7 +58,7 @@ declared in root `firestore.indexes.json`; do not deploy or delete unrelated ind
    original actor isolation, direct-client denial, protected evidence, duplicate
    events, recurrence, status changes and the scheduled summary. A synthetic
    Crashlytics payload tests the adapter, not a device/export integration.
-5. Build with Node 22.19+ in the Node 22 line and `VITE_RELEASE_SHA` set to the
+5. Build with Node 22.19+ in the Node 22 line and `PUBLIC_RELEASE_SHA` set to the
    committed source. Use `scripts/build-astro-release.mjs`, then retain the exact
    verified predecessor Players and Coaches HTML for this application-only change.
    Existing assets remain content-addressed and checksum protected.

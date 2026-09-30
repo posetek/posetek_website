@@ -65,7 +65,7 @@ export async function drainIssues() {
 export function issueInput(operation: string, code: string): IssueInput {
   if (!session) session = crypto.randomUUID();
   return { eventId: crypto.randomUUID(), sessionId: session, kind: "error", platform: "web", operation, code,
-    occurredAtMillis: Date.now(), build: import.meta.env.VITE_RELEASE_SHA || "development", device: navigator.userAgent.slice(0, 180), route: location.pathname };
+    occurredAtMillis: Date.now(), build: import.meta.env.PUBLIC_RELEASE_SHA || import.meta.env.VITE_RELEASE_SHA || "unknown", device: navigator.userAgent.slice(0, 180), route: location.pathname };
 }
 export async function queueIssue(input: IssueInput, owner: string | null = currentOwner()) {
   const all = await records();
