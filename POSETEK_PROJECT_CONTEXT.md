@@ -4,6 +4,17 @@ Reviewed on September 29, 2026. This guide summarizes the available repository a
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
+## User issue alerts (2026-09-30)
+
+The user approved a separate crash/bug notification workflow to `dylank@posetek.net`,
+with a report form, private admin inbox, per-user incident emails, status changes
+and a 9 AM Pacific summary. Backend functions and synthetic delivery acceptance
+are implemented; website publication and activation are recorded in the release
+receipt when completed. Read [USER_ISSUE_ALERTS.md](docs/USER_ISSUE_ALERTS.md) and
+[the scoped release guide](deployments/user-issues/README.md). The native source
+candidate is separate and unverified on Mac/iPhone/TestFlight. Crashlytics export
+has not yet been verified; a synthetic adapter test is not device acceptance.
+
 ## Coach percentile presentation (2026-09-29, live)
 
 Coach percentile presentation is live as deployment `6abb9f1e6c2c84772de67005`, source

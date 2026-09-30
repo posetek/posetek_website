@@ -3,6 +3,10 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
+User crash/bug reporting, the protected issue inbox and email operations are
+documented in [User issue alerts](docs/USER_ISSUE_ALERTS.md). Native rollout and
+Crashlytics export verification have separate acceptance gates.
+
 The unified coach workspace and Astro build are documented in
 [the implementation handoff](docs/UNIFIED_COACH_WORKSPACE.md). Team Insights owns
 the coach roster, progress, player details and embedded Community. Astro builds

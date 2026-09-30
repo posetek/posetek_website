@@ -3,7 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "engines": { "node": ">=22.19.0" },
+  "engines": {
+    "node": ">=22.19.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && astro build",
@@ -45,6 +47,7 @@
     "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "^6.0.4",
     "astro": "7.3.5",
+    "fake-indexeddb": "^6.2.5",
     "oxlint": "^1.75.0",
     "playwright": "^1.63.0",
     "sass": "^1.103.1",
