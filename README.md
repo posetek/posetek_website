@@ -3,8 +3,10 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
-User crash/bug reporting, the protected issue inbox and email operations are
-documented in [User issue alerts](docs/USER_ISSUE_ALERTS.md). Native rollout and
+User crash/bug alerts and the private admin inbox are live as deployment
+`6abd8f957e046e8059376091` (source `e8de8d7`). All 1389 artifact files match
+production; the baseline protects 1387 application/public files.
+See [the production receipt](deployment/USER_ISSUE_ALERTS_PRODUCTION.json) and [User issue alerts](docs/USER_ISSUE_ALERTS.md). Native rollout and
 Crashlytics export verification have separate acceptance gates.
 
 The unified coach workspace and Astro build are documented in
@@ -14,7 +16,7 @@ the three public/application entries while retaining existing React and Svelte
 interactions. Use `node scripts/build-astro-release.mjs` for a deliberate
 application release; ordinary builds retain the protected live application.
 
-Coach percentile presentation is live as deployment `6abb9f1e6c2c84772de67005`, source
+The preceding coach percentile presentation release is deployment `6abb9f1e6c2c84772de67005`, source
 `684528b`, published September 29, 2026 at 4:25:34 AM PDT. The card pairs a compact
 radar with readable skill positions, measured-player counts and concise scale
 explanations. Phone layouts show skill positions first. Scoring and access are

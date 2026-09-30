@@ -30,7 +30,7 @@ describes the console step and possible export delays. Lack of events alone does
 not prove that a link is disabled. Unknown interrupted sessions are labeled with
 an unknown cause, never asserted to be crashes or memory exhaustion.
 
-Native candidate `89075d9` is on
+Native candidate `0f0d876` is on
 [`worktree-user-issue-alerts`](https://github.com/posetek/posetek-mobile-app/tree/worktree-user-issue-alerts).
 It adds the original Auth UID to Crashlytics context and a durable, account-bound
 manual-report queue with optional screenshots. It has **not** been compiled or
@@ -118,5 +118,5 @@ new receipts preserve the original occurrence time. There is no historical scan.
 Disable intake and sending to stop the feature, or only sending to retain intake.
 Never replay delivered jobs or blindly reset uncertain provider attempts.
 
-See [the scoped release guide](../deployments/user-issues/README.md). The production
-receipt records the actual activation and website deployment when published.
+See [the scoped release guide](../deployments/user-issues/README.md). The [production receipt](../deployment/USER_ISSUE_ALERTS_PRODUCTION.json) records
+the verified website deployment, activation, delivery acceptance and remaining native gates.

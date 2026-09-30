@@ -1,6 +1,6 @@
 # PoseTek website project context
 
-Reviewed on September 29, 2026. This guide summarizes the available repository and
+Reviewed on September 30, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
@@ -8,9 +8,13 @@ business document is included.
 
 The user approved a separate crash/bug notification workflow to `dylank@posetek.net`,
 with a report form, private admin inbox, per-user incident emails, status changes
-and a 9 AM Pacific summary. Backend functions and synthetic delivery acceptance
-are implemented; website publication and activation are recorded in the release
-receipt when completed. Read [USER_ISSUE_ALERTS.md](docs/USER_ISSUE_ALERTS.md) and
+and a 9 AM Pacific summary. Website and backend alerts are live as deployment `6abd8f957e046e8059376091`,
+source `e8de8d7`, published 9/30/2026, 3:41:20 PM PDT. All-user intake and delivery
+were enabled at 2026-09-30T22:42:51.312Z. Eight synthetic emails received signed
+delivery confirmations; test accounts and issue fixtures were removed. The baseline
+protects 1387 files; all 1389 artifact files match production.
+Players and Coaches marketing bytes are unchanged. See
+[the production receipt](deployment/USER_ISSUE_ALERTS_PRODUCTION.json). Read [USER_ISSUE_ALERTS.md](docs/USER_ISSUE_ALERTS.md) and
 [the scoped release guide](deployments/user-issues/README.md). The native source
 candidate is separate and unverified on Mac/iPhone/TestFlight. Crashlytics export
 has not yet been verified; a synthetic adapter test is not device acceptance.
