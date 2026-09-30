@@ -17,6 +17,10 @@ request mode is the stated draft assumption pending any further direction.
 Implementation alone does not publish the page or enable the new endpoint.
 Production release and actual inbox delivery must be recorded separately.
 
+Hosted visual review: [booking preview](https://6abd91acecc808d00c96c686--posetek.netlify.app/bookperformancetest).
+The preview is not an active booking service. Its exact artifact and verification
+receipt are recorded in `deployment/BOOKING_REFRESH_PREVIEW.json`.
+
 The September 30 user-issue alert release went live during this work. Its committed
 source and reconciled baseline were merged into the booking branch, and the exact
 matching release artifact was used for composition. The booking candidate is based
