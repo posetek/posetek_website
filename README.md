@@ -194,6 +194,7 @@ use committed source and do not require the reference capture.
 | Astro Coaches entry | `app/astro/pages/coaches/index.astro` |
 | Astro application entry and bootstrap | `app/astro/pages/application.astro`, `app/src/astro/ApplicationRoot.tsx` |
 | Shared public audience navigation | `app/src/pages/home/MarketingHeader.tsx` |
+| Performance test request page (review candidate) | `bookPerformanceTest.html`; [booking handoff](docs/PERFORMANCE_TEST_BOOKING.md) |
 | Application routes and screens | `app/src/App.tsx`, `app/src/pages/` |
 | Backend functions | `functions/` |
 | Feed frontend, API contracts and provenance | `app/src/pages/feed/` |

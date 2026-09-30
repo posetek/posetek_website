@@ -68,3 +68,37 @@ test('marketing preview keeps coaches routes separate and serves seekable drill 
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test('booking preview selects edited source or exact release for every booking alias', async () => {
+  const directory = await mkdtemp(join(resolve(tmpdir()), 'posetek-booking-preview-'));
+  const put = async (file, value) => { const target = join(directory, file); await mkdir(dirname(target), { recursive: true }); await writeFile(target, value); };
+  const referenceRoot = join(directory, 'reference'), sourceRoot = join(directory, 'source');
+  let server;
+  try {
+    await put('reference/application.html', 'Preserved application');
+    await put('reference/bookPerformanceTest.html', 'Old booking');
+    await put('source/bookPerformanceTest.html', 'Edited booking');
+    await put('release/bookperformancetest.html', 'Exact composed booking');
+    for (const [bookingRoot, bookingPath, expected] of [
+      [sourceRoot, '/bookPerformanceTest.html', 'Edited booking'],
+      [join(directory, 'release'), '/bookperformancetest.html', 'Exact composed booking'],
+    ]) {
+      server = createHomepagePreviewServer({ marketingRoot: referenceRoot, referenceRoot, bookingRoot, bookingPath });
+      server.listen(0, '127.0.0.1'); await once(server, 'listening');
+      const base = 'http://127.0.0.1:' + server.address().port;
+      for (const route of ['/bookPerformanceTest.html', '/bookperformancetest.html', '/bookPerformanceTest', '/bookperformancetest', '/bookperformancetest/']) {
+        const response = await fetch(base + route);
+        assert.equal(response.status, 200, route); assert.equal(await response.text(), expected, route);
+      }
+      assert.equal(await (await fetch(base + '/signin')).text(), 'Preserved application');
+      await new Promise(done => server.close(done)); server = undefined;
+    }
+    server = createHomepagePreviewServer({ referenceRoot, bookingRoot: join(directory, 'missing') });
+    server.listen(0, '127.0.0.1'); await once(server, 'listening');
+    assert.equal((await fetch('http://127.0.0.1:' + server.address().port + '/bookPerformanceTest.html')).status, 404);
+  } finally {
+    if (server) await new Promise(done => server.close(done));
+    assert.equal(dirname(directory), resolve(tmpdir())); assert.ok(basename(directory).startsWith('posetek-booking-preview-'));
+    await rm(directory, { recursive: true, force: true });
+  }
+});

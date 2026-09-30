@@ -1,807 +1,222 @@
 <!DOCTYPE html>
+<!-- posetek-booking-entry -->
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <link rel="icon" type="image/svg+xml" href="/images/logo.svg">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script type="text/javascript">
-    (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-    })(window, document, "clarity", "script", "w8lex8gzl7");
-    </script>
-    <title>Book a Performance Test — PoseTek</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --white: #ffffff;
-            --off-white: #f7f8f6;
-            --green-dark: #1a3a2e;
-            --green-mid: #2d5e4a;
-            --green-accent: #4c8c6a;
-            --green-light: #e8f3ee;
-            --text-dark: #111111;
-            --text-mid: #444444;
-            --error: #b33a3a;
-            --transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            color: var(--text-dark);
-            background: linear-gradient(165deg, var(--white) 40%, var(--green-light) 100%);
-            min-height: 100vh;
-            line-height: 1.5;
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 5%;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(26, 58, 46, 0.08);
-            position: sticky;
-            top: 0;
-            z-index: 50;
-        }
-
-        .logo {
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: var(--green-dark);
-            text-decoration: none;
-            letter-spacing: -0.5px;
-        }
-
-        .logo span { color: var(--green-accent); }
-
-        .back-link {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--green-dark);
-            text-decoration: none;
-        }
-
-        .back-link:hover { color: var(--green-mid); }
-
-        main {
-            max-width: 520px;
-            margin: 0 auto;
-            padding: 2rem 1.25rem 4rem;
-        }
-
-        .page-intro {
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-
-        .page-intro .eyebrow {
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: var(--green-accent);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 0.5rem;
-        }
-
-        .page-intro h1 {
-            font-size: 1.65rem;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            margin-bottom: 0.5rem;
-            color: var(--text-dark);
-        }
-
-        .page-intro p {
-            font-size: 0.95rem;
-            color: var(--text-mid);
-        }
-
-        .form-card {
-            background: var(--white);
-            border-radius: 20px;
-            border: 1px solid rgba(26, 58, 46, 0.1);
-            box-shadow: 0 12px 40px rgba(26, 58, 46, 0.08);
-            overflow: hidden;
-        }
-
-        .form-section {
-            padding: 1.5rem 1.5rem;
-            border-bottom: 1px solid rgba(26, 58, 46, 0.08);
-        }
-
-        .form-section:last-of-type { border-bottom: none; }
-
-        .form-section h2 {
-            font-size: 0.78rem;
-            font-weight: 700;
-            color: var(--green-accent);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 1rem;
-        }
-
-        .calendar-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.75rem;
-        }
-
-        .calendar-nav button {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            border: 1px solid rgba(26, 58, 46, 0.12);
-            background: var(--off-white);
-            cursor: pointer;
-            font-size: 1rem;
-            color: var(--green-dark);
-            transition: var(--transition);
-        }
-
-        .calendar-nav button:hover {
-            background: var(--green-light);
-            border-color: var(--green-accent);
-        }
-
-        .calendar-nav button:focus-visible {
-            outline: 2px solid var(--green-accent);
-            outline-offset: 2px;
-        }
-
-        #calendarMonthLabel {
-            font-weight: 600;
-            font-size: 1rem;
-            color: var(--text-dark);
-        }
-
-        .calendar-weekdays {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
-            margin-bottom: 6px;
-            font-size: 0.68rem;
-            font-weight: 600;
-            color: var(--text-mid);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            text-align: center;
-        }
-
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
-        }
-
-        .calendar-grid button {
-            aspect-ratio: 1;
-            max-height: 44px;
-            border-radius: 10px;
-            border: 1px solid transparent;
-            background: var(--off-white);
-            font-family: inherit;
-            font-size: 0.88rem;
-            font-weight: 500;
-            color: var(--text-dark);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .calendar-grid button:hover:not(:disabled) {
-            background: var(--green-light);
-            border-color: rgba(76, 140, 106, 0.35);
-        }
-
-        .calendar-grid button.other-month {
-            color: #aaa;
-            background: transparent;
-            cursor: default;
-        }
-
-        .calendar-grid button.today {
-            border-color: var(--green-accent);
-        }
-
-        .calendar-grid button.selected {
-            background: var(--green-dark);
-            color: var(--white);
-            font-weight: 600;
-        }
-
-        .calendar-grid button:disabled {
-            opacity: 0.35;
-            cursor: not-allowed;
-        }
-
-        .selected-date-readout {
-            margin-top: 0.85rem;
-            font-size: 0.88rem;
-            color: var(--text-mid);
-        }
-
-        .selected-date-readout strong {
-            color: var(--green-dark);
-        }
-
-        label {
-            display: block;
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: var(--text-dark);
-            margin-bottom: 0.4rem;
-        }
-
-        .field { margin-bottom: 1rem; }
-
-        .field:last-child { margin-bottom: 0; }
-
-        select, input[type="text"], input[type="email"], input[type="tel"] {
-            width: 100%;
-            padding: 0.75rem 0.9rem;
-            font-size: 1rem;
-            font-family: inherit;
-            border: 1px solid rgba(26, 58, 46, 0.15);
-            border-radius: 12px;
-            background: var(--white);
-            color: var(--text-dark);
-            transition: var(--transition);
-        }
-
-        select {
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231a3a2e' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 14px center;
-            padding-right: 2.5rem;
-        }
-
-        select:focus, input:focus {
-            outline: none;
-            border-color: var(--green-accent);
-            box-shadow: 0 0 0 3px rgba(76, 140, 106, 0.2);
-        }
-
-        .row-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-        }
-
-        @media (max-width: 480px) {
-            .row-2 { grid-template-columns: 1fr; }
-        }
-
-        .payment-note {
-            font-size: 0.78rem;
-            color: var(--text-mid);
-            margin-top: 0.5rem;
-            line-height: 1.45;
-        }
-
-        .payment-price {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--green-dark);
-            margin-bottom: 0.75rem;
-        }
-
-        .payment-hint {
-            font-size: 0.85rem;
-            color: var(--text-mid);
-            margin-bottom: 0.75rem;
-            line-height: 1.45;
-        }
-
-        .payment-element-wrap {
-            min-height: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
-        #payment-element {
-            margin-bottom: 0.25rem;
-        }
-
-        #stripePaymentError {
-            margin-top: 0.35rem;
-        }
-
-        .booking-sealed .booking-sealable {
-            pointer-events: none;
-            opacity: 0.72;
-        }
-
-        .submit-wrap {
-            padding: 0 1.5rem 1.5rem;
-        }
-
-        .btn-submit {
-            width: 100%;
-            padding: 0.95rem 1.5rem;
-            font-size: 1rem;
-            font-weight: 600;
-            font-family: inherit;
-            color: var(--white);
-            background: var(--green-dark);
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: var(--transition);
-            box-shadow: 0 4px 20px rgba(26, 58, 46, 0.25);
-        }
-
-        .btn-submit:hover:not(:disabled) {
-            background: var(--green-mid);
-            transform: translateY(-1px);
-        }
-
-        .btn-submit:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
-        }
-
-        .error-msg {
-            font-size: 0.8rem;
-            color: var(--error);
-            margin-top: 0.35rem;
-            display: none;
-        }
-
-        .error-msg.visible { display: block; }
-
-        .field.has-error input,
-        .field.has-error select {
-            border-color: var(--error);
-        }
-
-        #successPanel {
-            display: none;
-            text-align: center;
-            padding: 3rem 1.5rem;
-        }
-
-        #successPanel.visible { display: block; }
-
-        #bookingForm.hidden { display: none; }
-
-        .success-icon {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 1rem;
-            background: var(--green-light);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.75rem;
-        }
-
-        #successPanel h2 {
-            font-size: 1.35rem;
-            margin-bottom: 0.5rem;
-            color: var(--text-dark);
-        }
-
-        #successPanel p {
-            color: var(--text-mid);
-            font-size: 0.95rem;
-            margin-bottom: 1.5rem;
-        }
-
-        #successPanel a {
-            color: var(--green-dark);
-            font-weight: 600;
-        }
-
-        footer {
-            text-align: center;
-            padding: 2rem;
-            font-size: 0.82rem;
-            color: var(--text-mid);
-        }
-
-        footer a { color: var(--green-accent); }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#04130e">
+  <meta name="description" content="Request a PoseTek performance test for a player, team or club. Share your preferred date and time, and we’ll confirm the details with you.">
+  <title>Book a Performance Test — PoseTek</title>
+  <script type="text/javascript">
+    (function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","w8lex8gzl7");
+  </script>
+  <link rel="icon" type="image/svg+xml" href="/images/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root{color-scheme:dark;--ink:#f0f5ed;--muted:#a9bdb1;--lime:#b7f34a;--line:#254036;--panel:#0a211a;--error:#ffb4a9}
+    *,*::before,*::after{box-sizing:border-box}body{margin:0;background:#04130e;color:var(--ink);font:14px/1.6 Inter,Arial,sans-serif}a{color:inherit;text-decoration:none}button,input,select,textarea{font:inherit}button,a,input,select,textarea{-webkit-tap-highlight-color:#b7f34a22}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--lime);outline-offset:4px}button{cursor:pointer}h1,h2,h3,p{margin:0}[hidden]{display:none!important}.shell{width:min(1240px,calc(100% - 96px));margin-inline:auto}.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.skip-link{position:fixed;top:-100px;left:20px;z-index:200;background:var(--lime);color:#04130e;padding:12px 20px}.skip-link:focus{top:10px}
+    .site-header{border-bottom:1px solid var(--line);background:#04130e}.nav-shell{min-height:82px;display:flex;align-items:center;gap:24px}.brand{display:inline-flex;align-items:center;gap:11px;font-size:16px;font-weight:900;letter-spacing:.08em;flex-shrink:0}.brand-mark{position:relative;display:grid;place-items:center;width:34px;height:34px;border-radius:3px;background:var(--lime);color:#082015;font-size:23px;line-height:1}.brand-mark span{position:absolute;right:-3px;bottom:-3px;width:8px;height:8px;background:#04130e}.audience-switch{display:flex;padding:3px;border:1px solid var(--line);border-radius:6px;background:#071b13}.audience-switch a{display:flex;align-items:center;min-height:38px;padding:0 14px;font-size:11px;font-weight:600;color:var(--muted);border-radius:3px}.audience-switch a:hover{background:#ffffff09;color:var(--ink)}.back-link{margin-left:auto;font-size:12px;color:var(--muted)}.back-link span{margin-left:10px;color:var(--lime)}.signin{display:flex;align-items:center;gap:16px;border:1px solid #416147;border-radius:4px;min-height:40px;padding:0 15px;font-size:12px;font-weight:600}.signin:hover,.back-link:hover{color:var(--lime)}
+    .booking-layout{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:80px;align-items:start;padding-block:64px 80px}.intro{padding-top:12px}.eyebrow,.small-label{font:500 10px/1.7 'IBM Plex Mono',monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--lime)}.intro>.eyebrow{display:flex;align-items:center;gap:10px;margin-bottom:24px}.status-dot{width:6px;height:6px;display:inline-block;border-radius:50%;background:var(--lime)}h1,h2{font-family:'Barlow Condensed','Arial Narrow',sans-serif;text-transform:uppercase;font-weight:700;line-height:.97;letter-spacing:-.022em}h1{font-size:clamp(64px,6vw,84px)}h1 em{font-style:normal;color:var(--lime)}.intro-copy{font-size:18px;line-height:1.5;max-width:330px;margin-top:28px}.intro-detail{color:var(--muted);font-size:14px;max-width:340px;margin-top:12px;line-height:1.85}.test-overview{margin-top:38px;padding-top:26px;border-top:1px solid var(--line);max-width:370px}.overview-heading{display:flex;align-items:center;gap:18px;font-size:12px;color:var(--muted);line-height:1.6}.test-count{font:600 50px/1 'Barlow Condensed',sans-serif;color:var(--lime)}.test-list{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;list-style:none;padding:0;margin:24px 0;font-size:12px;color:var(--muted)}.test-list li::before{content:'·';color:var(--lime);margin-right:10px}.text-link{display:inline-flex;align-items:center;gap:20px;min-height:44px;font-size:12px;font-weight:600}.text-link span{color:var(--lime)}.text-link:hover{color:var(--lime)}.contact{margin-top:32px;display:flex;flex-direction:column;gap:8px}.contact .small-label{color:var(--muted)}.contact a{display:inline-flex;align-items:center;gap:22px;min-height:30px;font-size:13px}.contact a:hover{color:var(--lime)}
+    .booking-card{min-width:0;background:var(--panel);border:1px solid #355041;border-radius:10px;overflow:hidden}.card-heading{padding:30px 32px 26px;border-bottom:1px solid var(--line)}.card-heading .eyebrow{margin-bottom:12px}.card-heading h2{font-size:42px}.card-heading>p:last-child{margin-top:14px;max-width:440px;color:var(--muted);font-size:13px;line-height:1.8}fieldset{border:0;margin:0;padding:0;min-width:0}.form-section{padding:24px 32px;border-bottom:1px solid var(--line)}h3{display:flex;align-items:center;gap:12px;font-size:13px;font-weight:600;margin-bottom:18px}h3>span{font:10px 'IBM Plex Mono',monospace;color:var(--lime)}.field-row{display:grid;grid-template-columns:1fr 1fr;gap:18px}.field{min-width:0}.field+.field-row{margin-top:18px}label{display:block;font-size:11px;color:#c5d3c9;margin-bottom:8px;font-weight:500}label>span:not(.optional){color:var(--lime)}.optional{color:var(--muted);font-size:10px;font-weight:400;margin-left:7px}input,select,textarea{display:block;width:100%;min-width:0;border:1px solid #3b5748;border-radius:5px;background:#061810;color:var(--ink);padding:11px 12px;min-height:46px;font-size:13px;transition:border-color .15s}select{padding-right:26px}textarea{resize:vertical;min-height:94px;max-height:360px}input:hover,select:hover,textarea:hover{border-color:#709275}input::placeholder,textarea::placeholder{color:#8fa899;opacity:1}input[aria-invalid=true]{border-color:var(--error)}input[type=date]{appearance:none;-webkit-appearance:none;min-height:46px}input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.85}.field-hint{font-size:11px;line-height:1.7;color:var(--muted);margin-top:12px}.field-error{color:var(--error);font-size:11px;margin-top:8px}.honeypot{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}.submit-area{padding:26px 32px 28px}.button-primary{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:52px;width:100%;border:0;border-radius:5px;background:var(--lime);color:#102015;padding:0 18px;font-weight:700;font-size:13px;transition:background .15s}.button-primary:hover:not(:disabled){background:#d0ff73}.button-primary span{font-size:22px;font-weight:400}.button-primary:disabled{opacity:.65;cursor:wait}.submit-note{font-size:11px;line-height:1.9;color:var(--muted);margin-top:16px}.submit-note a,.privacy-note a,.no-script a{text-decoration:underline;text-underline-offset:3px}.privacy-note{color:#8fa899;font-size:10px;margin-top:12px}.submission-error{padding:14px;border:1px solid #805447;border-radius:5px;background:#3b251f;color:#ffcdc4;line-height:1.7;font-size:12px;margin-bottom:16px}.submit-area>.field-hint{margin:0 0 14px}.success-panel{padding:44px 32px 48px}.success-icon{display:grid;place-items:center;width:48px;height:48px;border:1px solid #698c44;border-radius:50%;color:var(--lime);font-size:24px;margin-bottom:32px}.success-panel h2{font-size:48px;margin:12px 0 24px}.success-panel>p:not(.eyebrow){color:var(--muted);font-size:14px;line-height:1.9;margin-top:14px}.success-panel .request-reference{font:10px/1.8 'IBM Plex Mono',monospace;overflow-wrap:anywhere}.success-panel .button-primary{margin-top:32px}.no-script{padding:30px;color:var(--muted)}.site-footer{display:flex;align-items:center;justify-content:space-between;gap:24px;border-top:1px solid var(--line);padding-block:26px 34px;color:#91aa9b;font-size:11px}.site-footer a:hover{color:var(--lime)}
+    @media(max-width:1100px){.booking-layout{gap:40px;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr)}.shell{width:calc(100% - 64px)}.field-row{gap:12px}.card-heading,.form-section,.submit-area{padding-inline:24px}h1{font-size:68px}}
+    @media(max-width:800px){.booking-layout{grid-template-columns:1fr;gap:36px;padding-block:36px 48px;max-width:620px}.intro{padding-top:0}.intro h1 br{display:none}.intro h1 br::after{content:' '}.intro h1{font-size:64px;max-width:480px}.intro h1 em{display:block}.intro h1{word-spacing:.04em}.intro h1 br{display:inline}.intro h1 br:nth-of-type(1){display:none}.intro h1 br:nth-of-type(1)::after{content:' '}.intro-copy{max-width:none;margin-top:20px;font-size:16px}.intro-detail{max-width:480px}.test-overview{display:none}.contact{margin-top:18px;flex-direction:row;align-items:center;gap:16px;flex-wrap:wrap}.back-link{display:none}.signin{margin-left:auto}.nav-shell{gap:18px}.site-footer p{display:none}}
+    @media(max-width:480px){.shell{width:calc(100% - 36px)}.nav-shell{min-height:70px;gap:14px}.brand-wordmark{display:none}.audience-switch a{padding-inline:11px;min-height:36px}.signin{padding-inline:11px;min-height:40px}.signin span{display:none}.booking-layout{padding-top:28px;gap:28px}h1,.intro h1{font-size:58px}.intro>.eyebrow{margin-bottom:18px}.intro h1 br:nth-of-type(1){display:block}.intro-detail{font-size:13px}.card-heading,.form-section,.submit-area{padding:22px 20px}.card-heading h2{font-size:38px}.field-row{grid-template-columns:1fr;gap:18px}input,select,textarea{font-size:16px}.success-panel{padding:32px 22px}.success-panel h2{font-size:42px}.contact{gap:4px 14px}.site-footer{padding-block:22px}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
+  </style>
 </head>
 <body>
-    <header>
-        <a href="performanceTesting.html" class="logo">Pose<span>Tek</span></a>
-        <a href="performanceTesting.html" class="back-link">← Back</a>
-    </header>
-
-    <main>
-        <div class="page-intro" id="pageIntro">
-            <p class="eyebrow">Performance testing</p>
-            <h1>Book your time slot</h1>
-            <p>Pick a date, choose a time, and complete your details to reserve your 10-minute diagnostic.</p>
-        </div>
-
-        <div class="form-card" id="bookingCard">
-            <form id="bookingForm" novalidate>
-                <input type="hidden" name="appointmentDate" id="appointmentDate" value="">
-
-                <div class="form-section booking-sealable">
-                    <h2>Select a date</h2>
-                    <div class="calendar-nav" aria-label="Calendar month">
-                        <button type="button" id="calPrev" aria-label="Previous month">‹</button>
-                        <span id="calendarMonthLabel" role="status"></span>
-                        <button type="button" id="calNext" aria-label="Next month">›</button>
-                    </div>
-                    <div class="calendar-weekdays" aria-hidden="true">
-                        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-                    </div>
-                    <div class="calendar-grid" id="calendarGrid" role="grid" aria-label="Calendar dates"></div>
-                    <p class="selected-date-readout" id="dateReadout">Select a day to continue.</p>
-                    <p class="error-msg" id="dateError" style="margin-top: 0.5rem;">Please select a date from the calendar.</p>
-                </div>
-
-                <div class="form-section booking-sealable">
-                    <h2>Time slot</h2>
-                    <div class="field" id="timeField">
-                        <label for="timeSlot">Available times</label>
-                        <select id="timeSlot" name="timeSlot" required disabled>
-                            <option value="">First select a date above</option>
-                        </select>
-                        <p class="error-msg" id="timeError">Please choose a time slot.</p>
-                    </div>
-                </div>
-
-                <div class="form-section booking-sealable">
-                    <h2>Your details</h2>
-                    <div class="field" id="nameField">
-                        <label for="fullName">Full name <span aria-hidden="true">*</span></label>
-                        <input type="text" id="fullName" name="fullName" autocomplete="name" required placeholder="Jordan Smith">
-                        <p class="error-msg" id="nameError">Please enter your name.</p>
-                    </div>
-                    <div class="field" id="emailField">
-                        <label for="email">Email <span aria-hidden="true">*</span></label>
-                        <input type="email" id="email" name="email" autocomplete="email" required placeholder="you@example.com">
-                        <p class="error-msg" id="emailError">Please enter a valid email.</p>
-                    </div>
-                </div>
-
-                <div class="form-section" id="paymentSection">
-                    <h2>Payment</h2>
-                    <p class="payment-price" id="paymentPriceLine" aria-live="polite"></p>
-                    <p class="payment-hint" id="paymentHint">Fill in your booking details above, then use the button below to load Stripe’s secure card form. Your card number never touches PoseTek.</p>
-                    <div id="payment-element" class="payment-element-wrap" role="region" aria-label="Secure card payment"></div>
-                    <p class="error-msg" id="stripePaymentError"></p>
-                    <p class="payment-note">Payments are processed by <a href="https://stripe.com" target="_blank" rel="noopener">Stripe</a>. Card details stay on Stripe’s systems — we never store your full card number.</p>
-                </div>
-
-                <div class="submit-wrap">
-                    <button type="submit" class="btn-submit" id="submitBtn">Continue to secure payment</button>
-                </div>
-            </form>
-
-            <div id="successPanel">
-                <div class="success-icon" aria-hidden="true">✓</div>
-                <h2>You're booked</h2>
-                <p id="successSummary">We'll send a confirmation email with location details and what to bring.</p>
-                <p><a href="performanceTesting.html">← Back to performance testing</a></p>
+  <a class="skip-link" href="#main-content">Skip to booking</a>
+  <header class="site-header">
+    <nav class="shell nav-shell" aria-label="Primary navigation">
+      <a class="brand" href="/" aria-label="PoseTek home"><span class="brand-mark" aria-hidden="true">P<span></span></span><span class="brand-wordmark">POSETEK</span></a>
+      <div class="audience-switch" aria-label="Explore PoseTek for"><a href="/">Players</a><a href="/coaches">Coaches</a></div>
+      <a class="back-link" href="/#tests">Explore the tests <span aria-hidden="true">↗</span></a>
+      <a class="signin" href="/signin">Sign in <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+  <main id="main-content" class="shell booking-layout">
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> Performance testing</p>
+      <h1 id="page-title">Book a <br>performance <br><em>test.</em></h1>
+      <p class="intro-copy">Start with evidence. Find your next training focus.</p>
+      <p class="intro-detail">For a player, a team, or a whole club. Tell us what you have in mind and when works for you.</p>
+      <div class="test-overview">
+        <div class="overview-heading"><span class="test-count">06</span><span>Tests.<br>One connected picture.</span></div>
+        <ul class="test-list"><li>Sprint</li><li>Vertical jump</li><li>Broad jump</li><li>Dribbling</li><li>Change of direction</li><li>Shooting</li></ul>
+        <a href="/#tests" class="text-link">See what we measure <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="contact"><span class="small-label">Have a question?</span><a href="mailto:dylank@posetek.net">dylank@posetek.net <span aria-hidden="true">↗</span></a></div>
+    </section>
+    <section class="booking-card" aria-labelledby="form-title">
+      <div class="card-heading"><p class="eyebrow">Your next step</p><h2 id="form-title">Let’s find a time.</h2><p>Send your preferences. We’ll confirm the date, location and session details with you.</p></div>
+      <form id="bookingForm" novalidate>
+        <fieldset id="bookingFields">
+          <legend class="sr-only">Performance test request</legend>
+          <section class="form-section" aria-labelledby="session-heading">
+            <h3 id="session-heading"><span>01</span> Your session</h3>
+            <div class="field"><label for="bookingType">Who is the test for?</label><select name="bookingType" id="bookingType"><option value="individual">An individual player</option><option value="team">A team or club</option><option value="other">Something else — let’s talk</option></select></div>
+            <div class="field-row">
+              <div class="field"><label for="appointmentDate">Preferred date <span aria-hidden="true">*</span></label><input type="date" id="appointmentDate" name="appointmentDate" required aria-describedby="dateError"><p class="field-error" id="dateError" hidden>Choose today or a date within the next year.</p></div>
+              <div class="field"><label for="timeSlot">Preferred time <span aria-hidden="true">*</span></label><select id="timeSlot" name="timeSlot" required><option value="flexible">I’m flexible</option></select></div>
             </div>
+            <p class="field-hint">All times are Pacific. Your selection is a preference, subject to confirmation.</p>
+          </section>
+          <section class="form-section" aria-labelledby="contact-heading">
+            <h3 id="contact-heading"><span>02</span> Your details</h3>
+            <div class="field-row">
+              <div class="field"><label for="fullName">Full name <span aria-hidden="true">*</span></label><input type="text" id="fullName" name="fullName" required maxlength="120" autocomplete="name" placeholder="Your name" aria-describedby="nameError"><p class="field-error" id="nameError" hidden>Enter your name.</p></div>
+              <div class="field"><label for="email">Email <span aria-hidden="true">*</span></label><input type="email" id="email" name="email" required maxlength="254" autocomplete="email" inputmode="email" spellcheck="false" placeholder="you@example.com" aria-describedby="emailError"><p class="field-error" id="emailError" hidden>Enter a valid email address.</p></div>
+            </div>
+          </section>
+          <section class="form-section" aria-labelledby="notes-heading">
+            <h3 id="notes-heading"><span>03</span> Anything we should know?</h3>
+            <div class="field"><label for="notes">A little context <span class="optional">Optional</span></label><textarea id="notes" name="notes" maxlength="1000" rows="3" placeholder="Your team, location, or what you’d like to focus on…"></textarea></div>
+          </section>
+          <div class="honeypot" aria-hidden="true"><label for="website">Leave this field empty</label><input id="website" name="website" autocomplete="off" tabindex="-1"></div>
+        </fieldset>
+        <div class="submit-area">
+          <div id="submissionError" class="submission-error" role="alert" tabindex="-1" hidden></div>
+          <p id="changedNotice" class="field-hint" hidden>Your details have changed. Sending again creates a new request. To avoid a duplicate, retry your original details or email us.</p>
+          <button type="submit" id="submitBtn" class="button-primary">Send booking request <span aria-hidden="true">↗</span></button>
+          <p class="submit-note">Your request goes to <a href="mailto:dylank@posetek.net">dylank@posetek.net</a>.<br>No payment is taken. Your appointment is confirmed separately.</p>
+          <p class="privacy-note">We use your details to respond to your request. <a href="/privacy">Privacy policy</a></p>
         </div>
-    </main>
-
-    <footer>
-        <p>© 2026 PoseTek · <a href="privacy.html">Privacy</a></p>
-    </footer>
-
-    <script src="https://js.stripe.com/v3/"></script>
-    <script>
-        (function () {
-            const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-            let viewYear = new Date().getFullYear();
-            let viewMonth = new Date().getMonth();
-            let selectedDate = null;
-
-            const grid = document.getElementById('calendarGrid');
-            const monthLabel = document.getElementById('calendarMonthLabel');
-            const dateReadout = document.getElementById('dateReadout');
-            const hiddenDate = document.getElementById('appointmentDate');
-            const timeSelect = document.getElementById('timeSlot');
-            const form = document.getElementById('bookingForm');
-            const successPanel = document.getElementById('successPanel');
-
-            function pad(n) { return n < 10 ? '0' + n : String(n); }
-
-            function formatReadout(d) {
-                return WEEKDAYS[d.getDay()] + ', ' + MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
-            }
-
-            function isSameDay(a, b) {
-                return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-            }
-
-            function startOfToday() {
-                const t = new Date();
-                t.setHours(0, 0, 0, 0);
-                return t;
-            }
-
-            function buildTimeOptions() {
-                timeSelect.innerHTML = '';
-                const opt0 = document.createElement('option');
-                opt0.value = '';
-                opt0.textContent = 'Choose a time';
-                timeSelect.appendChild(opt0);
-
-                for (let h = 9; h <= 17; h++) {
-                    for (let m of [0, 30]) {
-                        if (h === 17 && m > 0) continue;
-                        const label = (h % 12 || 12) + ':' + (m === 0 ? '00' : '30') + ' ' + (h < 12 ? 'AM' : 'PM');
-                        const opt = document.createElement('option');
-                        opt.value = label;
-                        opt.textContent = label;
-                        timeSelect.appendChild(opt);
-                    }
-                }
-                timeSelect.disabled = false;
-            }
-
-            function renderCalendar() {
-                monthLabel.textContent = MONTHS[viewMonth] + ' ' + viewYear;
-                grid.innerHTML = '';
-
-                const first = new Date(viewYear, viewMonth, 1);
-                const startPad = first.getDay();
-                const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-                const today = startOfToday();
-
-                const totalCells = Math.ceil((startPad + daysInMonth) / 7) * 7;
-
-                for (let i = 0; i < totalCells; i++) {
-                    const dayNum = i - startPad + 1;
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-
-                    if (dayNum < 1 || dayNum > daysInMonth) {
-                        const prevMonthDays = new Date(viewYear, viewMonth, 0).getDate();
-                        const d = dayNum < 1 ? prevMonthDays + dayNum : dayNum - daysInMonth;
-                        btn.textContent = d;
-                        btn.classList.add('other-month');
-                        btn.disabled = true;
-                        btn.setAttribute('tabindex', '-1');
-                    } else {
-                        const d = new Date(viewYear, viewMonth, dayNum);
-                        btn.textContent = dayNum;
-                        if (isSameDay(d, today)) btn.classList.add('today');
-                        if (d < today) {
-                            btn.disabled = true;
-                        } else {
-                            btn.addEventListener('click', function () {
-                                selectedDate = d;
-                                hiddenDate.value = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-                                grid.querySelectorAll('button.selected').forEach(b => b.classList.remove('selected'));
-                                btn.classList.add('selected');
-                                dateReadout.innerHTML = 'Selected: <strong>' + formatReadout(d) + '</strong>';
-                                dateReadout.style.color = '';
-                                document.getElementById('dateError').classList.remove('visible');
-                                buildTimeOptions();
-                            });
-                            if (selectedDate && isSameDay(d, selectedDate)) btn.classList.add('selected');
-                        }
-                    }
-                    grid.appendChild(btn);
-                }
-            }
-
-            document.getElementById('calPrev').addEventListener('click', function () {
-                viewMonth--;
-                if (viewMonth < 0) { viewMonth = 11; viewYear--; }
-                renderCalendar();
-            });
-
-            document.getElementById('calNext').addEventListener('click', function () {
-                viewMonth++;
-                if (viewMonth > 11) { viewMonth = 0; viewYear++; }
-                renderCalendar();
-            });
-
-            /** Replace with your Stripe publishable key (Dashboard → Developers → API keys). */
-            const STRIPE_PUBLISHABLE_KEY = 'pk_test_YOUR_PUBLISHABLE_KEY';
-            /** Deploy createPerformanceTestPaymentIntent and paste the function URL here. */
-            const CREATE_PI_URL = 'https://us-central1-YOUR_PROJECT_ID.cloudfunctions.net/createPerformanceTestPaymentIntent';
-
-            let stripeInstance = null;
-            let elements = null;
-            let paymentStepReady = false;
-            let payButtonLabel = '';
-
-            function showStripeErr(msg) {
-                const el = document.getElementById('stripePaymentError');
-                if (!el) return;
-                el.textContent = msg || '';
-                el.classList.toggle('visible', !!msg);
-            }
-
-            function sealBookingFields() {
-                form.classList.add('booking-sealed');
-            }
-
-            async function maybeHandlePaymentReturn() {
-                if (typeof Stripe === 'undefined') return false;
-                const params = new URLSearchParams(window.location.search);
-                const secret = params.get('payment_intent_client_secret');
-                if (!secret) return false;
-
-                try {
-                    const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
-                    const { paymentIntent } = await stripe.retrievePaymentIntent(secret);
-
-                    if (paymentIntent && paymentIntent.status === 'succeeded') {
-                        history.replaceState(null, '', window.location.pathname);
-                        const meta = paymentIntent.metadata || {};
-                        const email = meta.email || '';
-                        const appt = meta.appointmentDate || '';
-                        const slot = meta.timeSlot || '';
-                        let summary = "You're booked. We'll send a confirmation with location details.";
-                        if (appt && slot) {
-                            summary = appt + ' at ' + slot + '. Confirmation will be sent to ' + (email || 'your email') + '.';
-                        } else if (email) {
-                            summary = 'Confirmation will be sent to ' + email + '.';
-                        }
-                        document.getElementById('successSummary').textContent = summary;
-                        form.classList.add('hidden');
-                        document.getElementById('pageIntro').style.display = 'none';
-                        successPanel.classList.add('visible');
-                        return true;
-                    }
-
-                    history.replaceState(null, '', window.location.pathname);
-                    showStripeErr('Payment was not completed. You can try again below.');
-                } catch (err) {
-                    history.replaceState(null, '', window.location.pathname);
-                    showStripeErr('Could not verify payment status. If you were charged, contact support.');
-                }
-                return false;
-            }
-
-            function showErr(fieldId, errId, show) {
-                const field = document.getElementById(fieldId);
-                const err = document.getElementById(errId);
-                if (!field || !err) return;
-                field.classList.toggle('has-error', show);
-                err.classList.toggle('visible', show);
-            }
-
-            form.addEventListener('submit', async function (e) {
-                e.preventDefault();
-                showStripeErr('');
-
-                showErr('timeField', 'timeError', false);
-                showErr('nameField', 'nameError', false);
-                showErr('emailField', 'emailError', false);
-
-                const dateErr = document.getElementById('dateError');
-                let ok = true;
-                if (!hiddenDate.value) {
-                    dateReadout.style.color = 'var(--error)';
-                    dateErr.classList.add('visible');
-                    ok = false;
-                } else {
-                    dateReadout.style.color = '';
-                    dateErr.classList.remove('visible');
-                }
-
-                if (!timeSelect.value) {
-                    showErr('timeField', 'timeError', true);
-                    ok = false;
-                }
-
-                const name = document.getElementById('fullName').value.trim();
-                if (!name) {
-                    showErr('nameField', 'nameError', true);
-                    ok = false;
-                }
-
-                const email = document.getElementById('email').value.trim();
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                    showErr('emailField', 'emailError', true);
-                    ok = false;
-                }
-
-                if (!ok) return;
-
-                if (typeof Stripe === 'undefined') {
-                    showStripeErr('Payment system failed to load. Refresh the page and try again.');
-                    return;
-                }
-
-                if (CREATE_PI_URL.indexOf('YOUR_PROJECT_ID') !== -1 || STRIPE_PUBLISHABLE_KEY.indexOf('YOUR_PUBLISHABLE_KEY') !== -1) {
-                    showStripeErr('Stripe is not configured yet: set STRIPE_PUBLISHABLE_KEY and CREATE_PI_URL in this page, and deploy createPerformanceTestPaymentIntent.');
-                    return;
-                }
-
-                const submitBtn = document.getElementById('submitBtn');
-
-                if (!paymentStepReady) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'Loading secure form…';
-                    try {
-                        const res = await fetch(CREATE_PI_URL, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                fullName: name,
-                                email: email,
-                                appointmentDate: hiddenDate.value,
-                                timeSlot: timeSelect.value,
-                            }),
-                        });
-                        const data = await res.json().catch(function () { return {}; });
-                        if (!res.ok) {
-                            throw new Error(data.error || 'Could not start payment');
-                        }
-                        if (!data.clientSecret) {
-                            throw new Error('Invalid response from payment server');
-                        }
-
-                        stripeInstance = Stripe(STRIPE_PUBLISHABLE_KEY);
-                        elements = stripeInstance.elements({
-                            clientSecret: data.clientSecret,
-                            appearance: {
-                                theme: 'stripe',
-                                variables: {
-                                    colorPrimary: '#1a3a2e',
-                                    borderRadius: '12px',
-                                },
-                            },
-                        });
-                        const paymentElement = elements.create('payment');
-                        document.getElementById('paymentHint').style.display = 'none';
-                        paymentElement.mount('#payment-element');
-
-                        const cents = typeof data.amountCents === 'number' ? data.amountCents : 5000;
-                        const dollars = (cents / 100).toFixed(2);
-                        document.getElementById('paymentPriceLine').textContent = 'Amount due: $' + dollars + ' USD';
-
-                        paymentStepReady = true;
-                        payButtonLabel = 'Pay $' + dollars + ' — confirm booking';
-                        sealBookingFields();
-                        submitBtn.textContent = payButtonLabel;
-                        submitBtn.disabled = false;
-                    } catch (err) {
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Continue to secure payment';
-                        showStripeErr(err.message || 'Something went wrong. Please try again.');
-                    }
-                    return;
-                }
-
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Processing…';
-
-                const returnUrl = window.location.origin + window.location.pathname;
-                const { error } = await stripeInstance.confirmPayment({
-                    elements: elements,
-                    confirmParams: {
-                        return_url: returnUrl,
-                        receipt_email: email,
-                    },
-                });
-
-                if (error) {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = payButtonLabel || 'Confirm booking';
-                    showStripeErr(error.message);
-                }
-            });
-
-            (async function init() {
-                if (await maybeHandlePaymentReturn()) return;
-                renderCalendar();
-            })();
-        })();
-    </script>
+      </form>
+      <div id="successPanel" class="success-panel" hidden>
+        <span class="success-icon" aria-hidden="true">✓</span><p class="eyebrow">Next step: confirmation</p>
+        <h2 id="successTitle" tabindex="-1">Request received.</h2><p id="successSummary"></p>
+        <p>Your preferred date and time are pending confirmation. We’ll contact you to agree on the details.</p>
+        <p class="request-reference" id="requestReference"></p>
+        <a class="button-primary" href="/">Explore PoseTek <span aria-hidden="true">↗</span></a>
+      </div>
+      <noscript><div class="no-script">To request a test, email <a href="mailto:dylank@posetek.net?subject=Performance%20test%20request">dylank@posetek.net</a> with your preferred date and time. This form needs JavaScript to send.</div><style>#bookingForm{display:none}</style></noscript>
+    </section>
+  </main>
+  <footer class="shell site-footer"><span>© 2026 PoseTek</span><p>Start with evidence. Train what’s next.</p><a href="/privacy">Privacy</a></footer>
+  <script>
+  (() => {
+    'use strict';
+    const ENDPOINT = 'https://us-central1-kickai-69dd0.cloudfunctions.net/requestPerformanceTestBooking';
+    const TIMEZONE = 'America/Los_Angeles';
+    const form = document.getElementById('bookingForm');
+    const fields = document.getElementById('bookingFields');
+    const date = document.getElementById('appointmentDate');
+    const time = document.getElementById('timeSlot');
+    const name = document.getElementById('fullName');
+    const email = document.getElementById('email');
+    const button = document.getElementById('submitBtn');
+    const error = document.getElementById('submissionError');
+    const notice = document.getElementById('changedNotice');
+    let attempted = null, sending = false, retryUntil = 0, retryTimer;
+    const RETRY_STORAGE_KEY = 'posetek-booking-retry-v1';
+    async function requestIdentity(fingerprint) {
+      // Only a digest and random reference survive a reload; no form values.
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(fingerprint));
+      const hash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+      let saved;
+      try { saved = JSON.parse(sessionStorage.getItem(RETRY_STORAGE_KEY) || 'null'); } catch (_) { /* Storage may be unavailable. */ }
+      const requestId = saved?.hash === hash && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(saved.requestId)
+        ? saved.requestId : uuid();
+      try { sessionStorage.setItem(RETRY_STORAGE_KEY, JSON.stringify({ hash, requestId })); } catch (_) { /* In-memory retries remain available. */ }
+      return { fingerprint, requestId };
+    }
+    function pacificDay() {
+      const parts = new Intl.DateTimeFormat('en-US', { timeZone: TIMEZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+      return ['year', 'month', 'day'].map(type => parts.find(part => part.type === type).value).join('-');
+    }
+    function refreshDateBounds() {
+      date.min = pacificDay();
+      date.max = new Date(Date.parse(date.min + 'T00:00:00Z') + 366 * 86400000).toISOString().slice(0, 10);
+    }
+    refreshDateBounds();
+    for (let n = 0; n <= 16; n++) {
+      const hour = 9 + Math.floor(n / 2), minutes = n % 2 ? '30' : '00';
+      const option = document.createElement('option');
+      option.value = String(hour).padStart(2, '0') + ':' + minutes;
+      option.textContent = (hour % 12 || 12) + ':' + minutes + (hour < 12 ? ' AM' : ' PM');
+      time.appendChild(option);
+    }
+    function details() {
+      return { fullName: name.value.trim(), email: email.value.trim(), appointmentDate: date.value,
+        timeSlot: time.value, timezone: TIMEZONE, bookingType: document.getElementById('bookingType').value,
+        notes: document.getElementById('notes').value.trim(), website: document.getElementById('website').value };
+    }
+    function uuid() {
+      if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+      const bytes = crypto.getRandomValues(new Uint8Array(16));
+      bytes[6] = (bytes[6] & 15) | 64; bytes[8] = (bytes[8] & 63) | 128;
+      const hex = Array.from(bytes, value => value.toString(16).padStart(2, '0')).join('');
+      return hex.slice(0,8) + '-' + hex.slice(8,12) + '-' + hex.slice(12,16) + '-' + hex.slice(16,20) + '-' + hex.slice(20);
+    }
+    function setFieldError(input, id, invalid) {
+      input.setAttribute('aria-invalid', String(invalid));
+      document.getElementById(id).hidden = !invalid;
+    }
+    function updateButton() {
+      const seconds = Math.max(0, Math.ceil((retryUntil - Date.now()) / 1000));
+      button.disabled = sending || seconds > 0;
+      if (sending) button.textContent = 'Sending your request…';
+      else if (seconds) button.textContent = 'Try again in ' + seconds + 's';
+      else button.innerHTML = (attempted ? 'Try sending again' : 'Send booking request') + ' <span aria-hidden="true">↗</span>';
+      if (!seconds && retryTimer) { clearInterval(retryTimer); retryTimer = null; }
+    }
+    form.addEventListener('input', () => {
+      notice.hidden = !attempted || JSON.stringify(details()) === attempted.fingerprint;
+      if (attempted && !sending && retryUntil <= Date.now()) button.innerHTML = (notice.hidden ? 'Try sending again' : 'Send updated request') + ' <span aria-hidden="true">↗</span>';
+    });
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (sending || retryUntil > Date.now()) return;
+      refreshDateBounds();
+      const data = details();
+      const dateValid = Boolean(data.appointmentDate) && data.appointmentDate >= date.min && data.appointmentDate <= date.max && date.validity.valid;
+      const nameValid = Boolean(data.fullName) && data.fullName.length <= 120;
+      const emailValid = email.validity.valid && /^[^\s<>@,;"\\]+@[^\s<>@,;"\\]+\.[^\s<>@,;"\\]+$/.test(data.email);
+      setFieldError(date, 'dateError', !dateValid); setFieldError(name, 'nameError', !nameValid); setFieldError(email, 'emailError', !emailValid);
+      error.hidden = true;
+      if (!dateValid || !nameValid || !emailValid) { (!dateValid ? date : !nameValid ? name : email).focus(); return; }
+      const fingerprint = JSON.stringify(data);
+      sending = true; fields.disabled = true; notice.hidden = true; form.setAttribute('aria-busy', 'true'); updateButton();
+      try {
+        if (!attempted || attempted.fingerprint !== fingerprint) attempted = await requestIdentity(fingerprint);
+      } catch (_) {
+        sending = false; fields.disabled = false; form.removeAttribute('aria-busy'); updateButton();
+        error.textContent = 'This browser could not start your request. Please email dylank@posetek.net.'; error.hidden = false; error.focus(); return;
+      }
+      const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 35000);
+      try {
+        const response = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ requestId: attempted.requestId, ...data }), signal: controller.signal });
+        const result = await response.json().catch(() => null);
+        if (!response.ok || result?.status !== 'received' || result.requestId !== attempted.requestId) {
+          const delay = Number(response.headers.get('Retry-After') || result?.retryAfterSeconds || 0);
+          if (Number.isFinite(delay) && delay > 0) retryUntil = Date.now() + Math.min(delay, 3600) * 1000;
+          const message = response.status === 429 ? 'Too many requests. Please wait and try again, or email dylank@posetek.net.'
+            : response.status === 400 ? 'Please check your details and try again. You can also email dylank@posetek.net.'
+            : 'We couldn’t confirm delivery. Try again or email dylank@posetek.net.';
+          throw new Error(message);
+        }
+        const dayLabel = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(data.appointmentDate + 'T12:00:00Z'));
+        const timeLabel = data.timeSlot === 'flexible' ? 'a flexible time' : time.options[time.selectedIndex].textContent + ' Pacific';
+        document.getElementById('successSummary').textContent = 'You requested ' + dayLabel + ' at ' + timeLabel + '. We have your contact email as ' + data.email + '.';
+        document.getElementById('requestReference').textContent = 'Request reference: ' + attempted.requestId;
+        form.hidden = true; document.querySelector('.card-heading').hidden = true; document.getElementById('successPanel').hidden = false;
+        document.querySelector('.booking-card').setAttribute('aria-labelledby', 'successTitle');
+        document.getElementById('successTitle').focus();
+      } catch (failure) {
+        error.textContent = failure.name === 'AbortError' || failure instanceof TypeError
+          ? 'We couldn’t confirm delivery. Your details are still here. Try again or email dylank@posetek.net.'
+          : failure.message;
+        error.hidden = false; error.focus();
+      } finally {
+        clearTimeout(timeout); sending = false; fields.disabled = false; form.removeAttribute('aria-busy');
+        updateButton();
+        if (retryUntil > Date.now()) retryTimer = setInterval(updateButton, 1000);
+      }
+    });
+  })();
+  </script>
 </body>
 </html>

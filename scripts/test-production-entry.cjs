@@ -3,6 +3,7 @@
 const fs = require('node:fs'), path = require('node:path'), http = require('node:http'), assert = require('node:assert/strict');
 const httpOnly = process.argv.includes('--http-only');
 const applicationRelease = process.argv.includes('--application-release');
+const bookingRelease = process.argv.includes('--booking-release');
 const root = path.resolve(__dirname, '..'), dist = path.join(root, 'production-dist');
 const out = path.join(root, 'app/node_modules/.cache/planner-entry-tests');
 const cases = ['/signin', '/privacy', '/profile.html', '/insights', '/insights?orgId=club&teamId=team&weeks=12', '/dashboard', '/admin', '/admin/', '/admin/programs', '/admin/programs/personalized?orgId=club&players=p',
@@ -28,7 +29,7 @@ const cases = ['/signin', '/privacy', '/profile.html', '/insights', '/insights?o
     if (!base) {
       server = http.createServer((req, res) => {
         const pathname = new URL(req.url, 'http://local').pathname;
-        const route = ['/coaches', '/coaches/'].includes(pathname) ? '/coaches/index.html' : pathname === '/' ? '/index.html' : pathname;
+        const route = ['/coaches', '/coaches/'].includes(pathname) ? '/coaches/index.html' : pathname === '/' ? '/index.html' : /^\/bookperformancetest(?:\.html|\/)?$/i.test(pathname) ? '/bookperformancetest.html' : pathname;
         let file = path.resolve(dist, '.' + route);
         if (!file.startsWith(dist + path.sep) && file !== dist) { res.writeHead(400); res.end(); return; }
         if (!fs.existsSync(file) || !fs.statSync(file).isFile()) file = path.join(dist, 'application.html');
@@ -39,6 +40,8 @@ const cases = ['/signin', '/privacy', '/profile.html', '/insights', '/insights?o
       base = 'http://127.0.0.1:' + server.address().port;
     }
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'deployment/homepage-baseline.json'), 'utf8'));
+    assert.ok(!(applicationRelease && bookingRelease), 'Application and booking releases are separate compositions');
+    const reviewedBooking = bookingRelease ? (await (await import('./build-booking-release.mjs')).verifyBookingRelease(root)).booking : undefined;
     let reviewedApplication;
     if (applicationRelease) {
       const receipt = JSON.parse(fs.readFileSync(path.join(root, '.netlify/application-release-build.json'), 'utf8'));
@@ -56,11 +59,16 @@ const cases = ['/signin', '/privacy', '/profile.html', '/insights', '/insights?o
     assert.ok(!manifest.files.some(file => file.path === '/coaches' || file.path.startsWith('/coaches/')), 'Preservation baseline overlaps coaches output');
     const hash = bytes => require('node:crypto').createHash('sha1').update(bytes).digest('hex');
     for (const file of manifest.files) {
-      const expected = reviewedApplication && file.path === '/application.html' ? reviewedApplication : file;
+      const expected = reviewedApplication && file.path === '/application.html' ? reviewedApplication : reviewedBooking && file.path === '/bookperformancetest.html' ? reviewedBooking : file;
       let bytes = fs.readFileSync(path.join(dist, !preserveApplicationEntry && file.path === '/index.html' ? 'application.html' : file.path.slice(1)));
       if (!preserveApplicationEntry && file.path === '/index.html') bytes = bytes.toString('utf8').replace(/\n<!-- homepage-navigation:start -->[\s\S]*?<!-- homepage-navigation:end -->\n/g, '');
       assert.equal(typeof bytes === 'string' ? Buffer.byteLength(bytes) : bytes.length, expected.size, 'Verified file size changed: ' + file.path);
       assert.equal(hash(bytes), expected.sha, 'Verified file changed: ' + file.path);
+    }
+    if (reviewedBooking) for (const route of ['/bookPerformanceTest.html', '/bookperformancetest.html', '/bookPerformanceTest', '/bookperformancetest', '/bookperformancetest/']) {
+      const response = await fetch(base + route), html = await response.text();
+      assert.equal(response.status, 200, route);
+      assert.ok(html.includes('<!-- posetek-booking-entry -->'), 'Booking page missing: ' + route);
     }
     const marketingPages = [
       { routes: ['/', '/index.html'], marker: '<!-- posetek-marketing-entry -->' },

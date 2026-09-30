@@ -10,7 +10,7 @@ const marketing = fileURLToPath(new URL('../app/astro-dist/', import.meta.url));
 const reference = fileURLToPath(new URL('../.netlify/deployed-reference/6aa9b6f0d8faf6177db8fd97/', import.meta.url));
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.wasm': 'application/wasm', '.woff2': 'font/woff2' };
 
-export function createHomepagePreviewServer({ marketingRoot = marketing, referenceRoot = reference } = {}) {
+export function createHomepagePreviewServer({ marketingRoot = marketing, referenceRoot = reference, bookingRoot = referenceRoot, bookingPath = '/bookPerformanceTest.html' } = {}) {
 return createServer(async (req, res) => {
   try {
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); res.end(); return; }
@@ -28,8 +28,9 @@ return createServer(async (req, res) => {
       filePath = resolve(marketingRoot) === resolve(referenceRoot) ? pathname : pathname.slice('/marketing'.length);
     } else if (pathname.startsWith('/_astro/')) {
       root = marketingRoot;
-    } else if (/^\/bookperformancetest\/?$/i.test(pathname)) {
-      filePath = '/bookPerformanceTest.html';
+    } else if (/^\/bookperformancetest(?:\.html|\/)?$/i.test(pathname)) {
+      root = bookingRoot;
+      filePath = bookingPath;
     }
     let target = resolve(root, '.' + filePath);
     const rel = relative(root, target);
@@ -37,7 +38,7 @@ return createServer(async (req, res) => {
     let details;
     try { details = await stat(target); if (!details.isFile()) throw new Error('not file'); }
     catch {
-      if ((extname(pathname) && extname(pathname) !== '.html') || pathname.startsWith('/_astro/') || pathname.startsWith('/marketing/assets/') || pathname === '/' || /^\/coaches(?:\/index\.html|\/)?$/.test(pathname)) { res.writeHead(404); res.end(); return; }
+      if ((extname(pathname) && extname(pathname) !== '.html') || pathname.startsWith('/_astro/') || pathname.startsWith('/marketing/assets/') || pathname === '/' || /^\/coaches(?:\/index\.html|\/)?$/.test(pathname) || /^\/bookperformancetest(?:\.html|\/)?$/i.test(pathname)) { res.writeHead(404); res.end(); return; }
       target = resolve(referenceRoot, 'application.html');
       details = await stat(target);
     }
@@ -72,5 +73,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   await stat(resolve(reference, 'application.html')).catch(() => { throw new Error('Capture the public reference first: node scripts/capture-deployed-reference.mjs'); });
   const port = Number(process.env.PORT || 4174);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT must be an integer between 1 and 65535');
-  createHomepagePreviewServer().listen(port, '127.0.0.1', () => console.log(`Updated PoseTek marketing pages: http://127.0.0.1:${port} (local review only)`));
+  createHomepagePreviewServer({ bookingRoot: fileURLToPath(new URL('../', import.meta.url)) }).listen(port, '127.0.0.1', () => console.log(`Updated PoseTek marketing and booking pages: http://127.0.0.1:${port} (local review only)`));
 }

@@ -1,8 +1,25 @@
 # PoseTek website project context
 
-Reviewed on September 29, 2026. This guide summarizes the available repository and
+Reviewed on September 30, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
+
+## Performance test booking refresh (2026-09-30, review candidate)
+
+The user requested that the booking destination match the current public site's
+colors, typography, navigation and layout, and confirmed `dylank@posetek.net` as
+the request inbox. The review candidate replaces the unconfigured legacy Stripe
+page with a preferred-date/time request form; request mode is the stated draft
+assumption while the request-versus-paid choice remains open. Dates are Pacific
+preferences, not checked availability or confirmed reservations.
+
+Read [the booking handoff](docs/PERFORMANCE_TEST_BOOKING.md). The separate booking
+composer replaces only the canonical booking HTML over the verified production
+artifact; it retains the baseline guards and all other pages/assets. The new
+scoped Firebase endpoint fixes its recipient server-side and uses the existing
+verified Resend domain through a separate booking adapter. Code and mocked checks
+do not constitute deployment or inbox-delivery verification. The confirmed live
+release remains the September 29 release below until a new receipt says otherwise.
 
 ## Coach percentile presentation (2026-09-29, live)
 
