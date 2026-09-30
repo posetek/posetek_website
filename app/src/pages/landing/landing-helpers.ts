@@ -162,6 +162,7 @@ const RETURN_TO_ALLOWED = new Set([
 const RETURN_TO_ALLOWED_PATHS = new Set([
   "/admin",
   "/admin/access",
+  "/admin/user-issues",
   "/feed",
   "/athlete",
   "/roster",
