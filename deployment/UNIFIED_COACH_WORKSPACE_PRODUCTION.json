@@ -1,0 +1,700 @@
+{
+  "schemaVersion": 1,
+  "status": "production-verified",
+  "recordedAt": "2026-09-29T11:03:01.037Z",
+  "repository": "https://github.com/posetek/posetek_website",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/13",
+  "decisions": [
+    "Team Insights is the single coach workspace for assigned teams and independent rosters.",
+    "Player detail remains in a named workspace tab with measured roster percentiles, existing plan/history, and published personal workouts.",
+    "Community retains the canonical social audience and permissions; independent coaches require an organization for Team Community.",
+    "Astro builds the three website documents while retaining React, Svelte, existing routes, and protected public files."
+  ],
+  "frontend": {
+    "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+    "deployId": "6abb9834af8b9c320f64df04",
+    "previousDeployId": "6abadd8abff0a78fde2fbe28",
+    "sourceCommit": "3e41c2a6c2bc8beba3b0829091a96d441ad0e15c",
+    "productionUrl": "https://posetek.net",
+    "deployUrl": "https://6abb9834af8b9c320f64df04--posetek.netlify.app",
+    "publishedAt": "2026-09-29T10:55:40.356Z",
+    "exactReviewedDraftPromoted": true,
+    "rebuildDuringPromotion": false,
+    "documents": [
+      {
+        "path": "/application.html",
+        "sha": "a8334a291ca2b6ce0e7190875e6e7422aa1d28af",
+        "size": 14976
+      },
+      {
+        "path": "/coaches/index.html",
+        "sha": "167c6dd233a8bad39c09f49486d39595a7ea9cb6",
+        "size": 25969
+      },
+      {
+        "path": "/index.html",
+        "sha": "12b1b8ff0a9f0e33e3471b15b7bbd0696e3e86f1",
+        "size": 37505
+      }
+    ],
+    "preservedFilesBeforeRelease": 1206,
+    "addedAssets": 128,
+    "artifactFiles": 1337,
+    "artifactBytes": 133922747,
+    "inventoryFiles": 1338,
+    "artifactMatchesProductionInventory": true,
+    "inventoryManifestSha256": "5b71023d2572cd81d78a350dff5848768a720913849fceb07e362e220568a227",
+    "servedVerification": {
+      "totalFiles": 1337,
+      "rawExactFiles": 1285,
+      "historicalHtmlMatchesImmutablePredecessor": 51,
+      "homepageBookingLinkTransforms": 5,
+      "otherHomepageDomChanges": false,
+      "note": "Existing Netlify pretty-URL processing is retained. Processed legacy HTML was compared with immutable predecessor delivery; the homepage differs only by its five existing booking href transformations."
+    },
+    "httpVerification": {
+      "applicationRoutes": 25,
+      "marketingRoutes": 5,
+      "scriptAndStyleAssets": 1170
+    },
+    "productionEntryAndImmutableAssetHeadersVerified": true,
+    "baseline": {
+      "reconciled": true,
+      "preservedFiles": 1335,
+      "preservedBytes": 133859273,
+      "ordinaryPreservationBuildPassed": true,
+      "postGuardArtifactMatchedFiles": 1337,
+      "sourceCommitRecorded": true,
+      "releaseGuardTestsPassed": 30
+    }
+  },
+  "backend": {
+    "schemaVersion": 1,
+    "assembledAt": "2026-09-29T11:00:29.578Z",
+    "sourceCommit": "463a1c4d21344c51cb5ba10a5fd46afada1c9e74",
+    "project": "kickai-69dd0",
+    "region": "us-central1",
+    "codebase": "expanded-insights",
+    "deployment": {
+      "verifiedAt": "2026-09-29T10:16:55.726Z",
+      "functionCount": 9,
+      "functions": {
+        "getClubInsightsV2": {
+          "versionId": "4",
+          "sourceSha256": "add91945fd291b695237ed853dc4e37b9e3e2775036b21a26e829d9046adbbae",
+          "status": "ACTIVE",
+          "definition": {
+            "timeout": "540s",
+            "availableMemoryMb": 1024,
+            "maxInstances": 10,
+            "httpsTrigger": true,
+            "callableLabel": "true",
+            "publicInvoker": true,
+            "ingressSettings": "ALLOW_ALL"
+          },
+          "iamSha256": "c0628979974b95221d9f75067946607266ef54393c11b476037744fc50f1bb6e",
+          "runtimeConfig": {
+            "present": true,
+            "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+            "bytes": 112,
+            "schema": "firebase-project-and-bucket"
+          }
+        },
+        "getCoachPlayerComparison": {
+          "versionId": "1",
+          "sourceSha256": "add91945fd291b695237ed853dc4e37b9e3e2775036b21a26e829d9046adbbae",
+          "status": "ACTIVE",
+          "definition": {
+            "timeout": "540s",
+            "availableMemoryMb": 1024,
+            "maxInstances": 10,
+            "httpsTrigger": true,
+            "callableLabel": "true",
+            "publicInvoker": true,
+            "ingressSettings": "ALLOW_ALL"
+          },
+          "iamSha256": "a6b0c301a8aa2e2ae6f52311750f1674f642188ab8d62a66c109f8d5e8af5a7d",
+          "runtimeConfig": {
+            "present": true,
+            "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+            "bytes": 112,
+            "schema": "firebase-project-and-bucket"
+          }
+        },
+        "recordInsightUsage": {
+          "versionId": "4",
+          "sourceSha256": "add91945fd291b695237ed853dc4e37b9e3e2775036b21a26e829d9046adbbae",
+          "status": "ACTIVE",
+          "definition": {
+            "timeout": "60s",
+            "availableMemoryMb": 256,
+            "maxInstances": 10,
+            "httpsTrigger": true,
+            "callableLabel": "true",
+            "publicInvoker": true,
+            "ingressSettings": "ALLOW_ALL"
+          },
+          "iamSha256": "328f2c2c79c8bc205a61fa521a4da75c05896f467044662bc897a5182956ca91",
+          "runtimeConfig": {
+            "present": true,
+            "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+            "bytes": 112,
+            "schema": "firebase-project-and-bucket"
+          }
+        },
+        "projectInsightPlayer": {
+          "versionId": "4",
+          "sourceSha256": "add91945fd291b695237ed853dc4e37b9e3e2775036b21a26e829d9046adbbae",
+          "status": "ACTIVE",
+          "definition": {
+            "timeout": "540s",
+            "availableMemoryMb": 512,
+            "maxInstances": 10,
+            "eventTrigger": {
+              "resource": "projects/kickai-69dd0/databases/(default)/documents/players/{playerId}",
+              "eventType": "providers/cloud.firestore/eventTypes/document.write",
+              "service": "firestore.googleapis.com",
+              "failurePolicy": {
+                "retry": {}
+              }
+            }
+          },
+          "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+          "runtimeConfig": {
+            "present": true,
+            "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+            "bytes": 112,
+            "schema": "firebase-project-and-bucket"
+          }
+        },
+        "projectInsightRecords": {
+          "versionId": "4",
+          "sourceSha256": "add91945fd291b695237ed853dc4e37b9e3e2775036b21a26e829d9046adbbae",
+          "status": "ACTIVE",
+          "definition": {
+            "timeout": "540s",
+            "availableMemoryMb": 512,
+            "maxInstances": 10,
+            "eventTrigger": {
+              "resource": "projects/kickai-69dd0/databases/(default)/documents/players/{playerId}/{collectionId}/{recordId}",
+              "eventType": "providers/cloud.firestore/eventTypes/document.write",
+              "service": "firestore.googleapis.com",
+              "failurePolicy": {
+                "retry": {}
+              }
+            }
+          },
+          "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+          "runtimeConfig": {
+            "present": true,
+            "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+            "bytes": 112,
+            "schema": "firebase-project-and-bucket"
+          }
+        },
+        "projectInsightRevisions": {
+          "versionId": "4",
+          "sourceSha256": "add91945fd291b695237ed853dc4e37b9e3e2775036b21a26e829d9046adbbae",
+          "status": "ACTIVE",
+          "definition": {
+            "timeout": "540s",
+            "availableMemoryMb": 512,
+            "maxInstances": 10,
+            "eventTrigger": {
+              "resource": "projects/kickai-69dd0/databases/(default)/documents/players/{playerId}/reps/{repId}/revisions/{revisionId}",
+              "eventType": "providers/cloud.firestore/eventTypes/document.write",
+              "service": "firestore.googleapis.com",
+              "failurePolicy": {
+                "retry": {}
+              }
+            }
+          },
+          "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+          "runtimeConfig": {
+            "present": true,
+            "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+            "bytes": 112,
+            "schema": "firebase-project-and-bucket"
+          }
+        },
+        "projectInsightFailures": {
+          "versionId": "4",
+          "sourceSha256": "add91945fd291b695237ed853dc4e37b9e3e2775036b21a26e829d9046adbbae",
+          "status": "ACTIVE",
+          "definition": {
+            "timeout": "540s",
+            "availableMemoryMb": 512,
+            "maxInstances": 10,
+            "eventTrigger": {
+              "resource": "projects/kickai-69dd0/databases/(default)/documents/failureCases/{failureId}",
+              "eventType": "providers/cloud.firestore/eventTypes/document.write",
+              "service": "firestore.googleapis.com",
+              "failurePolicy": {
+                "retry": {}
+              }
+            }
+          },
+          "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+          "runtimeConfig": {
+            "present": true,
+            "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+            "bytes": 112,
+            "schema": "firebase-project-and-bucket"
+          }
+        },
+        "projectInsightArtifacts": {
+          "versionId": "4",
+          "sourceSha256": "add91945fd291b695237ed853dc4e37b9e3e2775036b21a26e829d9046adbbae",
+          "status": "ACTIVE",
+          "definition": {
+            "timeout": "540s",
+            "availableMemoryMb": 512,
+            "maxInstances": 10,
+            "eventTrigger": {
+              "resource": "projects/_/buckets/kickai-69dd0.firebasestorage.app",
+              "eventType": "google.storage.object.finalize",
+              "service": "storage.googleapis.com",
+              "failurePolicy": {
+                "retry": {}
+              }
+            }
+          },
+          "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+          "runtimeConfig": {
+            "present": true,
+            "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+            "bytes": 112,
+            "schema": "firebase-project-and-bucket"
+          }
+        },
+        "projectInsightArtifactDeletes": {
+          "versionId": "4",
+          "sourceSha256": "add91945fd291b695237ed853dc4e37b9e3e2775036b21a26e829d9046adbbae",
+          "status": "ACTIVE",
+          "definition": {
+            "timeout": "540s",
+            "availableMemoryMb": 512,
+            "maxInstances": 10,
+            "eventTrigger": {
+              "resource": "projects/_/buckets/kickai-69dd0.firebasestorage.app",
+              "eventType": "google.storage.object.delete",
+              "service": "storage.googleapis.com",
+              "failurePolicy": {
+                "retry": {}
+              }
+            }
+          },
+          "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+          "runtimeConfig": {
+            "present": true,
+            "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+            "bytes": 112,
+            "schema": "firebase-project-and-bucket"
+          }
+        }
+      },
+      "runtimeConfiguration": {
+        "getClubInsightsV2": {
+          "runtime": "nodejs22",
+          "generation": 1
+        },
+        "getCoachPlayerComparison": {
+          "runtime": "nodejs22",
+          "generation": 1
+        },
+        "recordInsightUsage": {
+          "runtime": "nodejs22",
+          "generation": 1
+        },
+        "projectInsightPlayer": {
+          "runtime": "nodejs22",
+          "generation": 1
+        },
+        "projectInsightRecords": {
+          "runtime": "nodejs22",
+          "generation": 1
+        },
+        "projectInsightRevisions": {
+          "runtime": "nodejs22",
+          "generation": 1
+        },
+        "projectInsightFailures": {
+          "runtime": "nodejs22",
+          "generation": 1
+        },
+        "projectInsightArtifacts": {
+          "runtime": "nodejs22",
+          "generation": 1
+        },
+        "projectInsightArtifactDeletes": {
+          "runtime": "nodejs22",
+          "generation": 1
+        }
+      },
+      "sourceFiles": {
+        "index.js": {
+          "sha256": "6ec5341fa5b88f82b7318f74a990ab6dabd6ab02a812b44900a24fbb809662fb",
+          "bytes": 808
+        },
+        "insights-entrypoints.js": {
+          "sha256": "49f9ad270cca71b3f55b415d4b6869b6405c418910670aa8be25d40f356ee5e0",
+          "bytes": 4376
+        },
+        "insights-v2.js": {
+          "sha256": "7d2934283f5546869baf766981345143c45ac59b0b089cae7a14b2b4de9cd06a",
+          "bytes": 35416
+        },
+        "insights-v2-projection.js": {
+          "sha256": "001a2fe0f6c9c016ba4a692d1d64a0268a29a86e57b32eea811b8c6693d1e222",
+          "bytes": 11919
+        },
+        "insights-v2-qualification.js": {
+          "sha256": "9d76e838c0b829c2576c41568f3764d89d056c3759cdf214513bc56633d46556",
+          "bytes": 12356
+        },
+        "processing-evidence.js": {
+          "sha256": "ff8e976ee70f37c62914c2cee80bef39419e283d0a9fa4b9fc4d028eadf3a38e",
+          "bytes": 4692
+        },
+        "insight-usage.js": {
+          "sha256": "94f02489c224cd33dec3e19bc62c73be766e68c4e37072527cf0a966ae71d4d0",
+          "bytes": 16690
+        },
+        "club-access.js": {
+          "sha256": "ecc45c631b6b2bbf204621a896410f60f40d3d46f98df5576515616c82d5834a",
+          "bytes": 1326
+        },
+        "athlete-storage-paths.js": {
+          "sha256": "2b0c8a3320b82a94f32add9d2344708effcd42ce6aef7f0c88a013ec6db99d4a",
+          "bytes": 2802
+        },
+        "effective-rep.js": {
+          "sha256": "77cb3a0761a890156d67495e2dac84b8e6250467bd53c8da05ecbeb5f5793dff",
+          "bytes": 4643
+        },
+        "insights-axis-scoring.js": {
+          "sha256": "b1a87b0bffd488e7329aa09a176ff784c21951ee3001ec87cbfe6fb344f9bbc3",
+          "bytes": 2700
+        },
+        "athlete-profile-spec.json": {
+          "sha256": "138ed2356a56e0ac92c6bc3f9e88f508ed82fb9af1cb6cc363ad9a1453fb967f",
+          "bytes": 2766
+        },
+        "package.json": {
+          "sha256": "a9ac459e8c2330272c3fc52ab9d27b48f40dbd0dca9855f0983cef3f49e44686",
+          "bytes": 498
+        },
+        "package-lock.json": {
+          "sha256": "50a3b53078a82209bf36b6123e4cc27d01614274cd3aa3e9ed86d0dd420a4ea0",
+          "bytes": 261037
+        }
+      },
+      "triggerRuntimeAndTransportVerified": true,
+      "unrelatedFunctionsPreserved": true,
+      "unchangedIncludedEndpoint": "recordInsightUsage",
+      "sourceManifestSha256": "7c7ce3f5b46c37620dfcc54b2b387f18fd83d54ec8e4b474fa894f371ce62de6",
+      "verifiedReceiptSha256": "4ada9d302966f85617cb0098ddf6ec4e3a8182eb20dfe1e09c4766f57a396c25",
+      "deploymentLogSha256": "b17f4ab144d284c5e1816d3dbae43f992668355d10c8407f61e712399ae1793b"
+    },
+    "tests": {
+      "total": 423,
+      "passed": 420,
+      "failed": 0,
+      "skipped": 3,
+      "existingSkips": true,
+      "logSha256": "5d70a8beade5c0d7506b47239b258e26f3f2ebdd45ae58df67c11ff8d1844775"
+    },
+    "liveApi": {
+      "assignedTeamAgeSearchAndIsolation": true,
+      "independentRosterAndOwnership": true,
+      "inactiveMembershipAndTransferredPlayer": true,
+      "signupInvitationStability": true,
+      "additionalRoles": true,
+      "cases": [
+        "Assigned coach context includes only one authorized team and its two players.",
+        "Team report returns two total players, one-row pagination, twelve qualified tests, one historical completed workout, and recorded age 15.",
+        "Name search narrows roster pagination to one while retaining twelve qualified tests in report totals.",
+        "Projection version 4 and complete comparison cohort of two produce the expected top-player percentile.",
+        "Unassigned team, out-of-scope player and outside-coach requests are denied with 403; anonymous report request is denied with 401.",
+        "Independent scope resolves only the authenticated caller roster and rejects another owner player with 403.",
+        "Client-supplied independent coach identity is rejected with 400.",
+        "Inactive organization membership denies team access and independent fallback; temporary membership change is restored.",
+        "Transferred player is denied under the former selected team; temporary player change is restored.",
+        "Existing signup link and code readback remains stable for one team player and one independent player.",
+        "Additional athlete context resolves exactly its bound player; manager context resolves two authorized teams and three organization players; synthetic administrator has the existing verified-domain authority."
+      ],
+      "pendingFixtureMutation": false
+    },
+    "fixtures": {
+      "syntheticOnly": true,
+      "authAccounts": 6,
+      "roles": [
+        "admin",
+        "athlete",
+        "coach",
+        "independent",
+        "manager",
+        "outside"
+      ],
+      "playerProfiles": 5,
+      "organizations": 1,
+      "teams": 2,
+      "repSourceDocuments": 30,
+      "storageEvidenceObjects": 60,
+      "activeSyntheticPlans": 2,
+      "publishedSyntheticPersonalWorkouts": 2,
+      "historicalSyntheticPersonalWorkoutLogs": 2,
+      "journaledSourceDocuments": 51,
+      "historicalOutcomeAt": "2026-09-26T12:00:00.000Z",
+      "notificationActivationMillis": 1790636790868,
+      "notificationJobs": 0,
+      "notificationSettingsUnchanged": true,
+      "notificationVerifiedAt": "2026-09-29T11:00:23.952Z",
+      "notificationSettingsSha256": "2213354afc595d71e8563f7cd822059d9119d4e0fc73bbaa0aab0921f22af27e",
+      "note": "Historical source observers may create derived notification activity bookkeeping, which is included in fixture cleanup. No live workout or notification job is generated.",
+      "temporaryOperatorCredentialRemoved": true,
+      "cleanup": {
+        "complete": true,
+        "verifiedAt": "2026-09-29T11:00:10.450Z",
+        "stableReadbacksAtLeast60SecondsApart": true,
+        "zeroReadbacks": [
+          {
+            "at": "2026-09-29T10:58:44.017Z",
+            "accounts": 0,
+            "recordsAndObjects": 0,
+            "authDeletionTombstones": 6
+          },
+          {
+            "at": "2026-09-29T11:00:10.449Z",
+            "accounts": 0,
+            "recordsAndObjects": 0,
+            "authDeletionTombstones": 6
+          }
+        ],
+        "authDeletionTombstonesObserved": 6,
+        "authAccountsRemaining": 0,
+        "documentTreesAndIndexesRemaining": 0,
+        "storageObjectsRemaining": 0,
+        "includesSigninMetadata": true,
+        "privateJournalCredentialsRedactedAt": "2026-09-29T11:00:29.504Z",
+        "note": "Tombstone counters are cumulative observations. Both readbacks found zero remaining run-owned records, including deletion tombstones."
+      }
+    }
+  },
+  "verification": {
+    "websiteUnitSuite": {
+      "passed": 1361,
+      "total": 1362,
+      "note": "One existing movement-framing test exceeded the five-second limit under parallel CPU load; its isolated file rerun passed all seven tests."
+    },
+    "focusedCoachTests": 86,
+    "managerAndNavigationTests": 69,
+    "rosterTests": 16,
+    "typeScriptPassed": true,
+    "scopedDeploymentHelperTestsPassed": 19,
+    "candidateCoach": {
+      "origin": "https://6abb9834af8b9c320f64df04--posetek.netlify.app",
+      "checkedAt": "2026-09-29T10:54:37.549Z",
+      "passed": 73,
+      "pageErrors": 0,
+      "cases": [
+        "coach sign-in opens scoped roster and compact header",
+        "coach report tabs retain one complete server report",
+        "coach copies existing signup link and code without regeneration",
+        "coach roster management opens within workspace",
+        "coach server name search narrows roster",
+        "coach named player tab shows complete cohort percentiles, assigned and personal workouts",
+        "coach player history remains selected across workspace tabs",
+        "coach planner carries player and exact return context",
+        "coach refresh recovers selected player and comparison",
+        "coach Community Activity, People, Sharing, Back and error recovery keep workspace",
+        "coach responsive roster 360",
+        "coach responsive player 360",
+        "coach responsive Community 360",
+        "coach responsive Activity 360",
+        "coach responsive Find people 360",
+        "coach responsive Sharing settings 360",
+        "coach responsive Community error 360",
+        "coach responsive Community recovered 360",
+        "coach responsive roster 390",
+        "coach responsive player 390",
+        "coach responsive Community 390",
+        "coach responsive Activity 390",
+        "coach responsive Find people 390",
+        "coach responsive Sharing settings 390",
+        "coach responsive Community error 390",
+        "coach responsive Community recovered 390",
+        "coach responsive roster 430",
+        "coach responsive player 430",
+        "coach responsive Community 430",
+        "coach responsive Activity 430",
+        "coach responsive Find people 430",
+        "coach responsive Sharing settings 430",
+        "coach responsive Community error 430",
+        "coach responsive Community recovered 430",
+        "coach responsive roster 1280",
+        "coach responsive player 1280",
+        "coach responsive Community 1280",
+        "coach responsive Activity 1280",
+        "coach responsive Find people 1280",
+        "coach responsive Sharing settings 1280",
+        "coach responsive Community error 1280",
+        "coach responsive Community recovered 1280",
+        "coach dashboard alias preserves player identity",
+        "coach legacy Community link enters workspace",
+        "unassigned team deep link is denied without substituting another roster",
+        "independent sign-in opens scoped roster and compact header",
+        "independent report tabs retain one complete server report",
+        "independent copies existing signup link and code without regeneration",
+        "independent roster management opens within workspace",
+        "independent server name search narrows roster",
+        "independent named player tab shows complete cohort percentiles, assigned and personal workouts",
+        "independent player history remains selected across workspace tabs",
+        "independent planner carries player and exact return context",
+        "independent refresh recovers selected player and comparison",
+        "independent Community retains honest independent access boundary",
+        "independent responsive roster 360",
+        "independent responsive player 360",
+        "independent responsive Community 360",
+        "independent responsive independent boundary 360",
+        "independent responsive roster 390",
+        "independent responsive player 390",
+        "independent responsive Community 390",
+        "independent responsive independent boundary 390",
+        "independent responsive roster 430",
+        "independent responsive player 430",
+        "independent responsive Community 430",
+        "independent responsive independent boundary 430",
+        "independent responsive roster 1280",
+        "independent responsive player 1280",
+        "independent responsive Community 1280",
+        "independent responsive independent boundary 1280",
+        "independent dashboard alias preserves player identity",
+        "independent legacy Community link enters workspace"
+      ]
+    },
+    "productionCoach": {
+      "origin": "https://posetek.net",
+      "checkedAt": "2026-09-29T10:56:44.568Z",
+      "passed": 12,
+      "pageErrors": 0,
+      "cases": [
+        "coach production sign-in and scoped roster",
+        "coach production comparison and both workout sources",
+        "coach production player history persists",
+        "coach production planner return",
+        "coach production selected player refresh",
+        "coach production Community and access boundary",
+        "independent production sign-in and scoped roster",
+        "independent production comparison and both workout sources",
+        "independent production player history persists",
+        "independent production planner return",
+        "independent production selected player refresh",
+        "independent production Community and access boundary"
+      ]
+    },
+    "productionOtherRoles": {
+      "origin": "https://posetek.net",
+      "checkedAt": "2026-09-29T10:56:55.271Z",
+      "passed": 16,
+      "pageErrors": 0,
+      "cases": [
+        "athlete sign-in preserves Training return destination",
+        "athlete Profile uses the six-tab shell",
+        "athlete AI Coach uses the six-tab shell",
+        "athlete Drills uses the six-tab shell",
+        "athlete Training uses the six-tab shell",
+        "athlete Community uses the six-tab shell",
+        "athlete Standings uses the six-tab shell",
+        "athlete Training refresh keeps route and authenticated shell",
+        "athlete legacy Community link and sharing toolbar retain navigation",
+        "organization manager retains organization administration",
+        "organization manager refresh recovers authorized workspace",
+        "organization manager Community remains standalone with authorized staff access",
+        "organization manager planner returns to Organization and links player details to athlete view",
+        "PoseTek admin sign-in opens fixture player with organization context",
+        "PoseTek admin fixture player refresh retains access",
+        "PoseTek admin account hierarchy keeps fixture team expanded"
+      ],
+      "blockedWrites": [
+        {
+          "category": "usage telemetry",
+          "operation": "recordInsightUsage"
+        },
+        {
+          "category": "usage telemetry",
+          "operation": "recordInsightUsage"
+        },
+        {
+          "category": "usage telemetry",
+          "operation": "recordInsightUsage"
+        }
+      ],
+      "allowedMetadataWrites": [
+        {
+          "kind": "synthetic player lastLogin"
+        },
+        {
+          "kind": "synthetic admin sign-in profile"
+        },
+        {
+          "kind": "synthetic admin sign-in profile"
+        },
+        {
+          "kind": "synthetic admin sign-in profile"
+        },
+        {
+          "kind": "synthetic admin sign-in profile"
+        }
+      ],
+      "note": "Only run-owned sign-in metadata writes were permitted. Usage telemetry was intercepted; no workout starts, current outcomes, notifications or social mutations were exercised."
+    },
+    "productionCompiledSmoke": {
+      "base": "https://posetek.net",
+      "reports": [
+        {
+          "route": "/signin",
+          "width": 390,
+          "hydrated": true,
+          "overflow": false
+        },
+        {
+          "route": "/join#accessCode",
+          "width": 390,
+          "secretCaptured": true,
+          "secretRemoved": true
+        }
+      ]
+    },
+    "marketingFrameworkBrowserStates": 10,
+    "viewportWidths": [
+      360,
+      390,
+      430,
+      1280
+    ],
+    "physicalDeviceTestingClaimed": false
+  },
+  "preserved": {
+    "previouslyLiveWorkoutAlertSource": "02938d296630f9184702edea80442ca98f149563",
+    "unrelatedFunctions": true,
+    "canonicalRulesNotDeployed": true,
+    "gatewayNotDeployed": true,
+    "nativeNotDeployed": true,
+    "trainingCatalogAndActivationNotChanged": true,
+    "privateWorkoutConversationsRemainPrivate": true
+  },
+  "recovery": {
+    "websitePredecessor": "6abadd8abff0a78fde2fbe28",
+    "scopedBackendGuide": "deployments/expanded-insights/README.md",
+    "note": "Use the audited Netlify predecessor and guarded scoped function source/configuration/IAM backups. Do not roll back user records or projections as a source-code rollback."
+  },
+  "evidence": {
+    "candidateCoachSha256": "6b8e0dde679823e32c48027fda79f3d6f81bfeb07d93d7f98f9d8f209978cbfa",
+    "productionCoachSha256": "c8183623a175bff430806bce768989d8706ebb938036bb2bc070a382bf4ae625",
+    "productionRolesSha256": "d4af3d98686ad91bb8a6452ef86074f1995f68d17b6b1e0f0418d3149eba45e6",
+    "servedVerificationSha256": "458da71b92e32ad209a3814ddb6aca3f9ed0915c57265463638d61bcef820b56",
+    "ordinaryBuildLogSha256": "a0a7fdab3dc09668f7fe87858970817f1a1d980527c3aae35e04d86808a7b1e3",
+    "guardTestsLogSha256": "f5fb7bb2ebc78a474794a42c01108fe581dd17830bfa7db6ab4566d962a6d6b0"
+  }
+}

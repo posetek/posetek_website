@@ -11,8 +11,8 @@ const source = fileURLToPath(new URL('./', import.meta.url));
 const app = '<!doctype html><html><head><script type="module" crossorigin src="/assets/current.js"></script></head><body>Current application</body></html>';
 const bridgeBlock = '\n<!-- homepage-navigation:start -->\n<script src="/marketing/home-navigation.js" defer></script>\n<!-- homepage-navigation:end -->\n';
 const applicationWithBridge = app.replace('</body>', bridgeBlock + '</body>');
-const marketing = '<!doctype html><!-- posetek-marketing-entry --><script type="module" src="/marketing/assets/new.js"></script>';
-const coaches = '<!doctype html><!-- posetek-coaches-entry --><title>PoseTek for coaches</title><meta name="description" content="Team-by-team support"><link rel="canonical" href="https://posetek.net/coaches"><script type="module" src="/marketing/assets/coaches.js"></script>';
+const marketing = '<!doctype html><!-- posetek-marketing-entry --><script type="module" src="/_astro/new.12345678.js"></script>';
+const coaches = '<!doctype html><!-- posetek-coaches-entry --><title>PoseTek for coaches</title><meta name="description" content="Team-by-team support"><link rel="canonical" href="https://posetek.net/coaches"><script type="module" src="/_astro/coaches.12345678.js"></script>';
 const sha = bytes => createHash('sha1').update(bytes).digest('hex');
 
 async function fixture(mode, options, run) {
@@ -43,16 +43,17 @@ async function fixture(mode, options, run) {
     }
     await put('deployment/homepage-baseline.json', JSON.stringify(manifest));
     await put('deployment/home-navigation.js', '// local legacy-only bridge\n');
-    await put('marketing-dist/index.html', marketing);
-    await put('marketing-dist/coaches/index.html', options.missingMarker ? coaches.replace('<!-- posetek-coaches-entry -->', '') : coaches);
-    await put('marketing-dist/assets/new.js', '/* new isolated homepage */');
-    await put('marketing-dist/assets/coaches.js', '/* new isolated coaches page */');
+    await put('app/astro-dist/index.html', marketing);
+    await put('app/astro-dist/coaches/index.html', options.missingMarker ? coaches.replace('<!-- posetek-coaches-entry -->', '') : coaches);
+    await put('app/astro-dist/_astro/new.12345678.js', '/* new isolated homepage */');
+    await put('app/astro-dist/_astro/coaches.12345678.js', '/* new isolated coaches page */');
     await put('app/node_modules/typescript/bin/tsc', '// build tool fixture\n');
-    await put('app/node_modules/vite/bin/vite.js', '// build tool fixture\n');
+    await put('app/node_modules/astro/bin/astro.mjs', '// build tool fixture\n');
     await put('netlify.toml', '[build]\npublish = "production-dist"\n[[redirects]]\n  from = "/coaches"\n  to = "/coaches/index.html"\n  status = 200\n[[redirects]]\n  from = "/coaches/"\n  to = "/coaches/index.html"\n  status = 200\n[[redirects]]\nfrom = "/*"\nto = "/application.html"\nstatus = 200\n');
     await put('production-dist/guard-sentinel.txt', 'unchanged until guard passes');
     await mkdir(join(directory, 'scripts'), { recursive: true });
     await copyFile(join(source, 'build-production.mjs'), join(directory, 'scripts/build-production.mjs'));
+    await copyFile(join(source, 'astro-assets.mjs'), join(directory, 'scripts/astro-assets.mjs'));
     await copyFile(join(source, 'test-production-entry.cjs'), join(directory, 'scripts/test-production-entry.cjs'));
 
     const responses = Object.fromEntries([...files].map(([path, bytes]) => [new URL(path, 'https://pinned.example').href, bytes]));
@@ -98,6 +99,28 @@ test('legacy baseline still remaps the app index and adds one navigation bridge'
     assert.equal(await readFile(join(directory, 'production-dist/marketing/home-navigation.js'), 'utf8'), '// local legacy-only bridge\n');
     const checks = execute('test-production-entry.cjs', ['--http-only']);
     assert.equal(checks.status, 0, checks.stderr);
+  });
+});
+
+test('candidate verification accepts only the exact built entry from the current baseline', async () => {
+  await fixture('modern', {}, async ({ directory, execute, build }) => {
+    assert.equal(build.status, 0, build.stderr);
+    const next = applicationWithBridge.replace('Current application', 'Reviewed new application');
+    await writeFile(join(directory, 'production-dist/application.html'), next);
+    await mkdir(join(directory, '.netlify'), { recursive: true });
+    const receipt = { baselineDeploymentId: 'test-pinned-deployment', application: { path: '/application.html', sha: sha(next), size: Buffer.byteLength(next) } };
+    const save = () => writeFile(join(directory, '.netlify/application-release-build.json'), JSON.stringify(receipt));
+    await save();
+    assert.notEqual(execute('test-production-entry.cjs', ['--http-only']).status, 0, 'Ordinary preservation must still fail');
+    let result = execute('test-production-entry.cjs', ['--http-only', '--application-release']);
+    assert.equal(result.status, 0, result.stderr);
+    receipt.baselineDeploymentId = 'different-production'; await save();
+    result = execute('test-production-entry.cjs', ['--http-only', '--application-release']);
+    assert.notEqual(result.status, 0); assert.match(result.stderr, /another baseline/);
+    receipt.baselineDeploymentId = 'test-pinned-deployment'; await save();
+    await writeFile(join(directory, 'production-dist/application.html'), next + ' changed after build');
+    result = execute('test-production-entry.cjs', ['--http-only', '--application-release']);
+    assert.notEqual(result.status, 0); assert.match(result.stderr, /Verified file size changed/);
   });
 });
 

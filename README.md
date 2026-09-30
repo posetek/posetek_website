@@ -3,6 +3,47 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
+The unified coach workspace and Astro build are documented in
+[the implementation handoff](docs/UNIFIED_COACH_WORKSPACE.md). Team Insights owns
+the coach roster, progress, player details and embedded Community. Astro builds
+the three public/application entries while retaining existing React and Svelte
+interactions. Use `node scripts/build-astro-release.mjs` for a deliberate
+application release; ordinary builds retain the protected live application.
+
+Coach percentile presentation is live as deployment `6abb9f1e6c2c84772de67005`, source
+`684528b`, published September 29, 2026 at 4:25:34 AM PDT. The card pairs a compact
+radar with readable skill positions, measured-player counts and concise scale
+explanations. Phone layouts show skill positions first. Scoring and access are
+unchanged. All 1,342 artifact files match production inventory; the baseline
+protects 1,340 application/public files. See
+[the presentation release receipt](deployment/COACH_COMPARISON_POLISH_PRODUCTION.json)
+and [PR #14](https://github.com/posetek/posetek_website/pull/14).
+
+The preceding workspace and Astro release is recorded in
+[its production receipt](deployment/UNIFIED_COACH_WORKSPACE_PRODUCTION.json).
+
+Workout email alerts are live for all players from September 28, 2026 at
+4:06:30 PM PDT. Saved outcomes go to `dylank@posetek.net`; web-observed sessions
+also qualify for an inactivity notice after 30 minutes, processed every five
+minutes. Emails include the player, recorded time/progress and a protected link
+to the exact workout history. Native-only sessions have saved-ending coverage.
+There is no historical backfill. All seven scoped functions, the verified
+Resend sender and signed delivery webhook are live. Three synthetic emails
+received delivery receipts, and the final quiet email was confirmed in Outlook
+Inbox. Test records were removed before a fresh all-player activation cutoff.
+
+The preceding workout-alert website checkpoint used source `d814225` and deployment
+`6abadd8abff0a78fde2fbe28`; its baseline protected 1,207 application/public files.
+The preservation build,
+22 release checks, 30 production routes and all 1,049 JS/CSS assets passed.
+See the [production receipt](deployment/WORKOUT_NOTIFICATIONS_PRODUCTION.json),
+[notification handoff](docs/WORKOUT_NOTIFICATIONS.md) and
+[scoped release guide](deployments/workout-notifications/README.md).
+Source and handoff changes are shared in
+[PR #11](https://github.com/posetek/posetek_website/pull/11).
+
+The following release summaries describe earlier checkpoints.
+
 Email-free coach and administrator access is live on [posetek.net](https://posetek.net).
 Source `f9f10e0` was published as deployment `6ab8679ccbfca079f8997124` on
 September 26, 2026 at 5:50:52 PM PDT. Organization managers create private staff
@@ -120,7 +161,7 @@ older mockup; use `app/src/pages/feed/` for iterations.
 
 ## Set up a fresh clone
 
-Use Node.js 22.18 or later in the Node 22 release line and npm 10. Run from the
+Use Node.js 22.19 or later in the Node 22 release line and npm 10. Run from the
 repository root unless stated otherwise:
 
 ```powershell
@@ -148,9 +189,10 @@ use committed source and do not require the reference capture.
 | Area | Location |
 | --- | --- |
 | Homepage sections, copy, styles and interactive demos | `app/src/pages/home/` |
-| Public entry and metadata | `index.html` |
+| Astro public entry and metadata | `app/astro/pages/index.astro`, `app/astro/layouts/Document.astro` |
 | Coaches page, fictional examples, and development journey | `app/src/pages/coaches/` |
-| Coaches entry and metadata | `coaches/index.html`, `app/src/coaches-entry.tsx` |
+| Astro Coaches entry | `app/astro/pages/coaches/index.astro` |
+| Astro application entry and bootstrap | `app/astro/pages/application.astro`, `app/src/astro/ApplicationRoot.tsx` |
 | Shared public audience navigation | `app/src/pages/home/MarketingHeader.tsx` |
 | Application routes and screens | `app/src/App.tsx`, `app/src/pages/` |
 | Backend functions | `functions/` |
@@ -159,9 +201,10 @@ use committed source and do not require the reference capture.
 | Production assembly and verification | `scripts/`, `deployment/` |
 | Player behavior and data contracts | [docs/PLAYER_EXPERIENCE.md](docs/PLAYER_EXPERIENCE.md) |
 
-For application development, run `npm --prefix app run dev` and use the URL Vite
-prints. This serves the application source, which is a different build from the
-isolated public homepage. Mobile source remains a reference for shared behavior.
+For the complete migrated site, run `npm --prefix app run dev:astro`.
+`npm --prefix app run dev` remains a compatible Vite application preview; its
+legacy entry documents are retained for that purpose. Mobile source remains a
+reference for shared behavior.
 
 The admin dashboard source now has a development-only synthetic preview at
 `/admin?preview=1`. See [the admin dashboard cleanup handoff](docs/admin/DASHBOARD_CLEANUP.md)

@@ -1,0 +1,38 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+  socialDescription?: string;
+  canonical?: string;
+  marketing?: boolean;
+}
+const { title, description, socialDescription, canonical, marketing = false } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content={marketing ? "#04130e" : "#061b14"} />
+    <meta name="referrer" content="no-referrer" />
+    {description && <meta name="description" content={description} />}
+    {canonical && <>
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={socialDescription || description} />
+      <meta property="og:type" content="website" />
+      <meta property="og:url" content={canonical} />
+      <meta name="twitter:card" content="summary" />
+      <link rel="canonical" href={canonical} />
+    </>}
+    <link rel="icon" type="image/svg+xml" href="/images/logo.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href={marketing
+      ? "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800;900&display=swap"
+      : "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"} rel="stylesheet" />
+    {!marketing && <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />}
+    <title>{title}</title>
+    {marketing && <style is:inline>html,body{margin:0;background:#04130e}</style>}
+  </head>
+  <body><slot /></body>
+</html>

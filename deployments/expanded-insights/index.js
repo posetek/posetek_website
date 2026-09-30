@@ -1,5 +1,5 @@
 "use strict";
-// Deliberately scoped bundle: only the eight Expanded Insights functions.
+// Deliberately scoped bundle: only the nine Expanded Insights functions.
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 admin.initializeApp();

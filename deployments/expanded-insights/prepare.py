@@ -15,14 +15,15 @@ ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
 PROJECT = 'kickai-69dd0'
 REGION = 'us-central1'
-ENDPOINTS = ('getClubInsightsV2', 'recordInsightUsage', 'projectInsightPlayer', 'projectInsightRecords',
+ENDPOINTS = ('getClubInsightsV2', 'getCoachPlayerComparison', 'recordInsightUsage', 'projectInsightPlayer', 'projectInsightRecords',
              'projectInsightRevisions', 'projectInsightFailures', 'projectInsightArtifacts', 'projectInsightArtifactDeletes')
 FILES = ('insights-entrypoints.js', 'insights-v2.js', 'insights-v2-projection.js', 'insights-v2-qualification.js',
-         'processing-evidence.js', 'insight-usage.js', 'club-access.js', 'athlete-storage-paths.js', 'package.json', 'package-lock.json')
+         'processing-evidence.js', 'insight-usage.js', 'club-access.js', 'athlete-storage-paths.js',
+         'effective-rep.js', 'insights-axis-scoring.js', 'athlete-profile-spec.json', 'package.json', 'package-lock.json')
 API = 'https://cloudfunctions.googleapis.com/v1/'
 PARENT = f'projects/{PROJECT}/locations/{REGION}'
 BUCKET = 'kickai-69dd0.firebasestorage.app'
-CALLABLES = ENDPOINTS[:2]
+CALLABLES = ENDPOINTS[:3]
 FIREBASE_IGNORE = b'node_modules\n.git\n*.log\n'
 FIREBASE_CONFIG = {'functions': {'source': 'source', 'codebase': 'expanded-insights', 'runtime': 'nodejs22'}}
 # Pinned from the Firebase SDK __trigger inspection in the private September 17
@@ -39,7 +40,7 @@ def expected_definitions():
     definitions = {}
     for endpoint in ENDPOINTS:
         row = {'timeout': '60s' if endpoint == 'recordInsightUsage' else '540s',
-               'availableMemoryMb': 256 if endpoint == 'recordInsightUsage' else 1024 if endpoint == 'getClubInsightsV2' else 512,
+               'availableMemoryMb': 256 if endpoint == 'recordInsightUsage' else 1024 if endpoint in ('getClubInsightsV2', 'getCoachPlayerComparison') else 512,
                'maxInstances': 10}
         if endpoint in CALLABLES:
             row.update({'httpsTrigger': True, 'callableLabel': 'true', 'publicInvoker': True, 'ingressSettings': 'ALLOW_ALL'})

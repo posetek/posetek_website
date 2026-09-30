@@ -1,0 +1,11 @@
+---
+import Document from "../layouts/Document.astro";
+import HomePage from "../../src/pages/home/HomePage";
+---
+<Document marketing title="PoseTek | Start with evidence. Train what’s next."
+  description="Test, review, train, and retest. PoseTek connects six soccer performance tests, movement and technique analysis, athlete profiles, AI coaching, and focused workout planning."
+  socialDescription="Understand the movement. Find the focus. Connect performance testing, technique analysis, AI coaching, and workout planning in one player development journey."
+  canonical="https://posetek.net/">
+  <Fragment set:html={"<!-- posetek-marketing-entry -->"} />
+  <div id="root"><HomePage client:load /></div>
+</Document>

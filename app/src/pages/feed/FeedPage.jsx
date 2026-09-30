@@ -6,6 +6,9 @@ import { callSocial } from "./api";
 import { formatMeasurement, mergeActivities, initials, formatDate } from "./model";
 import PlayerShell, { playerTabPath } from "../athlete-portal/player/PlayerShell";
 import { communityPanel, communityPanelPath, communityPersonPath } from "./navigation";
+import { coachWorkspacePath } from "../../lib/coach-navigation";
+import { loadAccountAccess } from "../../lib/account-access";
+import { getClubContext } from "../../lib/organization-data";
 import "./feed.css";
 import "../../styles/pose-portal.css";
 import "./feed-cascade.css";
@@ -171,14 +174,14 @@ function Icon({ name }) {
     {name}
   </span>;
 }
-function FeedPage() {
+function FeedPage({ embedded = false, organizationId: workspaceOrganizationId, onNavigatePlayer } = {}) {
   let location = useLocation();
   let navigate = useNavigate();
   let query = new URLSearchParams(location.search);
   let preview = query.get(`preview`) === `1`;
   let viewAsPlayerId = query.get(`viewAsPlayerId`) || void 0;
   let athletePreview = !!viewAsPlayerId;
-  let organizationId = query.get(`organizationId`) || void 0;
+  let organizationId = workspaceOrganizationId || query.get(`organizationId`) || void 0;
   let linkedPlayer = query.get(`connect`) || void 0;
   let activityId = query.get(`activity`) || void 0;
   let [context, setContext] = React.useState(preview ? sampleContext : null);
@@ -196,8 +199,21 @@ function FeedPage() {
   let authReturnTo = React.useRef(location.pathname + location.search);
   authReturnTo.current = location.pathname + location.search;
   React.useEffect(() => {
-    document.title = `Community | PoseTek`;
-  }, []);
+    if (!embedded) document.title = `Community | PoseTek`;
+  }, [embedded]);
+  React.useEffect(() => {
+    if (embedded || preview || !context?.staff || context.admin || context.playerId || athletePreview) return;
+    let current = true;
+    const uid = auth.currentUser?.uid;
+    // Managers retain their existing staff feed; only coaches use the new
+    // workspace's Community tab. Social context groups both roles as staff.
+    void getClubContext(context.organizationId).then(club => {
+      if (current && uid && auth.currentUser?.uid === uid && club.role === `coach`) {
+        navigate(coachWorkspacePath(location.search, { view: `community`, orgId: context.organizationId || undefined, organizationId: undefined }), { replace: true });
+      }
+    }).catch(() => { /* The social endpoint still enforces the current feed scope. */ });
+    return () => { current = false; };
+  }, [embedded, preview, context, athletePreview, navigate, location.search]);
   /* oxlint-disable react/set-state-in-effect -- Preserve deployed state resets before loading a different viewer, audience, or directory. */
   /* oxlint-disable react-hooks/exhaustive-deps -- These refs are request counters, not DOM nodes; cleanup must invalidate their latest values. */
   React.useEffect(() => {
@@ -225,7 +241,18 @@ function FeedPage() {
           setContext(e);
           setStatus(`ready`);
         }
-      }).catch(e => {
+      }).catch(async e => {
+        // Independent coaches have no social organization. Resolve their existing
+        // account before showing the player feed's error chrome on a legacy link.
+        if (!embedded && !athletePreview && t && authRequest.current === i) {
+          try {
+            const access = await loadAccountAccess(r, () => t && authRequest.current === i);
+            if (t && authRequest.current === i && access.kind === `active` && access.role === `independent`) {
+              navigate(coachWorkspacePath(authReturnTo.current.split(`?`)[1] || ``, { view: `community` }), { replace: true });
+              return;
+            }
+          } catch { /* Keep the original access error if the account cannot be resolved. */ }
+        }
         if (t && authRequest.current === i) {
           setError(e.message);
           setStatus(`error`);
@@ -240,6 +267,7 @@ function FeedPage() {
     };
   }, [
     preview,
+    embedded,
     organizationId,
     viewAsPlayerId,
     navigate,
@@ -306,8 +334,9 @@ function FeedPage() {
   let feedUrl = location.pathname + (location.search || ``);
   let athleteUrl = e => athletePreview ? feedUrl : playerTabPath(e, location.search, location.pathname);
   let staffOnly = !!context && (context.staff || context.admin) && !context.playerId;
-  let sharedPlayerShell = !athletePreview && !staffOnly;
-  let Content = sharedPlayerShell ? `section` : `main`;
+  let sharedPlayerShell = !embedded && !athletePreview && !staffOnly;
+  let sharedChrome = sharedPlayerShell || embedded;
+  let Content = sharedChrome ? `section` : `main`;
   let tabs = staffOnly ? [
     [
       feedUrl,
@@ -351,8 +380,8 @@ function FeedPage() {
       `You`
     ]
   ];
-  let content = <div className={sharedPlayerShell ? `social-app social-embedded` : `pt-pose social-app`}>
-    {!sharedPlayerShell && <header className={`social-header`}>
+  let content = <div className={embedded ? `social-app social-embedded social-coach` : sharedPlayerShell ? `social-app social-embedded` : `pt-pose social-app`}>
+    {!sharedChrome && <header className={`social-header`}>
       <Link className={`social-brand`} to={feedUrl}>
         {`POSETEK`}
         <span>
@@ -375,7 +404,7 @@ function FeedPage() {
       </div>
     </header>}
     <div className={`social-layout`}>
-      {!sharedPlayerShell && <aside className={`social-sidebar`}>
+      {!sharedChrome && <aside className={`social-sidebar`}>
         <div className={`social-club-mark`}>
           <Icon name={`sports_soccer`} />
         </div>
@@ -423,7 +452,7 @@ function FeedPage() {
         </button>}
       </aside>}
       <Content className={`social-main`}>
-        {sharedPlayerShell && <nav className="social-toolbar" aria-label="Community sections">
+        {sharedChrome && <nav className="social-toolbar" aria-label="Community sections">
           <button aria-current={panel === `feed` ? `page` : undefined} onClick={() => setPanel(`feed`)}><Icon name="dynamic_feed" /><span>Activity</span></button>
           <button aria-current={panel === `people` ? `page` : undefined} onClick={() => setPanel(`people`)}><Icon name="person_add" /><span>Find people</span></button>
           <button aria-current={panel === `settings` ? `page` : undefined} onClick={() => setPanel(`settings`)}><Icon name="tune" /><span>Sharing settings</span></button>
@@ -459,15 +488,10 @@ function FeedPage() {
           {panel === `feed` && <>
             <div className={`social-heading`}>
               <div>
-                <p className={`social-eyebrow`}>
+                {!embedded && <p className={`social-eyebrow`}>
                   {`Show up. Put in the work.`}
-                </p>
-                <h1>
-                  {`Better together`}
-                  <span>
-                    {`.`}
-                  </span>
-                </h1>
+                </p>}
+                {embedded ? <h2>Community activity</h2> : <h1>Better together<span>.</span></h1>}
                 <p>
                   {`The latest from your training community.`}
                 </p>
@@ -476,7 +500,7 @@ function FeedPage() {
                 <Icon name={`refresh`} />
               </button>
             </div>
-            {!sharedPlayerShell && <div className={`social-mobile-links`}>
+            {!sharedChrome && <div className={`social-mobile-links`}>
               <button onClick={() => setPanel(`people`)}>
                 <Icon name={`group`} />
                 {`Find friends`}
@@ -498,7 +522,8 @@ function FeedPage() {
             </nav>
             <div className={`social-feed`} aria-busy={loading}>
               {activities.map(e => <ActivityCard activity={e} organizationId={organizationId} preview={preview} onChange={e => setActivities(t => t.map(t => t.id === e.id ? e : t))} onPerson={e => {
-                navigate(communityPersonPath(location.pathname, location.search, e));
+                if (embedded && onNavigatePlayer) onNavigatePlayer(e);
+                else navigate(communityPersonPath(location.pathname, location.search, e));
               }} key={`${context.uid}:${e.id}`} />)}
             </div>
             {loading && <div className={`social-skeleton`} role={`status`}>
@@ -531,7 +556,7 @@ function FeedPage() {
           {panel === `moderation` && context.admin && <Moderation organizationId={organizationId} />}
         </>}
       </Content>
-      {!sharedPlayerShell && <aside className={`social-right`}>
+      {!sharedChrome && <aside className={`social-right`}>
         <p className={`social-eyebrow`}>
           {`Small steps. Real progress.`}
         </p>
@@ -559,7 +584,7 @@ function FeedPage() {
         </div>
       </aside>}
     </div>
-    {!sharedPlayerShell && <nav className={`social-bottom`} aria-label={staffOnly ? `Staff navigation` : `Athlete preview navigation`}>
+    {!sharedChrome && <nav className={`social-bottom`} aria-label={staffOnly ? `Staff navigation` : `Athlete preview navigation`}>
       {tabs.map(([e, t, n]) => <Link to={e} aria-current={n === `Home` ? `page` : void 0} onClick={() => {
         if (n === `Home`) {
           setPanel(`feed`);

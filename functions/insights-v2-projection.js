@@ -4,7 +4,9 @@ const { randomUUID } = require("node:crypto");
 const { playerSegment } = require("./athlete-storage-paths");
 const { millis, duplicateIds, qualifyRep, workoutEvents } = require("./insights-v2-qualification");
 const { createProcessingEvidenceReader, failureMatchesRep } = require("./processing-evidence");
-const PROJECTION_VERSION = 3;
+const { effectiveRep } = require("./effective-rep");
+const { measuredMetrics } = require("./insights-axis-scoring");
+const PROJECTION_VERSION = 4;
 const MAX_HISTORY = 20000;
 const MAX_WORKOUTS = 10000;
 const MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -89,7 +91,8 @@ function createInsightProjection({ db, bucket, HttpsError, now = () => Date.now(
     const testing = await mapBounded(reps, 8, async rep => {
       const evidence = duplicates.has(rep.id) ? {} : await readEvidence(playerId, rep, cache, failures);
       for (const failure of evidence.failures || []) linkedFailures.add(failure);
-      return qualifyRep(rep, evidence, duplicates.has(rep.id));
+      return { ...qualifyRep(rep, evidence, duplicates.has(rep.id)),
+        profileMetrics: measuredMetrics(effectiveRep(rep, evidence, duplicates.has(rep.id))) };
     });
     if (logDocs.length + personalLogs.length > maxWorkouts) throw new HttpsError("resource-exhausted", "The complete workout history exceeds the reporting bound. No partial total was returned.");
     const workouts = workoutEvents([...logDocs.map(doc => ({ ...doc.data(), id: doc.id })),
@@ -134,7 +137,7 @@ function createInsightProjection({ db, bucket, HttpsError, now = () => Date.now(
     let summary = snapshot.data();
     if (!summary?.complete || summary.version !== PROJECTION_VERSION || summary.token !== (state.data()?.token || null)
       || now() - summary.rebuiltAtMillis > MAX_AGE_MS || summary.rebuiltAtMillis > now()) {
-      if (!(typeof allowRebuild === "function" ? allowRebuild() : allowRebuild)) throw new HttpsError("failed-precondition", "Player summaries need rebuilding. Retry to refresh the complete report; each retry advances the rebuild.");
+      if (!(typeof allowRebuild === "function" ? allowRebuild() : allowRebuild)) throw new HttpsError("failed-precondition", "Player summaries need rebuilding. Retry to refresh the complete report; each retry advances the rebuild.", { reason: "insights-rebuild-required" });
       summary = await rebuildInsightPlayer(playerId);
     }
     if (summary.deleted) return null;

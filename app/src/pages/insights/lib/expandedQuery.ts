@@ -2,7 +2,8 @@ import { accountContext } from "../../admin/lib/accountHierarchy";
 import type { InsightsOrigin } from "./navigation";
 
 export const INSIGHT_VIEWS = ["overview", "testing", "workouts", "usage"] as const;
-export type InsightView = typeof INSIGHT_VIEWS[number];
+export const COACH_VIEWS = [...INSIGHT_VIEWS, "community", "player"] as const;
+export type InsightView = typeof COACH_VIEWS[number];
 export const TIMEZONES = ["America/Los_Angeles", "America/Denver", "America/Chicago", "America/New_York", "UTC"];
 export const AGE_BANDS = ["under10", "10-12", "13-15", "16-18", "19+", "unknown"];
 export const DIVISIONS = ["boys", "girls", "unknown"];
@@ -28,8 +29,11 @@ export function expandedRequest(search: string, now = new Date()) {
   const startInput = params.get("start");
   const startDate = validDate(startInput) && startInput! <= endDate && startInput! >= shiftDate(endDate, -365) ? startInput! : shiftDate(endDate, 1 - weeks * 7);
   return { ...accountContext(params), from: choice(params.get("from"), ["accounts", "organization", "dashboard"], "organization") as InsightsOrigin,
-    view: choice(params.get("view"), INSIGHT_VIEWS, "overview") as InsightView,
+    view: choice(params.get("view"), COACH_VIEWS, "overview") as InsightView,
     weeks, timezone, startDate, endDate,
+    playerId: (params.get("playerId") || "").slice(0, 150), rosterSearch: (params.get("rosterSearch") || "").trim().slice(0, 120),
+    page: Math.min(1000, Math.max(0, Math.floor(Number(params.get("page")) || 0))), cursor: (params.get("cursor") || "").slice(0, 2000),
+    extra: Object.fromEntries(["panel", "connect", "activity", "preview"].flatMap(key => params.has(key) ? [[key, params.get(key)!]] : [])),
     testingWindow: choice(params.get("testingWindow"), ["cumulative", "period"], "cumulative") as "cumulative" | "period",
     division: choice(params.get("division"), DIVISIONS), ageBand: choice(params.get("ageBand"), AGE_BANDS),
     testingStatus: choice(params.get("testingStatus"), ["fullyTested", "partiallyTested", "noSuccessfulTests", "noRecordedTests"]),
@@ -41,8 +45,9 @@ export function expandedRequest(search: string, now = new Date()) {
 }
 export type ExpandedRequest = ReturnType<typeof expandedRequest>;
 export function expandedQuery(request: ExpandedRequest, patch: Partial<ExpandedRequest> = {}) {
-  const next = { ...request, ...patch }, query = new URLSearchParams();
-  for (const key of ["orgId", "teamId", "coachId", "from", "view", "timezone", "testingWindow", "division", "ageBand", "testingStatus", "workoutStatus", "usageStatus", "usagePlatform", "usageFeature", "teamAssignment"] as const) if (next[key]) query.set(key, next[key]);
+  const next = { ...request, ...patch }, query = new URLSearchParams(next.extra);
+  for (const key of ["orgId", "teamId", "coachId", "from", "view", "playerId", "rosterSearch", "cursor", "timezone", "testingWindow", "division", "ageBand", "testingStatus", "workoutStatus", "usageStatus", "usagePlatform", "usageFeature", "teamAssignment"] as const) if (next[key]) query.set(key, next[key]);
+  if (next.page) query.set("page", String(next.page));
   query.set("weeks", String(next.weeks)); query.set("start", next.startDate); query.set("end", next.endDate);
   return query;
 }

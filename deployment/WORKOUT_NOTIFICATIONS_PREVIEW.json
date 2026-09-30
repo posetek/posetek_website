@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "status": "preview-ready-email-activation-pending",
+  "recordedAt": "2026-09-28T21:39:11.075Z",
+  "repository": "https://github.com/posetek/posetek_website",
+  "branch": "codex/workout-email-alerts",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/11",
+  "frontend": {
+    "deployId": "6abadd8abff0a78fde2fbe28",
+    "deployUrl": "https://6abadd8abff0a78fde2fbe28--posetek.netlify.app",
+    "state": "ready",
+    "artifactFiles": 1239,
+    "inventoryFiles": 1240,
+    "allArtifactBytesMatch": true,
+    "all32MarketingRoutesMatch": true,
+    "protectedDeepLinkRoutesMatch": true,
+    "applicationSha1": "36adbf4fa0ff48e692ae01354a114fd975f3484f",
+    "productionUnchanged": "6ab8679ccbfca079f8997124",
+    "verifiedAt": "2026-09-28T21:36:08.176Z",
+    "sourceCommit": "d814225368976c97e8184eabb8953779d139bc1c",
+    "publishedToProduction": false,
+    "authenticatedPlayerReturn": true,
+    "exactSavedRecordSelection": true,
+    "notificationDisabledReadback": true,
+    "singleHistoryAfterSelectionRefreshBackForward": true
+  },
+  "intake": {
+    "sourceCommit": "38baa80b3be446345ef9f41087858d017985b5b9",
+    "project": "kickai-69dd0",
+    "region": "us-central1",
+    "scope": "workout-notifications-intake",
+    "functions": {
+      "observeWorkoutNotifications": {
+        "versionId": "1",
+        "sourceSha256": "32a6c626536dffdd8591b5d035511af5923d7b7f984562af485f98c6febb7344",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "120s",
+          "availableMemoryMb": 256,
+          "maxInstances": 10,
+          "secrets": [],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/databases/(default)/documents/players/{playerId}/workoutLogs/{logId}",
+            "eventType": "providers/cloud.firestore/eventTypes/document.write",
+            "service": "firestore.googleapis.com",
+            "failurePolicy": {
+              "retry": {}
+            }
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "observePersonalWorkoutNotifications": {
+        "versionId": "1",
+        "sourceSha256": "32a6c626536dffdd8591b5d035511af5923d7b7f984562af485f98c6febb7344",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "120s",
+          "availableMemoryMb": 256,
+          "maxInstances": 10,
+          "secrets": [],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/databases/(default)/documents/players/{playerId}/personalWorkoutLogs/{logId}",
+            "eventType": "providers/cloud.firestore/eventTypes/document.write",
+            "service": "firestore.googleapis.com",
+            "failurePolicy": {
+              "retry": {}
+            }
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "recordWorkoutActivity": {
+        "versionId": "1",
+        "sourceSha256": "32a6c626536dffdd8591b5d035511af5923d7b7f984562af485f98c6febb7344",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "60s",
+          "availableMemoryMb": 256,
+          "maxInstances": 10,
+          "secrets": [],
+          "httpsTrigger": true,
+          "publicInvoker": true,
+          "ingressSettings": "ALLOW_ALL",
+          "callable": true
+        },
+        "iamSha256": "df2f78f8a685d25fa6b139f4c2b94dd35453ba71f7a7aaaa288ab58c686e68b2",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "getWorkoutNotificationStatus": {
+        "versionId": "1",
+        "sourceSha256": "32a6c626536dffdd8591b5d035511af5923d7b7f984562af485f98c6febb7344",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "60s",
+          "availableMemoryMb": 256,
+          "maxInstances": 10,
+          "secrets": [],
+          "httpsTrigger": true,
+          "publicInvoker": true,
+          "ingressSettings": "ALLOW_ALL",
+          "callable": true
+        },
+        "iamSha256": "372cf25b1adb870071ff2c08dd4b04acf98a20eec2b126efa7bb29caa16bd215",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      }
+    },
+    "unrelatedFunctionsPreserved": true,
+    "anonymousRequestsRejected": [
+      {
+        "name": "recordWorkoutActivity",
+        "status": 401,
+        "error": "UNAUTHENTICATED"
+      },
+      {
+        "name": "getWorkoutNotificationStatus",
+        "status": 401,
+        "error": "UNAUTHENTICATED"
+      }
+    ],
+    "settingsAbsent": true,
+    "sendsEnabled": false,
+    "checkedAt": "2026-09-28T21:33:04.489Z"
+  },
+  "provider": {
+    "name": "Resend",
+    "recipient": "dylank@posetek.net",
+    "sender": "PoseTek Workouts <workouts@alerts.posetek.net>",
+    "accountAccess": "pending",
+    "domainVerification": "pending",
+    "deliveryFunctionsDeployed": false,
+    "schedulerDeployed": false,
+    "webhookDeployed": false,
+    "mailboxAcceptance": false,
+    "workflowEmailsSent": 0
+  },
+  "validation": {
+    "websiteTestsPassed": 1340,
+    "typescript": true,
+    "backendTests": {
+      "total": 410,
+      "passed": 407,
+      "skipped": 3,
+      "failed": 0
+    },
+    "firestoreSdkIntegrationPassed": 15,
+    "canonicalRulesAssertionsPassed": 150,
+    "canonicalFirestoreRulesSha256": "ffd8a5c344e4cfd67882ab33f0fec41aaf7f2ce08beb860b286ced94e1b0e92e",
+    "releaseBaselineTestsPassed": 22,
+    "scopedPublisherTestsPassed": 11,
+    "syntheticResponsiveWidths": [
+      360,
+      390,
+      430,
+      1440
+    ],
+    "existingRepoLintErrors": 5,
+    "existingRepoLintErrorFile": "app/src/pages/athlete-portal/player/use-personal-workouts.ts"
+  },
+  "preserved": {
+    "productionWebsite": "6ab8679ccbfca079f8997124",
+    "workoutLogs": true,
+    "trainingCatalog": true,
+    "trainingPlans": true,
+    "canonicalRules": true,
+    "gateway": true,
+    "nativeSource": true,
+    "wholeBodyMobileAcceptanceGate": false
+  },
+  "remaining": [
+    "Sign in to the PoseTek Resend account and verify the sending domain.",
+    "Install genuine Secret Manager credentials and deploy delivery/webhook scopes.",
+    "Confirm the scheduler and synthetic completion, early ending, quiet/resume, inbox delivery and protected-link acceptance.",
+    "Promote the verified website draft, reconcile its preservation baseline and enable all players with a fresh cutoff."
+  ]
+}

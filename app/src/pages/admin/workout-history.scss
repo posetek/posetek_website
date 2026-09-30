@@ -1,0 +1,38 @@
+// Existing admin surfaces and coach saved-history hierarchy, scoped to this addition.
+.pt-admin .admin-workout-history {
+  .admin-heading { flex-wrap: wrap; align-items: start; }
+  .admin-heading > div { flex: 1 1 260px; }
+  .admin-heading > button { flex: 0 0 auto; }
+  .admin-recorded-workouts { display: grid; gap: 16px; margin-top: 24px; }
+  .admin-recorded-workouts > h3, .admin-recorded-workouts > p { margin: 0; }
+  .week-card { min-width: 0; padding: 20px; border: 1px solid var(--admin-line); border-radius: var(--radius-md); background: var(--surface-1); }
+  .week-card > header { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .week-card > header > div { min-width: 0; flex: 1 1 220px; }
+  .week-card h3 { margin: 0 0 8px; overflow-wrap: anywhere; }
+  .coachdash-sub, .coachdash-notice { color: var(--admin-dim); line-height: 1.55; }
+  .plan-chip { display: inline-flex; align-self: start; padding: 6px 10px; border: 1px solid var(--admin-line); border-radius: var(--radius-sm); font-size: 12px; }
+  .coachdash-player-metrics, .admin-workout-observation { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 18px 0; }
+  .coachdash-player-metrics { border-block: 1px solid var(--admin-line); padding: 16px 0; }
+  dt { color: var(--admin-dim); font-size: 12px; margin-bottom: 6px; }
+  dd { margin: 0; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+  summary { cursor: pointer; padding: 12px 0; min-height: 44px; font-weight: 650; }
+  .drill-list { list-style: none; margin: 8px 0 0; padding: 0; }
+  .drill-row { border-top: 1px solid var(--admin-line); padding: 14px 0; }
+  .drill-copy { display: grid; gap: 6px; overflow-wrap: anywhere; }
+  .drill-meta, .drill-note { color: var(--admin-dim); font-size: 13px; }
+  .admin-workout-select { margin-top: 12px; white-space: normal; text-align: left; min-height: 44px; }
+  .admin-focused-workout { margin-top: 22px; scroll-margin-top: 120px; border-left: 3px solid var(--admin-accent); padding-left: 16px; }
+  .admin-focused-workout:focus-visible, summary:focus-visible, button:focus-visible { outline: 2px solid var(--admin-accent); outline-offset: 4px; }
+  .admin-workout-notifications { padding: 18px 0 4px; }
+  .admin-workout-email-list { list-style: none; padding: 0; margin: 16px 0; }
+  .admin-workout-email-list > li { padding: 18px 0; border-top: 1px solid var(--admin-line); }
+  .admin-workout-email-heading { display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 12px; }
+  .admin-note { overflow-wrap: anywhere; }
+  @media (min-width: 1050px) { .coachdash-player-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (max-width: 540px) {
+    .week-card { padding: 16px; }
+    .admin-focused-workout { padding-left: 10px; }
+    .admin-workout-observation { grid-template-columns: minmax(0, 1fr); }
+    .coachdash-player-metrics { gap: 16px 12px; }
+  }
+}

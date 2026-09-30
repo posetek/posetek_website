@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "status": "production-verified",
+  "recordedAt": "2026-09-29T11:34:12.511Z",
+  "repository": "https://github.com/posetek/posetek_website",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/14",
+  "scope": "Presentation-only refinement of coach team and independent-roster percentile cards.",
+  "decisions": [
+    "Pair the compact radar with a readable percentile and position track for each skill.",
+    "Show skill positions before the radar on phones.",
+    "Explain the scale midpoint and highest position, retain per-skill measured-player counts and explicit missing states, and reveal detailed rules on demand."
+  ],
+  "frontend": {
+    "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+    "deployId": "6abb9f1e6c2c84772de67005",
+    "previousDeployId": "6abb9834af8b9c320f64df04",
+    "sourceCommit": "684528b60b8de3f0a02ca36412590412ca0f923e",
+    "productionUrl": "https://posetek.net",
+    "deployUrl": "https://6abb9f1e6c2c84772de67005--posetek.netlify.app",
+    "publishedAt": "2026-09-29T11:25:34.241Z",
+    "exactReviewedDraftPromoted": true,
+    "rebuildDuringPromotion": false,
+    "documents": [
+      {
+        "path": "/application.html",
+        "sha": "87c8f567449978dd4ae01774043b1083a0fb97c2",
+        "size": 14976
+      },
+      {
+        "path": "/coaches/index.html",
+        "sha": "167c6dd233a8bad39c09f49486d39595a7ea9cb6",
+        "size": 25969
+      },
+      {
+        "path": "/index.html",
+        "sha": "12b1b8ff0a9f0e33e3471b15b7bbd0696e3e86f1",
+        "size": 37505
+      }
+    ],
+    "preservedFilesBeforeRelease": 1334,
+    "addedAssets": 5,
+    "artifactFiles": 1342,
+    "artifactBytes": 134103167,
+    "inventoryFiles": 1343,
+    "artifactMatchesProductionInventory": true,
+    "inventoryManifestSha256": "d2b4f91206b3989c2d572fbf32ab86387eaeb754e7aa5c01b8760ca4894e1041",
+    "servedVerification": {
+      "totalFiles": 1342,
+      "rawExactFiles": 1290,
+      "historicalHtmlMatchesImmutablePredecessor": 51,
+      "homepageBookingLinkTransforms": 5,
+      "otherHomepageDomChanges": false
+    },
+    "httpVerification": {
+      "candidateApplicationRoutes": 25,
+      "candidateMarketingRoutes": 5,
+      "candidateScriptAndStyleAssets": 1175,
+      "productionApplicationRoutes": 25,
+      "productionMarketingRoutes": 5,
+      "productionResponsesMatchCandidate": true
+    },
+    "productionEntryAndImmutableAssetHeadersVerified": true,
+    "baseline": {
+      "reconciled": true,
+      "preservedFiles": 1340,
+      "preservedBytes": 134039693,
+      "ordinaryPreservationBuildPassed": true,
+      "postGuardArtifactMatchedFiles": 1342,
+      "sourceCommitRecorded": true
+    }
+  },
+  "verification": {
+    "insightsTestsPassed": 79,
+    "releaseGuardTestsPassed": 30,
+    "typeScriptPassed": true,
+    "localSyntheticVisualChecks": 28,
+    "viewportWidths": [
+      360,
+      390,
+      430,
+      1280
+    ],
+    "visualStates": [
+      "normal",
+      "long name",
+      "partial missing and insufficient data",
+      "all missing",
+      "two players with 0, 50 and 100",
+      "tied independent roster",
+      "fractional values"
+    ],
+    "horizontalOverflow": false,
+    "pageErrors": 0,
+    "keyboardDisclosurePassed": true,
+    "candidateCompiledSmokeStates": 2,
+    "productionCompiledSmokeStates": 2,
+    "smokeNote": "Sign-in hydration and staff activation entry parsing were checked in a signed-out browser. Activation response was intercepted with a synthetic fixture; no account was created.",
+    "liveAuthenticatedWorkflowsRerun": false,
+    "physicalDeviceTestingClaimed": false,
+    "productionDataCreated": false
+  },
+  "preserved": {
+    "percentileCalculation": true,
+    "cohortAndOwnershipChecks": true,
+    "workoutAndSocialBehavior": true,
+    "athleteAndMarketingPresentation": true,
+    "backendNotDeployed": true,
+    "canonicalRulesNotDeployed": true,
+    "gatewayNotDeployed": true,
+    "nativeNotDeployed": true,
+    "trainingCatalogAndActivationNotChanged": true
+  },
+  "recovery": {
+    "websitePredecessor": "6abb9834af8b9c320f64df04",
+    "note": "Restore the audited predecessor through the guarded website workflow; this release changes no backend or user records."
+  },
+  "evidence": {
+    "visualSha256": "60e739f79964fdf36bc44bd3abaf2746e8840e42f5a917f457b555f7f4b314b4",
+    "servedVerificationSha256": "33467fb6cd734aa59bbce592284c18fcd8b0f8384675dada3390f1daaa7c0a09",
+    "ordinaryBuildLogSha256": "f1c086a47b20b5511b8a333449c364059b69754475dfedc75a34957f2292dc94",
+    "insightsTestsLogSha256": "f5d06f729b62547cf0c179a4e1dfe609674c6950f943e71892c6ad91ab65f5ac",
+    "releaseGuardsLogSha256": "61118c02c6efebb60e66f275d51099103293fc5c66785fddcc7341ca95debfbc"
+  }
+}

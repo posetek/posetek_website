@@ -1,0 +1,444 @@
+{
+  "schemaVersion": 1,
+  "status": "active-all-players",
+  "recordedAt": "2026-09-28T23:11:52.011Z",
+  "repository": "https://github.com/posetek/posetek_website",
+  "branch": "codex/workout-email-alerts",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/11",
+  "checkpoints": {
+    "preview": "deployment/WORKOUT_NOTIFICATIONS_PREVIEW.json",
+    "providerSetup": "deployment/WORKOUT_NOTIFICATIONS_PROVIDER_SETUP.json",
+    "providerVerified": "deployment/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json",
+    "historicalReceiptsPreserved": true
+  },
+  "frontend": {
+    "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+    "deployId": "6abadd8abff0a78fde2fbe28",
+    "previousDeployId": "6ab8679ccbfca079f8997124",
+    "productionUrl": "https://posetek.net",
+    "deployUrl": "https://6abadd8abff0a78fde2fbe28--posetek.netlify.app",
+    "sourceCommit": "d814225368976c97e8184eabb8953779d139bc1c",
+    "publishedToProduction": true,
+    "publishedAt": "2026-09-28T22:56:54.754Z",
+    "promotionVerifiedAt": "2026-09-28T22:56:56.807Z",
+    "exactReviewedDraftPromoted": true,
+    "rebuildPerformed": false,
+    "restorePostCount": 1,
+    "promotionAcknowledgementLost": false,
+    "artifactFiles": 1239,
+    "inventoryFiles": 1240,
+    "allInventoryMatchesReviewed": true,
+    "liveApplicationBytesMatch": true,
+    "prePromotionPublicByteChecks": 129,
+    "preservedApplicationFiles": 1144,
+    "preservedMarketingFiles": 32,
+    "addedCompiledAssets": 62,
+    "reviewedInventorySha256": "00d8dfebbe2040410284e3818d2640370124d32d91a873dc59c18c2e8bae3743",
+    "baseline": {
+      "state": "reconciled-and-verified",
+      "reconciled": true,
+      "cacheVerifiedAt": "2026-09-28T22:59:01.324Z",
+      "baselineFiles": 1207,
+      "baselineBytes": 125432039,
+      "allCandidateFiles": 1239,
+      "allCandidateBytes": 131514386,
+      "allBytesMatchReviewed": true,
+      "ordinaryApplicationPreservationGuardPassed": true,
+      "postGuardArtifactFilesMatchReviewed": 1239,
+      "postGuardMarketingFilesRestoredAndMatched": 32,
+      "postPromotionReleaseBaselineTestsPassed": 22,
+      "sequentialPublicAssetVerificationComplete": true,
+      "evidenceSource": "Baseline reconciliation receipt, ordinary guard build, 22 release tests and sequential production HTTP checks",
+      "completedAt": "2026-09-28T23:05:06.838Z",
+      "publicAssetsChecked": 1049,
+      "publicRoutesChecked": 30,
+      "publicRouteCounts": {
+        "homepage": 2,
+        "coaches": 3,
+        "application": 25
+      },
+      "allArtifactBytesMatchPublished": true
+    },
+    "protectedLinks": {
+      "checkedAt": "2026-09-28T23:00:50.187Z",
+      "evidenceSource": "Release operator production browser checks",
+      "quietExactRecordAndAdministratorSignInReturn": true,
+      "signedOutGuard": true,
+      "exactQueryPreserved": true,
+      "completionExactRecord": true,
+      "earlyEndingExactRecord": true,
+      "fixturesPresentDuringReview": true,
+      "quietInventedEnding": false,
+      "completion": {
+        "doneDrills": 1,
+        "skippedDrills": 1,
+        "allPrescribedSetsComplete": false
+      },
+      "fixtureLimitation": "Synthetic prescription omitted dose amount/unit, so existing drill detail formatting showed undefined for those optional fixture-only values; outcome, selection and delivery assertions verified."
+    }
+  },
+  "backend": {
+    "project": "kickai-69dd0",
+    "region": "us-central1",
+    "deployedFunctions": 7,
+    "allActiveVersion1": true,
+    "scopedSourceConfigurationAndIamVerified": true,
+    "unrelatedFunctionsPreserved": true,
+    "receipt": "deployment/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json",
+    "scheduler": {
+      "enabled": true,
+      "schedule": "every 5 minutes"
+    }
+  },
+  "provider": {
+    "name": "Resend",
+    "recipient": "dylank@posetek.net",
+    "sender": "PoseTek Workouts <workouts@alerts.posetek.net>",
+    "domain": "alerts.posetek.net",
+    "domainVerified": true,
+    "sendingKeyDomainRestricted": true,
+    "sendingKeyPermission": "sending_access",
+    "openTracking": false,
+    "clickTracking": false,
+    "realSignedWebhookReconciliation": true,
+    "configurationReceipt": "deployment/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json",
+    "subdomainDmarc": {
+      "name": "_dmarc.alerts.posetek.net",
+      "value": "v=DMARC1; p=none;",
+      "rootPolicyUnchanged": true,
+      "analysisAfterQuietMessage": "pass",
+      "analysisEvidence": "Release operator Resend Insights browser readback; corroborated in the private mailbox receipt"
+    },
+    "secretValuesOmitted": true
+  },
+  "pilot": {
+    "state": "acceptance-complete-fixtures-cleaned",
+    "scope": "one synthetic allowlisted athlete",
+    "verifiedAt": "2026-09-28T22:56:28.772Z",
+    "journalVerifiedAt": "2026-09-28T22:56:28.775Z",
+    "naturalInactivityThresholdMinutes": 30,
+    "naturalQuietDeadlinesVerifiedAt": "2026-09-28T22:55:31.632Z",
+    "artificialTimingUsed": false,
+    "providerReadbackSource": "Resend dashboard readback",
+    "deliveredMessages": 3,
+    "cases": [
+      {
+        "case": "completion",
+        "providerStatus": "delivered",
+        "actualSignedDeliveredReceipt": true,
+        "deliveredReceiptReceivedAt": "2026-09-28T22:24:45.151Z"
+      },
+      {
+        "case": "early",
+        "providerStatus": "delivered",
+        "actualSignedDeliveredReceipt": true,
+        "deliveredReceiptReceivedAt": "2026-09-28T22:24:47.449Z"
+      },
+      {
+        "case": "quiet",
+        "providerStatus": "delivered",
+        "actualSignedDeliveredReceipt": true,
+        "deliveredReceiptReceivedAt": "2026-09-28T22:56:08.941Z"
+      }
+    ],
+    "resume": {
+      "cancelledWithoutSend": true,
+      "verifiedAt": "2026-09-28T22:55:53.837Z",
+      "firstAttemptRecorded": false
+    },
+    "historicalEmails": 0,
+    "historicalCoverage": "One synthetic pre-cutoff ending; broader historical import scenarios not claimed.",
+    "workoutEndingsInvented": false,
+    "parkedAt": "2026-09-28T23:00:29.168Z",
+    "privateIdentifiersAndRawPayloadsOmitted": true
+  },
+  "mailbox": {
+    "evidenceSource": "Outlook connector and browser, recorded by the release operator",
+    "checkedAt": "2026-09-28T22:57:31.420Z",
+    "recipient": "dylank@posetek.net",
+    "sender": "workouts@alerts.posetek.net",
+    "quietMessage": {
+      "folder": "Inbox",
+      "receivedAt": "2026-09-28T22:56:03Z",
+      "confirmedInInbox": true,
+      "sentAfterSubdomainDmarcConfigured": true
+    },
+    "confirmedInboxMessages": 1,
+    "earlierTerminalMessages": {
+      "count": 2,
+      "providerDelivered": true,
+      "microsoftServerAccepted": true,
+      "inboxPresenceConfirmed": false,
+      "note": "The two terminal messages preceded the subdomain DMARC record and were not found in Inbox during the recorded checks. Do not equate provider delivery with inbox placement."
+    },
+    "allThreeInInboxClaimed": false,
+    "readingByUserNotClaimed": true,
+    "placementGuaranteeClaimed": false
+  },
+  "activation": {
+    "allPlayersEnabled": true,
+    "state": "active",
+    "productionCutoffMillis": 1790636790868,
+    "activatedAt": "2026-09-28T23:06:30.868Z",
+    "confirmedAt": "2026-09-28T23:06:30.994Z",
+    "localActivationTime": "2026-09-28 4:06:30 PM PDT",
+    "settingsPath": "workoutNotificationSettings/current",
+    "settings": {
+      "enabled": true,
+      "sendEnabled": true,
+      "activatedAtMillis": 1790636790868
+    },
+    "exactThreeFields": true,
+    "pilotAllowlistPresent": false,
+    "freshCutoffAfterCleanup": true,
+    "historicalBackfill": false,
+    "confirmationEvidence": "Release operator activation readback; independently followed by bounded read-only settings/version audit"
+  },
+  "cleanup": {
+    "state": "complete",
+    "runOwnedFixturesDeleted": true,
+    "fixturesDeletionAt": "2026-09-28T23:00:57.907Z",
+    "cleanupCheckedAt": "2026-09-28T23:02:12.732Z",
+    "priorSettingsRestored": true,
+    "complete": true,
+    "finalReadOnlyQuiescenceAuditPassed": true,
+    "onlyProvenRunOwnedFixturesRemoved": true,
+    "finalReadOnlyQuiescenceAuditAt": "2026-09-28T23:06:17.889Z",
+    "explicitFixtureRootsAbsentAfterActivation": 15,
+    "settingsAbsenceBeforeActivationVerified": true,
+    "settingsStateNote": "Prior settings absence was restored at cleanup-check; global settings were subsequently created at the fresh activation cutoff.",
+    "settingsAbsentAtCleanupCheck": true
+  },
+  "validation": {
+    "websiteTestsPassed": 1340,
+    "typescript": true,
+    "backendTests": {
+      "total": 410,
+      "passed": 407,
+      "skipped": 3,
+      "failed": 0
+    },
+    "firestoreSdkIntegrationPassed": 15,
+    "canonicalRulesAssertionsPassed": 150,
+    "releaseBaselineTestsPassed": 22,
+    "notificationPublisherTestsPassed": 14,
+    "sharedPublisherTestsPassed": 19,
+    "syntheticResponsiveWidths": [
+      360,
+      390,
+      430,
+      1440
+    ],
+    "existingRepoLintErrors": 5,
+    "existingRepoLintErrorFile": "app/src/pages/athlete-portal/player/use-personal-workouts.ts",
+    "prelaunchRuntime": {
+      "window": {
+        "from": "2026-09-28T22:11:26.514Z",
+        "to": "2026-09-28T22:41:26.514Z",
+        "minutes": 30
+      },
+      "entries": 83,
+      "runtimeFailures": 0,
+      "errorSeverityEntries": 0,
+      "schedulerErrors": 0,
+      "handledWebhook400Count": 1,
+      "scope": "Prelaunch window only; does not claim a post-activation audit."
+    },
+    "postActivationReadOnlyAudit": {
+      "sampleLimitPerQuery": 100,
+      "queued": {
+        "sampled": 0,
+        "limitReached": false,
+        "statusCounts": {
+          "pending": 0,
+          "sending": 0,
+          "accepted": 0,
+          "delivered": 0,
+          "delayed": 0,
+          "bounced": 0,
+          "suppressed": 0,
+          "failed": 0,
+          "needs_review": 0,
+          "cancelled": 0,
+          "unknown": 0
+        }
+      },
+      "recentOutbox": {
+        "sampled": 0,
+        "limitReached": false,
+        "statusCounts": {
+          "pending": 0,
+          "sending": 0,
+          "accepted": 0,
+          "delivered": 0,
+          "delayed": 0,
+          "bounced": 0,
+          "suppressed": 0,
+          "failed": 0,
+          "needs_review": 0,
+          "cancelled": 0,
+          "unknown": 0
+        },
+        "eventCounts": {
+          "terminal": 0,
+          "inactivity": 0,
+          "unknown": 0
+        }
+      },
+      "recentActivity": {
+        "sampled": 0,
+        "limitReached": false,
+        "webObservedCount": 0,
+        "scheduledQuietCount": 0,
+        "sourceCounts": {
+          "workoutLogs": 0,
+          "personalWorkoutLogs": 0,
+          "unknown": 0
+        }
+      },
+      "explicitFixtureRootsChecked": 15,
+      "violations": {
+        "preCutoffQueuedJobs": 0,
+        "queuedWithoutPendingOrSendingStatus": 0,
+        "preCutoffRecentJobs": 0,
+        "preCutoffTerminalEndings": 0,
+        "preCutoffQuietBasis": 0,
+        "fixtureRecordsInSamples": 0,
+        "explicitFixtureRootsRemaining": 0
+      },
+      "passed": true,
+      "emptySamplesMeanZeroObservedOnly": true,
+      "boundedObservationsOnly": true,
+      "historicalFloodCoverageNotExpanded": true,
+      "settingsExactThreeFieldsAndCutoff": true,
+      "settingsVersionUnchanged": true,
+      "readOnly": true,
+      "evidenceRecordedInReceiptAt": "2026-09-28T23:08:00.869Z",
+      "observationLimit": "Three bounded queries with a limit of 100 each returned zero sampled records at this checkpoint. This establishes zero observed records in those queries, not a universal no-historical-flood guarantee."
+    },
+    "postActivationRuntime": {
+      "schemaVersion": 1,
+      "window": {
+        "from": "2026-09-28T23:06:30.868Z",
+        "to": "2026-09-28T23:11:12.845Z"
+      },
+      "retrieval": {
+        "requests": 1,
+        "entries": 4,
+        "maxEntries": 3000,
+        "complete": true
+      },
+      "functions": {
+        "observeWorkoutNotifications": {
+          "entries": 0,
+          "errorSeverityEntries": 0,
+          "crashEntries": 0,
+          "http5xxEntries": 0,
+          "executionStarted": 0,
+          "executionCompletedOk": 0,
+          "executionFailureEntries": 0
+        },
+        "observePersonalWorkoutNotifications": {
+          "entries": 0,
+          "errorSeverityEntries": 0,
+          "crashEntries": 0,
+          "http5xxEntries": 0,
+          "executionStarted": 0,
+          "executionCompletedOk": 0,
+          "executionFailureEntries": 0
+        },
+        "recordWorkoutActivity": {
+          "entries": 0,
+          "errorSeverityEntries": 0,
+          "crashEntries": 0,
+          "http5xxEntries": 0,
+          "executionStarted": 0,
+          "executionCompletedOk": 0,
+          "executionFailureEntries": 0
+        },
+        "getWorkoutNotificationStatus": {
+          "entries": 0,
+          "errorSeverityEntries": 0,
+          "crashEntries": 0,
+          "http5xxEntries": 0,
+          "executionStarted": 0,
+          "executionCompletedOk": 0,
+          "executionFailureEntries": 0
+        },
+        "dispatchWorkoutNotification": {
+          "entries": 0,
+          "errorSeverityEntries": 0,
+          "crashEntries": 0,
+          "http5xxEntries": 0,
+          "executionStarted": 0,
+          "executionCompletedOk": 0,
+          "executionFailureEntries": 0
+        },
+        "sweepWorkoutNotifications": {
+          "entries": 2,
+          "errorSeverityEntries": 0,
+          "crashEntries": 0,
+          "http5xxEntries": 0,
+          "executionStarted": 1,
+          "executionCompletedOk": 1,
+          "executionFailureEntries": 0
+        },
+        "resendWorkoutNotificationWebhook": {
+          "entries": 0,
+          "errorSeverityEntries": 0,
+          "crashEntries": 0,
+          "http5xxEntries": 0,
+          "executionStarted": 0,
+          "executionCompletedOk": 0,
+          "executionFailureEntries": 0
+        }
+      },
+      "scheduler": {
+        "entries": 2,
+        "errorSeverityEntries": 0,
+        "crashEntries": 0,
+        "http5xxEntries": 0,
+        "executionStarted": 0,
+        "executionCompletedOk": 0,
+        "executionFailureEntries": 0,
+        "attemptStarted": 1,
+        "attemptFinished": 1,
+        "attemptFinishedOk": 0,
+        "attemptFinishedNonOk": 0
+      },
+      "totals": {
+        "entries": 4,
+        "errorSeverityEntries": 0,
+        "crashEntries": 0,
+        "http5xxEntries": 0,
+        "executionStarted": 1,
+        "executionCompletedOk": 1,
+        "executionFailureEntries": 0
+      },
+      "observationLimit": "One bounded logging query for the stated window; a scheduler attempt and successful sweep execution were observed. No real-player sends are claimed by these logs."
+    }
+  },
+  "preserved": {
+    "realAthleteWorkoutData": true,
+    "trainingCatalog": true,
+    "trainingPlans": true,
+    "canonicalRules": true,
+    "gateway": true,
+    "nativeSource": true,
+    "wholeBodyMobileAcceptanceGate": false,
+    "rootMailRouting": true
+  },
+  "privateEvidenceHashes": {
+    "promotionSha256": "036de7255e5966ba52aee5bde1cd2ac0d075790c79cc65ff2c4d860b21962514",
+    "providerDeliverySha256": "20cb93b50ca3449ef573c7488f787a57b70f76083da346ece8e2a16991b622d0",
+    "mailboxSha256": "10181b2e3267c5f6209b7529dda080e2097f96c8be3492d31b5c109d2f954411",
+    "prelaunchRuntimeSha256": "ada9dbc080a12198a24343050d976c92ef0c1169e9c8077a9933737b063931c7",
+    "productionProtectedLinksSha256": "d7344922f96e2283f6f0f2245f119681c5a3551c51fdc2b837d80f59ebb71fec",
+    "baselineCacheVerificationSha256": "c5ea07382c2a3735cb57a64d82732833ece4a079fd11cda5864e994938618c62",
+    "baselineReconciliationSha256": "5114ede8d9b0e797d7e4a969872c65505ac2d67e011beb9e30d6373ab7db022b",
+    "postActivationAuditSha256": "b30ae19dc65e2a623b9c4bfe42753a35c153311a9e2e95553e0e937065224d7a",
+    "finalCleanupJournalSha256": "2cc55257e53880c3f117c07cd9a50bdafc10d886f65f9e46c67584a9eca4e949",
+    "postActivationRuntimeSha256": "66dcc33fff3e296f9102d08658b5b301e9f32407973139ff52f155153608f90b"
+  },
+  "remaining": []
+}

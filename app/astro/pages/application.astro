@@ -1,0 +1,12 @@
+---
+import Document from "../layouts/Document.astro";
+import ApplicationRoot from "../../src/astro/ApplicationRoot";
+---
+<Document title="PoseTek - Soccer Performance Analytics">
+  <Fragment set:html={"<!-- posetek-astro-application-entry -->"} />
+  <div id="root"><ApplicationRoot client:only="react" /></div>
+  <noscript>Enable JavaScript to sign in and use PoseTek.</noscript>
+  <Fragment set:html={"\n<!-- homepage-navigation:start -->\n"} />
+  <script is:inline src="/marketing/home-navigation.js" defer></script>
+  <Fragment set:html={"\n<!-- homepage-navigation:end -->\n"} />
+</Document>

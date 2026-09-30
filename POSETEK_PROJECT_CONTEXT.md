@@ -1,6 +1,6 @@
 # PoseTek website project context
 
-Reviewed on September 26, 2026. This guide summarizes the available repository and
+Reviewed on September 29, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
@@ -13,6 +13,89 @@ indexes and rules tests against the canonical mobile rules. Implementation was
 authorized on 2026-09-29 and has not started; nothing is deployed. Read
 [the handoff](docs/DEVICE_PERFORMANCE_PLAN_HANDOFF.md); the canonical plan is in
 `PoseTek-mobile-app/docs/plans/`. This does not change the recorded production release.
+
+## Coach percentile presentation (2026-09-29, live)
+
+Coach percentile presentation is live as deployment `6abb9f1e6c2c84772de67005`, source
+`684528b`, published September 29, 2026 at 4:25:34 AM PDT. The card pairs a compact
+radar with readable skill positions, measured-player counts and concise scale
+explanations. Phone layouts show skill positions first. Scoring and access are
+unchanged. All 1,342 artifact files match production inventory; the baseline
+protects 1,340 application/public files. See
+[the presentation release receipt](deployment/COACH_COMPARISON_POLISH_PRODUCTION.json)
+and [PR #14](https://github.com/posetek/posetek_website/pull/14).
+
+Verification passed 79 Insights tests, 30 release guards and 28 synthetic browser
+layout/state checks across four widths. Candidate and production artifact, route
+and signed-out entry checks passed. No production records or accounts were
+created. The ordinary preservation build matched the published artifact.
+
+## Unified coach workspace and Astro migration (2026-09-29)
+
+The user approved Team Insights as the single coach workspace, including
+organization and independent coaches. Overview owns the roster; Testing,
+Workouts, Active use, Community and one named player tab share its shell. Player
+comparisons use measured team/roster percentiles and recorded age, with explicit
+missing-data states. Existing plans, workout history, published personal workouts,
+signup actions and planner paths remain connected. Canonical staff permissions
+and social audiences remain authoritative.
+
+The user also selected the full-site Astro migration and supplied Astra frontend
+design guidance. Astro builds Players, Coaches and the application documents,
+retaining React interactions, Svelte demonstrations and the protected public
+assets. See [the implementation handoff](docs/UNIFIED_COACH_WORKSPACE.md) and
+[the API contract](docs/insights/COACH_WORKSPACE_CONTRACT.md). The scoped Insights
+release contains nine functions; no gateway, rules, native or catalog release is
+included. Website source `3e41c2a6c2bc8beba3b0829091a96d441ad0e15c` was published
+as `6abb9834af8b9c320f64df04` on September 29 at 3:55:40 AM PDT by promoting
+the exact reviewed draft. All 1,337 artifact files match the production inventory;
+the reconciled baseline protects 1,335 application/public files. The ordinary
+preservation build and 30 release guards passed. Hosted coach acceptance passed
+73 checks; production passed 12 coach, 16 athlete/manager/admin, and two compiled
+entry checks. See `deployment/UNIFIED_COACH_WORKSPACE_PRODUCTION.json` for backend,
+served-HTML processing, cleanup and recovery evidence.
+
+The previously deployed workout-alert source branch was merged before this work,
+preserving the September 28 live functionality that had not yet reached main.
+The following section records that predecessor production state.
+
+## Workout email alerts (2026-09-28, live)
+
+All-player workout alerts are enabled from September 28, 2026 at 4:06:30 PM PDT
+(`activatedAtMillis: 1790636790868`), with no historical backfill or pilot allowlist.
+Resend sends saved workout outcomes to `dylank@posetek.net` from
+`PoseTek Workouts <workouts@alerts.posetek.net>`. Website sessions also qualify for
+one inactivity notice after 30 minutes without meaningful activity, processed by
+a five-minute sweep. Native coverage uses existing saved endings; native-only
+inactivity is not inferred. Emails include recorded progress, time and a protected
+link to the exact workout history, where administrators can inspect delivery status.
+
+Website source `d814225368976c97e8184eabb8953779d139bc1c` was published as deployment
+`6abadd8abff0a78fde2fbe28` at 3:56:54 PM PDT by promoting the reviewed draft without
+rebuilding. All 1,239 artifact files match the candidate; the reconciled baseline
+protects 1,207 application/public files (125,432,039 bytes). The ordinary
+preservation build, 22 release checks, 30 production routes and all 1,049 JS/CSS
+assets passed. All 32 approved marketing files remain unchanged.
+
+All seven scoped Firebase functions and the scheduler are live and audited.
+The verified Resend domain uses one DKIM TXT, two DNS-only CNAMEs and a
+subdomain-only initial DMARC policy; root mail records remain unchanged. The
+sending-only key is domain restricted and both secrets use Secret Manager.
+Three synthetic emails received signed delivery receipts; the post-DMARC quiet
+message was also confirmed in Outlook Inbox. The first two messages have provider
+delivery evidence only. Natural quiet timing, resume cancellation, exact protected
+links and sign-in return passed. Synthetic cleanup and final quiescence checks
+passed before global activation. A bounded post-activation audit found exact
+settings, no synthetic roots and zero sampled new jobs or activity; this is not
+a claim of real-player usage or a complete historical scan.
+
+Read the [production receipt](deployment/WORKOUT_NOTIFICATIONS_PRODUCTION.json),
+[notification handoff](docs/WORKOUT_NOTIFICATIONS.md) and
+[scoped release guide](deployments/workout-notifications/README.md).
+The implementation preserves existing workout logs, canonical rules, gateway,
+native source, training catalog and the false whole-body mobile acceptance gate.
+Changes are shared in [PR #11](https://github.com/posetek/posetek_website/pull/11).
+The following sections record preceding releases.
 
 ## Email-free staff and administrator access (2026-09-26)
 

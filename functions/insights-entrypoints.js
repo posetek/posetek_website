@@ -49,6 +49,7 @@ function createInsightsEntrypoints(functions, admin, caller) {
   const events = functions.runWith({ timeoutSeconds: 540, memory: "512MB", maxInstances: 10, failurePolicy: true });
   const result = {
     getClubInsightsV2: functions.runWith({ timeoutSeconds: 540, memory: "1GB", maxInstances: 10 }).https.onCall((data, context) => insights.getClubInsightsV2(data || {}, caller(context))),
+    getCoachPlayerComparison: functions.runWith({ timeoutSeconds: 540, memory: "1GB", maxInstances: 10 }).https.onCall((data, context) => insights.getCoachPlayerComparison(data || {}, caller(context))),
     recordInsightUsage: functions.runWith({ timeoutSeconds: 60, maxInstances: 10 }).https.onCall((data, context) => usage.recordInsightUsage(data, caller(context))),
     projectInsightPlayer: events.firestore.document("players/{playerId}").onWrite((_, context) => rebuild(context.params.playerId)),
     projectInsightRecords: events.firestore.document("players/{playerId}/{collectionId}/{recordId}").onWrite(projectRecord),
