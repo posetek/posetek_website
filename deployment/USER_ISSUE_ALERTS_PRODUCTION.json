@@ -358,7 +358,15 @@
     "duplicateRetriesSuppressed": true,
     "recurrenceReopened": true,
     "productionDirectClientReadsDenied": true,
-    "privateScreenshotReadPassed": true
+    "privateScreenshotReadPassed": true,
+    "preservationBuild": {
+      "at": "2026-09-30T22:45:23.779Z",
+      "ordinaryBuildProtectedFiles": 1387,
+      "approvedMarketingRestored": true,
+      "composedArtifactFiles": 1389,
+      "exactPublishedArtifact": true,
+      "pathComparison": "Netlify canonical lowercase inventory paths"
+    }
   },
   "cleanup": {
     "at": "2026-09-30T22:42:25.237Z",
@@ -389,5 +397,6 @@
     "Build and review native candidate on the owning Mac, iPhone and TestFlight before rollout.",
     "Independent Cloud Monitoring email configuration is verified; its actual email delivery was not tested."
   ],
-  "recovery": "Disable userIssueSettings/current enabled and sendEnabled to park issue alerts. Keep dedup/outbox evidence; do not replay delivered jobs. Restore predecessor website only after checking intervening releases. Existing workout settings are separate."
+  "recovery": "Disable userIssueSettings/current enabled and sendEnabled to park issue alerts. Keep dedup/outbox evidence; do not replay delivered jobs. Restore predecessor website only after checking intervening releases. Existing workout settings are separate.",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/15"
 }
