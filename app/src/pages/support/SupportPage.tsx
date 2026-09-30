@@ -12,6 +12,7 @@ import {
   type SupportQuestionId,
 } from "./support-content";
 import "./support.scss";
+import ReportProblem from "./ReportProblem";
 
 function SupportEmail() {
   return <a href={SUPPORT_MAILTO}>{SUPPORT_EMAIL}</a>;
@@ -52,6 +53,7 @@ export default function SupportPage() {
           <p className="lead">Help with the PoseTek app and posetek.net. If your answer isn't below, email us and a person on our team will reply.</p>
         </div>
 
+        <ReportProblem />
         <section id="contact" aria-labelledby="contact-heading">
           <h2 id="contact-heading">Contact us</h2>
           <p>Email is the fastest way to reach us, for anything from a sign-in problem to a question about your results.</p>

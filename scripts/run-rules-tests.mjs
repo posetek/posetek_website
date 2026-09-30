@@ -33,6 +33,7 @@ const suites = [
   { name: 'adminRules', project: 'demo-posetek-admin' },
   { name: 'insightsRules', project: 'demo-expanded-insights' },
   { name: 'workoutNotifications', project: 'demo-workout-notifications' },
+  { name: 'userIssues', project: 'demo-user-issues' },
   { name: 'personalizedRules', project: 'demo-personalized-planner' },
   { name: 'socialRules', project: 'demo-posetek-feed', storage: true },
   { name: 'testingEventRules', project: 'demo-posetek-testing-events' },

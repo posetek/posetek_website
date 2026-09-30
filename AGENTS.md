@@ -48,22 +48,21 @@ default to a sibling `../PoseTek-mobile-app` checkout, and `RULES_PATH` /
 `deployment/*.json`, including the composed `whole-body-firestore.rules`
 (deleted), are historical records of past publishes, not instructions.
 
-The current website release is `6abb9f1e6c2c84772de67005`, source `684528b`,
-published September 29, 2026 at 4:25:34 AM PDT. This presentation follow-up makes coach
-percentile cards easier to scan without changing calculations, cohorts or access.
-Read `deployment/COACH_COMPARISON_POLISH_PRODUCTION.json`. Team Insights is the single coach
-workspace, including roster, inline player comparisons/training and embedded
-Community. Astro builds the three website documents while retaining React and
-Svelte interactions. The baseline protects 1,340 application/public files; all
-1,342 artifact files match the production inventory. Read
+The current website release is `6abd8f957e046e8059376091`, source `e8de8d7`,
+published 9/30/2026, 3:41:20 PM PDT. Separate user issue alerts, a report form and
+a private admin inbox are live. Read `deployment/USER_ISSUE_ALERTS_PRODUCTION.json`
+and `docs/USER_ISSUE_ALERTS.md`. Native candidate `0f0d876` still requires
+Mac/iPhone/TestFlight acceptance; real Crashlytics export remains unverified.
+The baseline protects 1387 application/public files; all 1389 artifact
+files match production. Players and Coaches marketing bytes were preserved.
+Team Insights remains the coach workspace with canonical membership/social
+boundaries. Preserve private workout drafts, signup codes and the separate live
+workout-alert workflow in `deployment/WORKOUT_NOTIFICATIONS_PRODUCTION.json`.
+No rules, gateway, native or catalog deployment was included in this release.
+Read `deployment/COACH_COMPARISON_POLISH_PRODUCTION.json`,
 `deployment/UNIFIED_COACH_WORKSPACE_PRODUCTION.json`,
-`docs/UNIFIED_COACH_WORKSPACE.md` and `docs/insights/COACH_WORKSPACE_CONTRACT.md`.
-Nine scoped Insights functions are live. Preserve canonical membership/social
-boundaries, private workout drafts, the existing signup codes, and the live
-workout-alert workflow from `deployment/WORKOUT_NOTIFICATIONS_PRODUCTION.json`.
-That alert source was merged before this release because it was already live
-but ahead of GitHub main. No rules, gateway, native or catalog deployment was
-included in this adjustment.
+`docs/UNIFIED_COACH_WORKSPACE.md` and `docs/insights/COACH_WORKSPACE_CONTRACT.md`
+for the preceding workspace behavior and release history.
 
 The prior email-free access website release is `6ab8679ccbfca079f8997124`, source `f9f10e0`,
 published September 26, 2026 at 5:50:52 PM PDT. Email-free staff activation and

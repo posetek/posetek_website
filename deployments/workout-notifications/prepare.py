@@ -29,6 +29,7 @@ SECRETS = {
 HTTPS = ('recordWorkoutActivity', 'getWorkoutNotificationStatus', 'resendWorkoutNotificationWebhook')
 CALLABLES = HTTPS[:2]
 FILES = ('workout-notifications.js', 'workout-notifications-entrypoints.js', 'workout-notifications-provider.js',
+         'user-issues.js', 'user-issue-model.js',
          'club-access.js', 'athlete-storage-paths.js', 'insights-v2-qualification.js', 'package.json', 'package-lock.json')
 
 

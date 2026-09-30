@@ -20,7 +20,12 @@ function createWorkoutNotificationEntrypoints(functions, admin, caller) {
       let verified;
       try { verified = verifyResendWebhook(req.rawBody, req.headers, process.env.RESEND_WEBHOOK_SECRET); }
       catch (_) { res.status(400).send("Invalid webhook"); return; }
-      try { await service.webhook(verified); res.status(200).send("OK"); }
+      try {
+        await service.webhook(verified);
+        const { createUserIssues } = require("./user-issues");
+        await createUserIssues({ db: admin.firestore(), HttpsError: functions.https.HttpsError, logger: functions.logger }).webhook(verified);
+        res.status(200).send("OK");
+      }
       catch (error) { res.status(error.code === "invalid-argument" ? 400 : 503).send("Delivery event not recorded"); }
     }),
   };
