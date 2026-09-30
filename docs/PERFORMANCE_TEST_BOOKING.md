@@ -17,6 +17,12 @@ request mode is the stated draft assumption pending any further direction.
 Implementation alone does not publish the page or enable the new endpoint.
 Production release and actual inbox delivery must be recorded separately.
 
+The September 30 user-issue alert release went live during this work. Its committed
+source and reconciled baseline were merged into the booking branch, and the exact
+matching release artifact was used for composition. The booking candidate is based
+on `6abd8f957e046e8059376091`; it preserves all 1,386 other protected files and both
+marketing documents. It does not roll back the concurrent issue-alert update.
+
 ## Design reference and decisions
 
 The current Players and Coaches pages are the visual reference. The booking page
@@ -81,3 +87,20 @@ Reconcile the preservation baseline only after verifying the published artifact;
 otherwise a later ordinary build would restore the previous booking page. Keep
 the existing homepage, Coaches page, application, Firebase rules, gateway, and
 training data intact. Do not deploy all root Firebase functions.
+
+## Verification of the review candidate
+
+- 38 Node checks passed across booking delivery, provider/HTTP contracts, booking
+  composition, preview aliases and production preservation; six mocked Python
+  release-helper checks passed.
+- The exact composed artifact passed two homepage routes, three Coaches routes,
+  five booking aliases, 25 application routes and 1,222 referenced asset checks.
+  This is not authenticated application acceptance.
+- Browser review covered desktop, 768px tablet, 390px phone and 320px phone
+  viewports, with no horizontal overflow. Required-field validation, focused
+  inline error feedback, field retention, a simulated 503 followed by success,
+  and the pending-confirmation receipt were checked.
+- The isolated loopback fixture recorded identical request IDs and payloads for
+  unchanged retries and for re-entry after page reload. No actual email was sent.
+- Existing Clarity integration remains present; no payment SDK, new frontend
+  dependency, price or unverified test duration was added.
