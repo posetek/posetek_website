@@ -127,6 +127,15 @@ test("normal video and artifact URLs are pinned to inspected generation and do n
   assert.ok(result.artifactUrls["pose.json"]);
   assert.ok(bucket.calls.filter(c => c[0] === "sign").every(c => c[2].generation === "123"));
 });
+test("reps processed without pose sign tracking.json for replay; the sprint list names only files mobile writes", async () => {
+  const { ARTIFACTS } = require("./effective-results");
+  for (const drill of ["sprint", "changeOfDirection", "dribbling"]) assert.ok(ARTIFACTS[drill].includes("tracking.json"), drill);
+  assert.deepEqual(ARTIFACTS.sprint.filter(name => /^com_/.test(name)), []);
+  const folder = original.storagePath;
+  const { service } = setup({ evidence: { ...valid, folder }, objects: { [`${folder}/metadata.json`]: { ...valid.metadata, poseComputed: false }, [`${folder}/tracking.json`]: { schemaVersion: 1, frames: [] } } });
+  const result = await service.getMedia({ playerId: "player", drill: "dribbling", repId: "rep" }, admin);
+  assert.ok(result.artifactUrls["tracking.json"]); assert.equal(result.artifactUrls["pose.json"], undefined);
+});
 test("a reused ordinary folder never exposes another attempt; exact diagnostic report enables video fallback even with stale upload pointer", async () => {
   const folder = original.storagePath;
   const { service, bucket } = setup({ seed: { "failureCases/failure": { playerDocumentID: "player", repId: "rep", storage: { reportPath: "failure_cases/failure/report.json" } } },

@@ -153,7 +153,7 @@ const ATHLETE_SHARE_REP_TYPES = {
 };
 const ATHLETE_SHARE_ARTIFACTS = {
   shooting: ["pose.json", "metadata.json", "ball_detections.json"],
-  sprint: ["pose.json", "metadata.json", "com_midpoints.json", "com_velocity.json"],
+  sprint: ["pose.json", "metadata.json", "tracking.json"],
   jump: ["pose.json", "metadata.json", "com_height.json", "torso_midpoints.json"],
   broadJump: [
     "pose.json",
@@ -164,8 +164,8 @@ const ATHLETE_SHARE_ARTIFACTS = {
     "com_midpoints.json",
     "com_height.json",
   ],
-  changeOfDirection: ["pose.json", "metadata.json"],
-  dribbling: ["pose.json", "metadata.json"],
+  changeOfDirection: ["pose.json", "metadata.json", "tracking.json"],
+  dribbling: ["pose.json", "metadata.json", "tracking.json"],
   freeRecord: ["pose.json", "metadata.json", "ball_detections.json"],
 };
 
