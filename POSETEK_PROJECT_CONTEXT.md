@@ -1,8 +1,23 @@
 # PoseTek website project context
 
-Reviewed on September 30, 2026. This guide summarizes the available repository and
+Reviewed on October 1, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
+
+## Shared user-issue recipients (2026-10-01)
+
+The user approved Nolan (`nolanj@posetek.net`) and Taiyo (`taiyow@posetek.net`)
+alongside Dylan for ongoing issue/status/daily-summary emails and the independent
+Google Cloud alert policy. New issue messages include all three; old frozen
+Dylan-only messages retain their destination and idempotency keys. Signed callbacks
+record each recipient separately and require all three delivery confirmations before
+the new aggregate job is called Delivered. Workout outcome/inactivity recipients
+remain unchanged. See [the recipient rollout receipt](deployment/USER_ISSUE_RECIPIENTS_PRODUCTION.json).
+This is a backend/configuration-only follow-up; the website release below is unchanged.
+The existing Resend daily sending quota is exhausted in the inspected failed-email
+dashboard record. Configuration and unit verification do not establish new-recipient
+delivery while that limit persists. No paid plan, quota override or historical replay
+was performed.
 
 ## User issue alerts (2026-09-30)
 

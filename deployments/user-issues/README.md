@@ -39,11 +39,23 @@ resource, severity and exclusions. Exclude alert/workout-mail services to avoid
 recursive reporting; canonical `ai_incident` logs are covered by their document
 observer. Existing sinks and Taiyo's notification channel remain intact.
 
-Cloud Monitoring policy `6520825830736261069` uses email channel
-`17819036609163820276` for `dylank@posetek.net`, independently of Resend. Verify
+Cloud Monitoring policy `6520825830736261069` uses email channels
+`17819036609163820276` for `dylank@posetek.net`, `1643439989627158215` for
+`nolanj@posetek.net`, and the existing `13952378452960206658` channel for
+`taiyow@posetek.net`, independently of Resend. Verify
 policy/channel enabled state after changes. Read back both Cloud Scheduler jobs.
 Create only the two additive `userIssueOccurrences`/`userIssueActors` indexes
 declared in root `firestore.indexes.json`; do not deploy or delete unrelated indexes.
+
+For the October 1 recipient expansion, deploy the backward-compatible webhook
+scope first and verify it before preparing/deploying the user-issues scope. New
+issue/status/daily payloads include all three recipients; the shared provider's
+workout default remains Dylan-only. Frozen earlier payloads and keys are never
+rewritten. Per-recipient callbacks must settle independently, including callbacks
+received before the send response and out of timestamp order between recipients.
+This backend-only adjustment does not require a website, rules, gateway or native
+release. Read `deployment/USER_ISSUE_RECIPIENTS_PRODUCTION.json` for rollout evidence
+and actual delivery limits; configured destinations are not proof of Inbox arrival.
 
 ## Acceptance and promotion
 

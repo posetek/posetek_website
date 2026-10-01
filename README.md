@@ -9,6 +9,12 @@ production; the baseline protects 1387 application/public files.
 See [the production receipt](deployment/USER_ISSUE_ALERTS_PRODUCTION.json) and [User issue alerts](docs/USER_ISSUE_ALERTS.md). Native rollout and
 Crashlytics export verification have separate acceptance gates.
 
+The October 1 backend follow-up adds `nolanj@posetek.net` and `taiyow@posetek.net`
+to Dylan's ongoing issue emails and the independent Google Cloud alert policy.
+Signed receipts track each recipient; existing frozen emails and workout-alert
+destinations are preserved. The provider's current daily quota prevents a claim of
+new-recipient delivery. See [recipient rollout and limits](deployment/USER_ISSUE_RECIPIENTS_PRODUCTION.json).
+
 The unified coach workspace and Astro build are documented in
 [the implementation handoff](docs/UNIFIED_COACH_WORKSPACE.md). Team Insights owns
 the coach roster, progress, player details and embedded Community. Astro builds

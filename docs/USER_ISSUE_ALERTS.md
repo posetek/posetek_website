@@ -1,9 +1,34 @@
 # User issue alerts
 
-The approved destination is `dylank@posetek.net`, independent of the email used to
-sign in to Resend or GitHub. This is a separate workflow from workout notifications.
+The approved issue-alert recipients are `dylank@posetek.net`, `nolanj@posetek.net`
+and `taiyow@posetek.net`, independent of the email used to sign in to Resend or
+GitHub. The October 1 recipient expansion covers new incident, status-change and
+daily-summary emails. This is a separate workflow from workout notifications,
+whose recipient remains `dylank@posetek.net`.
 The sender is `PoseTek Support <support@alerts.posetek.net>`, using the existing
 verified domain, restricted Secret Manager key and signed delivery webhook.
+
+## Shared issue tracker
+
+The team's master workbook is in the shared PoseTek OneDrive at
+**PoseTek > Technology > Website > User Issue Tracker > PoseTek Issue Tracker.xlsx**.
+Dylan is the owner; Nolan Jetter (`nolanj@posetek.net`) and Taiyo Williamson
+(`taiyow@posetek.net`) have verified editing access. Use that shared workbook for
+triage rather than a downloaded attachment or an earlier local export.
+
+The hourly updater collects Outlook alerts, including Google Cloud Monitoring
+notifications, and reconciles backend incident evidence. It records the known
+actor and attempted operation, marks unknown identities honestly, links repeated
+notifications to their underlying incident and retains proposed fixes. Team edits
+to Status, Owner, Due and Fix notes must be preserved on refresh. A repeated alert
+is evidence of recurrence, not automatically another distinct affected user.
+
+This is a local scheduled update: Dylan's computer, Codex and OneDrive must remain
+running, with the connected accounts available. Save and close desktop Excel after
+editing and let OneDrive finish syncing. Avoid editing during the refresh window;
+a locked or conflicting workbook must be deferred rather than overwriting team
+changes. Email delivery runs separately in Google Cloud and is subject to the
+provider's delivery capacity even if the computer is off.
 
 ## Coverage and limits
 
@@ -80,13 +105,23 @@ attempts within 23 hours. Expired ambiguity requires review instead of risking a
 second delivery beyond the provider's idempotency window. Signed callbacks can
 arrive before API acknowledgement and settle the job. Delivered means accepted
 by the recipient mail server, not a verified Inbox placement or read receipt.
+Resend emits a separate callback for each recipient. The issue outbox stores
+`recipientDelivery` with each recipient's status and provider event time; the
+aggregate becomes Delivered only when all frozen recipients have delivered.
+An individual failure remains visible even if the other recipients deliver.
+Earlier Dylan-only jobs retain their original payload, destination and idempotency
+key, including pending retries. This change does not backfill old emails or reset
+uncertain attempts. Recipient verification uses the original frozen payload,
+so callbacks for a newly added recipient cannot settle an old Dylan-only job.
 
 At **9 AM America/Los_Angeles**, a nonempty preceding 9-to-9 reporting period produces
 one summary with incident/crash/report counts, affected accounts or anonymous
 sessions, recurrences, status changes, top issues, unresolved/unverified issues and
 email jobs needing attention. Daylight-saving transitions are tested. The independent
-Cloud Monitoring policy emails Dylan on alert-service errors; it does not use Resend.
-Its configuration is verified, but its email Inbox arrival is not claimed.
+Cloud Monitoring policy emails all three recipients on alert-service errors; it
+does not use Resend. Its configuration is verified. Historical Dylan Inbox
+messages are included in the tracker; adding recipients alone does not verify
+Nolan's or Taiyo's Inbox delivery.
 
 Intake limits are 120 reports per authenticated account per hour, 15 per anonymous
 source IP, and 3,000 client reports globally per hour. Replays do not consume quota.
