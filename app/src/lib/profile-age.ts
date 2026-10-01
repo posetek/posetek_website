@@ -10,14 +10,18 @@ export interface ProfileAge {
 }
 function validDate(value: unknown): Date | null {
   try {
+    let normalized = value;
     if (typeof value === 'string') {
       const calendar = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:T.*)?$/);
       if (!calendar) return null;
       const check = new Date(Date.UTC(Number(calendar[1]), Number(calendar[2]) - 1, Number(calendar[3])));
       if (check.getUTCFullYear() !== Number(calendar[1]) || check.getUTCMonth() + 1 !== Number(calendar[2]) || check.getUTCDate() !== Number(calendar[3])) return null;
+      // The gateway treats a timestamp without an offset as UTC. JavaScript
+      // otherwise reads it in the browser's timezone, changing DOB and freshness.
+      if (value.includes('T') && !/(?:[zZ]|[+-]\d{2}(?::?\d{2})?(?::?\d{2})?)$/.test(value)) normalized = `${value}Z`;
     }
-    const date = value instanceof Date ? value : typeof (value as any)?.toDate === 'function' ? (value as any).toDate()
-      : typeof value === 'string' ? new Date(value) : null;
+    const date = normalized instanceof Date ? normalized : typeof (normalized as any)?.toDate === 'function' ? (normalized as any).toDate()
+      : typeof normalized === 'string' ? new Date(normalized) : null;
     return date instanceof Date && Number.isFinite(date.getTime()) ? date : null;
   } catch { return null; }
 }

@@ -22,4 +22,13 @@ describe('shared profile age eligibility', () => {
     for (const age of ['15', 15.5, 4, 81]) expect(resolveProfileAge({ age, ageRecordedAt: now }, now)).toMatchObject({ age: null, observationStatus: 'invalid' });
     expect(resolveProfileAge({ age: 15, ageRecordedAt: '2011-02-31' }, now).age).toBeNull();
   });
+  it('treats timezone-less ISO observations and legacy DOB as UTC, preserving explicit offsets', () => {
+    const observation = resolveProfileAge({ age: 15, ageRecordedAt: '2026-10-01T12:00:00' }, now);
+    expect(observation).toMatchObject({ age: 15, observationStatus: 'current' });
+    expect(observation.recordedAt?.toISOString()).toBe('2026-10-01T12:00:00.000Z');
+    expect(resolveProfileAge({ dateOfBirth: '2011-10-01T23:30:00' }, now)).toMatchObject({ age: 15, source: 'legacyDateOfBirth' });
+    expect(resolveProfileAge({ age: 15, ageRecordedAt: '2026-10-01T05:00:00-07:00' }, now).recordedAt?.toISOString()).toBe('2026-10-01T12:00:00.000Z');
+    expect(resolveProfileAge({ dateOfBirth: '2011-02-31T23:30:00' }, now).age).toBeNull();
+    expect(resolveProfileAge({ age: 15, ageRecordedAt: '2026-10-01T12:00:00.001' }, now)).toMatchObject({ age: null, observationStatus: 'future' });
+  });
 });
