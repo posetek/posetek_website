@@ -6,8 +6,8 @@ business document is included.
 
 ## Reliable personal workouts (2026-10-01, live)
 
-Guided player Training is live as deployment `6abe312c5da9000e9f8b0532`, source
-`512cd489adb85770aeaa1275aa91558f5dad6128`, published October 1 at 3:28:57 AM PDT.
+Guided player Training is live as deployment `6abe3e6fd97e6a691aa603fe`, source
+`96f85bb3db83de9599a58507b15acf71ce6dfbf8`, published October 1 at 4:07:44 AM PDT.
 Focus, location, time, conditional age and readiness replace the equipment
 checklist. Visible location defaults have compact exceptions; available times
 come from code-only assessment. Conversations, AI revisions, explicit publishing

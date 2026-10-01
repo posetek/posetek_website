@@ -48,8 +48,8 @@ default to a sibling `../PoseTek-mobile-app` checkout, and `RULES_PATH` /
 `deployment/*.json`, including the composed `whole-body-firestore.rules`
 (deleted), are historical records of past publishes, not instructions.
 
-The current website release is `6abe312c5da9000e9f8b0532`, source `512cd48`,
-published October 1, 2026 at 3:28:57 AM PDT. Guided Training uses code-only
+The current website release is `6abe3e6fd97e6a691aa603fe`, source `96f85bb`,
+published October 1, 2026 at 4:07:44 AM PDT. Guided Training uses code-only
 feasibility assessment, shared single-session composition and explicit age and
 readiness confirmation. Read `deployment/RELIABLE_PLAYER_WORKOUTS_PRODUCTION.json`
 and `docs/RELIABLE_PLAYER_WORKOUTS.md` before changing these contracts. Gateway
