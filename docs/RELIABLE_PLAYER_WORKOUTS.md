@@ -54,6 +54,10 @@ remains the workflow. There are no player drill-search, reorder or dosage editin
 controls. Start/Resume rechecks a compact current setup while preserving frozen
 workout snapshots, completed sets and timers. Six-tab navigation and private
 conversation recovery remain unchanged.
+AI Coach history disables message submission until the selected conversation has
+loaded from the server. A synchronous guard also blocks a rapid submit before the
+loading state renders; canceling or switching conversations cannot bind an old
+read to the next message.
 
 ## Additive gateway and rules contract
 

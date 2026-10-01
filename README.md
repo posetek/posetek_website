@@ -3,6 +3,17 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
+Guided personal workouts are live as deployment `6abe312c5da9000e9f8b0532`, source
+`512cd48`, published October 1, 2026 at 3:28:57 AM PDT. Players choose focus,
+location, available time and readiness one step at a time; age is confirmed only
+when needed. Code-only assessment and shared deterministic composition produce
+eligible sessions while conversations, AI revisions, Publish and Start remain
+connected. Admin evidence storage and age eligibility are repaired. Read
+[the handoff](docs/RELIABLE_PLAYER_WORKOUTS.md) and
+[the release receipt](deployment/RELIABLE_PLAYER_WORKOUTS_PRODUCTION.json).
+Unavailable catalog combinations require visible adjustments; the 80 held drills
+and native release gates remain unchanged.
+
 User crash/bug reporting, the protected issue inbox and email operations are
 documented in [User issue alerts](docs/USER_ISSUE_ALERTS.md). Native rollout and
 Crashlytics export verification have separate acceptance gates.

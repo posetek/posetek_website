@@ -1,8 +1,34 @@
 # PoseTek website project context
 
-Reviewed on September 29, 2026. This guide summarizes the available repository and
+Reviewed on October 1, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
+
+## Reliable personal workouts (2026-10-01, live)
+
+Guided player Training is live as deployment `6abe312c5da9000e9f8b0532`, source
+`512cd489adb85770aeaa1275aa91558f5dad6128`, published October 1 at 3:28:57 AM PDT.
+Focus, location, time, conditional age and readiness replace the equipment
+checklist. Visible location defaults have compact exceptions; available times
+come from code-only assessment. Conversations, AI revisions, explicit publishing
+and tracked workouts remain connected. The reviewed catalog can still leave some
+age/setup combinations unavailable; offer adjustments without granting held drills.
+
+The shared gateway is `agent-gateway-sha-cb575df84000`, built and tested from
+canonical backend main and promoted through its release script. Private admin
+evidence now falls back to immutable JSON artifacts for unsupported Firestore
+structures as well as excessive size. Admin and player age readers agree; an
+explicit confirmation can refresh the same observed age without inventing a DOB.
+Catalog `1.0.93` makes only STR-005, STR-006, STR-008, STR-501 and STR-502 mat
+optional. All 80 held drafts, media, doses, review states and native gates remain.
+
+The release preserves already-live issue-alert source `e8de8d7` and predecessor
+deployment `6abd8f957e046e8059376091`, including approved Players/Coaches marketing
+bytes. Read [the handoff](docs/RELIABLE_PLAYER_WORKOUTS.md) and
+[the production receipt](deployment/RELIABLE_PLAYER_WORKOUTS_PRODUCTION.json)
+before another application, gateway, rules or catalog release. The existing Coach
+proxy allows production origins and rejects Netlify preview origins; exercise the
+actual Coach handoff on Posetek.net rather than widening that allowlist.
 
 ## User issue alerts (2026-09-30)
 

@@ -18,7 +18,9 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
   const [history, setHistory] = useState<Row[]>([]), [showHistory, setShowHistory] = useState(false);
   const [memory, setMemory] = useState<Row | null>(null), [showMemory, setShowMemory] = useState(false);
   const [status, setStatus] = useState('');
+  const [historyLoading, setHistoryLoading] = useState(false);
   const controller = useRef<AbortController | null>(null), conversation = useRef<string | null>(null);
+  const historyLoadingRef = useRef(false);
   const turn = useRef(0), messageRoot = useRef<HTMLDivElement>(null);
   const workspace = capability === 'pose_chat' && config?.coachWorkspaceEnabled === true;
   const canChat = capabilityEnabled(config, capability);
@@ -38,10 +40,12 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
 
   const reset = () => {
     turn.current++; controller.current?.abort(); controller.current = null;
+    historyLoadingRef.current = false; setHistoryLoading(false);
     conversation.current = null; setMessages([]); setAnswer(''); setSending(false); setError(''); onDraft?.(null);
   };
   const openHistory = async (item: Row) => {
     reset(); const token = turn.current;
+    historyLoadingRef.current = true; setHistoryLoading(true);
     try {
       const bound = item.workoutTarget;
       const matches = (target: Row | undefined) => target && target.kind === context?.workoutRef?.kind &&
@@ -67,10 +71,11 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
         }
       }
     } catch (e: any) { if (token === turn.current) setError(e.message); }
+    finally { if (token === turn.current) { historyLoadingRef.current = false; setHistoryLoading(false); } }
   };
 
   const send = async (text: string, memoryAction?: Row) => {
-    if (!canChat || controller.current || (!memoryAction && !text.trim())) return;
+    if (!canChat || controller.current || historyLoadingRef.current || (!memoryAction && !text.trim())) return;
     const token = ++turn.current;
     controller.current = new AbortController(); setSending(true); setError(''); setAnswer(''); onDraft?.(null);
     if (!memoryAction) { setDraft(''); setMessages(rows => [...rows, { role: 'user', content: text }]); }
@@ -116,13 +121,13 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
     }
   };
   const memoryCommand = (kind: string, extra: Row = {}) => void send('', { kind, ...(kind !== 'list' ? { expectedRevision: memory?.workspace.revision } : {}), ...extra });
-  return <section className="player-chat" aria-busy={sending}>
+  return <section className="player-chat" aria-busy={sending || historyLoading}>
     <div className="player-actions">
-      <button type="button" onClick={() => setShowHistory(v => !v)}>History</button>
+      <button type="button" disabled={historyLoading} onClick={() => setShowHistory(v => !v)}>History</button>
       <button type="button" onClick={reset}>New conversation</button>
-      {workspace && <button type="button" onClick={() => { setShowMemory(v => !v); memoryCommand('list'); }}>Coach memory</button>}
+      {workspace && <button type="button" disabled={historyLoading} onClick={() => { setShowMemory(v => !v); memoryCommand('list'); }}>Coach memory</button>}
     </div>
-    {showHistory && <section className="portal-card"><h2>Conversations</h2>{history.length ? history.map(item => <button className="player-list-button" key={item.id} onClick={() => void openHistory(item)}>{item.title || 'Conversation'}<small>{dateText(item.lastMessageAt)}</small></button>) : <p>No conversations yet.</p>}</section>}
+    {showHistory && <section className="portal-card"><h2>Conversations</h2>{history.length ? history.map(item => <button className="player-list-button" key={item.id} disabled={historyLoading} onClick={() => void openHistory(item)}>{item.title || 'Conversation'}<small>{dateText(item.lastMessageAt)}</small></button>) : <p>No conversations yet.</p>}</section>}
     {showMemory && <section className="portal-card"><h2>Coach memory</h2><p>Choose what your coach remembers across conversations.</p>
       {!memory ? <p>Loading memory…</p> : <>
         <label><input type="checkbox" checked={memory.workspace.enabled} disabled={sending} onChange={e => memoryCommand('setEnabled', { enabled: e.target.checked })} /> Use coach memory</label>
@@ -136,12 +141,13 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
       {messages.map((m, i) => <article key={m.id || i} className={`chat-message ${m.role === 'user' ? 'user' : 'assistant'}`}><MultilineText text={m.content || ''} />{onHandoff && m.role === 'assistant' && validHandoff(m.workoutRequest, playerId) && (m.workoutRequest.destination === 'personal_workout' && personalStore && athlete ? <CoachPersonalWorkout playerId={playerId} athlete={athlete} preview={preview} store={personalStore} config={config} request={{ ...m.workoutRequest, ...(conversation.current && m.id ? { originConversationId: conversation.current, originMessageId: m.id } : {}) }} reference={m.personalWorkoutProposal} active={active && !sending && !error && i === messages.length - 1} onReview={onHandoff} /> : !sending && !error && i === messages.length - 1 && <button className="primary-cta" onClick={() => onHandoff(m.workoutRequest)}>Continue in Training</button>)}</article>)}
       {answer && <article className="chat-message assistant">{error && <small>Interrupted reply · check history for the saved version</small>}<MultilineText text={answer} /></article>}
       {sending && <p role="status">{status || 'Your coach is thinking…'}</p>}
+      {historyLoading && <p role="status">Loading your conversation…</p>}
     </div>
     {error && <div className="player-error" role="alert"><p>{error}</p>{conversation.current && <button type="button" disabled={sending} onClick={() => void openHistory({ id: conversation.current, workoutTarget: context?.workoutRef })}>Load saved conversation</button>}</div>}
     {!canChat && <p>{config ? 'Your coach is temporarily unavailable. Your history is still here.' : 'Connecting to your coach…'}</p>}
     <form className="chat-composer" onSubmit={e => { e.preventDefault(); void send(draft.trim()); }}>
-      <textarea aria-label="Message your coach" value={draft} onChange={e => setDraft(e.target.value)} maxLength={capability === 'workout_chat' ? 500 : 2000} placeholder="Message your coach…" rows={2} disabled={sending} />
-      <button type="submit" disabled={!canChat || sending || !draft.trim()} aria-label="Send message"><span className="material-symbols-outlined">arrow_upward</span></button>
+      <textarea aria-label="Message your coach" value={draft} onChange={e => setDraft(e.target.value)} maxLength={capability === 'workout_chat' ? 500 : 2000} placeholder="Message your coach…" rows={2} disabled={sending || historyLoading} />
+      <button type="submit" disabled={!canChat || sending || historyLoading || !draft.trim()} aria-label="Send message"><span className="material-symbols-outlined">arrow_upward</span></button>
     </form>
     {sending && <button className="text-button" onClick={() => controller.current?.abort()}>Stop reply</button>}
   </section>;
