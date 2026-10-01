@@ -6,14 +6,15 @@ import type { BlockV3 } from '../../../lib/contracts/types';
 import type { Row } from './execution';
 import type { TrainingAccess } from './training-access';
 
-export const PERSONAL_CAPABILITIES = ['save_personal_workout', 'generate_personal_workout', 'start_personal_workout', 'update_personal_workout_log'] as const;
+export const PERSONAL_CAPABILITIES = ['save_personal_workout', 'generate_personal_workout', 'assess_personal_workout', 'start_personal_workout', 'update_personal_workout_log'] as const;
 export type PersonalCapability = typeof PERSONAL_CAPABILITIES[number];
-export type PersonalIntake = { age?: number; equipment: string[]; setting: 'solo' | 'partner'; painFlag: boolean; access?: TrainingAccess };
+export type PersonalIntake = { age?: number; equipment: string[]; setting: 'solo' | 'partner'; painFlag: boolean; access?: TrainingAccess; focusDomains?: string[] };
 export type PersonalDraft = { workoutId: string; order: number; title: string; intent: string; focusDomains: string[]; budgetMinutes: number; estimatedMinutes: number; blocks: BlockV3[]; nextBlockSequence: number };
 export type SourceWorkout = { planId: string; workoutId: string; revision: number };
 export type PendingPersonalJob = { schemaVersion: 1; uid: string; playerId: string; capability: PersonalCapability; jobId: string; params: Row; signature: string; terminalFailed?: boolean };
 export function personalCapabilityEnabled(config: Row | null, capability: PersonalCapability, preview = false) {
   const cap = config?.capabilities?.[capability];
+  if (capability === 'assess_personal_workout') return preview || !!(config && config.globalEnabled === true && !config.unavailable && config.personalWorkoutsEnabled === true && cap?.enabled === true);
   return preview || !!(config && config.globalEnabled === true && !config.unavailable && config.personalWorkoutsEnabled === true && cap?.enabled === true && Number.isInteger(cap.dailyLimitPerUser) && cap.dailyLimitPerUser > 0);
 }
 export function personalWorkoutsEnabled(config: Row | null, preview = false) {
@@ -34,13 +35,18 @@ export function personalProgress(logs: Row[]) {
 export function personalAge(athlete: Row, now = new Date()): number | undefined {
   const date = (v: any): Date | null => { const d = v?.toDate?.() || (v instanceof Date ? v : typeof v === 'string' ? new Date(v) : null); return d && Number.isFinite(d.getTime()) ? d : null; };
   for (const field of ['birthDate', 'dateOfBirth']) {
+    const calendar = typeof athlete[field] === 'string' ? athlete[field].match(/^(\d{4})-(\d{2})-(\d{2})(?=T|$)/) : null;
+    if (calendar) {
+      const check = new Date(Date.UTC(Number(calendar[1]), Number(calendar[2]) - 1, Number(calendar[3])));
+      if (check.getUTCFullYear() !== Number(calendar[1]) || check.getUTCMonth() + 1 !== Number(calendar[2]) || check.getUTCDate() !== Number(calendar[3])) continue;
+    }
     const birth = date(athlete[field]);
     if (!birth || birth > now) continue;
     const age = now.getUTCFullYear() - birth.getUTCFullYear() - (now.getUTCMonth() < birth.getUTCMonth() || (now.getUTCMonth() === birth.getUTCMonth() && now.getUTCDate() < birth.getUTCDate()) ? 1 : 0);
     if (age >= 5 && age <= 80) return age;
   }
   const recorded = date(athlete.ageRecordedAt), gap = recorded ? now.getTime() - recorded.getTime() : null;
-  return Number.isInteger(athlete.age) && athlete.age >= 5 && athlete.age <= 80 && (gap === null || gap >= 0 && gap <= 365 * 86400000) ? athlete.age : undefined;
+  return Number.isInteger(athlete.age) && athlete.age >= 5 && athlete.age <= 80 && gap !== null && gap >= 0 && gap <= 365 * 86400000 ? athlete.age : undefined;
 }
 export function eligiblePersonalDrill(drill: CatalogDrill, intake: PersonalIntake, maxDifficulty = 5): boolean {
   return drill.status === 'published' && !drill.trainingPolicy && Number.isInteger(intake.age) &&
