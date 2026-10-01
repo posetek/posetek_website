@@ -82,6 +82,7 @@ describe('Coach History server-read handoff', () => {
     expect(find(busy, element => element.type === 'textarea').props.disabled).toBe(true);
     expect(find(busy, element => element.props['aria-label'] === 'Send message').props.disabled).toBe(true);
     expect(text(busy)).toContain('Loading your conversation…');
+    expect(text(busy)).not.toContain('What do you want to work on?');
     pending.resolve(snapshot('Your saved workout request.'));
     await vi.waitFor(() => expect(render().props['aria-busy']).toBe(false));
     submit(render());
