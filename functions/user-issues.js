@@ -179,12 +179,23 @@ function createUserIssues({ db, HttpsError, provider, now = Date.now, logger = c
     }
     await db.runTransaction(async tx => {
       const ref = jobRef(id), job = (await tx.get(ref)).data(), receiptRef = ref.collection("receipts").doc(M.hash(eventId)), receipt = await tx.get(receiptRef);
+      const recipient = event.data.to?.[0], recipients = job?.payload?.to;
       if (receipt.exists || !job?.firstAttemptAtMillis || !job.payload || job.providerId && job.providerId !== providerId || eventAt < job.firstAttemptAtMillis - 300000
-        || ![M.FROM, "support@alerts.posetek.net"].includes(event.data.from) || event.data.to?.length !== 1 || event.data.to[0] !== M.TO) return;
-      tx.create(receiptRef, { type: event.type, at: eventAt, receivedAtMillis: now() });
+        || ![M.FROM, "support@alerts.posetek.net"].includes(event.data.from) || !Array.isArray(event.data.to) || event.data.to.length !== 1
+        || !Array.isArray(recipients) || !recipients.includes(recipient)) return;
+      tx.create(receiptRef, { type: event.type, recipient, at: eventAt, receivedAtMillis: now() });
       const rank = { accepted: 1, delayed: 2, delivered: 3, failed: 4, bounced: 5, suppressed: 6 };
-      if (eventAt < (job.lastProviderAtMillis || 0) || rank[job.status] >= 3 && rank[status] < 3 || eventAt === job.lastProviderAtMillis && rank[status] <= (rank[job.status] || 0)) return;
-      tx.update(ref, { status, providerId, lastProviderAtMillis: eventAt, dueAtMillis: null, leaseId: null });
+      // Resend emits one recipient per callback. Bind to the frozen payload,
+      // including legacy Dylan-only jobs, and order events per recipient.
+      const deliveries = { ...job.recipientDelivery };
+      const previous = deliveries[recipient] || (recipients.length === 1 ? { status: job.status, at: job.lastProviderAtMillis } : {});
+      if (eventAt < (previous.at || 0) || rank[previous.status] >= 3 && rank[status] < 3 || eventAt === previous.at && rank[status] <= (rank[previous.status] || 0)) return;
+      deliveries[recipient] = { status, at: eventAt };
+      const states = recipients.map(to => deliveries[to]?.status || "accepted");
+      const aggregate = ["suppressed", "bounced", "failed", "delayed"].find(state => states.includes(state))
+        || (states.every(state => state === "delivered") ? "delivered" : "accepted");
+      tx.update(ref, { status: aggregate, recipientDelivery: deliveries, providerId,
+        lastProviderAtMillis: Math.max(eventAt, job.lastProviderAtMillis || 0), dueAtMillis: null, leaseId: null });
       if (["failed", "bounced", "suppressed"].includes(status)) logger.error("user_issue_delivery_failed", { code: status, jobId: id });
     });
   }

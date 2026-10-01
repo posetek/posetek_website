@@ -2,11 +2,11 @@
 const { createUserIssues } = require("./user-issues");
 const { createIssueSources } = require("./user-issue-sources");
 const { createResendProvider } = require("./workout-notifications-provider");
-const { FROM } = require("./user-issue-model");
+const { FROM, RECIPIENTS } = require("./user-issue-model");
 function createUserIssueEntrypoints(functions, admin) {
   const db = admin.firestore();
   const service = createUserIssues({ db, HttpsError: functions.https.HttpsError, logger: functions.logger,
-    provider: createResendProvider({ apiKey: () => process.env.RESEND_API_KEY, from: FROM }) });
+    provider: createResendProvider({ apiKey: () => process.env.RESEND_API_KEY, from: FROM, recipients: RECIPIENTS }) });
   const sources = createIssueSources(service, db);
   const caller = context => context.auth ? { uid: context.auth.uid, email: context.auth.token?.email, emailVerified: context.auth.token?.email_verified === true,
     displayName: context.auth.token?.name, isAnonymous: context.auth.token?.firebase?.sign_in_provider === "anonymous" } : null;

@@ -2,6 +2,7 @@
 const crypto = require("node:crypto");
 const FROM = "PoseTek Support <support@alerts.posetek.net>";
 const TO = "dylank@posetek.net";
+const RECIPIENTS = Object.freeze([TO, "nolanj@posetek.net", "taiyow@posetek.net"]);
 const hash = value => crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const clean = (value, max = 200) => typeof value === "string" ? value.replace(/[\x00-\x1f\x7f]/g, " ").trim().slice(0, max) : "";
 function redact(value, max = 2000) {
@@ -52,7 +53,7 @@ function previousPeriod(at) { return new Date(Date.parse(`${periodKey(at)}T12:00
 const dateText = at => new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", dateStyle: "medium", timeStyle: "long" }).format(at);
 function payload(job, id) {
   const lines = [job.title, ...job.lines, "Detailed reports and screenshots require PoseTek administrator sign-in.", `Open User issues: https://posetek.net/admin/user-issues${job.issueId ? `?issue=${job.issueId}` : ""}`];
-  return { from: FROM, to: [TO], subject: `[PoseTek ${job.type === "daily" ? "daily summary" : "user issue"}] ${clean(job.title, 130)}`,
+  return { from: FROM, to: [...RECIPIENTS], subject: `[PoseTek ${job.type === "daily" ? "daily summary" : "user issue"}] ${clean(job.title, 130)}`,
     text: lines.join("\n\n"), tags: [{ name: "posetek_issue_outbox", value: id }] };
 }
-module.exports = { FROM, TO, ID, STATES, hash, clean, redact, setting, normalize, screenshot, periodKey, previousPeriod, dateText, payload };
+module.exports = { FROM, TO, RECIPIENTS, ID, STATES, hash, clean, redact, setting, normalize, screenshot, periodKey, previousPeriod, dateText, payload };
