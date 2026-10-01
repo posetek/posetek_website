@@ -22,7 +22,7 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
     catch (error) { if (error?.code !== "functions/task-already-exists") throw error; }
   }
 
-  async function observeOutbox(id) {
+  async function observeOutbox(id, { schedule = true } = {}) {
     if (!SAFE_ID.test(id || "")) M.fail("tracker_invalid_outbox_id");
     const ref = db.doc(`${PATHS.queue}/outbox-${id}`);
     const queued = await db.runTransaction(async tx => {
@@ -39,7 +39,7 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
         changedAtMillis: now(), firstQueuedAtMillis: old?.firstQueuedAtMillis || now(), appliedHash: old?.appliedHash || null });
       return true;
     });
-    if (queued) await wake();
+    if (queued && schedule) await wake();
     return { queued };
   }
 

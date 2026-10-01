@@ -48,8 +48,11 @@ normalizer owns daylight-saving conversion. Null cells are represented by `""`.
 `SPECS` in `office-script.ts` is the complete column-order contract. The writer
 rejects missing/extra machine columns. It never updates existing human Status,
 Owner, Due or Fix notes. Existing order and filters remain; new records append.
-IDs are retained exactly. Source strings that resemble formulas are written as
-literal text, then verified against their original semantic values.
+IDs are retained exactly. Every nonempty source string is escaped as literal
+text before writing, including ISO date labels, numeric-looking IDs, existing
+apostrophes and formula-like strings. Native readback must preserve their exact
+original values. Typed numbers and booleans remain typed. Stored receipt IDs
+and hashes receive the same protection so Excel coercion cannot break replay.
 
 `expectedMachineSha256` is null only for a new source key. For an existing row it
 is SHA-256 of canonical JSON `{values,links}` from the previous verified cloud
@@ -162,7 +165,23 @@ formula recalculation, row sorting, preserved links, an injected timeout/retry,
 locked workbook, changed human input, and the returned flow HTTP receipt. Check
 runtime limits and licensing in the signed-in tenant before any purchase.
 
+Power Automate synchronous operations have a 120-second timeout. Measure the
+standalone writer and exact replay separately with a representative workbook
+and batch; a successful browser bootstrap or a tiny fixture does not establish
+connector performance. Keep a margin below the limit and retain the frozen batch
+after any timeout. Split batches or optimize further before activation if that
+acceptance fails. The native bootstrap is a separate one-time migration.
+
+The candidate caches formula-area dimensions before enumerating cells, avoids
+duplicate bootstrap table/value reads and locates each changed row through only
+its live stable-key column. It deliberately retains live table structure checks,
+per-write key lookup, source fingerprints, human-field comparison and complete
+postread checks. Row positions and mutable metadata are not cached across writes.
+Those reductions do not provide an exclusive editing lock or a runtime guarantee.
+
 Official API references: [tables and append semantics](https://learn.microsoft.com/en-us/javascript/api/office-scripts/excelscript/excelscript.table?view=office-scripts),
 [range and literal/formula APIs](https://learn.microsoft.com/en-us/javascript/api/office-scripts/excelscript/excelscript.range?view=office-scripts),
 [Office Scripts TypeScript restrictions](https://learn.microsoft.com/en-us/office/dev/scripts/develop/typescript-restrictions),
+[Office Scripts platform limits](https://learn.microsoft.com/en-us/office/dev/scripts/testing/platform-limits),
+[workbook communication and performance](https://learn.microsoft.com/en-us/office/dev/scripts/develop/web-client-performance),
 [Excel connector limits and concurrent-write restrictions](https://learn.microsoft.com/en-us/connectors/excelonlinebusiness/).

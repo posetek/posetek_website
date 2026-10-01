@@ -2,6 +2,7 @@
 const { fail, verifyReceipt } = require("./issue-tracker-bridge-model");
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const FLOW_SCOPE = "https://service.flow.microsoft.com/.default";
+const TRANSPORT_TIMEOUT_MS = 125000, MAX_ASYNC_POLLS = 24, MIN_POLL_MS = 5000;
 
 function flowEndpoint(value) {
   let url; try { url = new URL(value); } catch (_) { fail("tracker_invalid_endpoint"); }
@@ -36,26 +37,67 @@ function createFlowTokenProvider({ credentials, fetchImpl = fetch, now = Date.no
   };
 }
 
-function createPowerAutomateTransport({ endpoint, getAccessToken, fetchImpl = fetch }) {
+// Location is supplied only by the authenticated flow response. Never follow an
+// arbitrary redirect, another origin, another workflow, or the invoke endpoint.
+// Signed polling URLs may contain a capability token: keep them memory-only and
+// do not forward an OAuth token when the URL already carries a signature.
+function pollEndpoint(value, invoke) {
+  let url, source;
+  try { source = new URL(invoke); url = new URL(value, source); } catch (_) { fail("tracker_unverified_receipt"); }
+  const base = source.pathname.slice(0, -"/triggers/manual/paths/invoke".length);
+  if (typeof value !== "string" || !value || value.length > 8192 || url.protocol !== "https:" || url.origin !== source.origin ||
+      url.username || url.password || url.hash || !url.pathname.startsWith(`${base}/runs/`) ||
+      /%(?:2e|2f|5c)/i.test(url.pathname) || /[\\\u0000-\u0020]/.test(value) ||
+      [...url.searchParams.keys()].some(key => ["access_token", "authorization"].includes(key.toLowerCase()))) fail("tracker_unverified_receipt");
+  return url.href;
+}
+function pollDelay(value, now) {
+  if (value == null || value === "") return MIN_POLL_MS;
+  const seconds = /^\d+$/.test(value) ? Number(value) * 1000 : Date.parse(value) - now;
+  return Number.isFinite(seconds) ? Math.max(MIN_POLL_MS, seconds) : MIN_POLL_MS;
+}
+function checkStatus(response) {
+  if (response.ok) return;
+  if ([401, 403].includes(response.status)) fail("tracker_remote_auth");
+  if ([409, 412, 423].includes(response.status)) fail("tracker_remote_conflict");
+  fail(response.status >= 500 || response.status === 429 || response.status === 408 ? "tracker_transport_retry" : "tracker_remote_rejected");
+}
+function createPowerAutomateTransport({ endpoint, getAccessToken, fetchImpl = fetch, now = Date.now,
+  wait = ms => new Promise(resolve => setTimeout(resolve, ms)) }) {
   return { async send(batch) {
     const url = flowEndpoint(await endpoint());
     const token = await getAccessToken();
     if (typeof token !== "string" || !token || /[\r\n]/.test(token)) fail("tracker_missing_oauth_config");
-    let response;
-    try {
-      response = await fetchImpl(url, { method: "POST", redirect: "error", signal: AbortSignal.timeout(125000),
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, "X-PoseTek-Batch-Id": batch.batchId }, body: JSON.stringify(batch) });
-    } catch (_) { fail("tracker_transport_uncertain"); }
-    if (!response.ok) {
-      if ([401, 403].includes(response.status)) fail("tracker_remote_auth");
-      if ([409, 412, 423].includes(response.status)) fail("tracker_remote_conflict");
-      fail(response.status >= 500 || response.status === 429 || response.status === 408 ? "tracker_transport_retry" : "tracker_remote_rejected");
+    const deadline = now() + TRANSPORT_TIMEOUT_MS;
+    async function request(target, options) {
+      const remaining = deadline - now();
+      if (remaining <= 0) fail("tracker_transport_uncertain");
+      try { return await fetchImpl(target, { ...options, redirect: "error", signal: AbortSignal.timeout(Math.min(remaining, TRANSPORT_TIMEOUT_MS)) }); }
+      catch (_) { fail("tracker_transport_uncertain"); }
     }
-    // A 202 acknowledgement is not a verified Excel write. The response action
-    // must run only after the script returned an exact post-read receipt.
+    let response;
+    response = await request(url, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`,
+      "X-PoseTek-Batch-Id": batch.batchId }, body: JSON.stringify(batch) });
+    let pollingUrl, polls = 0;
+    while (response.status === 202) {
+      // Acceptance is not an Excel acknowledgement. Only the final exact native
+      // receipt can release the frozen batch. Flow concurrency MUST remain one:
+      // bounded-timeout retries may submit the same batch more than once.
+      const location = response.headers?.get("location");
+      pollingUrl = location ? pollEndpoint(location, url) : pollingUrl;
+      if (!pollingUrl) fail("tracker_unverified_receipt");
+      if (polls >= MAX_ASYNC_POLLS) fail("tracker_transport_uncertain");
+      const delay = pollDelay(response.headers?.get("retry-after"), now());
+      if (now() + delay >= deadline) fail("tracker_transport_uncertain");
+      await wait(delay);
+      const signed = [...new URL(pollingUrl).searchParams.keys()].some(key => ["sig", "signature", "token", "code"].includes(key.toLowerCase()));
+      response = await request(pollingUrl, { method: "GET", headers: signed ? { Accept: "application/json" } : { Accept: "application/json", Authorization: `Bearer ${token}` } });
+      polls++;
+    }
+    checkStatus(response);
     if (response.status !== 200) fail("tracker_unverified_receipt");
     let receipt; try { receipt = await response.json(); } catch (_) { fail("tracker_unverified_receipt"); }
     return verifyReceipt(batch, receipt);
   } };
 }
-module.exports = { FLOW_SCOPE, flowEndpoint, createFlowTokenProvider, createPowerAutomateTransport };
+module.exports = { FLOW_SCOPE, TRANSPORT_TIMEOUT_MS, MAX_ASYNC_POLLS, MIN_POLL_MS, flowEndpoint, pollEndpoint, pollDelay, createFlowTokenProvider, createPowerAutomateTransport };

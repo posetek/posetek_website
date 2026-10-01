@@ -113,22 +113,30 @@ function validateReferences(images: TableImage[], plans: TablePlan[]): void {
 }
 function getTable(workbook: ExcelScript.Workbook, spec: Spec): ExcelScript.Table {
   const table=workbook.getTable(spec.table);requireCondition(!!table,'Missing native table: '+spec.table);
-  requireCondition(table.getWorksheet().getName()===spec.sheet,'Table moved to unexpected sheet');
+  const sheet=table.getWorksheet();requireCondition(sheet.getName()===spec.sheet,'Table moved to unexpected sheet');
   const header=table.getHeaderRowRange();requireCondition(header.getRowIndex()===spec.row&&header.getColumnIndex()===spec.column,'Table moved: '+spec.table);
   requireCondition(same(header.getValues()[0],spec.headers)&&!table.getShowTotals(),'Unexpected table schema/totals: '+spec.table);
-  requireCondition(!table.getWorksheet().getProtection().getProtected(),'Worksheet protected/locked');return table;
+  requireCondition(!sheet.getProtection().getProtected(),'Worksheet protected/locked');return table;
 }
-function readImage(workbook: ExcelScript.Workbook, spec: Spec, selectedKeys: string[]): TableImage {
+function readImage(workbook: ExcelScript.Workbook, spec: Spec, selectedKeys: string[] | null): TableImage {
   const table=getTable(workbook,spec),rows:RowImage[]=[];
   if(table.getRowCount()===0)return {spec,rows};
   const range=table.getRangeBetweenHeaderAndTotal(),values=range.getValues(),formulas=range.getFormulas();
   const formulaCells:{[key:string]:boolean}={},formulaAreas=range.getSpecialCells(ExcelScript.SpecialCellType.formulas);
-  if(formulaAreas)formulaAreas.getAreas().forEach(area=>{const top=area.getRowIndex()-range.getRowIndex(),left=area.getColumnIndex()-range.getColumnIndex();for(let r=0;r<area.getRowCount();r++)for(let c=0;c<area.getColumnCount();c++)formulaCells[(top+r)+':'+(left+c)]=true;});
+  if(formulaAreas){
+    const originRow=range.getRowIndex(),originColumn=range.getColumnIndex(),areas=formulaAreas.getAreas();
+    for(let i=0;i<areas.length;i++){
+      const area=areas[i],top=area.getRowIndex()-originRow,left=area.getColumnIndex()-originColumn,height=area.getRowCount(),width=area.getColumnCount();
+      // Workbook getters can synchronize with the cloud. Read dimensions once,
+      // then enumerate the formula cells entirely in memory.
+      for(let r=0;r<height;r++)for(let c=0;c<width;c++)formulaCells[(top+r)+':'+(left+c)]=true;
+    }
+  }
   values.forEach((cells,index)=>{
     const key=String(cells[spec.headers.indexOf(spec.key)]);requireCondition(key!=='','Blank source key');
     const machine:Fields={},human:Fields={},calculated:Fields={},links:Links={};
     spec.headers.forEach((h,col)=>{if(spec.human.indexOf(h)>=0){requireCondition(!formulaCells[index+':'+col],'Unexpected formula in editable field; manual review required');human[h]=cells[col];}else if(spec.calculated.indexOf(h)>=0)calculated[h]=formulas[index][col];else{requireCondition(!formulaCells[index+':'+col],'Unexpected formula in machine source column');machine[h]=cells[col];}});
-    if(selectedKeys.indexOf(key)>=0)spec.linkColumns.forEach(h=>{const link=range.getCell(index,spec.headers.indexOf(h)).getHyperlink();links[h]=link?.address||'';});
+    if(selectedKeys===null||selectedKeys.indexOf(key)>=0)spec.linkColumns.forEach(h=>{const link=range.getCell(index,spec.headers.indexOf(h)).getHyperlink();links[h]=link?.address||'';});
     rows.push({key,values:machine,links,human,formulas:calculated});
   });return {spec,rows};
 }
@@ -142,8 +150,16 @@ function findReceipt(workbook: ExcelScript.Workbook,batch:Envelope): Receipt | u
   if(!matching.length)return undefined;requireCondition(matching[0][1]===batch.payloadSha256,'Batch ID reused with different payload');
   const receipt=JSON.parse(String(matching[0][3])) as Receipt;requireCondition(receipt.verified&&receipt.batchId===batch.batchId&&receipt.payloadSha256===batch.payloadSha256&&receipt.workbookKey===batch.workbookKey,'Invalid stored receipt');return receipt;
 }
-function safeLiteral(value: Cell): Cell {return typeof value==='string'&&/^[=+\-@]/.test(value)?"'"+value:value;}
-function currentRowIndex(table: ExcelScript.Table,spec:Spec,key:string): number {const values=table.getRangeBetweenHeaderAndTotal().getValues();const matches:number[]=[];values.forEach((row,i)=>{if(row[spec.headers.indexOf(spec.key)]===key)matches.push(i);});requireCondition(matches.length===1,'Source row moved/deleted/duplicated during write');return matches[0];}
+// Excel also coerces ISO dates, numeric-looking IDs and leading apostrophes.
+// Prefix every nonempty source string once. Native getValues() removes that
+// escape while preserving the original text, including any original apostrophe.
+function safeLiteral(value: Cell): Cell {return typeof value==='string'&&value!==''?"'"+value:value;}
+function currentRowIndex(table: ExcelScript.Table,spec:Spec,key:string): number {
+  // Re-read the live key column for every write so a sort still follows the
+  // source identity. No cached row index or full-table value read is needed.
+  const keys=table.getColumnByName(spec.key).getRangeBetweenHeaderAndTotal().getValues(),matches:number[]=[];
+  keys.forEach((row,i)=>{if(row[0]===key)matches.push(i);});requireCondition(matches.length===1,'Source row moved/deleted/duplicated during write');return matches[0];
+}
 function writeRow(workbook: ExcelScript.Workbook, plan: TablePlan, update: PlannedRow): void {
   const table=getTable(workbook,plan.spec),spec=plan.spec,row=update.change;
   if(update.alreadyApplied)return;
@@ -228,7 +244,7 @@ function main(workbook: ExcelScript.Workbook, payloadJson: string): string {
   const receipt:Receipt={schemaVersion:1,batchId:batch.batchId,workbookKey:batch.workbookKey,payloadSha256:batch.payloadSha256,verified:true,revision:batch.expectedRevision+1,applied:keys,counts:tableCounts(after)};
   // Persist verified receipt before final revision so a timed-out finalization can
   // re-read the exact data and finish without applying the batch twice.
-  const receipts=receiptsTable(workbook);receipts.addRows(-1,[[batch.batchId,batch.payloadSha256,receipt.revision,canonical(receipt)]]);
+  const receipts=receiptsTable(workbook);receipts.addRows(-1,[[safeLiteral(batch.batchId),safeLiteral(batch.payloadSha256),receipt.revision,safeLiteral(canonical(receipt))]]);
   requireCondition(same(findReceipt(workbook,batch),receipt),'Receipt postread verification failed');
   writeState(workbook,{...pending,revision:receipt.revision,pendingBatchId:'',pendingPayloadSha256:'',pendingExpectedRevision:-1,initialCounts:receipt.counts});
   if(receipts.getRowCount()>MAX_RECEIPTS)receipts.deleteRowsAt(0,receipts.getRowCount()-MAX_RECEIPTS);

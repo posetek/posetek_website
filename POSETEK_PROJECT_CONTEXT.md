@@ -9,9 +9,26 @@ business document is included.
 Dylan selected Power Automate to replace the hourly Excel tracker, with costs
 shown before any purchase. The event queue, conservative normalization and native
 Office Script writer are source candidates only; the existing hourly Codex task
-remains active. The cloud connection, licensing, prior pending OneDrive
-publication, source recovery and live workbook acceptance must be verified before
-cutover. Do not run both writers against the master. Read
+remains active. Dylan's Excel connection and a saved test-only writer flow
+(`b011912f-bb15-453f-92ef-761d223095b4`) are confirmed. Native synthetic
+initialize/upsert/replay passed with two actions, three instances, three emails
+and one daily row at revision one, preserving human fields. The flow has no
+backend or Outlook intake connected, and Microsoft blocks activation pending
+Premium licensing. Its saved details show Suspended, type Automated, owned by
+Dylan and running on its owner's plan. No purchase, trial or backend deployment
+occurred.
+
+Concurrency one requires an asynchronous Response; bounded final-receipt polling
+and native performance changes remain in progress. Microsoft documents that an
+Automated flow uses its owner's license regardless of who starts it. The current
+recommendation is one Premium license for Dylan at $180/year before tax, retaining
+his ownership; the earlier service-principal-owned/Dataverse alternative is not
+needed for this flow type. Entitlement acceptance, source recovery and full
+native acceptance remain cutover gates. Fresh cloud download `(10).xlsx` still
+contains the older `b49ac4d...`
+workbook; local `5e209015...` is unpublished and checkpoints are unchanged.
+Reconcile these versions before migration. Do not run both writers against the
+master. Read
 [ISSUE_TRACKER_EVENT_FLOW.md](docs/ISSUE_TRACKER_EVENT_FLOW.md) and
 [the isolated candidate](deployments/issue-tracker/README.md). This work does not
 change the live website or existing email delivery setup.

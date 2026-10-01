@@ -4,10 +4,9 @@
  */
 interface BootstrapRequest { mode: string; workbookKey: string; expectedSourceSha256: string; footerAddress: string; expectedFooter: Cell[][]; dailyRows: Cell[][] }
 function bootstrapSource(workbook: ExcelScript.Workbook): TableImage[] {
-  return SPECS.slice(0,3).map(spec=>{
-    const table=getTable(workbook,spec),values=table.getRowCount()?table.getRangeBetweenHeaderAndTotal().getValues():[];
-    const keys=values.map(row=>String(row[spec.headers.indexOf(spec.key)]));return readImage(workbook,spec,keys);
-  });
+  // null requests all source links from the same validated table read. Avoid
+  // reading every value and validating the same table twice merely to get keys.
+  return SPECS.slice(0,3).map(spec=>readImage(workbook,spec,null));
 }
 function bootstrapDigest(images: TableImage[]): string {
   return sha256(canonical(images.map(image=>({table:image.spec.table,rows:image.rows.slice().sort((a,b)=>a.key.localeCompare(b.key))}))));
@@ -55,7 +54,7 @@ function main(workbook: ExcelScript.Workbook, bootstrapJson: string): string {
   const receipts=sync.addTable('A3:D3',true);receipts.setName('TrackerSyncReceipts');sync.setVisibility(ExcelScript.SheetVisibility.hidden);
   refreshFormulas(workbook);
   requireCondition(same(readState(workbook),state),'Bootstrap state postread failed');
-  const seeded=SPECS.map(spec=>{const table=getTable(workbook,spec),values=table.getRowCount()?table.getRangeBetweenHeaderAndTotal().getValues():[];return readImage(workbook,spec,values.map(row=>String(row[spec.headers.indexOf(spec.key)])));});
+  const seeded=SPECS.map(spec=>readImage(workbook,spec,null));
   checkManagedFormulas(seeded);
   return canonical({initialized:true,mode:'paused',workbookKey:input.workbookKey,revision:0,sourceSha256,counts,seed:seeded.map(image=>({group:image.spec.group,rows:image.rows.map(row=>({key:row.key,values:row.values,links:row.links,machineSha256:rowDigest(row)}))}))});
 }
