@@ -318,15 +318,36 @@ export function usePersonalWorkouts(playerId: string, preview: boolean, config: 
         params: { ...params, requestId: crypto.randomUUID() },
       };
       const ref = db.collection('llmJobs').doc(record.jobId), owner = generation.current;
-      await ensurePersonalSubmission(record, { persist: value => { try { localStorage.setItem(assessmentKey, JSON.stringify(value)); } catch { /* the job still has a stable identity this visit */ } },
-        exists: async () => { const snapshot = await ref.get({ source: 'server' }), job = snapshot.data(); if (snapshot.exists && (job?.requestedByUid !== uid || job?.playerId !== playerId || job?.capability !== record.capability || job?.params?.requestId !== record.params.requestId)) throw new Error('The setup check does not match your account.'); return snapshot.exists; },
-        create: async () => { await ref.set({ schemaVersion: 1, capability: record.capability, playerId, params: record.params, requestedByUid: uid,
-          clientVersion: 'web-guided-workouts-v1', status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp() }); } });
       const result = await new Promise<Row>((resolve, reject) => {
-        const timeout = window.setTimeout(() => { stop(); reject(new Error('Your setup check is taking longer than expected. Retry to recover the same check.')); }, 20000);
-        const stop = ref.onSnapshot(snapshot => { const job = snapshot.data(); if (job?.status === 'complete') { clearTimeout(timeout); stop(); resolve(job.result || {}); }
-          else if (job?.status === 'failed') { clearTimeout(timeout); stop(); try { if (JSON.parse(localStorage.getItem(assessmentKey) || 'null')?.jobId === record.jobId) localStorage.setItem(assessmentKey, JSON.stringify({ ...record, terminalFailed: true })); } catch { /* optional recovery receipt */ } reject(new Error(job.error?.detail || job.error?.message || 'Your setup could not be checked. Try again.')); } }, e => { clearTimeout(timeout); stop(); reject(e); });
-        subscriptions.current.push(() => { clearTimeout(timeout); stop(); reject(new Error('The selected player changed.')); });
+        let settled = false, stop = () => {};
+        const settle = (complete: () => void) => {
+          if (settled) return; settled = true; clearTimeout(timeout); stop();
+          const index = subscriptions.current.indexOf(cancel); if (index >= 0) subscriptions.current.splice(index, 1);
+          complete();
+        };
+        const fail = (failure: any) => settle(() => reject(failure));
+        const cancel = () => fail(new Error('The selected player changed.'));
+        // Include the create acknowledgement in the limit. A queued Firestore
+        // write can finish later; its durable ID remains available for Retry.
+        const timeout = window.setTimeout(() => fail(new Error('Your setup check is taking longer than expected. Retry to recover the same check.')), 20000);
+        subscriptions.current.push(cancel);
+        void ensurePersonalSubmission(record, { persist: value => { try { localStorage.setItem(assessmentKey, JSON.stringify(value)); } catch { /* the job still has a stable identity this visit */ } },
+          exists: async () => { const snapshot = await ref.get({ source: 'server' }), job = snapshot.data(); if (snapshot.exists && (job?.requestedByUid !== uid || job?.playerId !== playerId || job?.capability !== record.capability || job?.params?.requestId !== record.params.requestId)) throw new Error('The setup check does not match your account.'); return snapshot.exists; },
+          create: async () => { await ref.set({ schemaVersion: 1, capability: record.capability, playerId, params: record.params, requestedByUid: uid,
+            clientVersion: 'web-guided-workouts-v1', status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp() }); } }).then(() => {
+          if (settled) return;
+          if (owner !== generation.current || auth.currentUser?.uid !== uid) { cancel(); return; }
+          const unsubscribe = ref.onSnapshot(snapshot => {
+            const job = snapshot.data();
+            if (settled || !job) return;
+            if (job.status === 'complete') settle(() => resolve(job.result || {}));
+            else if (job.status === 'failed') {
+              try { if (JSON.parse(localStorage.getItem(assessmentKey) || 'null')?.jobId === record.jobId) localStorage.setItem(assessmentKey, JSON.stringify({ ...record, terminalFailed: true })); } catch { /* optional recovery receipt */ }
+              fail(new Error(job.error?.detail || job.error?.message || 'Your setup could not be checked. Try again.'));
+            }
+          }, fail);
+          stop = unsubscribe; if (settled) stop();
+        }).catch(fail);
       });
       if (owner !== generation.current || auth.currentUser?.uid !== uid) throw new Error('The selected player changed. Return to Training.');
       try { if (JSON.parse(localStorage.getItem(assessmentKey) || 'null')?.jobId === record.jobId) localStorage.removeItem(assessmentKey); } catch { /* optional recovery storage */ }

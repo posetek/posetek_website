@@ -40,6 +40,21 @@ Unavailable combinations require a visible adjustment rather than a hidden
 focus or equipment substitution. The current reviewed catalog does not cover
 every age or setup; assessment cannot approve held content to fill those gaps.
 
+Completed testing is not a prerequisite for personal generation. A registered
+athlete with a confirmed age and valid setup can compose a personal session
+without test results or an active plan. Existing catalog, difficulty, equipment,
+partner and schedule constraints still apply.
+
+The October 1 follow-up traced an age-21 Speed/Agility failure to explicit catalog
+age ranges. Of 54 published personal-session records, 53 have maximum ages of 19
+or younger; STR-501 is Strength for ages 9–25. The age slider records an observation
+and does not promise catalog coverage for every accepted age. These authored
+ranges are not evidence of clinical unsuitability beyond age 19. Adult coverage
+requires a scoped content/age-envelope update, preserving the held drafts.
+Assessment reports the published age ranges and the relevant blocker for each
+selected focus. The UI distinguishes loading, unavailable choices and errors;
+an empty completed assessment must never remain labeled “Checking times…”.
+
 Age resolution uses a valid recorded birth date first, otherwise a nonfuture
 integer age observation recorded no more than 365 days ago. Missing, undated or
 stale observations require explicit confirmation. Saving an age writes `age`,
