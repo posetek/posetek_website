@@ -6,15 +6,15 @@ business document is included.
 
 ## Reliable personal workouts (2026-10-01, live)
 
-Guided player Training is live as deployment `6abe3e6fd97e6a691aa603fe`, source
-`96f85bb3db83de9599a58507b15acf71ce6dfbf8`, published October 1 at 4:07:44 AM PDT.
+Guided player Training is live as deployment `6abeaf5702a9c9983c7a41b9`, source
+`8956871d0ece5bf7c43e9830df60ab072eb3bd64`, published October 1 at 12:18:33 PM PDT.
 Focus, location, time, conditional age and readiness replace the equipment
 checklist. Visible location defaults have compact exceptions; available times
 come from code-only assessment. Conversations, AI revisions, explicit publishing
 and tracked workouts remain connected. The reviewed catalog can still leave some
 age/setup combinations unavailable; offer adjustments without granting held drills.
 
-The shared gateway is `agent-gateway-sha-cb575df84000`, built and tested from
+The shared gateway is `agent-gateway-sha-a63f1b0b7e5d`, built and tested from
 canonical backend main and promoted through its release script. Private admin
 evidence now falls back to immutable JSON artifacts for unsupported Firestore
 structures as well as excessive size. Admin and player age readers agree; an
@@ -22,10 +22,24 @@ explicit confirmation can refresh the same observed age without inventing a DOB.
 Catalog `1.0.93` makes only STR-005, STR-006, STR-008, STR-501 and STR-502 mat
 optional. All 80 held drafts, media, doses, review states and native gates remain.
 
+The availability follow-up separates completed empty assessments from loading
+and retryable errors; a bounded check retains its accepted job identity for
+recovery. Completed testing and active plans are not prerequisites. Live
+synthetic acceptance created a 30-minute Speed/Agility draft without either.
+The reported age-21 gap comes from authored catalog bounds: 53 of 54 published
+personal-session drills end at age 19 or younger; STR-501 covers Strength at
+ages 9–25. Current bounds remain enforced. These limits do not establish clinical
+unsuitability; adult coverage needs a separate content/age-envelope update.
+The reconciled baseline protects 1,438 application/public files. All 1,440
+artifact files match production inventory; the 52 existing processed HTML files
+retain only their previously verified transformations. The ordinary preservation
+build passed against this new baseline.
+
 The release preserves already-live issue-alert source `e8de8d7` and predecessor
 deployment `6abd8f957e046e8059376091`, including approved Players/Coaches marketing
-bytes. Read [the handoff](docs/RELIABLE_PLAYER_WORKOUTS.md) and
-[the production receipt](deployment/RELIABLE_PLAYER_WORKOUTS_PRODUCTION.json)
+bytes. Read [the handoff](docs/RELIABLE_PLAYER_WORKOUTS.md),
+[the availability receipt](deployment/WORKOUT_AVAILABILITY_PRODUCTION.json), and
+[the initial production receipt](deployment/RELIABLE_PLAYER_WORKOUTS_PRODUCTION.json)
 before another application, gateway, rules or catalog release. The existing Coach
 proxy allows production origins and rejects Netlify preview origins; exercise the
 actual Coach handoff on Posetek.net rather than widening that allowlist.

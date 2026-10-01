@@ -1,7 +1,7 @@
 {
-  "deploymentId": "6abe3e6fd97e6a691aa603fe",
-  "sourceCommit": "96f85bb3db83de9599a58507b15acf71ce6dfbf8",
-  "url": "https://6abe3e6fd97e6a691aa603fe--posetek.netlify.app",
+  "deploymentId": "6abeaf5702a9c9983c7a41b9",
+  "sourceCommit": "8956871d0ece5bf7c43e9830df60ab072eb3bd64",
+  "url": "https://6abeaf5702a9c9983c7a41b9--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
@@ -206,6 +206,11 @@
       "size": 4493
     },
     {
+      "path": "/_astro/applicationroot.bwegdi2m.js",
+      "sha": "05748599e6ecea92eb32383e132f4c51c626e26b",
+      "size": 17370
+    },
+    {
       "path": "/_astro/applicationroot.cbwgdqn5.js",
       "sha": "02f803471a6e43a3bd25b046de576621a97121c0",
       "size": 17370
@@ -264,6 +269,11 @@
       "path": "/_astro/athleteportalpage.cxxhlpvo.css",
       "sha": "b7717278b34c2527ccc60cadbec68ff0077385dc",
       "size": 25278
+    },
+    {
+      "path": "/_astro/athleteportalpage.dbfg8u2b.js",
+      "sha": "1719aece0653d2aebe495f05c1284532ce9b9ba1",
+      "size": 324576
     },
     {
       "path": "/_astro/athleteportalpage.dgylbsma.js",
@@ -986,6 +996,11 @@
       "size": 3867
     },
     {
+      "path": "/_astro/supportpage.dfeyi3qh.js",
+      "sha": "12227715fd8b42fcb1d3b0300fb0b94c1dd79680",
+      "size": 10366
+    },
+    {
       "path": "/_astro/supportpage.duytfibm.js",
       "sha": "e54ee992aa5ebc2a5ebaef0129529611877559b7",
       "size": 10366
@@ -1157,7 +1172,7 @@
     },
     {
       "path": "/application.html",
-      "sha": "7fb515da97706473884454263122131e9faf53f7",
+      "sha": "ff7ebffd4832b561a72d3094be962d3f0e388bd9",
       "size": 15038
     },
     {

@@ -3,14 +3,19 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
-Guided personal workouts are live as deployment `6abe3e6fd97e6a691aa603fe`, source
-`96f85bb`, published October 1, 2026 at 4:07:44 AM PDT. Players choose focus,
+Guided personal workouts are live as deployment `6abeaf5702a9c9983c7a41b9`, source
+`8956871`, published October 1, 2026 at 12:18:33 PM PDT. Players choose focus,
 location, available time and readiness one step at a time; age is confirmed only
 when needed. Code-only assessment and shared deterministic composition produce
 eligible sessions while conversations, AI revisions, Publish and Start remain
 connected. Admin evidence storage and age eligibility are repaired. Read
 [the handoff](docs/RELIABLE_PLAYER_WORKOUTS.md) and
-[the release receipt](deployment/RELIABLE_PLAYER_WORKOUTS_PRODUCTION.json).
+[the availability receipt](deployment/WORKOUT_AVAILABILITY_PRODUCTION.json).
+Completed testing and active plans are optional. Empty assessments show the
+actual library limitation, and interrupted checks recover the same accepted job.
+The current Speed/Agility age ranges exclude age 21; widening authored age
+envelopes is a separate content change. The initial guided release remains
+recorded in [its receipt](deployment/RELIABLE_PLAYER_WORKOUTS_PRODUCTION.json).
 Unavailable catalog combinations require visible adjustments; the 80 held drills
 and native release gates remain unchanged.
 

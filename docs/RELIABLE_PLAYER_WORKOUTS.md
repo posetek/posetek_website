@@ -4,6 +4,10 @@ Implementation contract agreed October 1, 2026. The production receipt records
 the actual deployed identities and completed acceptance; this document does not
 replace that receipt.
 
+The October 1 availability follow-up is recorded separately in
+[WORKOUT_AVAILABILITY_PRODUCTION.json](../deployment/WORKOUT_AVAILABILITY_PRODUCTION.json).
+Keep the initial guided-release receipt as a historical checkpoint.
+
 ## Player experience
 
 Training → Personal workouts → Create workout uses a short guided setup with
@@ -54,6 +58,11 @@ requires a scoped content/age-envelope update, preserving the held drafts.
 Assessment reports the published age ranges and the relevant blocker for each
 selected focus. The UI distinguishes loading, unavailable choices and errors;
 an empty completed assessment must never remain labeled “Checking times…”.
+Unavailable choices remove the empty slider and Create action; Change focus
+retains the requested time. Retryable check errors remain visible across Back
+and Next. The 20-second limit covers both the Firestore create acknowledgement
+and job observation. Retry/refresh recover the accepted job rather than creating
+a duplicate; a terminal failed job alone permits a replacement check.
 
 Age resolution uses a valid recorded birth date first, otherwise a nonfuture
 integer age observation recorded no more than 365 days ago. Missing, undated or
