@@ -1,12 +1,21 @@
 import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_INTAKE, planV3JobParams } from "./planJobs";
 import { emptyTrainingContext } from "./wholeBodyTraining";
+import { resolveProfileAge } from '../../../lib/profile-age';
 
 // Test the outgoing request without connecting to Firebase or creating a plan.
 vi.mock("../../../lib/firebase", () => ({ db: {} }));
 vi.mock("../../athlete-portal/lib/loaders", () => ({ submitLlmJob: vi.fn() }));
 
 describe("admin plan generation request", () => {
+  it('does not prefill generation intake from undated, stale, future or impossible-DOB ages', () => {
+    const now = new Date('2026-10-01T12:00:00Z');
+    for (const player of [{ age: 15 }, { age: 15, ageRecordedAt: '2025-01-01' }, { age: 15, ageRecordedAt: '2026-10-02' }, { birthDate: '2011-02-31' }]) {
+      expect(planV3JobParams([], player, resolveProfileAge(player, now).age, DEFAULT_INTAKE).intake).not.toHaveProperty('age');
+    }
+    const player = { birthDate: '2011-10-01', age: 30, ageRecordedAt: '2027-01-01' };
+    expect(planV3JobParams([], player, resolveProfileAge(player, now).age, DEFAULT_INTAKE).intake.age).toBe(15);
+  });
   it("sends individual versioned training context only when explicitly supplied", () => {
     const context = { ...emptyTrainingContext(), startDate: "2026-09-21", sessionDays: [1, 3], scheduleConfirmed: true };
     expect(planV3JobParams([], {}, 15, { ...DEFAULT_INTAKE, trainingContext: context }).intake.trainingContext).toEqual(context);

@@ -46,6 +46,8 @@ stale observations require explicit confirmation. Saving an age writes `age`,
 server `ageRecordedAt` and `updatedAt`; it never invents a birth date or increments
 an observed age on its anniversary. Profile displays the observation. Owner rules
 permit refreshing its timestamp even when the integer age is unchanged.
+Admin Profile uses the same age policy and provides an explicit Confirm current
+age action. Saving another profile field does not refresh an old age observation.
 
 Conversation → reviewed prescription → explicit Publish → saved detail → Start
 remains the workflow. There are no player drill-search, reorder or dosage editing
