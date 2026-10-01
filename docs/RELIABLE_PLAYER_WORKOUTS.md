@@ -8,7 +8,8 @@ replace that receipt.
 
 Training → Personal workouts → Create workout uses a short guided setup with
 recoverable Back/Next answers. Players choose one or two focuses, then Home,
-Gym or Field, available time, missing profile age and readiness. Known AI Coach
+Gym or Field, missing profile age, available time and readiness. Age precedes
+duration assessment only when confirmation is needed. Known AI Coach
 conditions prefill the setup; an existing proposal opens its conversation without
 another generation. No active plan is required.
 
@@ -36,7 +37,8 @@ targets in 5–60 minutes; supplied/custom targets retain the existing 1–135-m
 contract. The server calculates dose, rests and transitions under the existing
 approximate-time tolerance. Review displays both requested and calculated time.
 Unavailable combinations require a visible adjustment rather than a hidden
-focus or equipment substitution.
+focus or equipment substitution. The current reviewed catalog does not cover
+every age or setup; assessment cannot approve held content to fill those gaps.
 
 Age resolution uses a valid recorded birth date first, otherwise a nonfuture
 integer age observation recorded no more than 365 days ago. Missing, undated or

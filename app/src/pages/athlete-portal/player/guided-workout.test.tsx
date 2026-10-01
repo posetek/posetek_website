@@ -1,13 +1,27 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 vi.mock('../../../lib/firebase', () => ({ default: {}, auth: { currentUser: { uid: 'athlete' } }, db: {}, cloud: {}, storage: {} }));
-import { clearGuidedWorkout, focusFromRequest, guidedRequest, nearestMinuteIndex, nearestSupportedMinutes, readGuidedWorkout, rememberGuidedWorkout, restoredGuidedSetup, supportedSliderMinutes, toggleWorkoutFocus } from './guided-workout';
+import { clearGuidedWorkout, focusFromRequest, guidedRequest, locationFromRequest, nearestMinuteIndex, nearestSupportedMinutes, readGuidedWorkout, rememberGuidedWorkout, restoredGuidedSetup, supportedSliderMinutes, toggleWorkoutFocus } from './guided-workout';
 import { clearSpaceRestrictions, confirmedSetup, emptySetup, locationSetup, setupForProposal, setupFromIntake } from './training-access';
 import WorkoutSetupWizard from './WorkoutSetupWizard';
 import PlayerAgeField from './PlayerAgeField';
 
 afterEach(() => vi.unstubAllGlobals());
 describe('guided workout choices', () => {
+  it('prefills only the latest positive current location, excluding negated and historical settings', () => {
+    expect(locationFromRequest('I am not at the gym, I am on the field')).toBe('pitch');
+    expect(locationFromRequest('At home yesterday, now at gym')).toBe('gym');
+    expect(locationFromRequest('I was at home, but now on the pitch')).toBe('pitch');
+    expect(locationFromRequest("I cannot train at the gym; I am at home")).toBe('home');
+    expect(locationFromRequest('At the gym first, instead at home')).toBe('home');
+    expect(locationFromRequest('No gym access. At home yesterday.')).toBeUndefined();
+    expect(locationFromRequest('Gym access is unavailable')).toBeUndefined();
+    expect(locationFromRequest('I have no equipment at home')).toBe('home');
+    expect(locationFromRequest('I am at the gym today')).toBe('gym');
+    expect(locationFromRequest('I am currently at home')).toBe('home');
+    expect(locationFromRequest('I trained at the gym.')).toBeUndefined();
+    expect(locationFromRequest('I am not at the gym or at home')).toBeUndefined();
+  });
   it('maps readable focus labels to canonical domains and preserves explicit ball mastery', () => {
     expect(focusFromRequest('Speed and agility')).toEqual(['speed', 'agility']);
     expect(focusFromRequest('First touch and finishing')).toEqual(['receiving', 'shooting']);

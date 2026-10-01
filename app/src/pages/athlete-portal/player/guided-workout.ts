@@ -14,8 +14,22 @@ export const WORKOUT_FOCUSES = [
 ] as const;
 export const focusLabel = (domain: string) => WORKOUT_FOCUSES.find(f => f.domain === domain)?.label || domainLabel(domain);
 export function locationFromRequest(text: string): 'home' | 'gym' | 'pitch' | undefined {
-  return /\b(?:at home|in my (?:home|house)|indoors at home)\b/i.test(text) ? 'home' : /\b(?:at the gym|at a gym|in the gym|gym access|at gym)\b/i.test(text) ? 'gym'
-    : /\b(?:on (?:a |the )?(?:field|pitch)|at (?:a |the )?(?:field|pitch))\b/i.test(text) ? 'pitch' : undefined;
+  const places = /\b(?:at home|in my (?:home|house)|indoors at home|at (?:the |a )?gym|in the gym|gym access|(?:on|at) (?:a |the )?(?:field|pitch))\b/gi;
+  let current: 'home' | 'gym' | 'pitch' | undefined;
+  for (const clause of text.replace(/[’]/g, "'").split(/[,\.!?;\n]|\bbut\b/i)) {
+    // A past setting is not evidence of the equipment available for this session.
+    const directives = [...clause.matchAll(/\b(?:now|instead)\b/gi)];
+    const active = directives.length ? clause.slice(directives.at(-1)!.index!) : clause;
+    if (/\b(?:yesterday|earlier|last (?:workout|time)|previously|used to|(?:I |we )(?:was|were|trained|worked out|went))\b/i.test(active)) continue;
+    for (const match of active.matchAll(places)) {
+      const prefix = active.slice(0, match.index), suffix = active.slice(match.index! + match[0].length);
+      if (/\b(?:not|no|without|avoid|can't|cannot|don't|do not)(?:\s+(?:currently|today|training|train|working out|work out|going|go|being|be))*\s*$/i.test(prefix)
+        || /\b(?:not|no|without|can't|cannot|don't|do not)\b[^,;.!?]*\b(?:at|on|in)\b[^,;.!?]*\b(?:or|nor)\s*$/i.test(prefix)
+        || /^\s*(?:is |are )?(?:unavailable|not available|not accessible|isn't available|aren't available)\b/i.test(suffix)) continue;
+      current = /home|house/i.test(match[0]) ? 'home' : /gym/i.test(match[0]) ? 'gym' : 'pitch';
+    }
+  }
+  return current;
 }
 export function focusFromRequest(text: string): string[] {
   const patterns: Record<string, RegExp> = { speed: /\b(?:speed|sprint|acceleration)\b/i, strength: /\b(?:strength|stronger|weights|bodyweight)\b/i,
