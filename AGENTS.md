@@ -48,17 +48,26 @@ default to a sibling `../PoseTek-mobile-app` checkout, and `RULES_PATH` /
 `deployment/*.json`, including the composed `whole-body-firestore.rules`
 (deleted), are historical records of past publishes, not instructions.
 
-The current website release is `6abe3e6fd97e6a691aa603fe`, source `96f85bb`,
-published October 1, 2026 at 4:07:44 AM PDT. Guided Training uses code-only
+The current website release is `6abeaf5702a9c9983c7a41b9`, source `8956871`,
+published October 1, 2026 at 12:18:33 PM PDT. Guided Training uses code-only
 feasibility assessment, shared single-session composition and explicit age and
-readiness confirmation. Read `deployment/RELIABLE_PLAYER_WORKOUTS_PRODUCTION.json`
+readiness confirmation. Read `deployment/WORKOUT_AVAILABILITY_PRODUCTION.json`,
+`deployment/RELIABLE_PLAYER_WORKOUTS_PRODUCTION.json`
 and `docs/RELIABLE_PLAYER_WORKOUTS.md` before changing these contracts. Gateway
-`agent-gateway-sha-cb575df84000` is the shared canonical release; rules source
+`agent-gateway-sha-a63f1b0b7e5d` is the shared canonical release; rules source
 `44e4464` intentionally excludes unrelated unreleased native testing rules.
 Catalog `1.0.93` changes only five mat requirements to allow floor training;
 all 80 held drafts, doses, media and review states remain preserved. The release
 includes already-live issue alerts from `e8de8d7` / `6abd8f957e046e8059376091`.
 The Coach proxy rejects Netlify preview origins; keep its production allowlist.
+The protected application baseline now has 1,438 files; the verified production
+artifact has 1,440 files plus Netlify's generated metadata record. Preserve the
+original approved Players/Coaches marketing bytes during another app release.
+Testing results and active plans are not personal-workout prerequisites. The
+age-21 Speed/Agility issue was authored catalog coverage, not missing tests.
+Preserve current age envelopes and held content; assessment reports a truthful
+blocker instead of a perpetual loading state. Adult coverage requires a separate
+content/age-envelope update, not an eligibility bypass.
 
 The preceding coach presentation release is `6abb9f1e6c2c84772de67005`, source `684528b`,
 published September 29, 2026 at 4:25:34 AM PDT. This presentation follow-up makes coach
