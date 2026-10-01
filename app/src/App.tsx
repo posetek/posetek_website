@@ -2,6 +2,8 @@ import { Suspense, lazy } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { coachWorkspacePath } from "./lib/coach-navigation";
 import UsageTracking from "./lib/insight-usage/UsageTracking";
+import UserIssueBoundary, { UserIssueCapture } from "./components/UserIssueBoundary";
+import "./pages/support/user-issues.scss";
 
 const HomePage = lazy(() => import("./pages/home/HomePage"));
 const LandingPage = lazy(() => import("./pages/landing/LandingPage"));
@@ -38,6 +40,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <UsageTracking />
+      <UserIssueCapture />
+      <UserIssueBoundary>
       <Suspense fallback={<Fallback />}>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -81,6 +85,7 @@ export default function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
+      </UserIssueBoundary>
     </BrowserRouter>
   );
 }

@@ -5,12 +5,12 @@ const RECIPIENT = "dylank@posetek.net";
 const FROM = "PoseTek Workouts <workouts@alerts.posetek.net>";
 
 // No provider response body or credential is copied into application logs/errors.
-function createResendProvider({ apiKey, fetchImpl = fetch }) {
+function createResendProvider({ apiKey, fetchImpl = fetch, from = FROM }) {
   return {
     async send(payload, idempotencyKey) {
       const key = apiKey();
       if (typeof key !== "string" || !key.trim()) throw Object.assign(new Error("Email credentials are not configured."), { code: "provider_not_configured", permanent: true });
-      if (payload.from !== FROM || payload.to?.length !== 1 || payload.to[0] !== RECIPIENT) {
+      if (payload.from !== from || payload.to?.length !== 1 || payload.to[0] !== RECIPIENT) {
         throw Object.assign(new Error("Email recipient configuration is invalid."), { code: "recipient_invalid", permanent: true });
       }
       let response;

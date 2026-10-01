@@ -3,6 +3,7 @@ import "firebase/compat/auth";
 import "firebase/compat/firestore";
 import "firebase/compat/storage";
 import "firebase/compat/functions";
+import { configureIssueIdentity, instrumentIssueCallable } from "./user-issues";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBSfyXyhmD4kYGRSg-jOmGeLeOO8hX0-Gs",
@@ -15,8 +16,19 @@ const firebaseConfig = {
 
 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 
-export const auth = firebase.auth();
+const authClient = firebase.auth();
+export const auth = new Proxy(authClient, { get(target, key) {
+  const value = Reflect.get(target, key);
+  if (typeof value !== "function") return value;
+  const bound = value.bind(target);
+  return /^(signInWithEmailAndPassword|createUserWithEmailAndPassword|sendPasswordResetEmail)$/.test(String(key)) ? instrumentIssueCallable(`auth_${String(key)}`, bound) : bound;
+} });
+configureIssueIdentity(() => auth.currentUser?.uid || null);
 export const db = firebase.firestore();
 export const storage = firebase.storage();
-export const cloud = firebase.app().functions("us-central1");
+const functionsClient = firebase.app().functions("us-central1");
+export const cloud = new Proxy(functionsClient, { get(target, key) {
+  if (key === "httpsCallable") return (name: string, options?: firebase.functions.HttpsCallableOptions) => instrumentIssueCallable(name, target.httpsCallable(name, options));
+  const value = Reflect.get(target, key); return typeof value === "function" ? value.bind(target) : value;
+} });
 export default firebase;

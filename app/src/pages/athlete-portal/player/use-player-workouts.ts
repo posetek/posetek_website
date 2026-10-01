@@ -4,6 +4,7 @@ import type { WorkoutStore } from '../lib/workout-store';
 import { initialLog, patchBlock, resumeWorkout } from './execution';
 import type { Row } from './execution';
 import { startPlayerWorkout, mutatePlayerWorkout } from './workout-repository';
+import { captureIssue } from '../../../lib/user-issues';
 
 export type PlayerWorkoutStore = WorkoutStore & {
   saving: boolean;
@@ -41,7 +42,7 @@ export function usePlayerWorkouts(playerId: string, planId: string | null, previ
     if (busy.current) throw new Error('Please wait for your progress to save.');
     busy.current = true; setSaving(true); setError(null);
     try { return await action(); }
-    catch (e: any) { setError(e.message || 'Could not save. Check your connection and retry.'); throw e; }
+    catch (e: any) { if (!preview && e.code) captureIssue(e, 'workout_save', { playerId }); setError(e.message || 'Could not save. Check your connection and retry.'); throw e; }
     finally { busy.current = false; setSaving(false); }
   };
   const remember = (id: string, log: Row, token: number) => {

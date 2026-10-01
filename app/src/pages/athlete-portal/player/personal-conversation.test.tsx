@@ -46,7 +46,8 @@ describe('reviewed workout presentation', () => {
     const store = { enabled: true, proposal: null, workouts: [], logs: {}, messages: [], scheduleRevision: 0, loaded: true } as any;
     const html = renderToStaticMarkup(<PersonalWorkoutHub store={store} playerId="athlete" athlete={{ age: 15 }} config={null} preview initialRequest="I have 20 minutes. Solo. I have a ball and cones." onBack={() => {}} />);
     expect(html).not.toContain('About how many minutes?'); expect(html).not.toContain('Training with'); expect(html).not.toContain('What equipment do you have?'); expect(html).not.toContain('Your age');
-    expect(html).toContain('Any pain or restriction affecting this session?');
+    expect(html).toContain('What do you want to work on?');
+    expect(html).toContain('Your request is included');
   });
   it('does not repeat the original request in the revision composer when opening an existing conversation', () => {
     const store = { enabled: true, proposal, conversation: {}, workouts: [], logs: {}, messages: [], scheduleRevision: 0, loaded: true } as any;

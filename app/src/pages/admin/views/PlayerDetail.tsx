@@ -188,13 +188,28 @@ function ProfileCard({ player, coach, onSaved }: { player: PlayerRow; coach: Coa
     return date ? date.toISOString().slice(0, 10) : "";
   });
   const [age, setAge] = useState<string>(
-    resolved.source === "playerDocAge" && resolved.age !== null ? String(resolved.age) : "",
+    resolved.recordedAge !== null ? String(resolved.recordedAge) : "",
   );
   const [cap, setCap] = useState<string>(
     typeof player.raw?.maxDrillDifficulty === "number" ? String(player.raw.maxDrillDifficulty) : "",
   );
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const hasRecordedBirthday = resolvePlayerAge({ birthDate: player.raw?.birthDate, dateOfBirth: player.raw?.dateOfBirth }).age !== null;
+  const confirmableAge = Number(age);
+  const canConfirmAge = !hasRecordedBirthday && Number.isInteger(confirmableAge) && confirmableAge >= 5 && confirmableAge <= 80;
+
+  async function confirmCurrentAge() {
+    if (!canConfirmAge || saving) return;
+    setSaving(true); setMessage(null);
+    try {
+      // This deliberate action refreshes even the same stored number. A normal
+      // position/rating Save does not claim a new age observation.
+      await savePlayerProfile(player.id, { age: confirmableAge });
+      await onSaved(); setMessage("Current age confirmed.");
+    } catch (error: any) { setMessage(error?.message || "The current age could not be confirmed."); }
+    finally { setSaving(false); }
+  }
 
   async function save() {
     setSaving(true);
@@ -263,12 +278,15 @@ function ProfileCard({ player, coach, onSaved }: { player: PlayerRow; coach: Coa
           <label className="admin-field">
             <span>Recorded age (only when there is no birth date)</span>
             <input type="number" min={5} max={80} value={age} onChange={event => setAge(event.target.value)} />
+            {!hasRecordedBirthday && <button type="button" className="quiet-button" disabled={saving || !canConfirmAge} onClick={() => void confirmCurrentAge()}>Confirm current age</button>}
           </label>
         </div>
         <p className="admin-note">
           Age in use: {resolved.age ?? "unknown"} ({resolved.source}
-          {resolved.stale ? ", recorded over a year ago — refresh it" : ""}). A recorded age is an
+          {resolved.stale ? resolved.observationStatus === "future" ? ", future-dated observation — confirm current age"
+            : resolved.observationStatus === "undated" ? ", undated observation — confirm current age" : ", recorded over a year ago — refresh it" : ""}). A recorded age is an
           observation, not a birthday, so it is never incremented automatically.
+          {resolved.stale && resolved.recordedAge !== null && ` Stored observation: ${resolved.recordedAge} years; it is not used for prescriptions.`}
         </p>
         <label className="admin-field">
           <span>

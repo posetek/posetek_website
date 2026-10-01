@@ -3,6 +3,21 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
+Guided personal workouts are live as deployment `6abe3e6fd97e6a691aa603fe`, source
+`96f85bb`, published October 1, 2026 at 4:07:44 AM PDT. Players choose focus,
+location, available time and readiness one step at a time; age is confirmed only
+when needed. Code-only assessment and shared deterministic composition produce
+eligible sessions while conversations, AI revisions, Publish and Start remain
+connected. Admin evidence storage and age eligibility are repaired. Read
+[the handoff](docs/RELIABLE_PLAYER_WORKOUTS.md) and
+[the release receipt](deployment/RELIABLE_PLAYER_WORKOUTS_PRODUCTION.json).
+Unavailable catalog combinations require visible adjustments; the 80 held drills
+and native release gates remain unchanged.
+
+User crash/bug reporting, the protected issue inbox and email operations are
+documented in [User issue alerts](docs/USER_ISSUE_ALERTS.md). Native rollout and
+Crashlytics export verification have separate acceptance gates.
+
 The unified coach workspace and Astro build are documented in
 [the implementation handoff](docs/UNIFIED_COACH_WORKSPACE.md). Team Insights owns
 the coach roster, progress, player details and embedded Community. Astro builds

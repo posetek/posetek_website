@@ -10,6 +10,7 @@ import { loadClubMembership } from "../../../lib/organization-data";
 import { canAccessClubPlayer } from "../../../lib/organization";
 import { refreshAdminIdentity } from "../../admin/lib/identity";
 import firebase, { auth, cloud, db, storage } from "../../../lib/firebase";
+import { captureIssue } from "../../../lib/user-issues";
 import { findCoach as findCoachByUid, findPlayer, ownsPlayer } from "../../../lib/identity";
 import type { Drill } from "./drills";
 import { DRILLS } from "./drills";
@@ -187,7 +188,8 @@ export async function storageJson(reference: any): Promise<any> {
 
 export async function submitLlmJob(playerId: string, capability: string, params: any): Promise<any> {
   const ref = db.collection("llmJobs").doc();
-  await ref.set({
+  const ownerUid = auth.currentUser?.uid || null;
+  try { await ref.set({
     schemaVersion: 1,
     capability,
     playerId,
@@ -196,7 +198,7 @@ export async function submitLlmJob(playerId: string, capability: string, params:
     clientVersion: "1.1+4",
     status: "pending",
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-  });
+  }); } catch (error) { captureIssue(error, `submit_${capability}`, { playerId, requestId: ref.id, ownerUid }); throw error; }
   return ref;
 }
 
