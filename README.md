@@ -15,6 +15,10 @@ Signed receipts track each recipient; existing frozen emails and workout-alert
 destinations are preserved. The provider's current daily quota prevents a claim of
 new-recipient delivery. See [recipient rollout and limits](deployment/USER_ISSUE_RECIPIENTS_PRODUCTION.json).
 
+An event-triggered Power Automate issue-tracker candidate is being prepared to
+replace the hourly local update. It is not live; connection, licensing, migration
+and source-coverage gates remain. See [the tracker handoff](docs/ISSUE_TRACKER_EVENT_FLOW.md).
+
 The unified coach workspace and Astro build are documented in
 [the implementation handoff](docs/UNIFIED_COACH_WORKSPACE.md). Team Insights owns
 the coach roster, progress, player details and embedded Community. Astro builds

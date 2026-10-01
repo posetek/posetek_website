@@ -4,6 +4,18 @@ Reviewed on October 1, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
+## Event-triggered issue tracker candidate (2026-10-01)
+
+Dylan selected Power Automate to replace the hourly Excel tracker, with costs
+shown before any purchase. The event queue, conservative normalization and native
+Office Script writer are source candidates only; the existing hourly Codex task
+remains active. The cloud connection, licensing, prior pending OneDrive
+publication, source recovery and live workbook acceptance must be verified before
+cutover. Do not run both writers against the master. Read
+[ISSUE_TRACKER_EVENT_FLOW.md](docs/ISSUE_TRACKER_EVENT_FLOW.md) and
+[the isolated candidate](deployments/issue-tracker/README.md). This work does not
+change the live website or existing email delivery setup.
+
 ## Shared user-issue recipients (2026-10-01)
 
 The user approved Nolan (`nolanj@posetek.net`) and Taiyo (`taiyow@posetek.net`)
