@@ -56,10 +56,10 @@ record each recipient separately and require all three delivery confirmations be
 the new aggregate job is called Delivered. Workout outcome/inactivity recipients
 remain unchanged. See [the recipient rollout receipt](deployment/USER_ISSUE_RECIPIENTS_PRODUCTION.json).
 This is a backend/configuration-only follow-up; the website release below is unchanged.
-The existing Resend daily sending quota is exhausted in the inspected failed-email
-dashboard record. Configuration and unit verification do not establish new-recipient
-delivery while that limit persists. No paid plan, quota override or historical replay
-was performed.
+The inspected October 1 failed-email record confirmed Resend daily quota
+exhaustion. Later partial recovery does not establish delivery to every new
+recipient; check each recipient's current evidence. No paid Resend plan, quota
+override or historical replay was performed.
 
 ## Reliable personal workouts (2026-10-01, live)
 

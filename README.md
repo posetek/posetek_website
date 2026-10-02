@@ -26,8 +26,9 @@ Crashlytics export verification have separate acceptance gates.
 The October 1 backend follow-up adds `nolanj@posetek.net` and `taiyow@posetek.net`
 to Dylan's ongoing issue emails and the independent Google Cloud alert policy.
 Signed receipts track each recipient; existing frozen emails and workout-alert
-destinations are preserved. The provider's current daily quota prevents a claim of
-new-recipient delivery. See [recipient rollout and limits](deployment/USER_ISSUE_RECIPIENTS_PRODUCTION.json).
+destinations are preserved. The October 1 rollout encountered a verified quota
+failure; later partial recovery does not establish delivery to every new recipient.
+See [recipient rollout and limits](deployment/USER_ISSUE_RECIPIENTS_PRODUCTION.json).
 
 Microsoft email and event-triggered Power Automate tracker candidates are prepared
 but not live. Premium is assigned, the private writer saves without licensing
