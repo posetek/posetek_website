@@ -1,9 +1,23 @@
 "use strict";
 const { fail } = require("./issue-tracker-bridge-model");
 const MAILBOX = "dylank@posetek.net", ORIGIN = "https://graph.microsoft.com";
-const FIELDS = "id,internetMessageId,receivedDateTime,sentDateTime,subject,from,sender,body,bodyPreview,webLink,parentFolderId,internetMessageHeaders";
+const FIELDS = "id,internetMessageId,receivedDateTime,sentDateTime,subject,from,sender,body,bodyPreview,webLink,parentFolderId,internetMessageHeaders,isRead";
 const uuid = value => /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(value || "");
 const messageId = value => typeof value === "string" && value.length > 0 && value.length <= 2048 && !/[\u0000-\u001f]/.test(value);
+const PREFER = 'IdType="ImmutableId", outlook.body-content-type="html"';
+function safeGraphUrl(value, item = false) {
+  // Check raw bytes before URL parsing can normalize traversal, whitespace or
+  // backslashes. Opaque query/skip-token bytes are preserved exactly.
+  if (typeof value !== "string" || value.length > 8192 || /[^A-Za-z0-9\-._~:/?\[\]@!$&'()*+,;=%]/.test(value) ||
+      !value.startsWith(ORIGIN + "/")) fail("tracker_graph_invalid_page");
+  const path = value.slice(ORIGIN.length).split("?")[0];
+  if (!/^\/v1\.0\/users\/dylank(?:%40|@)posetek\.net\/messages(?:\/(?:[A-Za-z0-9_+=-]|%2[bB]|%3[dD])+)?$/.test(path)) fail("tracker_graph_invalid_page");
+  const segments = path.split("/");
+  if (segments.length !== 5 && !(item && segments.length === 6)) fail("tracker_graph_invalid_page");
+  let url; try { url = new URL(value); } catch (_) { fail("tracker_graph_invalid_page"); }
+  if (url.origin !== ORIGIN || url.username || url.password || url.hash || url.pathname !== path) fail("tracker_graph_invalid_page");
+  return value;
+}
 
 // Tokens are purpose-scoped to Graph. Authorization must be separately verified
 // with Exchange application RBAC for this ONE mailbox before enabling capture.
@@ -27,22 +41,16 @@ function createGraphTokenProvider({ credentials, fetchImpl = fetch, now = Date.n
   };
 }
 
-function createGraphReader({ getAccessToken, fetchImpl = fetch, mailbox = MAILBOX }) {
+function createGraphReader({ getAccessToken, fetchImpl = fetch, mailbox = MAILBOX, requestJson }) {
   if (mailbox.toLowerCase() !== MAILBOX) fail("tracker_wrong_mailbox");
   const base = `/v1.0/users/${encodeURIComponent(MAILBOX)}/messages`;
-  function safeUrl(value, item = false) {
-    let u; try { u = new URL(value); } catch (_) { fail("tracker_graph_invalid_page"); }
-    const segments = u.pathname.split("/");
-    let user; try { user = decodeURIComponent(segments[3] || "").toLowerCase(); } catch (_) { fail("tracker_graph_invalid_page"); }
-    if (u.origin !== ORIGIN || u.username || u.password || u.hash || segments[1] !== "v1.0" || segments[2] !== "users" || user !== MAILBOX || segments[4] !== "messages" ||
-      !(segments.length === 5 || item && segments.length === 6 && Boolean(segments[5]))) fail("tracker_graph_invalid_page");
-    return u.href;
-  }
   async function request(url, item = false) {
-    const safe = safeUrl(url, item), accessToken = await getAccessToken();
+    const safe = safeGraphUrl(url, item);
+    if (requestJson) return requestJson(safe, { item });
+    const accessToken = await getAccessToken();
     let response;
     try { response = await fetchImpl(safe, { method: "GET", redirect: "error", signal: AbortSignal.timeout(30000),
-      headers: { Authorization: `Bearer ${accessToken}`, Prefer: 'IdType="ImmutableId", outlook.body-content-type="html"' } }); }
+      headers: { Authorization: `Bearer ${accessToken}`, Prefer: PREFER } }); }
     catch (_) { fail("tracker_graph_read_unavailable"); }
     if (!response.ok) fail(response.status === 401 || response.status === 403 ? "tracker_graph_access_denied" : response.status === 404 ? "tracker_graph_message_unavailable" : response.status === 429 ? "tracker_graph_throttled" : "tracker_graph_read_failed");
     let data; try { data = await response.json(); } catch (_) { fail("tracker_graph_invalid_response"); }
@@ -62,10 +70,10 @@ function createGraphReader({ getAccessToken, fetchImpl = fetch, mailbox = MAILBO
       first.searchParams.set("$orderby", "receivedDateTime asc"); first.searchParams.set("$top", "50"); first.searchParams.set("$select", FIELDS);
       // Keep the provider's COMPLETE nextLink, including opaque skip tokens.
       const data = await request(cursor || first.href);
-      if (!Array.isArray(data.value)) fail("tracker_graph_invalid_page");
+      if (!data || !Array.isArray(data.value)) fail("tracker_graph_invalid_page");
       const messages = data.value.map(validateMessage);
       if (messages.some(m => Date.parse(m.receivedDateTime) < Date.parse(since) || Date.parse(m.receivedDateTime) >= Date.parse(until))) fail("tracker_graph_window_violation");
-      const next = data["@odata.nextLink"] == null ? null : safeUrl(data["@odata.nextLink"]);
+      const next = data["@odata.nextLink"] == null ? null : safeGraphUrl(data["@odata.nextLink"]);
       if (next && next === cursor) fail("tracker_graph_pagination_loop");
       return { records: messages, cursor: next, complete: next === null };
     },
@@ -78,4 +86,4 @@ function createGraphReader({ getAccessToken, fetchImpl = fetch, mailbox = MAILBO
     },
   };
 }
-module.exports = { createGraphTokenProvider, createGraphReader, MAILBOX };
+module.exports = { createGraphTokenProvider, createGraphReader, safeGraphUrl, PREFER, MAILBOX };

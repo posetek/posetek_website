@@ -5,19 +5,26 @@ October 1 and authorized setup. An available Premium license is now assigned to
 dylank@posetek.net; the saved private writer no longer has the former licensing
 block. Dylan explicitly paused the hourly Codex tracker to finish Power Automate
 setup. `update-posetek-issue-tracker` is **PAUSED**; do not restart it automatically.
-No backend deployment or shared-master cutover has occurred. Excel and Outlook
+No tracker backend deployment or shared-master cutover has occurred. Excel and Outlook
 connections, the dedicated application/service
 principal and eleven fixed credential secrets are configured. The writer is On
 only for the private synthetic workbook and allows only that service principal.
 Actual private Power Automate transport and identical replay returned exact
-revision-six native receipts. Mailbox-scoped access, backend deployment and
-shared-master migration remain gates. Neither cloud-mail intake nor the email
-sender flow is imported; production Resend remains active. The pause does not
+revision-six native receipts. Mailbox-reader acceptance, tracker deployment and
+shared-master migration remain gates. The independent email sender is now
+imported and On, with its four backend scopes verified. Its approved one-message
+pilot passed send acceptance, all three recipient traces and duplicate suppression.
+Both production email domains now use Microsoft for new alerts; historical
+Resend jobs and evidence remain unchanged. The Outlook arrival flow
+`6956b87e-6556-4ab6-8709-ac866cf417b2` is imported and Off; its native checker
+reported zero errors and warnings. The delegated reader is not imported. The pause does not
 establish replacement coverage; migration must catch up from the committed cutoffs.
 The separately approved Dylan Send As grant for `alerts@posetek.net` was verified
 at `2026-10-02T05:29:31.9389018Z`, preserving Nolan's grant, Dylan's Full Access
 and sent-copy settings. This sent no email and does not prove delivery or mailbox
-reading through application RBAC.
+reading through application RBAC. A separate GET-only delegated Outlook reader
+is prepared with explicit provider/proof gates; see
+[its acceptance requirements](../deployments/issue-tracker/MAIL_READ_PROXY.md).
 
 ## Intended behavior
 

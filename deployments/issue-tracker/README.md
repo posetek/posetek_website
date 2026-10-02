@@ -120,14 +120,20 @@ activation gates. See the handoff for source coverage and licensing limits.
 
 `ISSUE_TRACKER_GRAPH_TENANT_ID`, `ISSUE_TRACKER_GRAPH_CLIENT_ID` and
 `ISSUE_TRACKER_GRAPH_CLIENT_SECRET` use client credentials with Graph `.default`.
-Verify Exchange application RBAC restricts Mail.Read to `dylank@posetek.net`;
-the code never requests another mailbox and does not grant tenant-wide Mail.Read.
-Both Graph endpoints bind these secrets. The scheduled capture's backend side
+The explicit `mailReadProvider: "graph"` route requires verification that Exchange
+application RBAC restricts Mail.Read to `dylank@posetek.net`; the code never requests
+another mailbox and does not grant tenant-wide Mail.Read. The alternative
+`mailReadProvider: "power_automate"` route uses Dylan's existing delegated Outlook
+connection through a fixed GET proxy and requires separate endpoint/export/caller/
+connection proof. It keeps `graphMailboxVerified` false and never falls back to
+application Graph. See [MAIL_READ_PROXY.md](MAIL_READ_PROXY.md) for its package,
+acceptance gates and exact settings. Both arrival and source-capture endpoints
+bind their read credentials. The scheduled capture's backend side
 still runs when Outlook reads fail; their leases, failures and checkpoints are
 independent. Permission errors and unfinished pagination fail closed.
 
 Before activation, import verified native seed and identity aliases, then set
-`sourceRecoveryEnabled`, `graphMailboxVerified`, `mailAliasesVerified`,
+`sourceRecoveryEnabled`, the explicitly selected/verified mail provider, `mailAliasesVerified`,
 `sourceCaptureStart` and `sourceCheckpoints: {outlook, backend}`. The two initial
 checkpoints must come from confirmed publication, not a local save. The latest
 confirmed publication covers both sources through `2026-10-02T04:56:51.854Z`, with

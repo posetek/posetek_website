@@ -1,14 +1,21 @@
-# Microsoft email delivery candidate
+# Microsoft email delivery
 
-Source candidate only. The user selected Power Automate Premium and the dedicated
+The user selected Power Automate Premium and the dedicated
 shared mailbox `alerts@posetek.net`. The application/service principal and eleven
 fixed credential/callback/ingress secrets are configured; the secrets were read
-back as Secret Manager version 1. Endpoint secrets are not installed and runtime
-grants remain gates. A bounded live trace query returned HTTP 200 with zero matches, proving
-trace query access only, not email delivery. No email flow is imported, function
-deployed or production provider setting changed. Keep the new route disabled
-until the live acceptance below is complete. The issue tracker and its workbook
-migration are independent.
+back as Secret Manager version 1. Both reviewed flow endpoints are installed as
+version 1, and the five Microsoft email runtime grants passed exact readback.
+The email flow `015cd141-794f-4592-a1e1-886fa2b2484f` is imported, On, and uses
+Dylan's verified Outlook connection. All four scoped backend releases passed
+deployed-source verification; all 111 existing function IAM policies and four
+existing schedules were preserved. Only the three Microsoft functions and their
+five-minute reconciliation schedule were added. The approved setup pilot sent
+one message, Exchange confirmed delivery to all three recipients, and the
+duplicate trigger skipped Outlook sending. Both production alert domains now
+select Microsoft; the activation readback passed at `2026-10-02T06:53:00.665Z`.
+Their original intake cutoffs and all other settings were preserved. Read
+[the release receipt](../../deployment/MICROSOFT_EMAIL_PRODUCTION.json).
+The issue tracker and shared-workbook migration remain independent and are not live.
 
 The separate tracker writer is On only for its private synthetic fixture and
 allows the dedicated service principal. Actual Power Automate transport and
@@ -23,10 +30,17 @@ needed by this email sender. See [the tracker handoff](../../docs/ISSUE_TRACKER_
 Dylan has Full Access to the shared sender mailbox. After his explicit approval,
 Send As for `alerts@posetek.net` was read back at `2026-10-02T05:29:31.9389018Z`.
 Nolan's existing Send As, Dylan's Full Access and sent-copy settings were preserved.
-No email was sent by this step; actual send and recipient-trace acceptance remain
-unproven. Preserve the existing mailbox grants. Browser file upload
-currently blocks email-flow package import. Neither that flow nor cloud-mail
-intake is installed; actual send/recipient-trace acceptance remains required.
+No email was sent by that permission step. Preserve the existing mailbox grants.
+Dylan manually uploaded the email ZIP; its actual saved export passed exact
+caller, connection, callback, retry and secure-data validation before activation.
+The separate cloud-mail intake is imported and Off, with zero native checker
+errors and warnings. The delegated mailbox reader still requires manual package
+upload and live acceptance.
+
+The activation census preserved 489 pending historical Resend issue jobs without
+rerouting, replaying, resetting or claiming recovery. Their frozen destinations,
+provider evidence and the old Resend key/webhook remain available. New alerts use
+Microsoft; this release does not cancel or purchase a Resend subscription.
 
 The existing Firebase workout and issue outboxes remain authoritative. Workout
 recipients remain Dylan only. New issue/status/daily messages retain Dylan, Nolan

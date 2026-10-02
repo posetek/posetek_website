@@ -30,17 +30,24 @@ destinations are preserved. The October 1 rollout encountered a verified quota
 failure; later partial recovery does not establish delivery to every new recipient.
 See [recipient rollout and limits](deployment/USER_ISSUE_RECIPIENTS_PRODUCTION.json).
 
-Microsoft email and event-triggered Power Automate tracker candidates are prepared
-but not live. Premium and the dedicated caller are configured; the writer is On
+Microsoft email migration is live; the event-triggered Power Automate tracker
+remains a candidate. Premium and the dedicated caller are configured; the writer is On
 only for its private synthetic workbook and permits only that service principal.
 Actual Power Automate transport and identical replay returned verified native
-revision-six receipts. Eleven credential secrets are installed; endpoint secrets
-are not. Dylan's Send As permission for `alerts@posetek.net` is verified; existing
-mailbox grants are preserved. Actual sending remains untested. Message-trace
-HTTP 200 establishes access, not delivery. Mailbox RBAC is
-blocked by an unexplained Microsoft prerequisite error, and package upload is
-blocking email-flow import. Backend deployment, mailbox intake and shared-master
-migration remain. Production Resend remains active. At Dylan's request, the hourly
+revision-six receipts. Eleven credential secrets and both reviewed endpoints are
+installed. Dylan's Send As permission for `alerts@posetek.net` is verified;
+existing mailbox grants are preserved. The actual email flow is imported and On;
+four scoped backend releases passed source and IAM/schedule preservation checks.
+One approved setup email reached all three recipients with Exchange trace
+evidence, and the duplicate trigger sent nothing. Both production alert domains
+now select Microsoft, preserving their intake cutoffs and historical Resend jobs.
+See [the email release receipt](deployment/MICROSOFT_EMAIL_PRODUCTION.json).
+Mailbox RBAC is blocked
+by an unexplained Microsoft prerequisite error; a separately reviewed delegated
+Outlook reader is prepared. The Outlook arrival flow is imported and Off with
+no native checker errors; reader import, mailbox acceptance and shared-master
+migration remain. Older frozen Resend jobs retain their provider and evidence.
+At Dylan's request, the hourly
 Codex tracker is **paused** while Power Automate setup is completed; do not restart
 it automatically. The last confirmed shared master has 598 instances, 128 emails
 and 23 actions through `2026-10-02T04:56:51.854Z`. The replacement is not live.

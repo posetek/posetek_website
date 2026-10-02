@@ -2,6 +2,7 @@
 const { fail, digest } = require("./issue-tracker-bridge-model");
 const { MAILBOX } = require("./issue-tracker-graph-reader");
 const { createEvidenceArchive } = require("./issue-tracker-evidence");
+const { mailReadBinding } = require("./issue-tracker-mail-read-proxy");
 
 function relevance(mail) {
   const sender = String(mail.from?.emailAddress?.address || mail.sender?.emailAddress?.address || "").toLowerCase();
@@ -56,8 +57,11 @@ function createMailCapture({ db, bridge, graph, archive = createEvidenceArchive(
       const supplied = message.originalId || message.id;
       if (message.mailbox?.toLowerCase() !== MAILBOX || !supplied) fail("tracker_wrong_mailbox");
       const settings = (await db.doc("issueTrackerSettings/current").get()).data();
-      if (settings?.enabled !== true || settings.graphMailboxVerified !== true || settings.mailAliasesVerified !== true || settings.mailbox?.toLowerCase() !== MAILBOX) fail("tracker_mail_not_configured");
+      const binding = mailReadBinding(settings);
+      if (settings?.enabled !== true || !binding || settings.mailAliasesVerified !== true) fail("tracker_mail_not_configured");
       const mail = await graph.message(supplied);
+      const current = (await db.doc("issueTrackerSettings/current").get()).data();
+      if (current?.enabled !== true || current.mailAliasesVerified !== true || mailReadBinding(current) !== binding) fail("tracker_capture_configuration_changed");
       const result = await capture(mail, { aliases: [supplied], schedule: true });
       return { queued: Boolean(result.ticket), ignored: !result.relevant };
     },

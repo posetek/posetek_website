@@ -68,7 +68,7 @@ test("raw evidence is immutable and complete only after all chunks, with idempot
 
 test("intake refetches authoritative immutable item, keeps original body privately and never trusts supplied joins", async () => {
   const db = new FakeFirestore(), queued = [], lookups = [];
-  await db.doc("issueTrackerSettings/current").set({ enabled: true, graphMailboxVerified: true, mailAliasesVerified: true, mailbox: MAILBOX });
+  await db.doc("issueTrackerSettings/current").set({ enabled: true, mailReadProvider: "graph", graphMailboxVerified: true, mailAliasesVerified: true, mailbox: MAILBOX });
   const service = createMailCapture({ db, graph: { message: async old => { lookups.push(old); return mail("immutable", { body: { contentType: "HTML", content: "PoseTek failed " + "x".repeat(40000) } }); } },
     bridge: { enqueueMessage: async (message, options) => { queued.push({ message, options }); return { ticket: { queueId: "mail", version: 1 } }; } } });
   await service.ingress({ id: "movable-old", mailbox: MAILBOX, subject: "Untrusted replacement", exactJoin: { type: "occurrenceId", value: id(1) } });
@@ -109,7 +109,7 @@ test("historical alias migration proves each old ID directly and refuses unavail
 function captureFixture({ pages = [{ records: [], cursor: null, complete: true }], capture, maxPages = 2, backend } = {}) {
   let time = AT, serial = 0, wakes = 0;
   const db = new FakeFirestore({ "issueTrackerSettings/current": { enabled: true, seedVerified: true, connectionVerified: true, sourceRecoveryEnabled: true,
-    graphMailboxVerified: true, mailAliasesVerified: true, workbookKey: "shared-file", mailbox: MAILBOX, sourceCheckpoints: { outlook: INITIAL, backend: INITIAL }, sourceCaptureStart: "2026-10-01T07:00:00Z" } });
+    mailReadProvider: "graph", graphMailboxVerified: true, mailAliasesVerified: true, workbookKey: "shared-file", mailbox: MAILBOX, sourceCheckpoints: { outlook: INITIAL, backend: INITIAL }, sourceCaptureStart: "2026-10-01T07:00:00Z" } });
   const requests = [];
   const graph = { page: async window => { requests.push(structuredClone(window)); const page = pages[window.cursor == null ? 0 : Number(window.cursor)]; if (page instanceof Error) throw page; return structuredClone(page); } };
   const mailCapture = { capture: async record => {
@@ -170,6 +170,30 @@ test("source gates prevent unverified alias/mailbox migration; backend continues
   }
   const f = captureFixture(); await f.db.doc("issueTrackerSettings/current").update({ sourceRecoveryEnabled: false });
   assert.deepEqual(await f.service.run("backend"), { skipped: "not_configured" });
+});
+
+test("provider proof change during a page cannot advance either completeness checkpoint", async () => {
+  const f = captureFixture({ pages: [{ records: [{ id: 1 }], cursor: null, complete: true }], capture: async (_, db) => {
+    await db.doc("issueTrackerSettings/current").update({ mailReadProvider: "missing" });
+    return { relevant: false, reason: "excluded" };
+  } });
+  await assert.rejects(f.service.run("outlook"), { code: "tracker_capture_configuration_changed" });
+  const state = f.db.snapshot("issueTrackerState/capture-outlook");
+  assert.equal(state.capturedThrough, INITIAL); assert.equal(state.publishedThrough, INITIAL);
+  assert.equal(state.activeWindow.pages, 0); assert.equal(state.leaseId, null);
+});
+
+test("resumed Outlook window refuses a different verified authorization route without consuming its cursor", async () => {
+  const f = captureFixture({ maxPages: 1, pages: [{ records: [], cursor: "1", complete: false }, { records: [], cursor: null, complete: true }] });
+  await f.service.run("outlook");
+  const before = f.db.snapshot("issueTrackerState/capture-outlook");
+  const { TENANT, CLIENT, CALLER } = require("./issue-tracker-mail-read-proxy");
+  await f.db.doc("issueTrackerSettings/current").update({ mailReadProvider: "power_automate", graphMailboxVerified: false, mailReadProxyVerified: true,
+    mailReadProxyProof: { schemaVersion: 1, verified: true, authorization: "delegated_proxy_route", tenantId: TENANT, clientId: CLIENT, callerObjectId: CALLER,
+      connectionAccount: MAILBOX, flowId: "11111111-2222-4333-8444-555555555555", connectionName: "shared-office365-11111111-2222-4333-8444-555555555555", endpointSha256: "a".repeat(64), exportSha256: "b".repeat(64) } });
+  await assert.rejects(f.service.run("outlook"), { code: "tracker_capture_provider_changed" });
+  assert.deepEqual(f.db.snapshot("issueTrackerState/capture-outlook"), before); assert.equal(f.requests.length, 1);
+  assert.equal((await f.service.run("backend")).captureComplete, true);
 });
 
 test("queued newer versions do not erase confirmed older publication receipts", async () => {

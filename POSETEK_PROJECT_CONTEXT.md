@@ -1,10 +1,10 @@
 # PoseTek website project context
 
-Reviewed on October 1, 2026. This guide summarizes the available repository and
+Reviewed on October 2, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
-## Microsoft email and event-triggered tracker candidate (2026-10-01)
+## Microsoft email migration and event-triggered tracker candidate (2026-10-01)
 
 Dylan reported purchasing Power Automate Premium and authorized setup. One
 available Premium license is now assigned to dylank@posetek.net, and the existing
@@ -15,26 +15,43 @@ dedicated service principal. Existing Excel and Outlook connections are confirme
 The shared mailbox alerts@posetek.net exists. Following Dylan's explicit approval,
 his Send As permission was read back at 2026-10-02T05:29:31.9389018Z. His existing
 Full Access, Nolan's Send As and the sent-copy settings were unchanged. No email
-was sent by that permission step; actual send and recipient-delivery acceptance
-remain gates. No additional subscription was purchased by the agent.
+was sent by that permission step; the separately approved setup pilot below
+passed send and recipient-delivery acceptance. No additional subscription was
+purchased by the agent.
 
 Eleven fixed credential/callback/ingress secrets were installed and read back as
-Secret Manager version 1. Endpoint secrets are not installed and runtime access
-still requires verification. A bounded live message-trace query returned HTTP 200 with zero
+Secret Manager version 1. Both reviewed flow endpoints are now installed as
+version 1; all five Microsoft email runtime grants passed exact readback.
+A bounded live message-trace query returned HTTP 200 with zero
 matches, proving query access only, not email delivery. Dylan-only mailbox RBAC
 is not verified: organization customization completed and `IsDehydrated` is false,
 but `New-ManagementScope` still returned its prerequisite error in a fresh
 authenticated session. The contradictory Microsoft failure has no confirmed cause;
-do not substitute tenant-wide Mail.Read. Browser file upload currently blocks the
-email-flow package import. No backend deployment, cloud-mail intake, email-flow
-import or production provider change has occurred.
+do not substitute tenant-wide Mail.Read. A dedicated GET-only reader using Dylan's
+existing Outlook connection is prepared with separate delegated-provider proof
+gates; it is not imported, deployed or verified against real mailbox messages.
+The email flow is imported and On after Dylan manually uploaded its ZIP. All four
+email backend scopes passed exact deployed-source verification, preserving every
+existing function IAM policy and schedule. Its approved one-message setup pilot
+passed send acceptance, Exchange delivery evidence for all three recipients and
+duplicate suppression. The isolated pilot finished with its terminal evidence
+retained. Both production alert domains now select Microsoft; activation readback
+passed at `2026-10-02T06:53:00.665Z`, preserving original domain intake cutoffs and
+all other fields. Its full transaction census retained 489 pending historical
+Resend issue jobs without rerouting or replay. See
+[the release receipt](deployment/MICROSOFT_EMAIL_PRODUCTION.json).
+The Outlook arrival flow is imported and Off; its native checker reported zero
+errors and warnings. Mailbox reader acceptance, tracker deployment and
+shared-master cutover have not occurred.
 
 The selected migration replaces all Resend notification types with Microsoft
 365 through Power Automate, retaining every existing alert and current recipient
 sets. A durable one-time claim prevents an uncertain send from being blindly
 replayed. Send acceptance and recipient-level Exchange trace evidence remain
 separate. Previously attempted Resend jobs retain their provider and history.
-The Microsoft source candidate is disabled by default and has not been deployed.
+The Microsoft sender and trace gates are now enabled for new alerts after the
+reviewed creation cutoff `2026-10-02T06:52:17.518Z`. No billing subscription was
+changed; the Resend key/webhook remain for preserved historical jobs and receipts.
 
 Tracker capture is independent of email delivery. Candidate recovery includes
 fully paged whole-mailbox reads, separate capture/publication checkpoints, direct
@@ -68,7 +85,8 @@ copy before migration; do not resurrect the older unpublished candidate.
 At Dylan's explicit request, `update-posetek-issue-tracker` is now **PAUSED** so
 Power Automate setup can finish. Do not restart the hourly procedure or scheduler
 automatically; earlier instructions to keep it active are superseded. The existing
-production email route remains active, and the replacement tracker is not live.
+production email route now uses Microsoft for new alerts, and the replacement
+tracker is not live.
 Catch up from the committed source cutoffs during verified migration. Never run
 both workbook writers against the master. Read
 [ISSUE_TRACKER_EVENT_FLOW.md](docs/ISSUE_TRACKER_EVENT_FLOW.md),

@@ -3,6 +3,7 @@ const crypto = require("node:crypto");
 const { fail, digest, materialOutbox } = require("./issue-tracker-bridge-model");
 const { createEvidenceArchive } = require("./issue-tracker-evidence");
 const { MAILBOX } = require("./issue-tracker-graph-reader");
+const { mailReadBinding } = require("./issue-tracker-mail-read-proxy");
 const OVERLAP_MS = 30 * 60000, WINDOW_MS = 86400000, LEASE_MS = 240000;
 const ready = s => s?.enabled === true && s.seedVerified === true && s.connectionVerified === true && s.sourceRecoveryEnabled === true && typeof s.workbookKey === "string" && Boolean(s.workbookKey);
 const iso = value => new Date(value).toISOString();
@@ -50,12 +51,13 @@ function createSourceCapture({ db, bridge, graph, mailCapture, backend = createB
   const stateRef = source => db.doc(`issueTrackerState/capture-${source}`);
   const windowRef = (source, seq) => db.doc(`issueTrackerCaptureWindows/${source}-${seq}`);
   function configured(settings, source) {
-    return ready(settings) && (source !== "outlook" || settings.graphMailboxVerified === true && settings.mailAliasesVerified === true && settings.mailbox?.toLowerCase() === MAILBOX);
+    return ready(settings) && (source !== "outlook" || Boolean(mailReadBinding(settings)) && settings.mailAliasesVerified === true && settings.mailbox === MAILBOX);
   }
-  async function checkLease(tx, source, leaseId, workbookKey) {
+  async function checkLease(tx, source, leaseId, workbookKey, binding) {
     const state = (await tx.get(stateRef(source))).data(), settings = (await tx.get(settingsRef)).data();
     if (state?.leaseId !== leaseId) fail("tracker_capture_lease_lost");
     if (!configured(settings, source) || settings.workbookKey !== workbookKey) fail("tracker_capture_configuration_changed");
+    if (source === "outlook" && (mailReadBinding(settings) !== binding || state.mailReadBinding !== binding)) fail("tracker_capture_configuration_changed");
     return state;
   }
   async function publish(source, claimed) {
@@ -74,7 +76,7 @@ function createSourceCapture({ db, bridge, graph, mailCapture, backend = createB
         if (!queued || !Number.isSafeInteger(queued.appliedVersion) || queued.appliedVersion < ticket.version) return false;
       }
       await db.runTransaction(async tx => {
-        await checkLease(tx, source, claimed.leaseId, claimed.workbookKey);
+        await checkLease(tx, source, claimed.leaseId, claimed.workbookKey, claimed.mailReadBinding);
         const current = (await tx.get(wref)).data();
         if (current.verifiedPages !== pageNumber) fail("tracker_capture_receipt_changed");
         tx.update(wref, { verifiedPages: pageNumber + 1 });
@@ -82,7 +84,7 @@ function createSourceCapture({ db, bridge, graph, mailCapture, backend = createB
     }
     if (pageNumber !== window.pages) return false;
     await db.runTransaction(async tx => {
-      const current = await checkLease(tx, source, claimed.leaseId, claimed.workbookKey);
+      const current = await checkLease(tx, source, claimed.leaseId, claimed.workbookKey, claimed.mailReadBinding);
       const finished = (await tx.get(wref)).data();
       if ((current.publishedSequence || 0) + 1 !== seq || finished.verifiedPages !== finished.pages || !finished.captureComplete) fail("tracker_capture_receipt_changed");
       tx.update(wref, { publicationConfirmed: true, publishedAtMillis: now() });
@@ -100,6 +102,8 @@ function createSourceCapture({ db, bridge, graph, mailCapture, backend = createB
       const state = (await tx.get(ref)).data() || {};
       if (state.leaseUntilMillis > now()) return { skipped: "capture_busy" };
       if (state.workbookKey && state.workbookKey !== settings.workbookKey) fail("tracker_capture_workbook_changed");
+      const binding = source === "outlook" ? mailReadBinding(settings) : null;
+      if (source === "outlook" && state.mailReadBinding && state.mailReadBinding !== binding) fail("tracker_capture_provider_changed");
       const initial = Date.parse(settings.sourceCheckpoints?.[source]), floor = Date.parse(settings.sourceCaptureStart);
       if (!Number.isFinite(initial) || !Number.isFinite(floor) || floor > initial || initial > now() + 60000) fail("tracker_capture_missing_checkpoint");
       const through = state.capturedThrough || iso(initial), to = Math.min(now() - settleMs, Date.parse(through) + WINDOW_MS);
@@ -111,8 +115,8 @@ function createSourceCapture({ db, bridge, graph, mailCapture, backend = createB
       }
       tx.set(ref, { ...state, workbookKey: settings.workbookKey, initialThrough: state.initialThrough || iso(initial), capturedThrough: through,
         publishedThrough: state.publishedThrough || iso(initial), completedSequence: state.completedSequence || 0, publishedSequence: state.publishedSequence || 0,
-        activeWindow: active, leaseId, leaseUntilMillis: now() + LEASE_MS, lastAttemptAtMillis: now() });
-      return { leaseId, workbookKey: settings.workbookKey, active };
+        activeWindow: active, leaseId, leaseUntilMillis: now() + LEASE_MS, lastAttemptAtMillis: now(), ...(binding ? { mailReadBinding: binding } : {}) });
+      return { leaseId, workbookKey: settings.workbookKey, active, mailReadBinding: binding };
     });
     if (claimed.skipped) return claimed;
     try {
@@ -133,7 +137,7 @@ function createSourceCapture({ db, bridge, graph, mailCapture, backend = createB
         }
         const next = { ...active, cursor: page.cursor, pages: active.pages + 1, records: active.records + page.records.length, relevant: active.relevant + relevant, excluded: active.excluded + page.records.length - relevant };
         await db.runTransaction(async tx => {
-          const state = await checkLease(tx, source, leaseId, claimed.workbookKey);
+          const state = await checkLease(tx, source, leaseId, claimed.workbookKey, claimed.mailReadBinding);
           if (state.activeWindow?.id !== active.id || state.activeWindow.pages !== active.pages) fail("tracker_capture_cursor_changed");
           tx.create(wref.collection("pages").doc(String(active.pages).padStart(6, "0")), { complete: true, tickets, records: page.records.length, relevant, excludedReasons: reasons });
           tx.create(cursorRef, { page: active.pages });
