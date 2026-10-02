@@ -1,22 +1,24 @@
-# Event-driven issue tracker candidate
+# Event-driven issue tracker activation
 
-Status: **not live**. Dylan reported purchasing Power Automate Premium on
+Status: **active; shared-master revision-eight publication verified, catch-up continuing**. Dylan reported purchasing Power Automate Premium on
 October 1 and authorized setup. An available Premium license is now assigned to
 dylank@posetek.net; the saved private writer no longer has the former licensing
 block. Dylan explicitly paused the hourly Codex tracker to finish Power Automate
 setup. `update-posetek-issue-tracker` is **PAUSED**; do not restart it automatically.
-No tracker backend deployment or shared-master cutover has occurred. Excel and Outlook
-connections, the dedicated application/service
-principal and eleven fixed credential secrets are configured. The writer is On
-only for the private synthetic workbook and allows only that service principal.
+The six tracker functions passed deployed source/configuration verification at
+`2026-10-02T09:37:27Z`, initially with settings disabled. Guarded backend
+activation passed at `2026-10-02T10:13:41.205Z`. Excel and Outlook connections, the dedicated application/service
+principal and eleven fixed credential secrets are configured. The writer is now
+On for the verified shared master and allows only that service principal.
 Actual private Power Automate transport and identical replay returned exact
-revision-six native receipts. Mailbox-reader acceptance, tracker deployment and
-shared-master migration remain gates. The independent email sender is now
+revision-six native receipts. Mailbox-reader acceptance and independent shared-master revision-eight readback
+have passed. Full source catch-up remains in progress. The independent email sender is now
 imported and On, with its four backend scopes verified. Its approved one-message
 pilot passed send acceptance, all three recipient traces and duplicate suppression.
 Both production email domains now use Microsoft for new alerts; historical
 Resend jobs and evidence remain unchanged. The Outlook arrival flow
-`6956b87e-6556-4ab6-8709-ac866cf417b2` is imported and Off; its native checker
+`6956b87e-6556-4ab6-8709-ac866cf417b2` was observed On at
+`2026-10-02T10:14:04.924Z`; its native checker
 reported zero errors and warnings. Its actual saved export passed exact execution,
 ingress and Dylan connection validation. The delegated reader
 `950eee98-d71a-48b8-b0b3-5fa5f2bd3c31` is imported with supported action-specific
@@ -26,16 +28,84 @@ known Inbox item, then failed before the first collection read because substring
 started at the path's end. V3 repairs only that boundary and the empty-ID
 character scan. Its actual saved export passed at `2026-10-02T08:45:14Z`, with
 the same caller, fixed Dylan GET, immutable preference and security policy.
-Full paging and all 128 original-to-immutable identity aliases remain pending.
-Preserve the failed v2 evidence and require the fresh v3 acceptance receipt before
-cutover. The pause does not establish replacement coverage; migration must catch
-up from the committed cutoffs.
+Read-only acceptance passed at `2026-10-02T09:12:05.266Z`: 72 complete pages,
+143 mailbox messages, all 128 original-to-immutable identity aliases and exact
+immutable replay. Independent private review checked 206 original responses.
+One unrelated message had no provider headers and is explicitly counted;
+relevant messages, the Inbox reference, all legacy fetches and replay require
+headers. Body, folder and read-state checks remain strict for every item.
+The reader rejected unauthenticated and other-mailbox requests; a different
+authenticated principal was not runtime-tested. This establishes the reviewed
+delegated route, not application RBAC or source publication. Preserve failed
+attempts alongside the successful receipt. No source checkpoint advanced during
+acceptance. Migration must catch up from the committed cutoffs.
 The separately approved Dylan Send As grant for `alerts@posetek.net` was verified
 at `2026-10-02T05:29:31.9389018Z`, preserving Nolan's grant, Dylan's Full Access
 and sent-copy settings. This sent no email and does not prove delivery or mailbox
 reading through application RBAC. The GET-only delegated Outlook reader retains
 explicit provider/proof gates; see
 [its acceptance requirements](../deployments/issue-tracker/MAIL_READ_PROXY.md).
+
+The actual shared master was initialized and made ready at revision zero, with its
+750-row disabled backend seed verified: 23 actions, 598 instances, 128 emails
+and one daily record. The fresh cloud ready workbook passed at
+`2026-10-02T10:08:45.472Z`, preserving all 23 human-field records, 882 source
+links, formulas, cached results and the archived footer. Its SHA-256 is
+`35adfc8c39bebea2374d837a6816a771daf2af5731e19c87e78c3f274de1a2d0`;
+the local synced file matched at `2026-10-02T10:11:51.851Z` without overwrite.
+The private XML verifier recognizes only three exact table-qualified current-row
+formula variants; native formula enforcement is unchanged.
+
+The saved writer retarget passed at `2026-10-02T09:58:29.972Z`, its fresh cloud
+script matched accepted/current source at `2026-10-02T10:05:29.479Z`, and the
+writer was observed On at `2026-10-02T10:09:59.421Z`. These prove configuration
+and readiness; the separate successful master-update proof is recorded below.
+Advance publication cutoffs only from exact native batch receipts.
+Never run the old whole-file renderer, replace this master, or reinitialize its
+sync state. Recovery must use the existing native revision and frozen batches.
+
+The first genuine batch is acknowledged at revision one, with counts 24 actions,
+598 instances, 129 emails and one daily record. It updated 39 existing instances
+and added one Google Cloud email and its action. At the 10:19 UTC readback, both
+sources completed capture through approximately 10:16 UTC, while their
+`publishedThrough` values still correctly remained at the imported cutoff:
+135 queued records were pending. This is an intermediate runtime observation,
+not independent cloud-workbook publication or completion of catch-up.
+
+The final fixed-time audit and fresh cloud download verified shared-master
+revision eight at `2026-10-02T10:53:58.855Z`: 70 actions, 684 instances, 160 emails
+and one daily record, totaling 915 rows and 1,076 links. Exact batch replay,
+machine values, all 882 original links, 23 original human records, formulas,
+cached results, eight native receipts and archive passed. The cloud SHA-256 is
+`685dd676867737f10d4b6d004dd55d543ee4a1c19218d575b72448a5d76b99e8`.
+Both temporary writer-queue holds were restored to RUNNING, most recently at
+`2026-10-02T10:54:07.925Z`; capture and intake remained enabled throughout.
+At the fixed `10:52:46.722Z` audit, 490 tickets were still pending. Outlook capture
+reached `10:46:03.715Z` and publication `10:21:03.004Z`; backend capture reached
+`10:46:03.664Z` while publication remained the imported `04:56:51.854Z` baseline.
+These are October 2 UTC checkpoints, not full catch-up. See
+[the production receipt](../deployment/ISSUE_TRACKER_EVENT_PRODUCTION.json).
+
+The old A4 label was corrected once to identify cloud event updates and the
+static imported baseline. A guarded native script changed only Actions!A4;
+independent before/after cloud verification preserved all native data and every
+other stored worksheet value, formula, style, hyperlink and comment. The native
+writer continues to update summary counts, not A4 coverage. Current completeness
+comes from cloud `capturedThrough` and `publishedThrough` receipts.
+
+One exact approved setup email was identified as setup delivery evidence, with
+no athlete incident. Its correction preserves the original message, row IDs,
+links and history. The reviewed two-row batch passed through the ordinary
+writer at revision seven and is incorporated in the independently verified
+revision-eight workbook. The follow-up independent comparison preserved all
+63 pre-correction human records, 882 existing rows and 1,031 prior links.
+
+The updated plain-text team guide was published in the existing shared folder;
+a fresh cloud download matched SHA-256
+`cb48a5741550f83479a7e975527e9acb41a3c5b35e106f936c3858932be94f70`
+at `2026-10-02T10:57:04.711Z`. It retains the stable workbook/folder links and
+explains cloud dependencies, native editing, partial catch-up and Microsoft email.
+Only the workbook and guide remain in that shared folder.
 
 ## Intended behavior
 
@@ -267,7 +337,7 @@ editing. A conflicting, partially applied or changed row stops acknowledgement
 and requires reconciliation. Preserve the frozen batch and recoverable backup;
 never force a whole-file overwrite to clear a conflict.
 
-## Candidate verification
+## Verification history
 
 The prior combined backend and native-model suite passed **212/212 tests**;
 the Microsoft path also passes five actual Firestore SDK tests. Coverage includes replay after an unknown
@@ -285,9 +355,12 @@ Offline checks use fake Firestore and native API fixtures. The separate native
 synthetic workbook run confirms the limited initialize/upsert/replay behavior
 described above, including literal date/numeric-ID preservation. The optimized
 writer is saved in Dylan's private Office Scripts folder. Actual private transport
-and exact replay now pass. Neither offline checks nor that private workbook
-establish live mailbox coverage or shared-master publication. The shared workbook and committed
-source checkpoints were unchanged by this migration setup.
+and exact replay passed during private-fixture acceptance. Those checks did not
+establish live mailbox coverage or shared-master publication. At the subsequent
+revision-zero initialization checkpoint, the imported source cutoffs were still
+unchanged. The later real revision-eight publication and its distinct current
+source checkpoints are recorded at the start of this handoff and in the production
+receipt.
 
 The exact deployed Firestore ruleset
 `a3587b76-a66f-40f0-9979-ffd029d583ee` was retrieved read-only. Its bytes passed

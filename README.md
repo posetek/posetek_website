@@ -31,8 +31,9 @@ failure; later partial recovery does not establish delivery to every new recipie
 See [recipient rollout and limits](deployment/USER_ISSUE_RECIPIENTS_PRODUCTION.json).
 
 Microsoft email migration is live; the event-triggered Power Automate tracker
-remains a candidate. Premium and the dedicated caller are configured; the writer is On
-only for its private synthetic workbook and permits only that service principal.
+was enabled at `2026-10-02T10:13:41.205Z`. Independent cloud-workbook
+revision-eight readback passed; full source catch-up remains in progress. Premium and the dedicated caller are configured; the
+writer is On for the verified shared master and permits only that service principal.
 Actual Power Automate transport and identical replay returned verified native
 revision-six receipts. Eleven credential secrets and both reviewed endpoints are
 installed. Dylan's Send As permission for `alerts@posetek.net` is verified;
@@ -44,18 +45,32 @@ now select Microsoft, preserving their intake cutoffs and historical Resend jobs
 See [the email release receipt](deployment/MICROSOFT_EMAIL_PRODUCTION.json).
 Mailbox RBAC is blocked
 by an unexplained Microsoft prerequisite error. The delegated Outlook reader is
-now imported; the Outlook arrival flow remains Off with no native checker errors.
+now verified; the Outlook arrival flow is On with its saved definition verified.
 The reader's first live attempt read a known Inbox message but failed on its first
 collection page. A narrow v3 correction fixes the empty message-ID boundary;
 the saved export passed validation at `2026-10-02T08:45:14Z`, preserving its
-caller, route and privacy settings. Full paging, all 128 legacy identity aliases
-and shared-master migration remain unverified. Older frozen Resend jobs retain
-their provider and evidence.
+caller, route and privacy settings. Read-only acceptance passed at
+`2026-10-02T09:12:05.266Z`: 72 pages, 143 mailbox messages, all 128 legacy identity
+aliases and exact replay. One unrelated message lacked provider headers and was
+explicitly counted; relevant and legacy evidence remained strict. Shared-master
+configuration, current script and historical ready revision-zero checkpoint are verified;
+independent real-master revision-eight publication is verified. The six tracker functions are
+deployed and verified; activation preserved existing resources and source cutoffs.
+Older frozen Resend jobs retain their provider and evidence.
 At Dylan's request, the hourly
-Codex tracker is **paused** while Power Automate setup is completed; do not restart
-it automatically. The last confirmed shared master has 598 instances, 128 emails
-and 23 actions through `2026-10-02T04:56:51.854Z`. The replacement is not live.
-See [the tracker handoff](docs/ISSUE_TRACKER_EVENT_FLOW.md) and
+Codex tracker remains **paused** after the Power Automate cutover; do not restart
+it against this master. The independently verified shared master at
+`2026-10-02T10:53:58.855Z` has 684 instances, 160 emails, 70 actions and one daily
+record at revision eight. All 882 original source links and 23 human records are
+preserved. The temporary verification pause was reversed; the writer queue is
+RUNNING. Capture and publication are distinct: 490 tickets remained pending at
+that audit, and complete catch-up is not claimed. The A4 label now identifies the
+static imported baseline. Never overwrite this native master with the old
+whole-file renderer or reinitialize its sync state.
+The updated team guide is published in the same shared folder and its cloud bytes
+are verified; the original workbook and folder links are unchanged.
+See [the tracker production receipt](deployment/ISSUE_TRACKER_EVENT_PRODUCTION.json),
+[the tracker handoff](docs/ISSUE_TRACKER_EVENT_FLOW.md) and
 [the Microsoft email package](deployments/microsoft-email/README.md).
 
 The unified coach workspace and Astro build are documented in

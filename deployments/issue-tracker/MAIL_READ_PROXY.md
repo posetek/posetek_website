@@ -1,6 +1,6 @@
-# Delegated Outlook read proxy candidate
+# Delegated Outlook read proxy
 
-This local candidate lets the tracker read Dylan's mailbox through the existing
+This deployed route lets the tracker read Dylan's mailbox through the existing
 Power Automate Outlook connection. It does not establish an Exchange application
 RBAC role. No import, mailbox read, deployment, setting change or shared-workbook
 cutover is implied by the offline tests.
@@ -9,8 +9,18 @@ The actual reader `950eee98-d71a-48b8-b0b3-5fa5f2bd3c31` is now imported. Its v3
 saved export passed exact validation at `2026-10-02T08:45:14Z` after the two-action
 collection-path correction below. The reader-only validator also accounts for
 Microsoft omitting empty `runAfter` at exactly the two branch-entry actions;
-null, nonempty and other dependency changes still refuse. Full paging and all
-128 legacy identity aliases remain pending; this is not production coverage.
+null, nonempty and other dependency changes still refuse. Read-only acceptance
+passed at `2026-10-02T09:12:05.266Z`: 72 pages, 143 messages, all 128 legacy
+identity aliases and exact immutable replay. The private audit checked 206
+original responses. The receipt explicitly counts one unrelated message whose
+provider response omitted headers; headers remain mandatory for every relevant
+message, the Inbox reference, legacy alias fetches and fresh replay. Body, folder
+and read-state remain mandatory for every item. No capture/publication checkpoint
+was advanced, and no application RBAC claim is made. A different authenticated
+principal was not runtime-tested. Guarded tracker activation passed at
+`2026-10-02T10:13:41.205Z`; independent shared-master revision-eight readback
+subsequently passed. Capture and published coverage remain distinct; full catch-up
+is still in progress.
 
 `build_mail_read_flow.py` creates a new private import ZIP. Its HTTP trigger permits
 only service principal object `cd9fa4b9-7716-4534-9cf1-620422f48aba`. The one external
@@ -128,8 +138,8 @@ tail and scans one allowed sentinel in the ID-character check, keeping its
 `range` count positive. Original request URLs and the exact route predicate are
 unchanged. The expression model now rejects out-of-bounds substring starts and
 zero range counts, and covers collection, opaque paging and empty-ID paths.
-The corrected saved-flow export is verified; full native read acceptance remains
-required. A successful single-message read does not prove mailbox coverage.
+The corrected saved-flow export and full native read acceptance described above
+are verified. A successful single-message read alone does not prove mailbox coverage.
 
 Microsoft documents the [Outlook HttpRequest parameters and supported Graph paths](https://learn.microsoft.com/en-us/connectors/office365connector/#send-an-http-request),
 [supported security settings by action type](https://learn.microsoft.com/en-us/azure/logic-apps/set-up-security-permissions#secure-data-in-run-history-by-using-obfuscation),

@@ -4,13 +4,13 @@ Reviewed on October 2, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
-## Microsoft email migration and event-triggered tracker candidate (2026-10-01)
+## Microsoft email migration and event-triggered tracker activation (2026-10-02)
 
 Dylan reported purchasing Power Automate Premium and authorized setup. One
 available Premium license is now assigned to dylank@posetek.net, and the existing
-private test writer saves without the former licensing block. It is On,
-Automated, owned by Dylan, with ID b011912f-bb15-453f-92ef-761d223095b4, targeting
-only the private synthetic workbook. Its trigger permits only the newly created
+writer saves without the former licensing block. It is On,
+Automated, owned by Dylan, with ID b011912f-bb15-453f-92ef-761d223095b4, now targeting
+the verified shared master after private-fixture acceptance. Its trigger permits only the newly created
 dedicated service principal. Existing Excel and Outlook connections are confirmed.
 The shared mailbox alerts@posetek.net exists. Following Dylan's explicit approval,
 his Send As permission was read back at 2026-10-02T05:29:31.9389018Z. His existing
@@ -39,9 +39,13 @@ ID-character scan to include an allowed sentinel, retaining the exact original
 URL, caller, fixed GET and privacy policy. The existing flow was edited while Off;
 its actual saved export passed validation at `2026-10-02T08:45:14Z`. The validator
 permits only the two observed branch-entry omissions of empty `runAfter` alongside
-editor metadata; all real dependencies stay exact. Full pagination and all 128
-legacy immutable-ID aliases are still unverified. Failed v2 evidence is retained;
-v3 acceptance uses a fresh plan and private run directory.
+editor metadata; all real dependencies stay exact. Read-only v3 acceptance passed
+at `2026-10-02T09:12:05.266Z`: 72 pages and 143 mailbox messages, all 128 legacy
+immutable-ID aliases and exact immutable replay. The private audit retained 206
+original responses. One unrelated message omitted headers; relevant messages,
+the Inbox reference, all legacy items and replay retained strict header checks.
+This verifies the delegated reader, not application RBAC or tracker publication.
+Failed v2/v3 attempts remain alongside the successful fresh acceptance receipt.
 The email flow is imported and On after Dylan manually uploaded its ZIP. All four
 email backend scopes passed exact deployed-source verification, preserving every
 existing function IAM policy and schedule. Its approved one-message setup pilot
@@ -52,9 +56,30 @@ passed at `2026-10-02T06:53:00.665Z`, preserving original domain intake cutoffs 
 all other fields. Its full transaction census retained 489 pending historical
 Resend issue jobs without rerouting or replay. See
 [the release receipt](deployment/MICROSOFT_EMAIL_PRODUCTION.json).
-The Outlook arrival flow is imported and Off; its native checker reported zero
-errors and warnings. Mailbox reader acceptance, tracker deployment and
-shared-master cutover have not occurred.
+The Outlook arrival flow was observed On at `2026-10-02T10:14:04.924Z`; its saved
+definition and native checker passed earlier verification. The isolated six-function tracker deployment passed actual
+source/configuration verification at `2026-10-02T09:37:27Z`, with settings still
+disabled. All six are ACTIVE version 1; existing functions, IAM, schedules,
+settings, rules and secret policies were preserved. A CLI empty-queue-policy
+error was resolved through actual private-policy readback, without redeployment
+or added IAM grants. Shared-master configuration and native readiness are now
+verified. Backend settings were atomically enabled at `2026-10-02T10:13:41.205Z`.
+Independent cloud revision-eight publication passed at `2026-10-02T10:53:58.855Z`:
+70 actions, 684 instances, 160 emails and one daily record, preserving all 882
+original links, 23 human records, machine hashes, formulas and eight native receipts.
+Both temporary queue holds were restored to RUNNING. The audit still had 490
+pending tickets: Outlook publication reached `10:21:03.004Z`, while backend
+publication remained `04:56:51.854Z`; both captures reached approximately 10:46 UTC.
+Complete catch-up is not claimed. The A4 label now truthfully identifies the
+static imported baseline; independent cloud comparison proved only that cell
+changed. The exact setup pilot classification was acknowledged
+through the normal writer at revision seven and is included in the verified
+revision-eight workbook. Read
+[the production receipt](deployment/ISSUE_TRACKER_EVENT_PRODUCTION.json).
+Independent correction readback also preserved all 63 then-current human records
+and 1,031 prior links. The updated team guide was published and its fresh cloud
+download verified at `2026-10-02T10:57:04.711Z`; the shared folder contains only
+that guide and the workbook.
 
 The selected migration replaces all Resend notification types with Microsoft
 365 through Power Automate, retaining every existing alert and current recipient
@@ -65,7 +90,7 @@ The Microsoft sender and trace gates are now enabled for new alerts after the
 reviewed creation cutoff `2026-10-02T06:52:17.518Z`. No billing subscription was
 changed; the Resend key/webhook remain for preserved historical jobs and receipts.
 
-Tracker capture is independent of email delivery. Candidate recovery includes
+Tracker capture is independent of email delivery. The deployed recovery includes
 fully paged whole-mailbox reads, separate capture/publication checkpoints, direct
 backend occurrences and repeated scans of historical delivery jobs. Native
 acceptance against a private fixture matching 23 actions, 560 instances and 128
@@ -87,24 +112,49 @@ not shared-master publication or email delivery.
 Concurrency one, bounded asynchronous receipt polling and exact replay remain
 required. See [native acceptance](scripts/issue-tracker/NATIVE_ACCEPTANCE.md).
 
-The earlier cloud/local workbook discrepancy is resolved. The confirmed shared
-master has 598 instances, 128 emails and 23 actions, with both source cutoffs at
-2026-10-02T04:56:51.854Z. Its verified SHA-256 is
+The earlier cloud/local workbook discrepancy was resolved. The pre-migration
+shared publication had 598 instances, 128 emails and 23 actions, with both source cutoffs at
+2026-10-02T04:56:51.854Z. Its pre-migration workbook SHA-256 was
 c9bf937b4cd1507d9f376bc861d0cb3779443b6a522e190ac48fb79c68f69d19.
-No unfinished hourly candidate remains at that checkpoint. Obtain a fresh cloud
-copy before migration; do not resurrect the older unpublished candidate.
+No unfinished hourly candidate remained at that pre-migration checkpoint.
+Do not resurrect an older unpublished candidate or overwrite the native master.
+The read-only native master inspection at `2026-10-02T09:13:35.555Z` verified
+those counts, all 23 human-field records and 882 source links. A fresh cloud
+backup passed full source, human-field and footer comparison at
+`2026-10-02T09:16:14.457Z`. Its workbook container hash differs after native
+inspection, while the publication basis remained unchanged. The actual master
+was then initialized and made ready at revision zero. The disabled backend seed import verified
+all 750 rows (23 actions, 598 instances, 128 emails and one daily record).
+That revision-zero cloud workbook, verified at `2026-10-02T10:08:45.472Z`, preserved those
+rows, all 23 human-field records, 882 source links, formulas and archived footer;
+its SHA-256 is `35adfc8c39bebea2374d837a6816a771daf2af5731e19c87e78c3f274de1a2d0`.
+The local synced master matched those bytes at `2026-10-02T10:11:51.851Z`, without
+a local overwrite. The read-only verifier accepts only the three exact XML
+current-row formula serializations; the native writer checks remain unchanged.
 
-At Dylan's explicit request, `update-posetek-issue-tracker` is now **PAUSED** so
-Power Automate setup can finish. Do not restart the hourly procedure or scheduler
-automatically; earlier instructions to keep it active are superseded. The existing
-production email route now uses Microsoft for new alerts, and the replacement
-tracker is not live.
-Catch up from the committed source cutoffs during verified migration. Never run
-both workbook writers against the master. Read
+The saved writer export passed strict retarget validation while Off at
+`2026-10-02T09:58:29.972Z`; only the workbook target changed from the accepted
+fixture. A fresh cloud download of its selected upsert script passed exact body
+and parameter checks at `2026-10-02T10:05:29.479Z`, matching current source and
+accepted fixture SHA `7cb0931b09cc8856efdf1f5042e088b2c4bc9d2282a203c943defd79ba4b5f28`.
+The writer was observed On at `2026-10-02T10:09:59.421Z`. The guarded backend
+activation passed at `2026-10-02T10:13:41.205Z`, followed by the first genuine
+native batch at revision one. Subsequent independent shared-master readback
+verified revision eight at `2026-10-02T10:53:58.855Z`, as recorded above. Never run
+the old whole-file renderer or reinitialize this native master. New source coverage
+must come from verified native batch and publication receipts.
+
+At Dylan's explicit request, `update-posetek-issue-tracker` remains **PAUSED**.
+Do not restart the old hourly procedure or scheduler; earlier instructions to keep
+it active are superseded. The production email route uses Microsoft for new
+alerts, and the replacement tracker is active with independent revision-eight
+publication verified. Catch-up continues from each source's verified publication
+cutoff; complete publication is not claimed. Never run both workbook writers
+against the master. Read
 [ISSUE_TRACKER_EVENT_FLOW.md](docs/ISSUE_TRACKER_EVENT_FLOW.md),
 [the tracker package](deployments/issue-tracker/README.md) and
 [the Microsoft email package](deployments/microsoft-email/README.md).
-This candidate does not change website bytes or training/planner records.
+This backend and automation release did not change website bytes or training/planner records.
 
 ## Shared user-issue recipients (2026-10-01)
 

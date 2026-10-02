@@ -1,8 +1,12 @@
-# Isolated tracker bridge candidate
+# Isolated tracker bridge
 
 Read [the event-flow handoff](../../docs/ISSUE_TRACKER_EVENT_FLOW.md) before setup.
-This package is not deployed or wired into `functions/index.js`. It adds six
-candidate entrypoints and no changes to the existing email delivery functions:
+This package is not wired into `functions/index.js`. Its isolated six-function
+deployment passed actual source/configuration verification at
+`2026-10-02T09:37:27Z`; guarded activation passed at
+`2026-10-02T10:13:41.205Z`. Independent shared-master revision-eight publication has passed;
+full source catch-up continues. It adds six
+entrypoints and no changes to the existing email delivery functions:
 
 | Entrypoint | Purpose | Required access |
 | --- | --- | --- |
@@ -27,6 +31,36 @@ Use the configured Node runtime if `node` is not on PATH. Inspect the generated
 manifest and exact endpoint list before any later deployment. An approved
 deployment must be scoped to these endpoints; never deploy the entire root
 functions project or unrelated Firestore rules as part of this setup.
+
+The two Firestore observers intentionally enable failure retries. Firebase CLI
+14.14 requires an acknowledgement for new retry policies. Use an interactive
+terminal and acknowledge only the prompt naming those two observers after
+reviewing the exact scope; do not use `--force` to bypass other deployment
+checks. The observer reads current source state transactionally, coalesces
+unchanged material hashes and retries scheduling with deterministic task IDs.
+Queue acknowledgement requires an exact verified writer receipt. The scoped
+source, control-plane and IAM/schedule readbacks remain required after deploy.
+
+The first release's interactive CLI run reported an invoker error after creating
+the private drain and queue: CLI14.14 called `bindings.filter` on an empty queue
+policy whose response omitted `bindings`. Actual readback then verified all six
+ACTIVE version-one functions and identical source ZIPs, the intended empty
+private policies, task settings and inherited runtime permissions. All prior
+114 function policies, five schedules and nine secret policies were preserved.
+The CLI failure remains recorded; no redeploy or IAM repair was needed. A live
+runtime evidence and independent shared-master readback subsequently passed.
+
+The shared master was initialized and made ready at revision zero, with an exact
+750-row disabled seed and preserved 882 source links and 23 human-field records.
+The saved writer retarget, current cloud script bytes and On state are verified.
+Backend settings are enabled. Independent fresh cloud revision-eight readback
+verified 70 actions, 684 instances, 160 emails and one daily record, preserving
+original human records and links. Both temporary queue holds were restored to
+RUNNING. Source capture/publication remain separate, with 490 pending tickets at
+the audit; full catch-up remains in progress. The setup-classification correction
+was acknowledged at revision seven and is included in the verified workbook.
+Read [the production receipt](../../deployment/ISSUE_TRACKER_EVENT_PRODUCTION.json). Do not rebuild or replace the master with the old whole-file renderer
+or run bootstrap again. Use native revisions and exact receipt-based recovery.
 
 The configuration lives in the private `issueTrackerSettings/current` record.
 It requires `enabled`, `seedVerified`, `connectionVerified`, `workbookKey` and the
@@ -135,13 +169,16 @@ independent. Permission errors and unfinished pagination fail closed.
 Before activation, import verified native seed and identity aliases, then set
 `sourceRecoveryEnabled`, the explicitly selected/verified mail provider, `mailAliasesVerified`,
 `sourceCaptureStart` and `sourceCheckpoints: {outlook, backend}`. The two initial
-checkpoints must come from confirmed publication, not a local save. The latest
-confirmed publication covers both sources through `2026-10-02T04:56:51.854Z`, with
+checkpoints must come from confirmed publication, not a local save. The historical
+pre-migration publication covered both sources through `2026-10-02T04:56:51.854Z`, with
 598 instances, 128 emails and 23 actions, workbook SHA-256
 `c9bf937b4cd1507d9f376bc861d0cb3779443b6a522e190ac48fb79c68f69d19`.
 The hourly Codex updater is now **PAUSED** at Dylan's request; do not restart it
-automatically. The replacement is not live. Re-read the current committed ledger
-and catch up missed source intervals before activation. For each original Outlook
+automatically. The replacement is enabled and independent shared-master revision-eight
+publication is verified; full source catch-up remains in progress. Those original
+cutoffs remain the initialization basis; ongoing catch-up resumes from each
+source's verified publication checkpoint in the production receipt. Never run
+the old renderer against the initialized native master. For each original Outlook
 row, `createMailCapture().verifiedAliases(originalIds)` reads that original ID
 with `Prefer: IdType="ImmutableId"` and returns a map to preserve its original
 row key. Merge this map into the reviewed seed before enabling intake. A missing
