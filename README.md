@@ -43,13 +43,14 @@ evidence, and the duplicate trigger sent nothing. Both production alert domains
 now select Microsoft, preserving their intake cutoffs and historical Resend jobs.
 See [the email release receipt](deployment/MICROSOFT_EMAIL_PRODUCTION.json).
 Mailbox RBAC is blocked
-by an unexplained Microsoft prerequisite error; a separately reviewed delegated
-Outlook reader is prepared. The Outlook arrival flow is imported and Off with
-no native checker errors. The first reader import was rejected because Microsoft
-does not support Secure Outputs on Parse JSON. The corrected package uses the
-supported action-specific privacy settings and passed focused tests and review;
-its replacement import, mailbox acceptance and shared-master
-migration remain. Older frozen Resend jobs retain their provider and evidence.
+by an unexplained Microsoft prerequisite error. The delegated Outlook reader is
+now imported; the Outlook arrival flow remains Off with no native checker errors.
+The reader's first live attempt read a known Inbox message but failed on its first
+collection page. A narrow v3 correction fixes the empty message-ID boundary;
+the saved export passed validation at `2026-10-02T08:45:14Z`, preserving its
+caller, route and privacy settings. Full paging, all 128 legacy identity aliases
+and shared-master migration remain unverified. Older frozen Resend jobs retain
+their provider and evidence.
 At Dylan's request, the hourly
 Codex tracker is **paused** while Power Automate setup is completed; do not restart
 it automatically. The last confirmed shared master has 598 instances, 128 emails

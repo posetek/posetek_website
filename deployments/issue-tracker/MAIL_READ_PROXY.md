@@ -5,6 +5,13 @@ Power Automate Outlook connection. It does not establish an Exchange application
 RBAC role. No import, mailbox read, deployment, setting change or shared-workbook
 cutover is implied by the offline tests.
 
+The actual reader `950eee98-d71a-48b8-b0b3-5fa5f2bd3c31` is now imported. Its v3
+saved export passed exact validation at `2026-10-02T08:45:14Z` after the two-action
+collection-path correction below. The reader-only validator also accounts for
+Microsoft omitting empty `runAfter` at exactly the two branch-entry actions;
+null, nonempty and other dependency changes still refuse. Full paging and all
+128 legacy identity aliases remain pending; this is not production coverage.
+
 `build_mail_read_flow.py` creates a new private import ZIP. Its HTTP trigger permits
 only service principal object `cd9fa4b9-7716-4534-9cf1-620422f48aba`. The one external
 operation is Office 365 Outlook `HttpRequest`, with `Uri` from the validated input,
@@ -94,8 +101,11 @@ needs a planned capture-state migration, not merely a settings toggle.
 Live acceptance must demonstrate: saved definition/connection and off state;
 approved principal succeeds and unauthenticated/wrong-principal requests fail;
 other mailbox routes are rejected before connector access; forced small-page
-pagination preserves full nextLink and full bodies/headers; read/non-Inbox messages
-are included; every frozen legacy Outlook ID resolves to an ImmutableId without
+pagination preserves full nextLink and full bodies. Header arrays remain required
+for the Inbox reference, all legacy identities/replay and relevant notices;
+provider-native header absence on unrelated paged messages is explicitly counted
+and preserved without inventing an empty array. Read/non-Inbox messages are
+included; every frozen legacy Outlook ID resolves to an ImmutableId without
 collisions; replay keeps original row IDs. Do not set `mailAliasesVerified` before
 the full current ledger's IDs pass. Connector response shape and tenant behavior
 remain native acceptance gates; offline expression evaluation is not that proof.
@@ -110,6 +120,16 @@ python -m unittest discover -s deployments/issue-tracker -p build_mail_read_flow
 The tests cover emitted route expressions, package isolation and fixed GET/header/
 caller/security settings, opaque nextLinks, HTTP failures, response identity,
 explicit provider selection, proof revocation and mid-window cursor preservation.
+
+Native v2 acceptance read the known Inbox item successfully but the first
+collection request failed before connector access: `substring` rejected a start
+at the end of the path. The collection-safe correction uses `slice` for the ID
+tail and scans one allowed sentinel in the ID-character check, keeping its
+`range` count positive. Original request URLs and the exact route predicate are
+unchanged. The expression model now rejects out-of-bounds substring starts and
+zero range counts, and covers collection, opaque paging and empty-ID paths.
+The corrected saved-flow export is verified; full native read acceptance remains
+required. A successful single-message read does not prove mailbox coverage.
 
 Microsoft documents the [Outlook HttpRequest parameters and supported Graph paths](https://learn.microsoft.com/en-us/connectors/office365connector/#send-an-http-request),
 [supported security settings by action type](https://learn.microsoft.com/en-us/azure/logic-apps/set-up-security-permissions#secure-data-in-run-history-by-using-obfuscation),

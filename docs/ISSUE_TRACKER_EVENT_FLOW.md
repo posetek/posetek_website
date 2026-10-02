@@ -18,17 +18,23 @@ Both production email domains now use Microsoft for new alerts; historical
 Resend jobs and evidence remain unchanged. The Outlook arrival flow
 `6956b87e-6556-4ab6-8709-ac866cf417b2` is imported and Off; its native checker
 reported zero errors and warnings. Its actual saved export passed exact execution,
-ingress and Dylan connection validation. The delegated reader's first import
-was rejected for unsupported Parse JSON Secure Outputs. Its corrected package
-uses Microsoft's supported action-specific privacy settings, with the raw route
-predicate inside secured Compose; focused tests and independent review passed.
-The reader is not imported. The pause does not
-establish replacement coverage; migration must catch up from the committed cutoffs.
+ingress and Dylan connection validation. The delegated reader
+`950eee98-d71a-48b8-b0b3-5fa5f2bd3c31` is imported with supported action-specific
+privacy settings; its first package had been rejected for unsupported Parse JSON
+Secure Outputs. Native v2 acceptance rejected unauthorized routes and read the
+known Inbox item, then failed before the first collection read because substring
+started at the path's end. V3 repairs only that boundary and the empty-ID
+character scan. Its actual saved export passed at `2026-10-02T08:45:14Z`, with
+the same caller, fixed Dylan GET, immutable preference and security policy.
+Full paging and all 128 original-to-immutable identity aliases remain pending.
+Preserve the failed v2 evidence and require the fresh v3 acceptance receipt before
+cutover. The pause does not establish replacement coverage; migration must catch
+up from the committed cutoffs.
 The separately approved Dylan Send As grant for `alerts@posetek.net` was verified
 at `2026-10-02T05:29:31.9389018Z`, preserving Nolan's grant, Dylan's Full Access
 and sent-copy settings. This sent no email and does not prove delivery or mailbox
-reading through application RBAC. A separate GET-only delegated Outlook reader
-is prepared with explicit provider/proof gates; see
+reading through application RBAC. The GET-only delegated Outlook reader retains
+explicit provider/proof gates; see
 [its acceptance requirements](../deployments/issue-tracker/MAIL_READ_PROXY.md).
 
 ## Intended behavior

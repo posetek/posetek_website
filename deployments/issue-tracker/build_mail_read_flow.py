@@ -63,10 +63,14 @@ def definition():
         'Validate_schema': action('ParseJson', {'content': '@triggerBody()', 'schema': SCHEMA}),
         # Only this comparison copy is normalized. The original URL is sent unchanged.
         'Message_path': action('Compose', f"@replace(first(split({url},'?')),'dylank%40posetek.net','dylank@posetek.net')", {'Validate_schema':['Succeeded']}),
-        'Message_id': action('Compose', f'@substring({path},min(length({path}),{len(BASE)+1}))', {'Message_path':['Succeeded']}),
+        # slice explicitly permits a start beyond the collection path's end;
+        # substring has bounds-sensitive native behavior unlike Python slicing.
+        'Message_id': action('Compose', f'@slice({path},{len(BASE)+1})', {'Message_path':['Succeeded']}),
         'Decoded_message_id': action('Compose', f"@replace(replace(replace(replace({tail},'%2B','+'),'%2b','+'),'%3D','='),'%3d','=')", {'Message_id':['Succeeded']}),
         'Invalid_URL_characters': bad_characters(url, URL_CHARS, 'Decoded_message_id'),
-        'Invalid_ID_characters': bad_characters(decoded, ITEM_CHARS, 'Invalid_URL_characters'),
+        # Collection requests have no ID. Scan one known-allowed sentinel too,
+        # so range always gets a positive count without changing the predicate.
+        'Invalid_ID_characters': bad_characters(f"concat({decoded},'A')", ITEM_CHARS, 'Invalid_URL_characters'),
         'Invalid_request_characters': bad_characters(req, '0123456789abcdefABCDEF-', 'Invalid_ID_characters'),
         'Route_is_allowed': action('Compose', '@and(' + ','.join(allowed) + ')', {'Invalid_request_characters':['Succeeded']}),
         # If supports neither secure setting. Only the boolean decision enters

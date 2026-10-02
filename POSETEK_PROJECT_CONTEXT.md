@@ -28,13 +28,20 @@ is not verified: organization customization completed and `IsDehydrated` is fals
 but `New-ManagementScope` still returned its prerequisite error in a fresh
 authenticated session. The contradictory Microsoft failure has no confirmed cause;
 do not substitute tenant-wide Mail.Read. A dedicated GET-only reader using Dylan's
-existing Outlook connection is prepared with separate delegated-provider proof
-gates; it is not imported, deployed or verified against real mailbox messages.
-The first reader package reached Microsoft's import validator but was rejected
-because Parse JSON does not support Secure Outputs. The corrected package uses
-Secure Inputs for Parse JSON, Compose and Response, and a secured boolean
-predicate before the condition. Focused package/route tests and independent
-review passed; replacement import and live read acceptance remain outstanding.
+existing Outlook connection is imported as `950eee98-d71a-48b8-b0b3-5fa5f2bd3c31`,
+with separate delegated-provider proof gates. The first package was rejected for
+unsupported Parse JSON Secure Outputs. V2 imported with supported action-specific
+privacy settings and read the known Inbox item with full body/headers/folder/read
+state, after rejecting unauthenticated and other-mailbox routes. Its first
+collection page then failed before connector access: `substring` rejected an
+index equal to path length. V3 changes only the message-ID tail to `slice` and the
+ID-character scan to include an allowed sentinel, retaining the exact original
+URL, caller, fixed GET and privacy policy. The existing flow was edited while Off;
+its actual saved export passed validation at `2026-10-02T08:45:14Z`. The validator
+permits only the two observed branch-entry omissions of empty `runAfter` alongside
+editor metadata; all real dependencies stay exact. Full pagination and all 128
+legacy immutable-ID aliases are still unverified. Failed v2 evidence is retained;
+v3 acceptance uses a fresh plan and private run directory.
 The email flow is imported and On after Dylan manually uploaded its ZIP. All four
 email backend scopes passed exact deployed-source verification, preserving every
 existing function IAM policy and schedule. Its approved one-message setup pilot

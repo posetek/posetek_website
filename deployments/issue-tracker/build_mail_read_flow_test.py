@@ -18,6 +18,21 @@ class Expressions:
     def __init__(self, outputs, item=None):
         self.outputs, self.item = outputs, item
 
+    @staticmethod
+    def substring(text, start, *length):
+        # WDL is stricter than Python slicing at the end of a string. Native
+        # collection acceptance must not rely on permissive Python behavior.
+        if start < 0 or start >= len(text) or (length and start + length[0] > len(text)):
+            raise ValueError('substring index outside string')
+        return text[start:start + length[0]] if length else text[start:]
+
+    @staticmethod
+    def integer_range(start, count):
+        # The official WDL contract requires a positive count, at most 100,000.
+        if count <= 0 or count > 100000:
+            raise ValueError('range requires positive bounded count')
+        return list(range(start, start + count))
+
     def evaluate(self, expression):
         tokens = re.findall(r"'(?:''|[^'])*'|[A-Za-z_][A-Za-z_0-9]*|[0-9]+|\?\[|[(),\]]", expression.lstrip('@'))
         pos = 0
@@ -43,8 +58,8 @@ class Expressions:
                 assert tokens[pos] == ')'; pos += 1
                 ops = {'body':lambda k:self.outputs[k], 'outputs':lambda k:self.outputs[k], 'item':lambda:self.item,
                     'first':lambda x:x[0], 'split':lambda s,d:s.split(d), 'replace':lambda s,a,b:s.replace(a,b),
-                    'substring':lambda s,start,*length:s[start:start+length[0]] if length else s[start:],
-                    'length':len, 'min':min, 'range':lambda start,count:list(range(start,start+count)),
+                    'substring':self.substring, 'slice':lambda s,start,*end:s[start:end[0]] if end else s[start:],
+                    'concat':lambda *s:''.join(s), 'length':len, 'min':min, 'range':self.integer_range,
                     'contains':lambda s,v:v in s, 'not':lambda x:not x, 'equals':lambda a,b:a==b,
                     'greater':lambda a,b:a>b, 'lessOrEquals':lambda a,b:a<=b, 'take':lambda s,n:s[:n],
                     'and':lambda *a:all(a), 'or':lambda *a:any(a)}
@@ -77,6 +92,17 @@ def all_actions(actions):
 
 
 class MailReadFlowTests(unittest.TestCase):
+    def test_collection_and_empty_item_tail_follow_strict_wdl_bounds(self):
+        with self.assertRaises(ValueError): Expressions({}).evaluate("@substring('abc',3)")
+        with self.assertRaises(ValueError): Expressions({}).evaluate('@range(0,0)')
+        for base in [m.BASE, m.BASE.replace('@','%40')]:
+            self.assertTrue(permitted(base))
+            self.assertTrue(permitted(base+'?$top=2&$skiptoken=%2Bopaque%3D'))
+            self.assertFalse(permitted(base+'/'))
+            self.assertFalse(permitted(base+'/?$top=2'))
+            self.assertTrue(permitted(base+'/A'))
+            self.assertFalse(permitted(base+'/A%2fB'))
+
     def test_generated_expressions_allow_only_fixed_route_and_preserve_opaque_query(self):
         for base in [m.BASE,m.BASE.replace('@','%40')]:
             for suffix in ['', '?$skiptoken=%2F..%252F%23%40&$top=1', '/A_B-c%2BD%3d?$select=body,internetMessageHeaders']:

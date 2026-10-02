@@ -34,8 +34,9 @@ No email was sent by that permission step. Preserve the existing mailbox grants.
 Dylan manually uploaded the email ZIP; its actual saved export passed exact
 caller, connection, callback, retry and secure-data validation before activation.
 The separate cloud-mail intake is imported and Off, with zero native checker
-errors and warnings. The delegated mailbox reader still requires manual package
-upload and live acceptance.
+errors and warnings. The delegated mailbox reader is imported and its corrected
+v3 saved export is verified. Full paging and legacy immutable-ID acceptance remain
+pending; see [the reader handoff](../issue-tracker/MAIL_READ_PROXY.md).
 
 The activation census preserved 489 pending historical Resend issue jobs without
 rerouting, replaying, resetting or claiming recovery. Their frozen destinations,
