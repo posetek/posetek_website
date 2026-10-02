@@ -27,7 +27,7 @@ describe('personal workout readiness', () => {
   });
   it('uses the actual birthday before an age field and does not invent missing ages', () => {
     expect(personalAge({ birthDate: '2011-10-01', age: 18 }, new Date('2026-09-25T12:00:00'))).toBe(14);
-    expect(personalAge({ age: 15 })).toBe(15); expect(personalAge({})).toBeUndefined();
+    expect(personalAge({ age: 15 })).toBeUndefined(); expect(personalAge({ age: 15, ageRecordedAt: new Date() })).toBe(15); expect(personalAge({})).toBeUndefined();
   });
   it('rejects stale/future age assertions and falls through an invalid first birthday field', () => {
     const now = new Date('2026-09-25T01:00:00Z');
@@ -36,6 +36,8 @@ describe('personal workout readiness', () => {
     expect(personalAge({ age: 15, ageRecordedAt: '2026-09-24' }, now)).toBe(15);
     expect(personalAge({ birthday: '2011-09-25' }, now)).toBeUndefined();
     expect(personalAge({ birthDate: 'not-a-date', dateOfBirth: '2011-09-25' }, now)).toBe(15);
+    expect(personalAge({ birthDate: '2011-02-31', age: 15, ageRecordedAt: now }, now)).toBe(15);
+    expect(personalAge({ birthDate: '2011-02-31' }, now)).toBeUndefined();
   });
   it('rejects invalid generation inputs before persisting a request', () => {
     expect(personalGenerationErrors(intake, 30, 'Work on close control')).toEqual([]);
@@ -149,15 +151,15 @@ describe('personal workout review screens', () => {
   });
   it('opens a conversation without athlete drill editing controls', () => {
     const html = renderToStaticMarkup(<PersonalWorkoutHub store={store} playerId="player-doc" athlete={{ age: 15 }} config={config} preview initialCreate onBack={() => {}} />);
-    expect(html).toContain('Your workout conversation.');
-    expect(html).toContain('Your focus and available time');
+    expect(html).toContain('Create your workout.');
+    expect(html).toContain('What do you want to work on?');
     for (const text of ['Add a drill', 'Search drills', 'Fine-tune drills', 'personal-dose-grid', 'personal-drill-actions']) expect(html).not.toContain(text);
   });
   it('labels an assigned copy and requires conditions before review', () => {
     const source = { workout: addPersonalDrill(personalDraft(), drill), reference: { planId: 'assigned', workoutId: 'slot', revision: 3 } };
     const html = renderToStaticMarkup(<PersonalWorkoutHub store={store} playerId="player-doc" athlete={{ age: 15 }} config={config} source={source} preview onBack={() => {}} />);
     expect(html).toContain('Your assigned workout stays as prescribed.');
-    expect(html.match(/<button[^>]*>Create my workout<\/button>/)?.[0]).toContain('disabled');
-    expect(html).toContain('how much time you have');
+    expect(html).not.toContain('Create my workout');
+    expect(html).toContain('Where will you train?');
   });
 });

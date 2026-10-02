@@ -2,11 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const fake = vi.hoisted(() => {
   const documents = new Map<string, any>();
   const failures = new Set<string>();
+  const writes = vi.fn((path: string, patch: any) => { documents.set(path, { ...documents.get(path), ...patch }); });
+  const serverTimestamp = vi.fn(() => new Date());
   function ref(path: string): any {
     return { id: path.split("/").at(-1), path, get: async () => {
       if (failures.has(path)) throw new Error("Read failed");
       return { id: path.split("/").at(-1), exists: documents.has(path), data: () => documents.get(path), ref: ref(path) };
-    } };
+    }, update: async (patch: any) => writes(path, patch) };
   }
   const comparable = (value: any) => value?.path || value;
   function collection(path: string, filters: any[] = [], limit = Infinity): any {
@@ -18,11 +20,11 @@ const fake = vi.hoisted(() => {
       return { docs, size: docs.length, empty: !docs.length };
     } };
   }
-  return { documents, failures, db: { collection }, context: vi.fn() };
+  return { documents, failures, writes, serverTimestamp, db: { collection }, context: vi.fn() };
 });
-vi.mock("../../../lib/firebase", () => ({ default: {}, auth: {}, db: fake.db }));
+vi.mock("../../../lib/firebase", () => ({ default: { firestore: { FieldValue: { serverTimestamp: fake.serverTimestamp } } }, auth: {}, db: fake.db }));
 vi.mock("../../../lib/organization-data", () => ({ getClubContext: fake.context }));
-import { loadClubAccountData, loadCoachAccount, loadCoachOfPlayer, loadCoachRoster, loadCoaches, loadTeamPlayers, playerRow } from "./accounts";
+import { loadClubAccountData, loadCoachAccount, loadCoachOfPlayer, loadCoachRoster, loadCoaches, loadTeamPlayers, playerRow, resolvePlayerAge, savePlayerProfile } from "./accounts";
 
 const team = { id: "team", organizationId: "club", name: "Team", coachUIDs: [], playerIds: ["wrong"] };
 function seedContext() {
@@ -31,7 +33,35 @@ function seedContext() {
   fake.documents.set("organizations/club", { schemaVersion: 2 });
   return context;
 }
-beforeEach(() => { fake.documents.clear(); fake.failures.clear(); fake.context.mockReset(); });
+beforeEach(() => { fake.documents.clear(); fake.failures.clear(); fake.context.mockReset(); fake.writes.mockClear(); fake.serverTimestamp.mockClear(); });
+
+describe('admin age read alignment', () => {
+  const now = new Date('2026-10-01T12:00:00Z');
+  it('keeps a stale, undated or future age visible as an observation without passing it to the editor', () => {
+    for (const ageRecordedAt of [undefined, new Date('2025-01-01'), new Date('2026-10-02')]) {
+      const raw = { age: 15, ageRecordedAt }, resolved = resolvePlayerAge(raw, now);
+      expect(resolved).toMatchObject({ age: null, recordedAge: 15, source: 'playerDocAge', stale: true });
+      expect(raw).toEqual({ age: 15, ageRecordedAt });
+    }
+  });
+  it('uses strict DOB or a current observation and retains legacy DOB fallback', () => {
+    expect(resolvePlayerAge({ birthDate: '2011-02-31' }, now).age).toBeNull();
+    expect(resolvePlayerAge({ birthDate: '2011-02-31', dateOfBirth: '2010-10-01' }, now)).toMatchObject({ age: 16, source: 'legacyDateOfBirth', stale: false });
+    expect(resolvePlayerAge({ age: 15, ageRecordedAt: now }, now)).toMatchObject({ age: 15, stale: false });
+  });
+  it('explicitly reconfirms the same stored age with server timestamps, while unrelated saves do not refresh it', async () => {
+    const oldDate = new Date('2025-01-01'); fake.documents.set('players/player', { age: 15, ageRecordedAt: oldDate, position: 'GK' });
+    await savePlayerProfile('player', { position: 'CM' });
+    expect(fake.documents.get('players/player').ageRecordedAt).toBe(oldDate);
+    expect(fake.writes.mock.calls[0][1]).not.toHaveProperty('age');
+    expect(fake.writes.mock.calls[0][1]).not.toHaveProperty('ageRecordedAt');
+    fake.serverTimestamp.mockClear(); await savePlayerProfile('player', { age: 15 });
+    expect(fake.serverTimestamp).toHaveBeenCalledTimes(2);
+    expect(Object.keys(fake.writes.mock.calls[1][1]).sort()).toEqual(['age', 'ageRecordedAt', 'updatedAt']);
+    expect(resolvePlayerAge(fake.documents.get('players/player'))).toMatchObject({ age: 15, stale: false, observationStatus: 'current' });
+    expect(fake.documents.get('players/player')).not.toHaveProperty('birthDate');
+  });
+});
 
 describe("admin roster reads", () => {
   it("does not retain invitation secrets in the roster or raw planner inputs", () => {

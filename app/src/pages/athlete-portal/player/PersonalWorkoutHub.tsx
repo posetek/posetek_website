@@ -4,11 +4,13 @@ import { localDayString } from '../../../lib/contracts/planV3';
 import TrainingLoadInstructions from '../../../components/TrainingLoadInstructions';
 import type { Row } from './execution';
 import type { PersonalWorkoutStore } from './use-personal-workouts';
-import { personalAge, personalCapabilityEnabled } from './personal-workouts';
+import { personalCapabilityEnabled } from './personal-workouts';
 import type { SourceWorkout } from './personal-workouts';
-import { applyEquipmentChanges, currentWorkoutConditions, equipmentChanges, suppliedWorkoutConditions } from './personal-conversation';
+import { applyEquipmentChanges, equipmentChanges, suppliedWorkoutConditions } from './personal-conversation';
 import TrainingSetup from './TrainingSetup';
-import { confirmedSetup, emptySetup, readRememberedSetup, rememberSetup, setupForProposal, setupFromIntake, setupSignature, setupSummary, EQUIPMENT_LABELS } from './training-access';
+import WorkoutSetupWizard from './WorkoutSetupWizard';
+import { confirmedSetup, emptySetup, locationSetup, readRememberedSetup, rememberSetup, setupForProposal, setupFromIntake, setupSignature, setupSummary, EQUIPMENT_LABELS } from './training-access';
+import { locationFromRequest } from './guided-workout';
 import type { SetupDraft } from './training-access';
 import PlayerWorkout from './PlayerWorkout';
 import './personal-workouts.css';
@@ -43,25 +45,23 @@ export default function PersonalWorkoutHub({ store, playerId, athlete, config, p
   const [requestText, setRequestText] = useState(initialConversation ? '' : initialRequest);
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', today = localDayString(new Date(), timezone);
   const latest = new Date(`${today}T12:00:00Z`); latest.setUTCDate(latest.getUTCDate() + 28);
-  const [scheduledDate, setScheduledDate] = useState(today), [answers, setAnswers] = useState<Row>({});
+  const [scheduledDate, setScheduledDate] = useState(today);
   const [revisionDate, setRevisionDate] = useState<string | undefined>();
   const [startPain, setStartPain] = useState('');
   const seedSetup = () => {
-    const prior = initialWorkout?.intake ? setupFromIntake(initialWorkout.intake) : readRememberedSetup(store.ownerUid, playerId) || emptySetup();
+    const remembered = initialWorkout?.intake ? setupFromIntake(initialWorkout.intake) : readRememberedSetup(store.ownerUid, playerId) || emptySetup();
+    const facility = locationFromRequest(initialRequest), prior = facility ? locationSetup(facility, remembered) : remembered;
     const explicit = suppliedWorkoutConditions(initialRequest);
-    return { ...prior, ...(explicit.equipment ? { equipment: explicit.equipment, equipmentAnswered: true } : {}),
+    return { ...prior, ...(equipmentChanges(initialRequest).replace || equipmentChanges(initialRequest).add.length || equipmentChanges(initialRequest).remove.length ? { equipment: applyEquipmentChanges(prior.equipment, initialRequest), equipmentAnswered: true } : {}),
       ...(explicit.setting ? { participantCount: explicit.setting === 'solo' ? 1 : 2 } : {}), confirmed: false } as SetupDraft;
   };
   const [setup, setSetup] = useState<SetupDraft>(seedSetup), [setupOpen, setSetupOpen] = useState(true);
   const [setupNotice, setSetupNotice] = useState('');
   const confirmedRequest = useRef(''), proposalSetupId = useRef('');
-  const supplied = suppliedWorkoutConditions(requestText, initialHandoff?.timeAvailableMinutes ?? initialHandoff?.workoutRef?.timeAvailableMinutes);
   const access = confirmedSetup(setup);
-  const conditions = currentWorkoutConditions(supplied, answers, personalAge(athlete));
   const p = mode === 'chat' ? store.proposal : null;
   const published = !!p && store.conversation?.publishedProposalId === p.proposalId;
   const setupChanged = !!p && (!p.intake?.access || setupSignature(setup) !== setupSignature(setupFromIntake(p.intake)));
-  const ready = !!access && !!conditions.age && Number.isInteger(conditions.minutes) && conditions.minutes >= 1 && conditions.minutes <= 135 && conditions.painAnswer === 'no' && scheduledDate >= today && scheduledDate <= latest.toISOString().slice(0, 10);
   const blocked = store.saving || store.scheduleRevision === null || !!(store.pending && !store.pending.terminalFailed) || store.conversationLoading;
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
@@ -76,8 +76,17 @@ export default function PersonalWorkoutHub({ store, playerId, athlete, config, p
   }, [p?.proposalId]);
   const begin = (w?: Row, copy = false) => {
     store.newConversation(); onSelection?.(); setMode('chat'); setRequestText(w ? `${copy ? 'Create a personal session like' : 'Adjust'} ${w.title}.` : '');
-    setAnswers({}); setScheduledDate(today); setEditing(w?.source === 'personal' && !copy ? w : null); setSourceRef(copy ? undefined : w?.sourceWorkout || undefined); setCopyFromWorkoutId(copy ? selected?.workoutId : undefined);
+    setScheduledDate(today); setEditing(w?.source === 'personal' && !copy ? w : null); setSourceRef(copy ? undefined : w?.sourceWorkout || undefined); setCopyFromWorkoutId(copy ? selected?.workoutId : undefined);
     setSetup(w && setup.confirmed ? setup : w?.intake ? setupFromIntake(w.intake) : seedSetup()); setSetupOpen(true); setSetupNotice(''); confirmedRequest.current = ''; proposalSetupId.current = '';
+  };
+  const generateGuided = async (params: Row) => {
+    try {
+      const result = await store.generate({ ...params, expectedRevision: editing?.revision || 0,
+        ...(editing ? { workoutId: editing.workoutId } : {}), ...(sourceRef ? { sourceWorkout: sourceRef } : {}), ...(copyFromWorkoutId ? { copyFromWorkoutId } : {}),
+        ...(initialHandoff?.originConversationId && initialHandoff?.originMessageId ? { originConversationId: initialHandoff.originConversationId, originMessageId: initialHandoff.originMessageId } : {}) });
+      if (!mounted.current) return true;
+      setSetupOpen(false); setRequestText(''); onSelection?.(result.conversationId); return true;
+    } catch (e) { fail(e); return false; }
   };
   const send = async () => {
     if (blocked || requestText.trim().length < 3) return;
@@ -96,13 +105,6 @@ export default function PersonalWorkoutHub({ store, playerId, athlete, config, p
         const changes = suppliedWorkoutConditions(requestText);
         if (changes.painAnswer === 'yes') throw new Error('Pause workout changes and ask your coach about the pain or restriction.');
         const result = await store.refine(requestText.trim(), { expectedScheduleRevision: store.scheduleRevision, scheduledDate: revisionDate || (p.scheduledDate < today ? today : p.scheduledDate), timezone: p.timezone || timezone, ...(changes.minutes ? { timeAvailableMinutes: changes.minutes } : {}), intake: { ...p.intake, ...access } });
-        if (!mounted.current) return;
-        onSelection?.(result.conversationId);
-      } else {
-        if (!ready) return;
-        const result = await store.generate({ requestText: requestText.trim(), timeAvailableMinutes: conditions.minutes, expectedRevision: editing?.revision || 0, expectedScheduleRevision: store.scheduleRevision, scheduledDate, timezone,
-          intake: { age: conditions.age, ...access, painFlag: false }, ...(editing ? { workoutId: editing.workoutId } : {}), ...(sourceRef ? { sourceWorkout: sourceRef } : {}), ...(copyFromWorkoutId ? { copyFromWorkoutId } : {}),
-          ...(initialHandoff?.originConversationId && initialHandoff?.originMessageId ? { originConversationId: initialHandoff.originConversationId, originMessageId: initialHandoff.originMessageId } : {}) });
         if (!mounted.current) return;
         onSelection?.(result.conversationId);
       }
@@ -128,7 +130,7 @@ export default function PersonalWorkoutHub({ store, playerId, athlete, config, p
   if (playing) return <>{notice}<PlayerWorkout key={playing.id} workout={playing} store={store.adapter} playerId={playerId} preview={preview} onExit={() => { setPlaying(null); setMode('list'); }} /></>;
   if (!store.enabled) return <section className="portal-card"><h2>Personal workouts</h2><p>Personal workout tools are not enabled for this account yet.</p><button onClick={onBack}>Back to training</button></section>;
   return <section className={`personal-workouts${coachOnly ? ' personal-coach-creation' : ''}`}>
-    {!coachOnly && <><button className="text-button" disabled={blocked} onClick={() => { if (mode === 'list') onBack(); else { setMode('list'); onSelection?.(); } }}>← {mode === 'list' ? 'Training' : 'Personal workouts'}</button><p className="eyebrow">Your own sessions</p><h1>{mode === 'chat' ? 'Your workout conversation.' : mode === 'saved' ? selected?.title || 'Your workout' : 'Personal workouts'}</h1></>}{notice}
+    {!coachOnly && <><button className="text-button" disabled={blocked} onClick={() => { if (mode === 'list') onBack(); else { setMode('list'); onSelection?.(); } }}>← {mode === 'list' ? 'Training' : 'Personal workouts'}</button><p className="eyebrow">Your own sessions</p><h1>{mode === 'chat' ? p ? 'Your workout conversation.' : 'Create your workout.' : mode === 'saved' ? selected?.title || 'Your workout' : 'Personal workouts'}</h1></>}{notice}
     {mode === 'list' && <><p>Tell your AI coach what you want to work on, review your session, then make it yours.</p><button className="primary-cta" disabled={blocked} onClick={() => begin()}>Create workout</button>
       {!!store.conversations?.length && <section className="portal-card"><h2>Workout conversations</h2><p className="muted-copy">Private drafts and earlier revisions stay here.</p>{store.conversations.map(c => <button className="player-list-button" key={c.id} disabled={blocked} onClick={() => void openConversation(c.id)}><strong>{c.title || 'Workout conversation'}</strong><small>{c.publishedWorkoutId ? 'Published workout · continue conversation' : 'Private draft · continue conversation'}</small></button>)}</section>}
       {!store.loaded ? <p role="status">Loading your workouts…</p> : !store.workouts.length ? <section className="portal-card"><h2>Your first session starts here</h2><p>Create a single workout without a multiweek plan. Review the prescription before publishing it.</p></section> : <div className="personal-workout-list">{[...store.workouts].sort((a, b) => String(b.scheduledDate).localeCompare(String(a.scheduledDate))).map(w => { const log = store.logs[w.workoutId]; return <button className="player-list-button" key={w.workoutId} disabled={blocked} onClick={() => openSaved(w)}><span className="personal-workout-meta">{log?.endedAt ? 'Finished' : log ? 'Resume' : 'Ready'} · {w.scheduledDate}</span><strong>{w.title}</strong><small>{w.estimatedMinutes} min · {w.blocks?.length || 0} drills</small></button>; })}</div>}
@@ -136,22 +138,15 @@ export default function PersonalWorkoutHub({ store, playerId, athlete, config, p
     {mode === 'chat' && <>
       {sourceRef && <p className="muted-copy">You are creating a personal copy. Your assigned workout stays as prescribed.</p>}{store.conversationLoading && <p role="status">Opening your saved conversation…</p>}
       {setupNotice && <p className="workout-pause-note" role="status">{setupNotice}</p>}
-      {(!coachOnly || !p) && (setupOpen ? <TrainingSetup value={setup} onChange={setSetup} onConfirm={confirmSetup} disabled={blocked} /> : <section className="training-setup-summary"><div><strong>Training setup</strong><p>{setupSummary(setup)}</p></div><button type="button" className="hub-secondary" disabled={blocked} onClick={() => setSetupOpen(true)}>Change setup</button></section>)}
-      {!p && !store.messages?.length && <div className="personal-conversation-welcome"><span className="material-symbols-outlined" aria-hidden="true">auto_awesome</span><h2>{coachOnly ? 'Let’s prepare your workout.' : 'What would you like to work on?'}</h2><p>Tell me your focus and how much time you have. I’ll prepare a workout for you to review.</p></div>}
+      {!p && !store.conversationLoading && <WorkoutSetupWizard store={store} playerId={playerId} athlete={athlete} setup={setup} onSetup={setSetup} initialRequest={requestText} initialMinutes={initialHandoff?.timeAvailableMinutes ?? initialHandoff?.workoutRef?.timeAvailableMinutes ?? source?.workout?.budgetMinutes} initialFocus={source?.workout?.intake?.focusDomains || source?.workout?.focusDomains} scheduledDate={scheduledDate} onDate={setScheduledDate} today={today} latestDate={latest.toISOString().slice(0, 10)} timezone={timezone} preview={preview} disabled={blocked} canGenerate={personalCapabilityEnabled(config, 'generate_personal_workout', preview)} onGenerate={generateGuided} resumeDraft={!source && !initialHandoff && !editing && !copyFromWorkoutId} />}
+      {p && !coachOnly && (setupOpen ? <TrainingSetup value={setup} onChange={setSetup} onConfirm={confirmSetup} disabled={blocked} /> : <section className="training-setup-summary"><div><strong>Training setup</strong><p>{setupSummary(setup)}</p></div><button type="button" className="hub-secondary" disabled={blocked} onClick={() => setSetupOpen(true)}>Change setup</button></section>)}
       {!!store.messages?.length && <div className="personal-conversation-messages" aria-label="Workout conversation" aria-live="polite">{store.messages.map((m, i) => <article key={m.id || i} className={`chat-message ${m.role === 'user' ? 'user' : 'assistant'}`}><small>{m.role === 'user' ? 'You' : 'AI Coach'}</small><p>{m.content || m.text}</p></article>)}</div>}
       {p && <><p className="eyebrow">{published ? 'Published prescription' : `Draft ${p.proposalRevision || 1} · private until published`}</p><PersonalPrescription proposal={p} catalog={store.catalog} />{coachOnly ? <button className="primary-cta" onClick={() => onReview?.(p)}>Review in Training</button> : <div className="personal-save-bar"><span><strong>{p.workout.estimatedMinutes} min</strong><small>{setupChanged ? 'Setup changed. Ask AI to update this draft.' : 'Review above, then publish'}</small></span><button className="primary-cta" disabled={blocked || !published && (!access || setupChanged)} onClick={() => void publish()}>{store.saving ? 'Checking…' : published ? 'Open published workout' : store.conversation?.publishedWorkoutId ? 'Republish workout' : 'Publish workout'}</button></div>}</>}
-      {(!coachOnly || !p) && <form className="personal-conversation-composer" onSubmit={e => { e.preventDefault(); void send(); }}>
+      {p && !coachOnly && <form className="personal-conversation-composer" onSubmit={e => { e.preventDefault(); void send(); }}>
         <label>{p ? 'What would you like to change?' : 'Your focus and available time'}<textarea rows={3} maxLength={500} value={requestText} disabled={blocked} onChange={e => setRequestText(e.target.value)} placeholder={p ? 'Add passing, replace a drill, or make it shorter…' : 'I have 20 minutes for ball control. I’m solo and have a ball and cones…'} /></label>
         {p && <details><summary>Training date · {revisionDate || (p.scheduledDate < today ? today : p.scheduledDate)}</summary><label>Training date for this revision<input type="date" min={today} max={latest.toISOString().slice(0, 10)} value={revisionDate || (p.scheduledDate < today ? today : p.scheduledDate)} onChange={e => setRevisionDate(e.target.value)} disabled={blocked} /></label><p className="muted-copy">Sending a change checks the current schedule again. Review the new draft before publishing.</p></details>}
-        {!p && <fieldset disabled={blocked} className="personal-session-fields"><legend>A few details for this session</legend><p className="muted-copy">I’ve carried forward the details you supplied.</p>
-          {!supplied.minutes && <label>About how many minutes?<input type="number" inputMode="numeric" min={1} max={135} value={conditions.minutes || ''} onChange={e => setAnswers(a => ({ ...a, minutes: Number(e.target.value) }))} /></label>}
-          {!personalAge(athlete) && !supplied.age && <label>Your age<input type="number" inputMode="numeric" min={5} max={80} value={conditions.age || ''} onChange={e => setAnswers(a => ({ ...a, age: Number(e.target.value) }))} /><small>Used for this session; this does not change your birthday.</small></label>}
-          {supplied.painAnswer !== 'no' && <label>Any pain or restriction affecting this session?<select value={conditions.painAnswer || ''} onChange={e => setAnswers(a => ({ ...a, painAnswer: e.target.value }))}><option value="">Choose an answer</option><option value="no">No</option><option value="yes">Yes — I need a review</option></select></label>}
-          {conditions.painAnswer === 'yes' && <p role="alert">Pause workout creation and ask your coach about a suitable return to training.</p>}
-          <details><summary>Training date · {scheduledDate}</summary><label>Training date<input type="date" min={today} max={latest.toISOString().slice(0, 10)} value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} /></label></details>
-        </fieldset>}
         {p && setupChanged && !requestText.trim() && <button type="button" className="hub-secondary" onClick={() => setRequestText('Adapt this workout to my confirmed training setup. Preserve suitable drills and replace only those that no longer fit.')}>Ask AI to use this setup</button>}
-        <button className="primary-cta" type="submit" disabled={blocked || requestText.trim().length < 3 || !personalCapabilityEnabled(config, 'generate_personal_workout', preview) || (!p && !ready) || (!!p && !access)}>{store.saving ? 'Preparing your workout…' : p ? 'Send changes' : 'Create my workout'}</button><small>{p ? 'Changes create a new draft to review before republishing.' : 'Confirm your training setup above. You can ask for changes before publishing. Available time is an approximate target.'}</small>
+        <button className="primary-cta" type="submit" disabled={blocked || requestText.trim().length < 3 || !personalCapabilityEnabled(config, 'generate_personal_workout', preview) || !access}>{store.saving ? 'Preparing your workout…' : 'Send changes'}</button><small>Changes create a new draft to review before republishing.</small>
       </form>}
     </>}
     {mode === 'saved' && selected && (() => { const log = store.logs[selected.workoutId], snapshot = log?.workoutSnapshot || selected; return <><p className="personal-workout-meta">Saved to Personal workouts · {selected.scheduledDate}</p><PersonalPrescription proposal={snapshot} catalog={store.catalog} />

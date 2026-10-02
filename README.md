@@ -3,10 +3,24 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
-User crash/bug alerts and the private admin inbox are live as deployment
-`6abd8f957e046e8059376091` (source `e8de8d7`). All 1389 artifact files match
-production; the baseline protects 1387 application/public files.
-See [the production receipt](deployment/USER_ISSUE_ALERTS_PRODUCTION.json) and [User issue alerts](docs/USER_ISSUE_ALERTS.md). Native rollout and
+Guided personal workouts are live as deployment `6abeaf5702a9c9983c7a41b9`, source
+`8956871`, published October 1, 2026 at 12:18:33 PM PDT. Players choose focus,
+location, available time and readiness one step at a time; age is confirmed only
+when needed. Code-only assessment and shared deterministic composition produce
+eligible sessions while conversations, AI revisions, Publish and Start remain
+connected. Admin evidence storage and age eligibility are repaired. Read
+[the handoff](docs/RELIABLE_PLAYER_WORKOUTS.md) and
+[the availability receipt](deployment/WORKOUT_AVAILABILITY_PRODUCTION.json).
+Completed testing and active plans are optional. Empty assessments show the
+actual library limitation, and interrupted checks recover the same accepted job.
+The current Speed/Agility age ranges exclude age 21; widening authored age
+envelopes is a separate content change. The initial guided release remains
+recorded in [its receipt](deployment/RELIABLE_PLAYER_WORKOUTS_PRODUCTION.json).
+Unavailable catalog combinations require visible adjustments; the 80 held drills
+and native release gates remain unchanged.
+
+User crash/bug reporting, the protected issue inbox and email operations are
+documented in [User issue alerts](docs/USER_ISSUE_ALERTS.md). Native rollout and
 Crashlytics export verification have separate acceptance gates.
 
 The October 1 backend follow-up adds `nolanj@posetek.net` and `taiyow@posetek.net`
