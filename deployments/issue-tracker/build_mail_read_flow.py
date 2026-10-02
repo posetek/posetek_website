@@ -18,6 +18,7 @@ BASE = 'https://graph.microsoft.com/v1.0/users/dylank@posetek.net/messages'
 URL_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?[]@!$&'()*+,;=%"
 ITEM_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_+=-'
 SECURE = {'secureData': {'properties': ['inputs', 'outputs']}}
+SECURE_INPUTS = {'secureData': {'properties': ['inputs']}}
 SCHEMA = {'type': 'object', 'additionalProperties': False, 'required': ['schemaVersion', 'requestId', 'url'], 'properties': {
     'schemaVersion': {'type': 'integer', 'enum': [1]}, 'requestId': {'type': 'string', 'minLength': 36, 'maxLength': 36},
     'url': {'type': 'string', 'minLength': len(BASE), 'maxLength': 8192}}}
@@ -28,7 +29,10 @@ def literal(value):
 
 
 def action(kind, inputs, after=None, **extra):
-    return {'type': kind, 'runAfter': after or {}, 'inputs': inputs, 'runtimeConfiguration': SECURE, **extra}
+    # Microsoft supports only Secure Inputs for these data operations; that
+    # setting also hides their outputs. Query/managed connectors support both.
+    security = SECURE_INPUTS if kind in ('ParseJson', 'Compose') else SECURE
+    return {'type': kind, 'runAfter': after or {}, 'inputs': inputs, 'runtimeConfiguration': security, **extra}
 
 
 def bad_characters(source, allowed, after):
@@ -37,7 +41,7 @@ def bad_characters(source, allowed, after):
 
 
 def response(status, body, after=None):
-    return {'type': 'Response', 'kind': 'Http', 'runAfter': after or {}, 'inputs': {'statusCode': status, 'headers': {'Content-Type': 'application/json'}, 'body': body}, 'runtimeConfiguration': SECURE}
+    return {'type': 'Response', 'kind': 'Http', 'runAfter': after or {}, 'inputs': {'statusCode': status, 'headers': {'Content-Type': 'application/json'}, 'body': body}, 'runtimeConfiguration': SECURE_INPUTS}
 
 
 def definition():
@@ -64,8 +68,11 @@ def definition():
         'Invalid_URL_characters': bad_characters(url, URL_CHARS, 'Decoded_message_id'),
         'Invalid_ID_characters': bad_characters(decoded, ITEM_CHARS, 'Invalid_URL_characters'),
         'Invalid_request_characters': bad_characters(req, '0123456789abcdefABCDEF-', 'Invalid_ID_characters'),
-        'Allow_only_Dylan_message_GET': {'type': 'If', 'runAfter': {'Invalid_request_characters':['Succeeded']}, 'expression': '@and(' + ','.join(allowed) + ')',
-            'runtimeConfiguration': SECURE, 'actions': {
+        'Route_is_allowed': action('Compose', '@and(' + ','.join(allowed) + ')', {'Invalid_request_characters':['Succeeded']}),
+        # If supports neither secure setting. Only the boolean decision enters
+        # it; the predicate's URL/message-ID inputs stay in secured Compose.
+        'Allow_only_Dylan_message_GET': {'type': 'If', 'runAfter': {'Route_is_allowed':['Succeeded']}, 'expression': "@equals(outputs('Route_is_allowed'),true)",
+            'actions': {
                 'Read_Dylan_messages': read,
                 'Return_complete_read': response(200, {'schemaVersion':1, 'requestId':'@'+req, 'mailbox':MAILBOX,
                     'graphStatus':"@outputs('Read_Dylan_messages')?['statusCode']", 'data':"@body('Read_Dylan_messages')"}, {'Read_Dylan_messages':['Succeeded']}),

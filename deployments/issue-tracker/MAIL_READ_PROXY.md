@@ -11,7 +11,11 @@ operation is Office 365 Outlook `HttpRequest`, with `Uri` from the validated inp
 `Method: GET`, and `CustomHeader1` set to
 `Prefer: IdType="ImmutableId", outlook.body-content-type="html"`. It has no supplied
 method, body or additional headers and no sending, marking, moving, deleting or
-Excel action. Connector retries are disabled; inputs and outputs are secured.
+Excel action. Connector retries are disabled. Parse JSON, Compose and Response
+use Microsoft's supported Secure Inputs setting, which also hides their outputs;
+the trigger, Query operations and Outlook connector secure both. The unsupported
+If security flags are absent: If receives only a boolean from a secured Compose
+predicate, so the raw URL and message ID are evaluated inside the secured action.
 
 The flow validates the object schema and independently rejects characters and
 routes outside the exact `https://graph.microsoft.com/v1.0/users/dylank@posetek.net/messages`
@@ -108,6 +112,7 @@ caller/security settings, opaque nextLinks, HTTP failures, response identity,
 explicit provider selection, proof revocation and mid-window cursor preservation.
 
 Microsoft documents the [Outlook HttpRequest parameters and supported Graph paths](https://learn.microsoft.com/en-us/connectors/office365connector/#send-an-http-request),
+[supported security settings by action type](https://learn.microsoft.com/en-us/azure/logic-apps/set-up-security-permissions#secure-data-in-run-history-by-using-obfuscation),
 [workflow expression functions](https://learn.microsoft.com/en-us/azure/logic-apps/expression-functions-reference),
 [message listing](https://learn.microsoft.com/en-us/graph/api/user-list-messages?view=graph-rest-1.0)
 and [ImmutableId preference](https://learn.microsoft.com/en-us/graph/outlook-immutable-id).

@@ -29,6 +29,8 @@ class Expressions:
                 value = token[1:-1].replace("''", "'")
             elif token.isdigit():
                 value = int(token)
+            elif token in ('true','false'):
+                value = token == 'true'
             else:
                 self_test = tokens[pos]; pos += 1
                 assert self_test == '('
@@ -109,7 +111,12 @@ class MailReadFlowTests(unittest.TestCase):
         self.assertEqual(trigger['runtimeConfiguration'],m.SECURE)
         connector=[]
         for _,a in all_actions(d['actions']):
-            self.assertEqual(a['runtimeConfiguration'],m.SECURE)
+            if a['type']=='If':
+                self.assertNotIn('runtimeConfiguration',a)
+                self.assertEqual(a['expression'],"@equals(outputs('Route_is_allowed'),true)")
+            else:
+                expected=m.SECURE_INPUTS if a['type'] in ('ParseJson','Compose','Response') else m.SECURE
+                self.assertEqual(a['runtimeConfiguration'],expected)
             self.assertIn(a['type'],['ParseJson','Compose','Query','If','OpenApiConnection','Response'])
             self.assertNotIn('operationOptions',a)
             if a['type']=='OpenApiConnection': connector.append(a)
@@ -119,6 +126,10 @@ class MailReadFlowTests(unittest.TestCase):
         self.assertEqual(set(inputs['parameters']),{'Uri','Method','CustomHeader1'})
         self.assertEqual(inputs['parameters']['Method'],'GET')
         self.assertEqual(inputs['parameters']['CustomHeader1'],'Prefer: IdType="ImmutableId", outlook.body-content-type="html"')
+        guard=d['actions']['Route_is_allowed']
+        self.assertEqual(guard['runtimeConfiguration'],m.SECURE_INPUTS)
+        self.assertIn("outputs('Message_path')",guard['inputs'])
+        self.assertEqual(d['actions']['Allow_only_Dylan_message_GET']['runAfter'],{'Route_is_allowed':['Succeeded']})
 
     def test_response_requires_connector_success_and_preserves_original_json_with_bounded_errors(self):
         a=m.definition()['actions']['Allow_only_Dylan_message_GET']['actions']

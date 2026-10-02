@@ -30,6 +30,11 @@ authenticated session. The contradictory Microsoft failure has no confirmed caus
 do not substitute tenant-wide Mail.Read. A dedicated GET-only reader using Dylan's
 existing Outlook connection is prepared with separate delegated-provider proof
 gates; it is not imported, deployed or verified against real mailbox messages.
+The first reader package reached Microsoft's import validator but was rejected
+because Parse JSON does not support Secure Outputs. The corrected package uses
+Secure Inputs for Parse JSON, Compose and Response, and a secured boolean
+predicate before the condition. Focused package/route tests and independent
+review passed; replacement import and live read acceptance remain outstanding.
 The email flow is imported and On after Dylan manually uploaded its ZIP. All four
 email backend scopes passed exact deployed-source verification, preserving every
 existing function IAM policy and schedule. Its approved one-message setup pilot

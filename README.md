@@ -45,7 +45,10 @@ See [the email release receipt](deployment/MICROSOFT_EMAIL_PRODUCTION.json).
 Mailbox RBAC is blocked
 by an unexplained Microsoft prerequisite error; a separately reviewed delegated
 Outlook reader is prepared. The Outlook arrival flow is imported and Off with
-no native checker errors; reader import, mailbox acceptance and shared-master
+no native checker errors. The first reader import was rejected because Microsoft
+does not support Secure Outputs on Parse JSON. The corrected package uses the
+supported action-specific privacy settings and passed focused tests and review;
+its replacement import, mailbox acceptance and shared-master
 migration remain. Older frozen Resend jobs retain their provider and evidence.
 At Dylan's request, the hourly
 Codex tracker is **paused** while Power Automate setup is completed; do not restart
