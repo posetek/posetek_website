@@ -43,4 +43,6 @@ measurements, and the 150-row schema ceiling is not a proven batch capacity.
 Initialize only from that current native inspection's fingerprint, values and
 footer; preserve all teammate edits and verify the resulting paused workbook and
 backend seed before enabling one writer. These tests do not establish production
-Outlook/backend intake, email delivery, or that the hourly publisher has stopped.
+Outlook/backend intake or email delivery. Separately, Dylan has now explicitly
+paused the hourly publisher to finish setup. Keep that pause in place; these
+private-fixture results do not authorize restarting it or enabling the replacement.

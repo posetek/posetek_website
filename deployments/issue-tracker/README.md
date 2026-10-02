@@ -129,10 +129,13 @@ independent. Permission errors and unfinished pagination fail closed.
 Before activation, import verified native seed and identity aliases, then set
 `sourceRecoveryEnabled`, `graphMailboxVerified`, `mailAliasesVerified`,
 `sourceCaptureStart` and `sourceCheckpoints: {outlook, backend}`. The two initial
-checkpoints must come from confirmed publication, not a local save. The last
-confirmed publication during implementation was `2026-10-02T02:47:19.937Z`, with
-586 instances, 128 emails and 23 actions;
-re-read the current committed ledger before seeding. For each original Outlook
+checkpoints must come from confirmed publication, not a local save. The latest
+confirmed publication covers both sources through `2026-10-02T04:56:51.854Z`, with
+598 instances, 128 emails and 23 actions, workbook SHA-256
+`c9bf937b4cd1507d9f376bc861d0cb3779443b6a522e190ac48fb79c68f69d19`.
+The hourly Codex updater is now **PAUSED** at Dylan's request; do not restart it
+automatically. The replacement is not live. Re-read the current committed ledger
+and catch up missed source intervals before activation. For each original Outlook
 row, `createMailCapture().verifiedAliases(originalIds)` reads that original ID
 with `Prefer: IdType="ImmutableId"` and returns a map to preserve its original
 row key. Merge this map into the reviewed seed before enabling intake. A missing

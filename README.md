@@ -35,12 +35,16 @@ but not live. Premium and the dedicated caller are configured; the writer is On
 only for its private synthetic workbook and permits only that service principal.
 Actual Power Automate transport and identical replay returned verified native
 revision-six receipts. Eleven credential secrets are installed; endpoint secrets
-are not. Message-trace HTTP 200 establishes access, not delivery. Mailbox RBAC is
+are not. Dylan's Send As permission for `alerts@posetek.net` is verified; existing
+mailbox grants are preserved. Actual sending remains untested. Message-trace
+HTTP 200 establishes access, not delivery. Mailbox RBAC is
 blocked by an unexplained Microsoft prerequisite error, and package upload is
 blocking email-flow import. Backend deployment, mailbox intake and shared-master
-migration remain. Production Resend and the hourly tracker stay active; the last confirmed
-master has 586 instances, 128 emails and 23 actions through
-`2026-10-02T02:47:19.937Z`. See [the tracker handoff](docs/ISSUE_TRACKER_EVENT_FLOW.md) and
+migration remain. Production Resend remains active. At Dylan's request, the hourly
+Codex tracker is **paused** while Power Automate setup is completed; do not restart
+it automatically. The last confirmed shared master has 598 instances, 128 emails
+and 23 actions through `2026-10-02T04:56:51.854Z`. The replacement is not live.
+See [the tracker handoff](docs/ISSUE_TRACKER_EVENT_FLOW.md) and
 [the Microsoft email package](deployments/microsoft-email/README.md).
 
 The unified coach workspace and Astro build are documented in

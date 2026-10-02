@@ -12,9 +12,11 @@ private test writer saves without the former licensing block. It is On,
 Automated, owned by Dylan, with ID b011912f-bb15-453f-92ef-761d223095b4, targeting
 only the private synthetic workbook. Its trigger permits only the newly created
 dedicated service principal. Existing Excel and Outlook connections are confirmed.
-The shared mailbox alerts@posetek.net exists; the email sender's complete
-delegation remains an acceptance gate. No additional subscription was purchased
-by the agent.
+The shared mailbox alerts@posetek.net exists. Following Dylan's explicit approval,
+his Send As permission was read back at 2026-10-02T05:29:31.9389018Z. His existing
+Full Access, Nolan's Send As and the sent-copy settings were unchanged. No email
+was sent by that permission step; actual send and recipient-delivery acceptance
+remain gates. No additional subscription was purchased by the agent.
 
 Eleven fixed credential/callback/ingress secrets were installed and read back as
 Secret Manager version 1. Endpoint secrets are not installed and runtime access
@@ -57,14 +59,18 @@ Concurrency one, bounded asynchronous receipt polling and exact replay remain
 required. See [native acceptance](scripts/issue-tracker/NATIVE_ACCEPTANCE.md).
 
 The earlier cloud/local workbook discrepancy is resolved. The confirmed shared
-master has 586 instances, 128 emails and 23 actions, with both source cutoffs at
-2026-10-02T02:47:19.937Z. Its verified SHA-256 is
-6e719cabf1639d3ae0792b03ce4aa87b8197a5c04360b3b95e5ae0bd827b25fd.
+master has 598 instances, 128 emails and 23 actions, with both source cutoffs at
+2026-10-02T04:56:51.854Z. Its verified SHA-256 is
+c9bf937b4cd1507d9f376bc861d0cb3779443b6a522e190ac48fb79c68f69d19.
 No unfinished hourly candidate remains at that checkpoint. Obtain a fresh cloud
 copy before migration; do not resurrect the older unpublished candidate.
 
-The hourly Codex tracker and existing production email route remain active.
-Never run both workbook writers against the master. Read
+At Dylan's explicit request, `update-posetek-issue-tracker` is now **PAUSED** so
+Power Automate setup can finish. Do not restart the hourly procedure or scheduler
+automatically; earlier instructions to keep it active are superseded. The existing
+production email route remains active, and the replacement tracker is not live.
+Catch up from the committed source cutoffs during verified migration. Never run
+both workbook writers against the master. Read
 [ISSUE_TRACKER_EVENT_FLOW.md](docs/ISSUE_TRACKER_EVENT_FLOW.md),
 [the tracker package](deployments/issue-tracker/README.md) and
 [the Microsoft email package](deployments/microsoft-email/README.md).

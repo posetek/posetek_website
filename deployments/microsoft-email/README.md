@@ -13,13 +13,18 @@ migration are independent.
 The separate tracker writer is On only for its private synthetic fixture and
 allows the dedicated service principal. Actual Power Automate transport and
 identical replay returned exact revision-six native receipts. The shared-master
-hourly writer continues. Dylan-only mailbox reading for tracker recovery remains
+hourly writer is **paused by Dylan's request** while Power Automate setup finishes;
+do not restart it automatically. Production Resend remains active and the cloud
+tracker is not live. Dylan-only mailbox reading for tracker recovery remains
 blocked by a contradictory Microsoft prerequisite error in a fresh session despite
 `IsDehydrated:false`; the cause is unconfirmed. Mailbox reading is not a permission
 needed by this email sender. See [the tracker handoff](../../docs/ISSUE_TRACKER_EVENT_FLOW.md).
 
-Dylan has Full Access to the shared sender mailbox; his separate Send As grant
-remains pending approval. Preserve the existing mailbox grants. Browser file upload
+Dylan has Full Access to the shared sender mailbox. After his explicit approval,
+Send As for `alerts@posetek.net` was read back at `2026-10-02T05:29:31.9389018Z`.
+Nolan's existing Send As, Dylan's Full Access and sent-copy settings were preserved.
+No email was sent by this step; actual send and recipient-trace acceptance remain
+unproven. Preserve the existing mailbox grants. Browser file upload
 currently blocks email-flow package import. Neither that flow nor cloud-mail
 intake is installed; actual send/recipient-trace acceptance remains required.
 
@@ -31,8 +36,8 @@ is part of this package. Google Cloud's independent alert policy remains separat
 ## Flow and credentials
 
 Create an Automated cloud flow owned by Dylan and using his licensed connection.
-Grant that connection Full Access and Send As for `alerts@posetek.net`; verify the
-actual Microsoft permissions before the pilot. The sender is locked in backend
+The connection owner's Full Access and Send As for `alerts@posetek.net` are now
+verified; recheck the actual permissions before the pilot. The sender is locked in backend
 configuration to that exact mailbox. Every new Microsoft issue/status/daily
 payload must contain the exact three-recipient set; every workout payload must
 contain Dylan alone. Omitting a teammate fails closed. Old attempted Resend

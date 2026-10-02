@@ -3,15 +3,21 @@
 Status: **not live**. Dylan reported purchasing Power Automate Premium on
 October 1 and authorized setup. An available Premium license is now assigned to
 dylank@posetek.net; the saved private writer no longer has the former licensing
-block. The existing hourly Codex tracker remains active until the replacement
-passes all acceptance gates. No backend deployment or shared-master cutover has
-occurred. Excel and Outlook connections, the dedicated application/service
+block. Dylan explicitly paused the hourly Codex tracker to finish Power Automate
+setup. `update-posetek-issue-tracker` is **PAUSED**; do not restart it automatically.
+No backend deployment or shared-master cutover has occurred. Excel and Outlook
+connections, the dedicated application/service
 principal and eleven fixed credential secrets are configured. The writer is On
 only for the private synthetic workbook and allows only that service principal.
 Actual private Power Automate transport and identical replay returned exact
 revision-six native receipts. Mailbox-scoped access, backend deployment and
 shared-master migration remain gates. Neither cloud-mail intake nor the email
-sender flow is imported; production Resend and the hourly tracker are unchanged.
+sender flow is imported; production Resend remains active. The pause does not
+establish replacement coverage; migration must catch up from the committed cutoffs.
+The separately approved Dylan Send As grant for `alerts@posetek.net` was verified
+at `2026-10-02T05:29:31.9389018Z`, preserving Nolan's grant, Dylan's Full Access
+and sent-copy settings. This sent no email and does not prove delivery or mailbox
+reading through application RBAC.
 
 ## Intended behavior
 
@@ -178,8 +184,9 @@ negative other-mailbox reads, followed by direct legacy-to-immutable ID mapping,
 remain required before source capture is enabled.
 
 The browser upload tool still rejects file selection for the prepared email package.
-Neither the email sender nor cloud-mail intake is installed. These setup blockers
-do not stop the existing production Resend route or hourly workbook publisher.
+Neither the email sender nor cloud-mail intake is installed. Production Resend
+remains active. The hourly workbook publisher is paused by user request; do not
+resume it to work around these setup blockers.
 Keep caller credentials and the bounded mailbox-ingress secret in Secret Manager,
 and keep Power Automate action inputs/outputs secure. No credential belongs in
 the workbook, flow screenshots, repository or this document.
@@ -188,9 +195,9 @@ the workbook, flow screenshots, repository or this document.
 
 1. Obtain a fresh cloud workbook and reconcile any new hourly candidate. The
    earlier b49ac4d/5e209015 discrepancy was resolved: the confirmed master now
-   contains 23 actions, 586 instances and 128 emails, SHA-256
-   `6e719cabf1639d3ae0792b03ce4aa87b8197a5c04360b3b95e5ae0bd827b25fd`, with
-   both source cutoffs at `2026-10-02T02:47:19.937Z`. There was no unfinished
+   contains 23 actions, 598 instances and 128 emails, SHA-256
+   `c9bf937b4cd1507d9f376bc861d0cb3779443b6a522e190ac48fb79c68f69d19`, with
+   both source cutoffs at `2026-10-02T04:56:51.854Z`. There was no unfinished
    candidate at that checkpoint. Exact receipts and recovery instructions are
    private in `.netlify/error-tracker-2026-10-01/RECURRING-TRACKER.md`.
 2. Complete licensing, access, flow configuration and private backend deployment
@@ -225,14 +232,15 @@ the workbook, flow screenshots, repository or this document.
    all Action/Instance/Email IDs and machine hashes; review legacy action mappings.
    The bootstrap keeps the three existing visible tabs, moves daily delivery rows
    into a native table to the right of Instances, and adds hidden sync state.
-5. Use an exclusive maintenance window to pause the old writer, bootstrap the
-   cloud workbook, verify counts/formulas/links/human fields, seed the queue and
+5. Use an exclusive maintenance window and confirm the old writer remains paused.
+   Bootstrap the cloud workbook, verify counts/formulas/links/human fields, seed the queue and
    catch up both sources. Never run both writers against the master. Keep the old
    ledger/read coverage available for gap recovery, but do not resume the old
    whole-file writer against a bootstrapped workbook without reviewed rollback.
 6. Confirm actual workbook receipts for both intake paths and meaningful delivery
-   updates before declaring the replacement live. Stop the hourly heartbeat only
-   at the verified cutover; retain an explicit source-recovery procedure.
+   updates before declaring the replacement live. Keep the user-requested hourly
+   pause in place; retain an explicit source-recovery procedure and do not restart
+   the old scheduler automatically.
 
 Excel does not provide a cross-cell transaction or an exclusive coauthor lock.
 Serialization and post-read checks reduce risk, but do not make simultaneous
