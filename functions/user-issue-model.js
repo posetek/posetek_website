@@ -1,8 +1,9 @@
 "use strict";
 const crypto = require("node:crypto");
+const { validContact, contactText, UID } = require("./user-issue-contacts");
 const FROM = "PoseTek Support <support@alerts.posetek.net>";
 const TO = "dylank@posetek.net";
-const RECIPIENTS = Object.freeze([TO, "nolanj@posetek.net", "taiyow@posetek.net"]);
+const RECIPIENTS = Object.freeze([TO]);
 const hash = value => crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const clean = (value, max = 200) => typeof value === "string" ? value.replace(/[\x00-\x1f\x7f]/g, " ").trim().slice(0, max) : "";
 function redact(value, max = 2000) {
@@ -52,7 +53,19 @@ function periodKey(at) {
 function previousPeriod(at) { return new Date(Date.parse(`${periodKey(at)}T12:00:00Z`) - 86400000).toISOString().slice(0, 10); }
 const dateText = at => new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", dateStyle: "medium", timeStyle: "long" }).format(at);
 function payload(job, id) {
-  const lines = [job.title, ...job.lines, "Detailed reports and screenshots require PoseTek administrator sign-in.", `Open User issues: https://posetek.net/admin/user-issues${job.issueId ? `?issue=${job.issueId}` : ""}`];
+  const snapshot = job.type === "incident" && job.contactSnapshot?.schemaVersion === 1 ? job.contactSnapshot : null;
+  const uid = UID.test(snapshot?.actorUid || "") ? snapshot.actorUid : null;
+  const contact = validContact(snapshot?.currentContact, uid) ? snapshot.currentContact : null;
+  const lookupFailed = snapshot?.lookup?.status === "failed";
+  const account = contact?.name || (snapshot?.authenticatedSnapshot?.uid === uid ? snapshot.authenticatedSnapshot.name : null) || (uid ? "Name unavailable" : "Unknown actor");
+  const identityLines = snapshot ? [`Account/reporter: ${redact(account, 200)}${uid ? ` (${uid})` : ""}${lookupFailed && contact ? "; name from the last successful lookup; current account details unconfirmed" : ""}${snapshot.reporterOnly ? "; reporter/uploader only; original operator unconfirmed" : ""}`,
+    // Only the strict, exact-UID server-owned Auth email bypasses free-text
+    // redaction. Description/message/display-name strings remain redacted.
+    `Contact email: ${lookupFailed ? `Unavailable as a current contact; latest exact-UID lookup failed (${snapshot.lookup.code === "account_not_found" ? "account_not_found" : "lookup_unavailable"}).${contact ? ` Last successful lookup evidence: ${contactText(contact, uid)}; current currency unconfirmed` : ""}` : contactText(contact, uid)}`,
+    `Target athlete: ${redact(snapshot.player?.name, 200) || "Unknown / not recorded"}${ID.test(snapshot.player?.id || "") ? ` (${snapshot.player.id})` : ""}`,
+    `Attempted action: ${redact(snapshot.operation, 100) || "Unknown / not recorded"}`] : [];
+  const legacyLines = snapshot ? job.lines.filter(line => !/^Affected user:/i.test(line)) : job.lines;
+  const lines = [job.title, ...identityLines, ...legacyLines, "Detailed reports and screenshots require PoseTek administrator sign-in.", `Open User issues: https://posetek.net/admin/user-issues${job.issueId ? `?issue=${job.issueId}` : ""}`];
   return { from: FROM, to: [...RECIPIENTS], subject: `[PoseTek ${job.type === "daily" ? "daily summary" : "user issue"}] ${clean(job.title, 130)}`,
     text: lines.join("\n\n"), tags: [{ name: "posetek_issue_outbox", value: id }] };
 }

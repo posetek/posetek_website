@@ -1,31 +1,34 @@
 # Microsoft email delivery
 
-The user selected Power Automate Premium and the dedicated
-shared mailbox `alerts@posetek.net`. The application/service principal and eleven
-fixed credential/callback/ingress secrets are configured; the secrets were read
-back as Secret Manager version 1. Both reviewed flow endpoints are installed as
-version 1, and the five Microsoft email runtime grants passed exact readback.
-The email flow `015cd141-794f-4592-a1e1-886fa2b2484f` is imported, On, and uses
-Dylan's verified Outlook connection. All four scoped backend releases passed
-deployed-source verification; all 111 existing function IAM policies and four
-existing schedules were preserved. Only the three Microsoft functions and their
-five-minute reconciliation schedule were added. The approved setup pilot sent
-one message, Exchange confirmed delivery to all three recipients, and the
-duplicate trigger skipped Outlook sending. Both production alert domains now
-select Microsoft; the activation readback passed at `2026-10-02T06:53:00.665Z`.
-Their original intake cutoffs and all other settings were preserved. Read
-[the release receipt](../../deployment/MICROSOFT_EMAIL_PRODUCTION.json).
-The issue tracker and shared-workbook migration remain independent and are not live.
+The selected provider is Microsoft 365 through Power Automate Premium, using the
+dedicated shared sender mailbox `alerts@posetek.net` and Dylan's licensed Outlook
+connection. The current release requires **Dylan alone (`dylank@posetek.net`)** for
+new issue, status, daily-summary and workout emails. Nolan and Taiyo retain their
+shared Excel editing access. The separate Google Cloud notification policy also
+requires Dylan alone; it has its own configuration and verification.
 
-The separate tracker writer is On only for its private synthetic fixture and
-allows the dedicated service principal. Actual Power Automate transport and
-identical replay returned exact revision-six native receipts. The shared-master
-hourly writer is **paused by Dylan's request** while Power Automate setup finishes;
-do not restart it automatically. Production Resend remains active and the cloud
-tracker is not live. Dylan-only mailbox reading for tracker recovery remains
-blocked by a contradictory Microsoft prerequisite error in a fresh session despite
-`IsDehydrated:false`; the cause is unconfirmed. Mailbox reading is not a permission
-needed by this email sender. See [the tracker handoff](../../docs/ISSUE_TRACKER_EVENT_FLOW.md).
+The October 2 migration activated Microsoft for both alert domains at
+`2026-10-02T06:53:00.665Z`, preserving the intake cutoffs, existing IAM policies and
+schedules. Its explicitly approved setup pilot delivered one message to the then
+approved three recipients, and a duplicate trigger skipped Outlook sending. Those
+are historical three-recipient results, not evidence of the new Dylan-only
+configuration. Preserve that [migration receipt](../../deployment/MICROSOFT_EMAIL_PRODUCTION.json).
+Use the [notification refinement receipt](../../deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json)
+for current deployed-source, recipient, recovery, flow-state and delivery evidence.
+Importing a flow or retaining an older On receipt does not prove that sending has
+been restored after the later Off state; restoration requires fresh verification.
+
+The event-based shared tracker is live in **PoseTek > Technology > Website > User
+Issue Tracker > PoseTek Issue Tracker.xlsx**. Dylan owns it; Nolan and Taiyo remain
+editors. Backend observers and Outlook arrivals enqueue updates for the native
+Power Automate writer, with independent cloud source catch-up. The Dylan-only
+delegated mailbox reader passed full pagination and immutable-ID acceptance;
+this does not establish Exchange application mailbox RBAC or authorize a broader
+mailbox route. The old hourly Codex updater is **paused by Dylan's request** and
+must remain paused. Capture progress and confirmed workbook publication are
+separate: a pending queue or failed acknowledgement must not be described as a
+fully refreshed workbook. Read the [event tracker receipt](../../deployment/ISSUE_TRACKER_EVENT_PRODUCTION.json)
+and [tracker handoff](../../docs/ISSUE_TRACKER_EVENT_FLOW.md).
 
 Dylan has Full Access to the shared sender mailbox. After his explicit approval,
 Send As for `alerts@posetek.net` was read back at `2026-10-02T05:29:31.9389018Z`.
@@ -33,31 +36,35 @@ Nolan's existing Send As, Dylan's Full Access and sent-copy settings were preser
 No email was sent by that permission step. Preserve the existing mailbox grants.
 Dylan manually uploaded the email ZIP; its actual saved export passed exact
 caller, connection, callback, retry and secure-data validation before activation.
-The separate cloud-mail intake is imported and Off, with zero native checker
-errors and warnings. The delegated mailbox reader is imported and its corrected
-v3 saved export is verified. Full paging and legacy immutable-ID acceptance remain
-pending; see [the reader handoff](../issue-tracker/MAIL_READ_PROXY.md).
+The cloud-mail intake and delegated reader were subsequently activated for the
+shared tracker. Their saved definitions, paging and legacy immutable-ID acceptance
+were verified; see [the reader handoff](../issue-tracker/MAIL_READ_PROXY.md) and the
+event tracker receipt. Mailbox reading is separate from the email sender's
+permissions and connection.
 
 The activation census preserved 489 pending historical Resend issue jobs without
 rerouting, replaying, resetting or claiming recovery. Their frozen destinations,
 provider evidence and the old Resend key/webhook remain available. New alerts use
 Microsoft; this release does not cancel or purchase a Resend subscription.
 
-The existing Firebase workout and issue outboxes remain authoritative. Workout
-recipients remain Dylan only. New issue/status/daily messages retain Dylan, Nolan
-and Taiyo. No historical backfill, recipient expansion, native or website release
-is part of this package. Google Cloud's independent alert policy remains separate.
+The existing Firebase workout and issue outboxes remain authoritative. Historical
+consumed send permissions retain their original recipient sets and individual
+receipts. Only the explicitly approved recent, provably unclaimed Microsoft issue
+jobs may receive audited Dylan-only amendments. This release does not replay the
+historical Resend backlog or authorize automated user outreach.
 
 ## Flow and credentials
 
 Create an Automated cloud flow owned by Dylan and using his licensed connection.
 The connection owner's Full Access and Send As for `alerts@posetek.net` are now
 verified; recheck the actual permissions before the pilot. The sender is locked in backend
-configuration to that exact mailbox. Every new Microsoft issue/status/daily
-payload must contain the exact three-recipient set; every workout payload must
-contain Dylan alone. Omitting a teammate fails closed. Old attempted Resend
-payloads retain their frozen destinations. No general sender or recipient is accepted
-from the HTTP trigger.
+configuration to that exact mailbox. Every new Microsoft issue/status/daily and
+workout payload must contain Dylan alone, with no CC/BCC. Dispatch and transactional
+claim both check the effective recipient envelope immediately before sending.
+An unconsumed frozen envelope containing a removed recipient is held with
+`provider_recipient_removed`; it consumes no send permission or recipient quota.
+Old attempted Resend payloads retain their frozen destinations and evidence.
+No general sender, recipient or message body is accepted from the HTTP trigger.
 
 The backend caller is a dedicated Entra application/service principal. The flow's
 Request trigger must use **Specific users in my tenant**, containing the caller's
@@ -167,11 +174,33 @@ message requiring review; this is the intentional duplicate-avoidance tradeoff.
 The scheduler does not blindly send it again. Unclaimed Microsoft wake-ups may
 retry indefinitely with the frozen payload; they do not inherit Resend's 23-hour
 idempotency expiry. Workflow retries are safe only because the backend refuses
-all repeated claims.
+all repeated claims. Each new claim freezes the effective payload digest and
+recipient set. Callbacks and message trace aggregate that consumed envelope;
+older consumed claims continue to aggregate their original recipients. Removing
+Nolan and Taiyo must never relabel a historical partial delivery as fully delivered.
+
+The approved recovery window is `2026-10-02T20:32:00.000Z` inclusive through
+`2026-10-02T21:16:12.577Z` exclusive. The lower bound is a conservative minute
+boundary for the observed Off state, not a claim about its exact second. The
+operator recovery tool defaults to a local plan, then requires an exact-project
+review, fresh source-bound plan and explicit deployment/authorization gate to
+apply. Each transaction re-reads the job, stored receipts, same-ID occurrence and
+paused issue-send setting. Existing claims, run IDs, tokens, accepted/provider
+evidence, trace evidence or active leases prevent recovery.
+
+An approved amendment retains the immutable original payload, provider and attempt
+history, with an audited prior delivery state. It freezes a separate Dylan-only
+effective envelope and, when supported by the exact occurrence, structured
+account/reporter, contact, target-athlete and attempted-action details. Contacts
+come from the exact recorded Firebase Auth UID; an unknown actor or failed lookup
+is explicit, and a reporter/uploader is not asserted to be the original operator.
+An identical recovery is idempotent. Never erase consumed claims or regenerate an
+already consumed envelope to recover delivery.
 
 All Microsoft email types share a limit of **20 claims per rolling five minutes**.
-They also share **9,000 recipients per rolling 24 hours**: a three-recipient issue
-message consumes three units; a workout message consumes one. Fifteen-minute
+They also share **9,000 recipients per rolling 24 hours**: each new Dylan-only
+issue or workout message consumes one unit. Historical consumed three-recipient
+claims retain their original three-unit accounting. Fifteen-minute
 buckets include the complete partially overlapping boundary bucket, so a job can
 wait up to fifteen extra minutes rather than exceed the rolling limit. This is
 not a midnight reset. Claims consume quota even if the subsequent send outcome is
@@ -199,7 +228,8 @@ Internet message ID. Conflicting evidence requires review. Missing trace data
 is never interpreted as failed delivery or permission to resend.
 
 Each recipient is recorded independently. Flow success means accepted; aggregate
-Delivered requires trace delivery for every frozen recipient. Quarantine/spam
+Delivered requires trace delivery for every recipient in the consumed effective
+envelope, including every original recipient of a historical claim. Quarantine/spam
 filtering stays distinct in the stored trace status and maps to suppressed; an
 unknown/expanded status requires review. Trace evidence is checked for seven days
 after claim. Missing acknowledgement becomes reviewable after ten minutes but can
@@ -279,7 +309,7 @@ IAM and scheduler inventory outside these reviewed scopes.
 Run the combined unit tests and actual loopback SDK suite:
 
 ```powershell
-node --test functions/microsoft-email.test.js functions/user-issues.test.js functions/workout-notifications.test.js
+node --test functions/microsoft-email.test.js functions/user-issues.test.js functions/user-issue-contacts.test.js functions/issue-tracker-mail-correlation.test.js functions/workout-notifications.test.js
 # Start disposable Firestore emulator at 127.0.0.1:8193, demo-microsoft-email only.
 $env:FIRESTORE_EMULATOR_HOST='127.0.0.1:8193'
 $env:GCLOUD_PROJECT='demo-microsoft-email'
@@ -290,10 +320,14 @@ Then verify in the actual tenant: Premium entitlement accepted; shared mailbox
 Full Access/Send As; caller identity allowlist; secure action settings; no retries
 on Claim or Send; correct async response; callbacks reject wrong secrets and run
 tokens; exact duplicate wake-ups yield one send; lost callback leaves reviewable
-state; all approved pilot recipients receive their intended message; each trace
+state; Dylan-only destinations and exact effective envelopes; a genuine alert
+receives its intended delivery evidence; each trace
 settles separately; pagination and mailbox trace access work; old Resend jobs
 remain unchanged; scheduled reconciliation executes with correct secret versions.
-Use only isolated fixtures and retain metadata evidence without private payloads.
+Use isolated fixtures for failure/replay tests and retain metadata evidence without
+private payloads. New setup messages need explicit approval; the earlier one-message
+setup approval was consumed. Confirm the shared tracker by fresh cloud download,
+native receipt and preserved row IDs, source links and human triage fields.
 
 Record the rollout and only then remove the pilot allowlist for future approved
 jobs. Failed/expired historical Resend messages require a separately reviewed

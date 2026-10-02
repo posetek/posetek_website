@@ -4,6 +4,8 @@
 // The caller must persist nextSeed ONLY after the workbook confirms the batch.
 // Bootstrap existing keys/hashes from the cloud workbook before enabling writes.
 const crypto = require("node:crypto");
+const Microsoft = require("./microsoft-email-model");
+const { validContact, contactText, email } = require("./user-issue-contacts");
 
 const HEADERS = Object.freeze({
   actions: ["Action ID", "Priority", "Problem", "Who / impact", "Recommended next step", "Observed evidence / limits", "Retest and safe recovery", "Code / evidence", "Provider reference"],
@@ -138,19 +140,30 @@ function identity(event, identities) {
   const uid = text(event.reporterUid);
   const exact = uid && identities && own(identities, uid) ? identities[uid] : null;
   if (exact?.uid && exact.uid !== uid) fail("identity lookup UID mismatch");
-  const name = text(event.reporterName || exact?.name);
+  const contact = validContact(event.currentContact, uid) ? event.currentContact : null;
+  if (event.currentContact && event.currentContact.uid !== uid) fail("contact lookup UID mismatch");
+  const name = text(contact?.name || event.reporterName || exact?.name);
   const isReport = /failureCases|fieldReports|system_diagnostic/i.test(`${event.source} ${event.sourceReference} ${event.code}`);
   const label = name || (uid ? `Account ${uid}` : "Unknown account");
   const actor = uid ? `${isReport ? "Reported/uploaded by" : "Recorded account"}: ${label}${isReport ? "; original operator unconfirmed" : ""}` : "Unknown actor (no authenticated reporter recorded)";
   const player = event.player && typeof event.player === "object" ? event.player : {};
-  return { actor, target: player.name ? `${player.name}${player.id ? ` (${player.id})` : ""}` : player.id ? `Player ${player.id} (name unknown)` : "Unknown / not recorded", basis: uid ? `Stored reporter Auth UID${event.reporterName ? " and stored reporter name" : exact?.name ? "; name from exact UID lookup" : "; name unknown"}. Target player is a separate recorded identity.${isReport ? " Reporter/uploader does not establish who operated the device." : ""}` : "No reporter UID recorded. No identity inferred from timing, email recipient, device, or target player." };
+  const snapshot = event.authenticatedSnapshot;
+  const token = snapshot?.schemaVersion === 1 && snapshot.uid === uid && snapshot.source === "authenticated_token" && Number.isSafeInteger(snapshot.observedAtMillis) ? snapshot : null;
+  const lookupFailed = event.contactLookup?.status === "failed";
+  const contactEvidence = contactText(contact, uid).replace("current Auth lookup", "Auth lookup observed");
+  const contactAnnotation = uid && (contact || event.contactLookup) ? `Recorded actor UID: ${uid}. ${contact?.name ? `${lookupFailed ? "Last successful" : "Recorded"} Auth account display name: ${contact.name}. ` : ""}Contact email: ${lookupFailed ? `Unavailable as a current contact.${contact ? ` Last successful lookup evidence: ${contactEvidence}.` : ""}` : contactEvidence + "."}${contact?.disabled ? " Auth account was disabled at that lookup." : ""}${lookupFailed ? ` Latest lookup failed (${text(event.contactLookup.code) || "lookup_unavailable"}); any retained contact is from the earlier lookup, currency unconfirmed.` : ""}${isReport ? " This contact belongs to the reporter/uploader; original operator remains unconfirmed." : ""}` : "";
+  const snapshotBasis = token ? ` Authenticated occurrence-token snapshot: ${email(token.email) || "no email"} (email ${token.emailVerified === true ? "verified" : "unverified"}); captured ${new Date(token.observedAtMillis).toISOString()}. This is separate from the current outreach lookup.` : "";
+  return { actor, target: player.name ? `${player.name}${player.id ? ` (${player.id})` : ""}` : player.id ? `Player ${player.id} (name unknown)` : "Unknown / not recorded", contactAnnotation,
+    basis: (uid ? `Stored reporter Auth UID${event.reporterName ? " and stored reporter name" : exact?.name ? "; name from exact UID lookup" : "; name unknown"}. Target player is a separate recorded identity.${isReport ? " Reporter/uploader does not establish who operated the device." : ""}` : "No reporter UID recorded. No identity inferred from timing, email recipient, device, or target player.") + snapshotBasis };
 }
 function deliveryDescription(job) {
   if (!job) return "No exact incident outbox record supplied; delivery unknown";
-  const recipients = Array.isArray(job.payload?.to) ? [...new Set(job.payload.to.map(text))].sort() : [];
+  const effectivePayload = Microsoft.effectiveDeliveryPayload(job);
+  const recipients = Array.isArray(effectivePayload?.to) ? [...new Set(effectivePayload.to.map(text))].sort() : [];
   const states = job.recipientDelivery || {};
   const status = text(job.status) || "unknown";
   const parts = [`Source job status: ${status}`];
+  if (job.deliveryAmendment) parts.push(`Approved recipient restriction: ${job.deliveryAmendment.id}; original frozen recipients retained in source evidence: ${(job.payload?.to || []).join(", ")}`);
   if (recipients.length) {
     parts.push(`Frozen recipients: ${recipients.join(", ")}`);
     parts.push(...recipients.map(recipient => {
@@ -232,6 +245,15 @@ function normalizeIssueTracker({ occurrences = [], outbox = [], issues = [], ide
         const marker = "\n\n[Latest source issue]\n";
         values["Correlation / limits"] = text(previous.values["Correlation / limits"]).split(marker)[0] + marker + metadata.sourceIssueSummary;
       }
+      if (metadata.contactAnnotation) {
+        const marker = "\n\n[Current outreach contact]\n";
+        for (const column of ["User who acted / reported", "Identity basis"]) values[column] = text(previous.values[column]).split(marker)[0] + marker + metadata.contactAnnotation;
+      }
+    }
+    if (table === "instances" && !previous?.values && metadata.contactAnnotation) {
+      const marker = "\n\n[Current outreach contact]\n";
+      values["User who acted / reported"] += marker + metadata.contactAnnotation;
+      values["Identity basis"] += marker + metadata.contactAnnotation;
     }
     if (table === "emails" && previous?.values) {
       const candidate = values, candidateLinks = links;
@@ -273,7 +295,7 @@ function normalizeIssueTracker({ occurrences = [], outbox = [], issues = [], ide
     values = Object.fromEntries(Object.entries(values).map(([column, value]) => [column, typeof value === "number" ? Number(value.toPrecision(15)) : value]));
     const hash = machineRowSha256({ values, links });
     if (!previous || previous.hash !== hash) changes[table].push({ key: id, expectedMachineSha256: previous?.hash || null, values, links });
-    const { sourceIssueSummary: _sourceIssueSummary, sourceHasPeriod: _sourceHasPeriod, ...storedMetadata } = metadata;
+    const { sourceIssueSummary: _sourceIssueSummary, sourceHasPeriod: _sourceHasPeriod, contactAnnotation: _contactAnnotation, ...storedMetadata } = metadata;
     seed.rows[table][id] = { ...previous, ...storedMetadata, hash, values, links };
   }
   function action(definition, impact, source = "", preferred) {
@@ -385,7 +407,7 @@ function normalizeIssueTracker({ occurrences = [], outbox = [], issues = [], ide
     const sourceIssueSummary = issue ? `Grouped source issue state: ${text(issue.state) || "unknown"}; recorded occurrences: ${Number.isSafeInteger(issue.occurrences) && issue.occurrences >= 0 ? issue.occurrences : "unknown"}. This does not change the manual action status.` : "";
     if (/system_diagnostic|interrupt/i.test(`${event.code} ${event.kind}`)) correlation.push("Diagnostic/interrupted label is not proof of a crash or its cause; inspect the original diagnostic.");
     const evidence = [event.message, event.description].filter(Boolean).join("\n") || `No error detail stored. Recorded code: ${text(event.code) || "unknown"}; kind: ${text(event.kind) || "unknown"}.`;
-    emit("instances", id, { Instance: info.rowId, "Occurred (Pacific)": pacificExcelSerial(event.occurredAtMillis), "User who acted / reported": info.who.actor, "Target athlete": info.who.target, "Attempted action": event.operation ? `Recorded operation: ${event.operation}` : "Unknown; operation not recorded", "Error / actual evidence": evidence, "Action ID": info.actionId, "Email delivery": deliveryDescription(job), "Recorded operation": text(event.operation), "Identity basis": info.who.basis, "Recorded actor UID": text(event.reporterUid), "Target player ID": text(event.player?.id), "Page / device": `${event.route || "No page recorded"}; ${event.device || "Unknown device"}`, "Received (Pacific)": pacificExcelSerial(event.receivedAtMillis), "Email IDs": (seed.emailLinks[id] || []).join(", ") || "No matching email", "Correlation / limits": correlation.join(" ") + (sourceIssueSummary ? `\n\n[Latest source issue]\n${sourceIssueSummary}` : ""), "Private issue": links["Private issue"] ? "Open issue" : "", "Source record": text(event.sourceReference || event.source), Build: text(event.build), "Request / job ID": text(event.requestId), "Occurrence ID": id, "Provider email ID": text(job?.providerId), "Delivery error code": text(job?.failureCode) }, links, { rowId: info.rowId, actionId: info.actionId, sourceIssueSummary, outboxObserved: Boolean(job) || inputSeed.rows?.instances?.[id]?.outboxObserved === true });
+    emit("instances", id, { Instance: info.rowId, "Occurred (Pacific)": pacificExcelSerial(event.occurredAtMillis), "User who acted / reported": info.who.actor, "Target athlete": info.who.target, "Attempted action": event.operation ? `Recorded operation: ${event.operation}` : "Unknown; operation not recorded", "Error / actual evidence": evidence, "Action ID": info.actionId, "Email delivery": deliveryDescription(job), "Recorded operation": text(event.operation), "Identity basis": info.who.basis, "Recorded actor UID": text(event.reporterUid), "Target player ID": text(event.player?.id), "Page / device": `${event.route || "No page recorded"}; ${event.device || "Unknown device"}`, "Received (Pacific)": pacificExcelSerial(event.receivedAtMillis), "Email IDs": (seed.emailLinks[id] || []).join(", ") || "No matching email", "Correlation / limits": correlation.join(" ") + (sourceIssueSummary ? `\n\n[Latest source issue]\n${sourceIssueSummary}` : ""), "Private issue": links["Private issue"] ? "Open issue" : "", "Source record": text(event.sourceReference || event.source), Build: text(event.build), "Request / job ID": text(event.requestId), "Occurrence ID": id, "Provider email ID": text(job?.providerId), "Delivery error code": text(job?.failureCode) }, links, { rowId: info.rowId, actionId: info.actionId, sourceIssueSummary, contactAnnotation: info.who.contactAnnotation, outboxObserved: Boolean(job) || inputSeed.rows?.instances?.[id]?.outboxObserved === true });
   }
   for (const [id, job] of jobs) if (job.type === "daily" || job.type === "status") {
     const sourceIssue = issueDocs.get(job.issueId);

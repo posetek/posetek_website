@@ -8,7 +8,7 @@ const root = path.resolve(__dirname, "../..");
 const output = path.resolve(process.argv[2] || "");
 if (!process.argv[2] || !output.startsWith(path.join(root, ".netlify") + path.sep)) throw new Error("Use a NEW ignored .netlify candidate directory");
 if (fs.existsSync(output)) throw new Error("Candidate directory already exists; choose a new directory");
-const names = ["issue-tracker-bridge.js", "issue-tracker-bridge-model.js", "issue-tracker-bridge-seed.js", "issue-tracker-bridge-transport.js", "issue-tracker-bridge-ingress.js", "issue-tracker-bridge-entrypoints.js", "issue-tracker-recovery.js", "issue-tracker-normalize.js", "issue-tracker-graph-reader.js", "issue-tracker-mail-read-proxy.js", "issue-tracker-evidence.js", "issue-tracker-mail-capture.js", "issue-tracker-source-capture.js", "package.json", "package-lock.json"];
+const names = ["issue-tracker-bridge.js", "issue-tracker-bridge-model.js", "issue-tracker-bridge-seed.js", "issue-tracker-bridge-transport.js", "issue-tracker-bridge-ingress.js", "issue-tracker-bridge-entrypoints.js", "issue-tracker-recovery.js", "issue-tracker-normalize.js", "issue-tracker-graph-reader.js", "issue-tracker-mail-read-proxy.js", "issue-tracker-evidence.js", "issue-tracker-mail-capture.js", "issue-tracker-source-capture.js", "user-issue-contacts.js", "microsoft-email-model.js", "user-issue-model.js", "package.json", "package-lock.json"];
 const sources = names.map(name => [name, fs.readFileSync(path.join(root, "functions", name))]);
 sources.push(["index.js", fs.readFileSync(path.join(__dirname, "index.js"))]);
 fs.mkdirSync(path.join(output, "source"), { recursive: true });

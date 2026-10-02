@@ -7,6 +7,7 @@ const { createGraphTokenProvider, createGraphReader } = require("./issue-tracker
 const { createMailCapture } = require("./issue-tracker-mail-capture");
 const { createSourceCapture } = require("./issue-tracker-source-capture");
 const { createMailReadProxyTransport, createConfiguredMailReader } = require("./issue-tracker-mail-read-proxy");
+const { createIssueContactEnrichment } = require("./user-issue-contacts");
 const GRAPH_SECRETS = ["ISSUE_TRACKER_GRAPH_TENANT_ID", "ISSUE_TRACKER_GRAPH_CLIENT_ID", "ISSUE_TRACKER_GRAPH_CLIENT_SECRET"];
 const MAIL_READ_SECRETS = [...GRAPH_SECRETS, "ISSUE_TRACKER_MAIL_READ_FLOW_ENDPOINT", "ISSUE_TRACKER_FLOW_TENANT_ID", "ISSUE_TRACKER_FLOW_CLIENT_ID", "ISSUE_TRACKER_FLOW_CLIENT_SECRET"];
 
@@ -28,6 +29,7 @@ function createIssueTrackerBridgeEntrypoints(functions, admin, { normalize, task
       endpoint: async () => process.env.ISSUE_TRACKER_MAIL_READ_FLOW_ENDPOINT,
       identity: async () => ({ tenantId: process.env.ISSUE_TRACKER_FLOW_TENANT_ID, clientId: process.env.ISSUE_TRACKER_FLOW_CLIENT_ID }) }) });
   const mailCapture = createMailCapture({ db: admin.firestore(), bridge, graph });
+  const contacts = createIssueContactEnrichment({ db: admin.firestore(), auth: typeof admin.auth === "function" ? admin.auth() : null });
   const capture = createSourceCapture({ db: admin.firestore(), bridge, graph, mailCapture });
   return {
     observeUserIssueTracker: functions.runWith({ timeoutSeconds: 60, maxInstances: 5, failurePolicy: true }).firestore.document("userIssueOutbox/{id}").onWrite((_, context) => bridge.observeOutbox(context.params.id)),
@@ -43,7 +45,7 @@ function createIssueTrackerBridgeEntrypoints(functions, admin, { normalize, task
       .pubsub.schedule("every 5 minutes").timeZone("Etc/UTC").onRun(async () => {
         // Independent credentials/cursors: Outlook denial must not skip backend
         // capture, and a backend page failure must not erase Outlook progress.
-        const results = await Promise.allSettled([capture.run("outlook"), capture.run("backend")]);
+        const results = await Promise.allSettled([capture.run("outlook"), capture.run("backend"), mailCapture.reconcile(), contacts.reconcile()]);
         if (results.some(result => result.status === "rejected")) throw new Error("tracker_source_capture_incomplete");
       }),
   };

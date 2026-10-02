@@ -77,6 +77,10 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
       // Arrival notifications may know an additional REST alias that the next
       // whole-mailbox read does not. Do not erase it or oscillate queue versions.
       const storedMessage = { ...message, aliases: [...new Set([...(old?.message?.aliases || []), ...(message.aliases || [])])].sort() };
+      if (old?.message?.exactJoin) {
+        if (message.exactJoin && M.canonical(message.exactJoin) !== M.canonical(old.message.exactJoin)) M.fail("tracker_mail_join_changed");
+        storedMessage.exactJoin = old.message.exactJoin;
+      }
       if (storedMessage.aliases.length > 20 || size(storedMessage) > 48000) M.fail("tracker_message_too_large");
       const desiredHash = M.digest(storedMessage);
       const version = old?.desiredHash === desiredHash ? old.version : (old?.version || 0) + 1;
@@ -262,11 +266,16 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
     } catch (error) {
       // Never persist/log an endpoint URL, bearer token, mailbox body or raw
       // provider response. Queue and prepared batch remain durable on failure.
-      if (batch) await db.doc(`${PATHS.batches}/${batch.payload.batchId}`).update({ lastError: /^tracker_[a-z_]+$/.test(error?.code || "") ? error.code : "tracker_retry_required", lastErrorAtMillis: now() });
+      const transportReason = /^tracker_[a-z_]+$/.test(error?.transportReasonCode || "") ? error.transportReasonCode : null;
+      if (batch) await db.doc(`${PATHS.batches}/${batch.payload.batchId}`).update({ lastError: /^tracker_[a-z_]+$/.test(error?.code || "") ? error.code : "tracker_retry_required", lastTransportReasonCode: transportReason, lastErrorAtMillis: now() });
+      await db.runTransaction(async tx => {
+        const state = (await tx.get(writerRef)).data();
+        if (state?.leaseId === claimed.leaseId) tx.update(writerRef, { lastTransportReasonCode: transportReason });
+      });
       if (["tracker_remote_conflict", "tracker_remote_auth", "tracker_remote_rejected", "tracker_unverified_receipt", "tracker_incomplete_receipt", "tracker_invalid_receipt_counts"].includes(error?.code)) {
         await db.runTransaction(async tx => {
           const state = (await tx.get(writerRef)).data();
-          if (state?.leaseId === claimed.leaseId) tx.update(writerRef, { blockedReason: error.code, blockedAtMillis: now() });
+          if (state?.leaseId === claimed.leaseId) tx.update(writerRef, { blockedReason: error.code, blockedTransportReasonCode: transportReason, blockedAtMillis: now() });
         });
       }
       throw error;

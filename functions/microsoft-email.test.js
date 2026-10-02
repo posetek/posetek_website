@@ -3,6 +3,7 @@ const test = require("node:test"), assert = require("node:assert/strict");
 const { FakeFirestore, HttpsError } = require("./test-support/fake-firestore");
 const M = require("./microsoft-email-model");
 const { createMicrosoftEmail, TRACE_WINDOW, RECIPIENT_BUCKET, RECIPIENT_WINDOW } = require("./microsoft-email");
+const { amendRecentUnclaimed } = require("./microsoft-email-amendment");
 const { createUserIssues } = require("./user-issues");
 const { createTraceReader, createFlowTransport, createTokenProvider, createMicrosoftProvider, flowEndpoint } = require("./microsoft-email-transport");
 const AT = Date.parse("2026-10-02T02:00:00Z"), ID = "a".repeat(64), PATH = `userIssueOutbox/${ID}`;
@@ -18,17 +19,28 @@ class QueueFirestore extends FakeFirestore {
     return adapt(super.collection(name));
   }
 }
-function fixture() {
+function fixture({ historicalClaim = false } = {}) {
   let time = AT;
   const payload = { from: "PoseTek Support <support@alerts.posetek.net>", to: [...M.RECIPIENTS], subject: "Issue observed", text: "Protected context <private>" };
   const db = new QueueFirestore({ [M.SETTINGS]: config(), "userIssueSettings/current": { enabled: true, sendEnabled: true, activatedAtMillis: AT - 1, emailProvider: "microsoft" },
     [PATH]: { id: ID, type: "incident", createdAtMillis: AT, status: "pending", dueAtMillis: AT, firstAttemptAtMillis: AT, attempts: 1, ...M.freeze("issue", ID, payload, config(), AT) } });
+  if (historicalClaim) {
+    const job = db.snapshot(PATH);
+    db.write(PATH, { payload: { ...job.payload, to: [...M.HISTORICAL_ISSUE_RECIPIENTS] }, status: "sending", dueAtMillis: null,
+      microsoft: { ...job.microsoft, claimedAtMillis: AT, runId: "run-1", claimTokenHash: M.hash("c".repeat(64)), traceUntilMillis: AT + TRACE_WINDOW } }, { merge: true });
+  }
   const errors = [], traces = [];
   const service = createMicrosoftEmail({ db, now: () => time, traceReader: { read: async () => ({ rows: traces, checkedAtMillis: time }) }, logger: { error: (...a) => errors.push(a) } });
   const request = { schemaVersion: 1, kind: "issue", jobId: ID, runId: "run-1" };
-  return { db, service, request, errors, traces, now: () => time, advance: ms => { time += ms; }, job: () => db.snapshot(PATH) };
+  return { db, service, request, errors, traces, historicalClaim, now: () => time, advance: ms => { time += ms; }, job: () => db.snapshot(PATH) };
 }
-async function claimed(f) { return f.service.claim(f.request); }
+async function claimed(f) {
+  if (f.historicalClaim) {
+    assert.equal((await f.service.claim(f.request)).allowSend, false, "historical permission is never granted again");
+    return { ...f.request, claimToken: "c".repeat(64) };
+  }
+  return f.service.claim(f.request);
+}
 const receipt = (f, c, outcome = "accepted") => ({ ...f.request, claimToken: c.claimToken, outcome });
 const row = (f, to, status = "delivered", patch = {}) => ({ id: `trace-${to}`, messageId: "<single-message@posetek.net>", senderAddress: "alerts@posetek.net", recipientAddress: to,
   subject: f.job().payload.subject, receivedDateTime: new Date(AT).toISOString(), status, ...patch });
@@ -42,15 +54,15 @@ test("new Microsoft route fails closed; all attempted legacy payloads stay on Re
   assert.equal(M.providerFor({ deliveryProvider: "other" }, {}), null);
 });
 
-test("new Microsoft issue messages require all three teammates and workout messages require only Dylan", () => {
+test("new Microsoft issue and workout messages require Dylan alone", () => {
   const payload = { subject: "Synthetic recipient configuration", text: "Test only" };
-  for (const to of [M.RECIPIENTS.slice(0, 1), M.RECIPIENTS.slice(0, 2), [M.RECIPIENTS[0], M.RECIPIENTS[0], M.RECIPIENTS[2]], [...M.RECIPIENTS, "other@posetek.net"]]) {
+  for (const to of [[], M.HISTORICAL_ISSUE_RECIPIENTS, [M.RECIPIENTS[0], M.RECIPIENTS[0]], [...M.RECIPIENTS, "other@posetek.net"]]) {
     assert.throws(() => M.freeze("issue", ID, { ...payload, to }, config(), AT), { code: "provider_recipient_invalid" });
   }
   assert.deepEqual(M.freeze("issue", ID, { ...payload, to: [...M.RECIPIENTS].reverse() }, config(), AT).payload.to, [...M.RECIPIENTS].reverse());
   const workoutId = `${ID}_terminal`;
-  assert.throws(() => M.freeze("workout", workoutId, { ...payload, to: [...M.RECIPIENTS] }, config(), AT), { code: "provider_recipient_invalid" });
-  assert.throws(() => M.freeze("workout", workoutId, { ...payload, to: [M.RECIPIENTS[1]] }, config(), AT), { code: "provider_recipient_invalid" });
+  assert.throws(() => M.freeze("workout", workoutId, { ...payload, to: [...M.HISTORICAL_ISSUE_RECIPIENTS] }, config(), AT), { code: "provider_recipient_invalid" });
+  assert.throws(() => M.freeze("workout", workoutId, { ...payload, to: [M.HISTORICAL_ISSUE_RECIPIENTS[1]] }, config(), AT), { code: "provider_recipient_invalid" });
   assert.deepEqual(M.freeze("workout", workoutId, { ...payload, to: [M.RECIPIENTS[0]] }, config(), AT).payload.to, [M.RECIPIENTS[0]]);
 });
 test("concurrent and repeated claims yield exactly one send permission, including lost-response recovery", async () => {
@@ -76,7 +88,7 @@ test("receipts authenticate the exact consumed claim; accepted never means deliv
   await assert.rejects(f.service.receipt({ ...receipt(f, c), outcome: "delivered" }), { code: "email_invalid_request" });
   await f.service.receipt(receipt(f, c)); f.advance(1000); assert.equal((await f.service.receipt(receipt(f, c))).duplicate, true);
   assert.equal(f.job().status, "accepted"); assert.equal(f.job().deliveredAtMillis, undefined);
-  assert.deepEqual(Object.values(f.job().recipientDelivery).map(v => v.status), ["accepted", "accepted", "accepted"]);
+  assert.deepEqual(Object.values(f.job().recipientDelivery).map(v => v.status), ["accepted"]);
 });
 test("unknown Outlook outcome holds the job; later authentic trace can resolve it", async () => {
   const f = fixture(), c = await claimed(f); await f.service.receipt(receipt(f, c, "uncertain"));
@@ -87,12 +99,12 @@ test("unknown Outlook outcome holds the job; later authentic trace can resolve i
   assert.equal(f.job().deliveredAtMillis, undefined, "Exchange received time is not a delivery timestamp");
 });
 test("per-recipient trace remains partial and preserves failures; late flow receipt cannot overwrite it", async () => {
-  const f = fixture(), c = await claimed(f); f.advance(300000);
+  const f = fixture({ historicalClaim: true }), c = await claimed(f); f.advance(300000);
   await f.service.applyTrace("issue", ID, { rows: [row(f, M.RECIPIENTS[0])], checkedAtMillis: f.now() });
   assert.notEqual(f.job().status, "delivered");
   await f.service.receipt(receipt(f, c)); assert.equal(f.job().status, "accepted");
   f.advance(300000);
-  await f.service.applyTrace("issue", ID, { rows: [row(f, M.RECIPIENTS[1], "failed"), row(f, M.RECIPIENTS[2])], checkedAtMillis: f.now() });
+  await f.service.applyTrace("issue", ID, { rows: [row(f, M.HISTORICAL_ISSUE_RECIPIENTS[1], "failed"), row(f, M.HISTORICAL_ISSUE_RECIPIENTS[2])], checkedAtMillis: f.now() });
   assert.equal(f.job().status, "failed"); assert.equal(f.job().recipientDelivery[M.RECIPIENTS[0]].status, "delivered");
 });
 test("trace matching requires exact subject, approved sender, destination and time", async () => {
@@ -102,8 +114,8 @@ test("trace matching requires exact subject, approved sender, destination and ti
   assert.deepEqual(f.job().recipientDelivery, {}); assert.notEqual(f.job().status, "delivered");
 });
 test("multiple message identities with the same correlation hold instead of claiming delivery", async () => {
-  const f = fixture(), c = await claimed(f); f.advance(300000);
-  await f.service.applyTrace("issue", ID, { rows: [row(f, M.RECIPIENTS[0]), row(f, M.RECIPIENTS[1], "delivered", { messageId: "<duplicate@posetek.net>" })], checkedAtMillis: f.now() });
+  const f = fixture({ historicalClaim: true }), c = await claimed(f); f.advance(300000);
+  await f.service.applyTrace("issue", ID, { rows: [row(f, M.RECIPIENTS[0]), row(f, M.HISTORICAL_ISSUE_RECIPIENTS[1], "delivered", { messageId: "<duplicate@posetek.net>" })], checkedAtMillis: f.now() });
   assert.equal(f.job().status, "needs_review"); assert.equal(f.job().microsoft.traceAmbiguous, true);
   await f.service.receipt(receipt(f, c)); assert.equal(f.job().status, "needs_review");
   assert.equal(f.job().microsoftTraceDueAtMillis, null);
@@ -138,8 +150,8 @@ test("global send budget defers excess claims without consuming permission or ex
 
 test("rolling recipient budget counts mixed issue/workout recipients globally and preserves denied work", async () => {
   const f = fixture(), budgetRef = f.db.doc("microsoftEmailState/sendBudget");
-  await budgetRef.set({ claimTimes: [], recipientBuckets: [{ start: AT, count: 8996 }] });
-  const issue = await claimed(f); assert.equal(issue.allowSend, true); // Three recipients: 8999.
+  await budgetRef.set({ claimTimes: [], recipientBuckets: [{ start: AT, count: 8998 }] });
+  const issue = await claimed(f); assert.equal(issue.allowSend, true); // Dylan only: 8999.
   const workoutId = `${"b".repeat(64)}_terminal`, logPath = "players/synthetic/workoutLogs/synthetic";
   const log = { completed: true, activeSeconds: 5 };
   await f.db.doc(logPath).set(log);
@@ -164,7 +176,7 @@ test("rolling recipient budget counts mixed issue/workout recipients globally an
 
 test("recipient limit uses a conservative partial boundary bucket, not a midnight reset", async () => {
   const f = fixture(), bucket = AT - RECIPIENT_WINDOW;
-  await f.db.doc("microsoftEmailState/sendBudget").set({ claimTimes: [], recipientBuckets: [{ start: bucket, count: 8998 }] });
+  await f.db.doc("microsoftEmailState/sendBudget").set({ claimTimes: [], recipientBuckets: [{ start: bucket, count: 9000 }] });
   f.advance(60000); // The oldest minute expired, but this 15-minute bucket still overlaps the day.
   assert.equal((await claimed(f)).allowSend, false);
   f.advance(RECIPIENT_BUCKET - 60001);
@@ -219,7 +231,7 @@ test("Graph trace completes pages before returning and never sends bearer creden
   const requests = [];
   const next = "https://graph.microsoft.com/v1.0/admin/exchange/tracing/messageTraces?$skiptoken=page2";
   const reader = createTraceReader({ now: f.now, getAccessToken: async () => "private-token", fetchImpl: async (url, opts) => {
-    requests.push({ url, opts }); return { ok: true, json: async () => requests.length === 1 ? { value: [row(f, M.RECIPIENTS[0])], "@odata.nextLink": next } : { value: [row(f, M.RECIPIENTS[1])] } };
+    requests.push({ url, opts }); return { ok: true, json: async () => requests.length === 1 ? { value: [row(f, M.RECIPIENTS[0])], "@odata.nextLink": next } : { value: [row(f, M.HISTORICAL_ISSUE_RECIPIENTS[1])] } };
   } });
   assert.equal((await reader.read(f.job())).rows.length, 2);
   assert.match(new URL(requests[0].url).searchParams.get("$filter"), /receivedDateTime ge .* and receivedDateTime le .*senderAddress eq 'alerts@posetek.net'/);
@@ -251,4 +263,108 @@ test("Resend callback cannot settle a Microsoft job even with matching tag and p
   const f = fixture(), issues = createUserIssues({ db: f.db, HttpsError, now: f.now });
   await issues.webhook({ id: "old-webhook", event: { type: "email.delivered", created_at: new Date(AT).toISOString(), data: { email_id: "old", from: "support@alerts.posetek.net", to: [M.RECIPIENTS[0]], tags: { posetek_issue_outbox: ID } } } });
   assert.equal(f.job().status, "pending");
+});
+
+async function legacyUnclaimed(f) {
+  await f.db.doc(PATH).update({ title: "Synthetic old issue", lines: ["Affected user: Target Athlete (staff)", "Operation: test_operation"],
+    payload: { ...f.job().payload, to: [...M.HISTORICAL_ISSUE_RECIPIENTS] }, failureCode: "provider_flow_http_502", failureMessage: "Original frozen failure", leaseUntilMillis: 0 });
+  f.advance(2);
+}
+const amendmentInput = f => ({ jobId: ID, expectedOriginalDigest: M.payloadDigest(f.job().payload), authorizationId: "approved-refinement-test",
+  lowerBoundMillis: AT - 1, upperBoundMillis: AT + 1 });
+test("pre-send recipient removal holds an old unconsumed envelope before any quota or send permission", async () => {
+  const f = fixture(); await legacyUnclaimed(f);
+  const before = f.job();
+  assert.equal((await claimed(f)).allowSend, false);
+  assert.equal(f.job().status, "needs_review"); assert.equal(f.job().failureCode, "provider_recipient_removed");
+  assert.deepEqual(f.job().payload, before.payload); assert.equal(f.job().microsoft.claimedAtMillis, undefined);
+  assert.equal(f.db.snapshot("microsoftEmailState/sendBudget"), undefined);
+});
+test("issue dispatcher holds frozen removed recipients before a provider wakeup or Resend API call", async () => {
+  for (const deliveryProvider of ["microsoft", "resend"]) {
+    const f = fixture(); await legacyUnclaimed(f); await f.db.doc(PATH).update({ deliveryProvider });
+    let sends = 0; const issues = createUserIssues({ db: f.db, HttpsError, now: f.now, logger: { error: () => {} }, provider: { send: async () => { sends++; return { id: "should-not-send" }; } } });
+    const original = f.job().payload; await issues.dispatch(ID);
+    assert.equal(sends, 0); assert.equal(f.job().failureCode, "provider_recipient_removed"); assert.deepEqual(f.job().payload, original);
+    assert.equal(f.job().attempts, 1); assert.equal(f.job().microsoft.claimedAtMillis, undefined);
+  }
+});
+test("audited recent unsent amendment is idempotent, keeps originals, and consumes exactly one recipient", async () => {
+  const f = fixture(); await legacyUnclaimed(f); await f.db.doc("userIssueSettings/current").update({ sendEnabled: false });
+  const before = f.job(), input = amendmentInput(f);
+  const dry = await amendRecentUnclaimed({ db: f.db, input, now: f.now });
+  assert.equal(dry.eligible, true); assert.equal(dry.applied, false); assert.deepEqual(f.job(), before);
+  const results = await Promise.all([amendRecentUnclaimed({ db: f.db, input, now: f.now, dryRun: false }), amendRecentUnclaimed({ db: f.db, input, now: f.now, dryRun: false })]);
+  assert.equal(results.filter(result => result.applied).length, 1); assert.equal(results.filter(result => result.duplicate).length, 1);
+  assert.deepEqual(f.job().payload, before.payload); assert.equal(f.job().attempts, before.attempts); assert.equal(f.job().firstAttemptAtMillis, before.firstAttemptAtMillis);
+  assert.equal(f.job().deliveryAmendment.previousDeliveryState.failureCode, "provider_flow_http_502");
+  await f.db.doc("userIssueSettings/current").update({ sendEnabled: true });
+  const c = await claimed(f); assert.equal(c.to, M.RECIPIENTS[0]); assert.equal(f.job().microsoft.claimRecipients.length, 1);
+  assert.equal(f.db.snapshot("microsoftEmailState/sendBudget").recipientBuckets.reduce((sum, bucket) => sum + bucket.count, 0), 1);
+  await f.service.receipt(receipt(f, c));
+  assert.deepEqual(Object.keys(f.job().recipientDelivery), M.RECIPIENTS);
+  f.advance(300000);
+  await f.service.applyTrace("issue", ID, { rows: [row(f, M.RECIPIENTS[0]), row(f, "nolanj@posetek.net", "failed")], checkedAtMillis: f.now() });
+  assert.equal(f.job().status, "delivered"); assert.equal(f.job().recipientDelivery["nolanj@posetek.net"], undefined);
+  const completed = f.job(); assert.equal((await amendRecentUnclaimed({ db: f.db, input, now: f.now, dryRun: false })).duplicate, true);
+  assert.deepEqual(f.job(), completed); assert.equal((await claimed(f)).allowSend, false);
+});
+test("recent amendment regenerates an audited exact-account body without changing the original envelope", async () => {
+  const f = fixture(); await legacyUnclaimed(f); await f.db.doc("userIssueSettings/current").update({ sendEnabled: false });
+  await f.db.doc(PATH).update({ issueId: "synthetic-issue", actorUid: "staff" });
+  await f.db.doc(`userIssueOccurrences/${ID}`).set({ issueId: "synthetic-issue", reporterUid: "staff", operation: "test_operation",
+    source: "application", player: { id: "athlete-id", name: "Target Athlete" },
+    currentContact: { schemaVersion: 1, uid: "staff", source: "firebase_admin_auth", name: "Account Staff", email: "staff@example.com", emailVerified: true, observedAtMillis: AT } });
+  const original = f.job().payload, result = await amendRecentUnclaimed({ db: f.db, input: amendmentInput(f), now: f.now, dryRun: false });
+  assert.equal(result.applied, true); assert.deepEqual(f.job().payload, original);
+  const payload = M.effectiveDeliveryPayload(f.job()); assert.equal(payload.subject, original.subject); assert.equal(payload.from, original.from);
+  assert.match(payload.text, /Account\/reporter: Account Staff \(staff\)/); assert.match(payload.text, /Contact email: staff@example\.com \(email verified\)/);
+  assert.match(payload.text, /Target athlete: Target Athlete \(athlete-id\)/); assert.doesNotMatch(payload.text, /Affected user:/);
+  assert.equal(f.job().deliveryAmendment.renderSource.occurrenceId, ID);
+});
+test("amendment refuses every consumed-send signal, original conflict, other provider, receipt or outside-window job", async () => {
+  for (const patch of [{ acceptedAtMillis: AT }, { providerId: "receipt" }, { recipientDelivery: { "nolanj@posetek.net": { status: "accepted" } } },
+    { microsoft: { runId: "already-run" } }, { microsoft: { claimTokenHash: "a".repeat(64) } }, { microsoft: { claimedAtMillis: AT } },
+    { microsoft: { receiptUncertainAtMillis: AT } }, { microsoft: { internetMessageId: "<sent@posetek.net>" } }, { microsoft: { traceCheckedAtMillis: AT } }]) {
+    const f = fixture(); await legacyUnclaimed(f); await f.db.doc("userIssueSettings/current").update({ sendEnabled: false });
+    await f.db.doc(PATH).update({ ...patch, ...(patch.microsoft ? { microsoft: { ...f.job().microsoft, ...patch.microsoft } } : {}) });
+    const before = f.job(), answer = await amendRecentUnclaimed({ db: f.db, input: amendmentInput(f), now: f.now, dryRun: false });
+    assert.equal(answer.reason, "amendment_send_evidence_present"); assert.deepEqual(f.job(), before);
+  }
+  for (const patch of [{ deliveryProvider: "resend" }, { createdAtMillis: AT - 2 }, { status: "delivered" }, { leaseUntilMillis: AT + 1000 }]) {
+    const f = fixture(); await legacyUnclaimed(f); await f.db.doc("userIssueSettings/current").update({ sendEnabled: false }); await f.db.doc(PATH).update(patch);
+    const before = f.job(), answer = await amendRecentUnclaimed({ db: f.db, input: amendmentInput(f), now: f.now, dryRun: false });
+    assert.equal(answer.applied, false); assert.ok(answer.reason); assert.deepEqual(f.job(), before);
+  }
+  const f = fixture(); await legacyUnclaimed(f); await f.db.doc("userIssueSettings/current").update({ sendEnabled: false });
+  await f.db.doc(`${PATH}/receipts/original`).set({ type: "sent" });
+  assert.equal((await amendRecentUnclaimed({ db: f.db, input: amendmentInput(f), now: f.now, dryRun: false })).reason, "amendment_send_evidence_present");
+  await assert.rejects(amendRecentUnclaimed({ db: f.db, input: { ...amendmentInput(f), expectedOriginalDigest: "f".repeat(64) }, now: f.now, dryRun: false }), { code: "amendment_original_changed" });
+});
+test("a consumed amendment keeps its frozen body when a later formatter changes", async () => {
+  const f = fixture(); await legacyUnclaimed(f); await f.db.doc("userIssueSettings/current").update({ sendEnabled: false });
+  await f.db.doc(PATH).update({ issueId: "synthetic-issue", actorUid: "staff" });
+  await f.db.doc(`userIssueOccurrences/${ID}`).set({ issueId: "synthetic-issue", reporterUid: "staff", operation: "test_operation", source: "application" });
+  await amendRecentUnclaimed({ db: f.db, input: amendmentInput(f), now: f.now, dryRun: false });
+  await f.db.doc("userIssueSettings/current").update({ sendEnabled: true });
+  const c = await claimed(f), frozen = M.effectiveDeliveryPayload(f.job());
+  const formatter = require("./user-issue-model"), saved = formatter.payload;
+  formatter.payload = () => { throw Error("A future formatter must not run for an already consumed permission"); };
+  try { assert.deepEqual(M.effectiveDeliveryPayload(f.job()), frozen); await f.service.receipt(receipt(f, c)); }
+  finally { formatter.payload = saved; }
+  assert.deepEqual(Object.keys(f.job().recipientDelivery), M.RECIPIENTS);
+});
+test("invalid amended body holds without permission; historical consumed recipients and claim snapshots cannot be rewritten", async () => {
+  const f = fixture(); await legacyUnclaimed(f); await f.db.doc("userIssueSettings/current").update({ sendEnabled: false });
+  await amendRecentUnclaimed({ db: f.db, input: amendmentInput(f), now: f.now, dryRun: false });
+  const amendment = f.job().deliveryAmendment, forged = { ...amendment.payload, text: "Forged body" };
+  const effectivePayloadDigest = M.payloadDigest(forged);
+  await f.db.doc(PATH).update({ deliveryAmendment: { ...amendment, payload: forged, effectivePayloadDigest,
+    id: M.deliveryAmendmentId(amendment.jobId, amendment.originalPayloadDigest, effectivePayloadDigest, amendment.approvedFromMillis, amendment.approvedCutoffMillis, amendment.authorizationId) } });
+  await f.db.doc("userIssueSettings/current").update({ sendEnabled: true });
+  assert.equal((await claimed(f)).allowSend, false); assert.equal(f.job().failureCode, "provider_delivery_amendment_invalid");
+  const old = fixture({ historicalClaim: true }), c = await claimed(old), originalTo = [...old.job().payload.to];
+  await old.service.receipt(receipt(old, c)); assert.deepEqual(Object.keys(old.job().recipientDelivery), originalTo);
+  await old.service.applyTrace("issue", ID, { rows: [row(old, originalTo[0])], checkedAtMillis: old.now() });
+  assert.notEqual(old.job().status, "delivered", "removing recipients never converts historical partial delivery into all delivered");
 });

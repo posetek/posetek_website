@@ -39,13 +39,24 @@ function createMicrosoftEmail({ db, now = Date.now, randomToken = () => crypto.r
       const at = now(), ref = refFor(data.kind, data.jobId);
       const config = (await tx.get(db.doc(M.SETTINGS))).data(), settings = (await tx.get(db.doc(M.DOMAIN_SETTINGS[data.kind]))).data();
       const job = (await tx.get(ref)).data();
-      if (!job || job.deliveryProvider !== "microsoft" || !job.microsoft || !job.payload || !job.firstAttemptAtMillis || job.microsoft.claimedAtMillis
+      if (!job || job.deliveryProvider !== "microsoft" || !job.microsoft || !job.payload || !job.firstAttemptAtMillis || M.hasSendEvidence(job)
         || !["pending", "sending"].includes(job.status)
         || !M.enabled(config, data.kind, data.jobId, job.createdAtMillis, at) || !domainAllows(data.kind, settings, job, at)) return { schemaVersion: 1, allowSend: false };
+      let payload;
+      try { payload = M.effectiveDeliveryPayload(job); } catch (error) {
+        tx.update(ref, { status: "needs_review", [M.deadlineField(data.kind)]: null, leaseId: null,
+          failureCode: error.code, failureMessage: "The audited delivery envelope is invalid; no send permission was consumed." });
+        return { schemaVersion: 1, allowSend: false };
+      }
+      if (!M.onlyDylan(payload)) {
+        tx.update(ref, { status: "needs_review", [M.deadlineField(data.kind)]: null, leaseId: null,
+          failureCode: "provider_recipient_removed", failureMessage: "The frozen destination includes a removed recipient; no send permission was consumed." });
+        return { schemaVersion: 1, allowSend: false };
+      }
       const budgetRef = db.doc("microsoftEmailState/sendBudget"), budget = (await tx.get(budgetRef)).data();
       const times = (budget?.claimTimes || []).filter(value => Number.isSafeInteger(value) && value > at - 300000);
       if (times.length >= SEND_BUDGET) return { schemaVersion: 1, allowSend: false, deferred: true };
-      const recipientBuckets = recipientBudget(budget, at, job.payload.to.length);
+      const recipientBuckets = recipientBudget(budget, at, payload.to.length);
       if (!recipientBuckets) return { schemaVersion: 1, allowSend: false, deferred: true };
       const guard = job.microsoft.sourceGuard;
       if (data.kind === "workout") {
@@ -61,13 +72,14 @@ function createMicrosoftEmail({ db, now = Date.now, randomToken = () => crypto.r
       // response intentionally requires review; repeating even the same run ID
       // cannot recover another send permission.
       const token = randomToken();
-      const microsoft = { ...job.microsoft, claimedAtMillis: at, runId: data.runId, claimTokenHash: M.hash(token), traceUntilMillis: at + TRACE_WINDOW };
+      const microsoft = { ...job.microsoft, claimedAtMillis: at, runId: data.runId, claimTokenHash: M.hash(token), traceUntilMillis: at + TRACE_WINDOW,
+        claimPayloadDigest: M.payloadDigest(payload), claimRecipients: [...payload.to], deliveryAmendmentId: job.deliveryAmendment?.id || null };
       tx.set(budgetRef, { claimTimes: [...times, at], recipientBuckets });
       tx.update(ref, { microsoft, status: "sending", [M.deadlineField(data.kind)]: null, leaseId: null,
         microsoftTraceDueAtMillis: at + 300000, failureCode: null, failureMessage: null });
       return { schemaVersion: 1, allowSend: true, kind: data.kind, jobId: data.jobId, runId: data.runId, claimToken: token,
-        correlation: microsoft.correlation, fromMailbox: microsoft.senderMailbox, to: job.payload.to.join(";"), subject: job.payload.subject,
-        html: job.payload.html || `<div style="white-space:pre-wrap">${escape(job.payload.text)}</div>` };
+        correlation: microsoft.correlation, fromMailbox: microsoft.senderMailbox, to: payload.to.join(";"), subject: payload.subject,
+        html: payload.html || `<div style="white-space:pre-wrap">${escape(payload.text)}</div>` };
     });
   }
   async function receipt(data) {
@@ -76,11 +88,12 @@ function createMicrosoftEmail({ db, now = Date.now, randomToken = () => crypto.r
       const ref = refFor(data.kind, data.jobId), job = (await tx.get(ref)).data(), at = now();
       if (!job || job.deliveryProvider !== "microsoft" || !job.microsoft?.claimedAtMillis || job.microsoft.runId !== data.runId
         || !M.authenticate(M.hash(data.claimToken), job.microsoft.claimTokenHash)) M.fail("email_claim_mismatch");
+      const payload = M.effectiveDeliveryPayload(job);
       const field = data.outcome === "accepted" ? "receiptAcceptedAtMillis" : "receiptUncertainAtMillis";
       if (job.microsoft[field]) return { schemaVersion: 1, recorded: true, duplicate: true };
       const deliveries = { ...job.recipientDelivery };
-      if (data.outcome === "accepted") for (const to of job.payload.to) if (!deliveries[to]) deliveries[to] = { status: "accepted", at, evidence: "flow_action" };
-      const status = data.outcome === "accepted" ? M.aggregate(job.payload.to, deliveries) : job.acceptedAtMillis || Object.keys(deliveries).length ? job.status : "needs_review";
+      if (data.outcome === "accepted") for (const to of payload.to) if (!deliveries[to]) deliveries[to] = { status: "accepted", at, evidence: "flow_action" };
+      const status = data.outcome === "accepted" ? M.aggregate(payload.to, deliveries) : job.acceptedAtMillis || Object.keys(deliveries).length ? job.status : "needs_review";
       const finalStatus = job.microsoft.traceAmbiguous === true ? "needs_review" : status;
       tx.update(ref, { microsoft: { ...job.microsoft, [field]: at }, recipientDelivery: deliveries,
         status: finalStatus,
@@ -96,13 +109,14 @@ function createMicrosoftEmail({ db, now = Date.now, randomToken = () => crypto.r
     return db.runTransaction(async tx => {
       const ref = refFor(kind, id), job = (await tx.get(ref)).data(), at = now();
       if (job?.deliveryProvider !== "microsoft" || !job.microsoft?.claimedAtMillis) return;
-      const send = job.microsoft, rows = result.rows.filter(row => row && row.subject === job.payload.subject
-        && String(row.senderAddress).toLowerCase() === send.senderMailbox && job.payload.to.includes(String(row.recipientAddress).toLowerCase())
+      const payload = M.effectiveDeliveryPayload(job);
+      const send = job.microsoft, rows = result.rows.filter(row => row && row.subject === payload.subject
+        && String(row.senderAddress).toLowerCase() === send.senderMailbox && payload.to.includes(String(row.recipientAddress).toLowerCase())
         && Number.isFinite(Date.parse(row.receivedDateTime)) && Date.parse(row.receivedDateTime) >= send.claimedAtMillis - 300000
         && Date.parse(row.receivedDateTime) <= Math.min(at, send.claimedAtMillis + 86400000));
       const invalid = rows.some(row => typeof row.messageId !== "string" || !row.messageId || row.messageId.length > 1000 || typeof row.id !== "string" || !row.id || row.id.length > 200);
       const messageIds = new Set(rows.map(row => row.messageId));
-      const contradictory = job.payload.to.some(to => new Set(rows.filter(row => String(row.recipientAddress).toLowerCase() === to).map(row => row.status)).size > 1);
+      const contradictory = payload.to.some(to => new Set(rows.filter(row => String(row.recipientAddress).toLowerCase() === to).map(row => row.status)).size > 1);
       const ambiguous = invalid || contradictory || messageIds.size > 1 || send.internetMessageId && rows.some(row => row.messageId !== send.internetMessageId);
       const deliveries = { ...job.recipientDelivery };
       if (!ambiguous) for (const row of rows) {
@@ -113,8 +127,8 @@ function createMicrosoftEmail({ db, now = Date.now, randomToken = () => crypto.r
           exchangeReceivedAtMillis: Date.parse(row.receivedDateTime), traceStatus: row.status, traceId: row.id, evidence: "microsoft_trace" };
       }
       const expired = at >= send.traceUntilMillis;
-      const missing = job.payload.to.some(to => !["delivered", "failed", "suppressed", "bounced"].includes(deliveries[to]?.status));
-      const status = ambiguous || send.traceAmbiguous || expired && missing ? "needs_review" : rows.length ? M.aggregate(job.payload.to, deliveries, "needs_review")
+      const missing = payload.to.some(to => !["delivered", "failed", "suppressed", "bounced"].includes(deliveries[to]?.status));
+      const status = ambiguous || send.traceAmbiguous || expired && missing ? "needs_review" : rows.length ? M.aggregate(payload.to, deliveries, "needs_review")
         : !job.acceptedAtMillis && at >= send.claimedAtMillis + RECEIPT_WAIT ? "needs_review" : job.status;
       const settled = status === "delivered";
       tx.update(ref, { status, recipientDelivery: deliveries, microsoft: { ...send, traceCheckedAtMillis: result.checkedAtMillis,

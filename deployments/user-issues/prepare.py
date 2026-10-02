@@ -12,7 +12,7 @@ ENDPOINTS = ('submitUserIssue', 'getUserIssues', 'updateUserIssue', 'observeIssu
              'observeIssueDiagnostic', 'observeIssueLog', 'dispatchUserIssue', 'sweepUserIssues', 'dailyUserIssues')
 CALLABLES = ENDPOINTS[:3]
 FILES = ('user-issues.js', 'user-issue-model.js', 'user-issue-sources.js', 'user-issue-entrypoints.js',
-         'microsoft-email-model.js', 'microsoft-email-transport.js',
+         'microsoft-email-model.js', 'microsoft-email-transport.js', 'microsoft-email-amendment.js', 'user-issue-contacts.js',
          'workout-notifications-provider.js', 'club-access.js', 'athlete-storage-paths.js', 'package.json', 'package-lock.json')
 
 def definitions():

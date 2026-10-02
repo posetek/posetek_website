@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "project": "kickai-69dd0",
+  "region": "us-central1",
+  "date": "2026-10-02",
+  "purpose": "Dylan-only notifications, exact-account outreach details and native tracker recovery",
+  "acceptance": {
+    "complete": false,
+    "remaining": [
+      "Drain existing native publication queue",
+      "Verify fresh cloud workbook bytes, current contact annotations and saved human edits against the exact applied backend chain"
+    ]
+  },
+  "recipients": {
+    "newIssueStatusDailyAndWorkout": [
+      "dylank@posetek.net"
+    ],
+    "googleCloudPolicyCount": 2,
+    "googleCloudRecipients": [
+      "dylank@posetek.net"
+    ],
+    "preserveHistoricalRecipientsReceiptsAndConsumedClaims": true,
+    "sharedWorkbookEditors": [
+      "dylank@posetek.net",
+      "nolanj@posetek.net",
+      "taiyow@posetek.net"
+    ],
+    "automaticOutreach": false
+  },
+  "resources": {
+    "emailFlow": "015cd141-794f-4592-a1e1-886fa2b2484f",
+    "emailFlowState": "On",
+    "sender": "alerts@posetek.net",
+    "writerFlow": "b011912f-bb15-453f-92ef-761d223095b4",
+    "writerFlowState": "On",
+    "mailArrivalFlow": "6956b87e-6556-4ab6-8709-ac866cf417b2",
+    "mailReadFlow": "950eee98-d71a-48b8-b0b3-5fa5f2bd3c31",
+    "mailReadProvider": "power_automate",
+    "graphMailboxVerified": false,
+    "workbookKey": "posetek-shared-issue-tracker-v1",
+    "workbookFolder": "PoseTek > Technology > Website > User Issue Tracker",
+    "workbookFilename": "PoseTek Issue Tracker.xlsx",
+    "nativeScriptSha256": "7cb0931b09cc8856efdf1f5042e088b2c4bc9d2282a203c943defd79ba4b5f28",
+    "nativeScriptAndWorkbookSchemaChanged": false,
+    "hourlyCodexAutomation": "PAUSED",
+    "cloudQueue": "RUNNING",
+    "licensedOwner": "dylank@posetek.net",
+    "additionalPurchase": false
+  },
+  "deployments": {
+    "userIssues": {
+      "functions": 10,
+      "version": "5",
+      "state": "ACTIVE",
+      "actualSourceSha256": "6191a975632facf327699f6625cbf865784b32422a1bc52e2099121a9916b696",
+      "actualArchiveAndConfigurationVerified": true,
+      "cliExit": 0
+    },
+    "microsoftEmail": {
+      "functions": 3,
+      "version": "2",
+      "state": "ACTIVE",
+      "actualSourceSha256": "4344836c43ee59801d154b3676fa84e0469d7a2c1694ff381362e0ec4592a90f",
+      "actualArchiveAndConfigurationVerified": true,
+      "cliExit": 0
+    },
+    "issueTracker": {
+      "functions": 6,
+      "version": "2",
+      "state": "ACTIVE",
+      "actualSourceSha256": "5569bf6cdac4b90277eb6875c66fe426b26a6f99d2adc602d27443372098dffc",
+      "actualArchiveAndConfigurationVerified": true,
+      "cliExit": 2,
+      "cliLimitation": "Post-deployment invoker inspection failed for the task worker. Read-only supplemental verification confirmed only empty-policy version/etag metadata normalization, with no binding, principal, permission or other configuration change."
+    },
+    "preservation": {
+      "existingFunctionInventory": 120,
+      "regionalSchedulerInventory": 7,
+      "functionAccessAndUnrelatedFunctionsPreserved": true,
+      "trackerSecretVersionsPreserved": 9,
+      "rulesChanged": false,
+      "websiteOrNativeDeployment": false
+    }
+  },
+  "identity": {
+    "source": "Exact recorded reporter Auth UID; server Firebase Admin Auth lookup",
+    "backfilledOccurrences": 101,
+    "distinctAuthAccounts": 7,
+    "accountsWithVerifiedEmail": 3,
+    "accountsWithUnverifiedEmail": 4,
+    "occurrencesWithVerifiedEmail": 84,
+    "occurrencesWithUnverifiedEmail": 17,
+    "missingAuthDisplayNames": 7,
+    "uploaderOrReporterOnlyOccurrences": 64,
+    "otherCloudLoggingRecordsWithNoRecordedUid": 995,
+    "historicalNonContactFieldsUnchanged": true,
+    "failedLookupRetryMinutes": 15,
+    "currentContactRefreshHours": 24,
+    "currentContactLookupTimeoutSeconds": 5,
+    "reconciliationPageSize": 20,
+    "clientIdentityInputTrusted": false,
+    "targetAthleteSeparate": true,
+    "unknownOperatorRemainsUnknown": true,
+    "liveAuditNote": "Counts reflect the fixed pre-backfill review and are not total identified-user coverage. No missing Auth display name was invented."
+  },
+  "recentMicrosoftRecovery": {
+    "fromInclusiveUtc": "2026-10-02T20:32:00.000Z",
+    "throughExclusiveUtc": "2026-10-02T21:16:12.577Z",
+    "reviewedWithFullPagination": true,
+    "transactionallyRecheckedUnconsumed": true,
+    "amended": 11,
+    "duplicate": 0,
+    "heldAtApply": 0,
+    "originalPayloadsPreserved": true,
+    "effectiveRecipientSnapshots": [
+      "dylank@posetek.net"
+    ],
+    "confirmedDelivered": 11,
+    "diagnosticUploaderMessages": 9,
+    "automaticUnknownOperatorMessages": 2,
+    "historicalResendReplayed": false,
+    "outlookAcceptance": {
+      "fromUtc": "2026-10-02T21:57:00Z",
+      "throughExclusiveUtc": "2026-10-02T22:20:00Z",
+      "fixedUpperBoundChosenBeforeQuery": true,
+      "fullDayQueryPages": 1,
+      "fullDayMessagesRead": 119,
+      "postCutoverMessages": 16,
+      "allVisibleToDylanOnly": true,
+      "noCcOrBcc": true
+    },
+    "historicalFormattingNote": "Two already-created unamended service jobs sent after restoration retained their old anonymous-actor body. They do not establish the new formatter; all recovered amendments use the separate identity fields."
+  },
+  "historicalPreservationAudit": {
+    "beforeUtc": "2026-10-02T21:16:01.701Z",
+    "afterUtc": "2026-10-02T22:25:20.256Z",
+    "fullOutboxPagination": true,
+    "originalFrozenPayloadsAndProviderFieldsPreserved": 1097,
+    "priorConsumedMicrosoftClaimsPreserved": 102,
+    "priorClaimFieldsPreserved": 918,
+    "priorMicrosoftReceiptMarkersPreserved": 204,
+    "oldResendJobsWithUnchangedAttemptsAndNoNewMicrosoftClaim": 984,
+    "priorOutboxReceiptMarkersRetained": 1296,
+    "priorRecipientStateKeysRetained": 517,
+    "receiptSubcollectionsIndependentlyEnumerated": false
+  },
+  "nativeRecovery": {
+    "cloudRevisionRecovered": 87,
+    "previousBlockedBackendRevision": 86,
+    "batchId": "3e88313e-a544-430b-83bb-da2f49d8ef17",
+    "frozenPayloadSha256": "62d2afcb8ba176feb259ead84a2f625bc63b8c15f98859b7d74e10465a23a00b",
+    "freshCloudWorkbookSha256": "0286bb5837a3747899d378d912573569db1e19dc5862f57041c9a5d267111e8a",
+    "counts": {
+      "actions": 180,
+      "instances": 1016,
+      "emails": 224,
+      "daily": 1
+    },
+    "exactCachedReceiptAcknowledged": true,
+    "flowPostsForRecovery": 0,
+    "workbookWritesForRecovery": 0,
+    "reseeded": false,
+    "regenerated": false,
+    "savedHumanRecordsChecked": 180,
+    "originalHumanRecordsChecked": 23,
+    "originalHistoricalLinksChecked": 882,
+    "firstResumedAppliedRevision": 88,
+    "firstResumedBatchAttempts": 2,
+    "asyncRetryReason": "tracker_async_retry_after_deadline",
+    "identicalBatchRetries": true,
+    "invalidTerminalReceiptChecksRemainStrict": true,
+    "firstConnectorTimeoutCause": "Unconfirmed",
+    "physicalFinalReadback": null
+  },
+  "validation": {
+    "focusedBackendTests": {
+      "passed": 209,
+      "failed": 0,
+      "skipped": 0
+    },
+    "firestoreEmulator": {
+      "passed": 7,
+      "failed": 0
+    },
+    "nativeOfficeScript": {
+      "passed": 36,
+      "failed": 0,
+      "skipped": 0,
+      "includes": ["Sorted source keys", "Late owner edits", "Formula and source-link preservation", "Exact-batch lost-ack replay"]
+    },
+    "emptyIamMetadataNormalizationNegativeTests": {
+      "passed": 4,
+      "failed": 0
+    },
+    "covers": [
+      "Different staff actor and target athlete",
+      "Unknown, unverified and changed Auth accounts",
+      "Forged client identity",
+      "Retryable contact lookup failure",
+      "Frozen delivery and replay",
+      "Exact delayed email correlation",
+      "Stable IDs and sorting",
+      "Human note preservation",
+      "Identical lost-acknowledgement replay",
+      "Strict terminal receipt, conflict, revision, digest and URL rejection"
+    ]
+  },
+  "teamGuide": {
+    "publishedAndFreshCloudReadbackVerified": true,
+    "sha256": "8fa62b845f39db5c1b2f161c364051dc6fbd30e734678f6d6603d6af8cb15442",
+    "onlyGuideAndWorkbookInSharedFolder": true
+  },
+  "limitations": [
+    "Auth display names can be missing; unverified contact addresses remain labeled.",
+    "Diagnostic reporters do not prove the original affected operator.",
+    "Cloud service failures without a recorded Auth UID retain an unknown actor.",
+    "Cloud source capture and native publication have separate completeness/checkpoints.",
+    "Microsoft send acceptance and recipient-confirmed delivery remain separate."
+  ]
+}

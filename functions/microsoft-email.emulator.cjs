@@ -10,6 +10,7 @@ const { HttpsError } = require("firebase-functions/v1/https");
 const { createMicrosoftEmail } = require("./microsoft-email");
 const { createUserIssues } = require("./user-issues");
 const M = require("./microsoft-email-model");
+const { amendRecentUnclaimed } = require("./microsoft-email-amendment");
 const db = new Firestore({ projectId: PROJECT, host: HOST, ssl: false });
 const ID = "a".repeat(64), path = `userIssueOutbox/${ID}`;
 const roots = ["microsoftEmailSettings", "microsoftEmailState", "userIssueSettings", "userIssueOutbox", "workoutNotificationOutbox"];
@@ -44,10 +45,10 @@ describe("Microsoft email actual Firestore transactions", { concurrency: false, 
     assert.equal((await db.doc(`userIssueOutbox/${id}`).get()).data().status, "pending");
     at += 300001; assert.equal((await service.claim({ ...input, jobId: id, runId: "later" })).allowSend, true);
   });
-  test("concurrent different jobs cannot overrun the last three daily recipient units", async () => {
+  test("concurrent different jobs cannot overrun the last daily recipient unit", async () => {
     const other = "b".repeat(64); await seed(other);
     const { RECIPIENT_BUCKET } = require("./microsoft-email");
-    await db.doc("microsoftEmailState/sendBudget").set({ claimTimes: [], recipientBuckets: [{ start: Math.floor(at / RECIPIENT_BUCKET) * RECIPIENT_BUCKET, count: 8997 }] });
+    await db.doc("microsoftEmailState/sendBudget").set({ claimTimes: [], recipientBuckets: [{ start: Math.floor(at / RECIPIENT_BUCKET) * RECIPIENT_BUCKET, count: 8999 }] });
     const results = await Promise.all([service.claim(input), service.claim({ ...input, jobId: other, runId: "other-run" })]);
     assert.equal(results.filter(result => result.allowSend).length, 1);
     const heldId = results[0].allowSend ? other : ID, held = (await db.doc(`userIssueOutbox/${heldId}`).get()).data();
@@ -76,5 +77,34 @@ describe("Microsoft email actual Firestore transactions", { concurrency: false, 
     assert.equal(results.reduce((sum, row) => sum + row.checked, 0), 1);
     assert.equal((await db.doc(path).get()).data().status, "needs_review");
     assert.equal((await service.claim(input)).allowSend, false);
+  });
+  test("real competing amendment and claim transactions preserve the original envelope and issue only one Dylan send", async () => {
+    const ref = db.doc(path), original = (await ref.get()).data();
+    original.payload.to = [...M.HISTORICAL_ISSUE_RECIPIENTS];
+    await ref.update({ payload: original.payload });
+    await db.doc("userIssueSettings/current").update({ sendEnabled: false }); at += 2;
+    const amendment = { jobId: ID, expectedOriginalDigest: M.payloadDigest(original.payload), authorizationId: "real-emulator-approved-test",
+      lowerBoundMillis: original.createdAtMillis - 1, upperBoundMillis: original.createdAtMillis + 1 };
+    const answers = await Promise.all([amendRecentUnclaimed({ db, input: amendment, now: () => at, dryRun: false }),
+      amendRecentUnclaimed({ db, input: amendment, now: () => at, dryRun: false }), service.claim(input)]);
+    assert.equal(answers.filter(row => row.applied).length, 1); assert.equal(answers.filter(row => row.duplicate).length, 1);
+    assert.equal(answers[2].allowSend, false); assert.deepEqual((await ref.get()).data().payload, original.payload);
+    await db.doc("userIssueSettings/current").update({ sendEnabled: true });
+    const claims = await Promise.all(Array.from({ length: 4 }, (_, i) => service.claim({ ...input, runId: `amended-run-${i}` })));
+    assert.equal(claims.filter(row => row.allowSend).length, 1); const claim = claims.find(row => row.allowSend);
+    assert.equal(claim.to, "dylank@posetek.net");
+    await service.receipt({ schemaVersion: 1, kind: "issue", jobId: ID, runId: claim.runId, claimToken: claim.claimToken, outcome: "accepted" });
+    const after = (await ref.get()).data(), budget = (await db.doc("microsoftEmailState/sendBudget").get()).data();
+    assert.deepEqual(after.payload, original.payload); assert.deepEqual(Object.keys(after.recipientDelivery), ["dylank@posetek.net"]);
+    assert.equal(budget.recipientBuckets.reduce((sum, bucket) => sum + bucket.count, 0), 1);
+  });
+  test("real receipt evidence blocks recent recovery without deleting that evidence", async () => {
+    const ref = db.doc(path), job = (await ref.get()).data();
+    await db.doc("userIssueSettings/current").update({ sendEnabled: false });
+    await ref.collection("receipts").doc("retained-original").set({ type: "sent", receivedAtMillis: at }); at += 2;
+    const result = await amendRecentUnclaimed({ db, input: { jobId: ID, expectedOriginalDigest: M.payloadDigest(job.payload), authorizationId: "real-emulator-approved-test",
+      lowerBoundMillis: job.createdAtMillis - 1, upperBoundMillis: job.createdAtMillis + 1 }, now: () => at, dryRun: false });
+    assert.equal(result.reason, "amendment_send_evidence_present"); assert.deepEqual((await ref.get()).data(), job);
+    assert.equal((await ref.collection("receipts").doc("retained-original").get()).exists, true);
   });
 });

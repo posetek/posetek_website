@@ -7,7 +7,8 @@ function validMessage(message) {
   if (!validKey(message.originalId || message.id)) return false;
   for (const field of ["id", "originalId", "immutableId", "internetMessageId", "issueId"]) if (message[field] !== undefined && !validKey(message[field])) return false;
   for (const field of ["from", "sender"]) if (message[field] !== undefined && (typeof message[field] !== "string" || message[field].length > 320 || !/^[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+$/.test(message[field]))) return false;
-  if (Object.keys(message).some(key => ![...STRINGS, "aliases", "links", "body", "monitoring"].includes(key))) return false;
+  if (Object.keys(message).some(key => ![...STRINGS, "aliases", "links", "body", "monitoring", "receivedRecipients"].includes(key))) return false;
+  if (message.receivedRecipients !== undefined && (!Array.isArray(message.receivedRecipients) || message.receivedRecipients.length > 20 || message.receivedRecipients.some(value => !validKey(value, 320) || !/^[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+$/.test(value)))) return false;
   for (const field of STRINGS) if (message[field] !== undefined && (typeof message[field] !== "string" || message[field].length > (/[Ii]d$/.test(field) ? 1024 : 30000))) return false;
   for (const field of ["aliases", "links"]) if (message[field] !== undefined && (!Array.isArray(message[field]) || message[field].length > 20 || message[field].some(value => field === "aliases" ? !validKey(value) : typeof value !== "string" || value.length > 2048))) return false;
   if (message.body !== undefined && !(typeof message.body === "string" && message.body.length <= 30000) &&

@@ -1,12 +1,13 @@
 # User issue alerts
 
-The approved issue-alert recipients are `dylank@posetek.net`, `nolanj@posetek.net`
-and `taiyow@posetek.net`, independent of the email used to sign in to Resend or
-GitHub. The October 1 recipient expansion covers new incident, status-change and
-daily-summary emails. This is a separate workflow from workout notifications,
-whose recipient remains `dylank@posetek.net`.
-The sender is `PoseTek Support <support@alerts.posetek.net>`, using the existing
-verified domain, restricted Secret Manager key and signed delivery webhook.
+The approved recipient of new incident, status-change, daily-summary and workout
+emails is `dylank@posetek.net`. Nolan and Taiyo retain shared Excel editing access.
+Microsoft 365 sends application alerts from `alerts@posetek.net` through the
+existing Power Automate connection. Both PoseTek Cloud Monitoring policies also
+target Dylan only. The prior three-recipient expansion and Resend deliveries are
+historical evidence; their original envelopes and partial outcomes stay intact.
+See [the refinement receipt](../deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json)
+and [the outreach handoff](NOTIFICATION_OUTREACH_REFINEMENT.md).
 
 ## Shared issue tracker
 
@@ -16,19 +17,19 @@ Dylan is the owner; Nolan Jetter (`nolanj@posetek.net`) and Taiyo Williamson
 (`taiyow@posetek.net`) have verified editing access. Use that shared workbook for
 triage rather than a downloaded attachment or an earlier local export.
 
-The hourly updater collects Outlook alerts, including Google Cloud Monitoring
-notifications, and reconciles backend incident evidence. It records the known
+The cloud event flow collects Outlook alerts, including Google Cloud Monitoring
+notifications, and independently reconciles backend incident evidence. It records the known
 actor and attempted operation, marks unknown identities honestly, links repeated
 notifications to their underlying incident and retains proposed fixes. Team edits
 to Status, Owner, Due and Fix notes must be preserved on refresh. A repeated alert
 is evidence of recurrence, not automatically another distinct affected user.
 
-This is a local scheduled update: Dylan's computer, Codex and OneDrive must remain
-running, with the connected accounts available. Save and close desktop Excel after
-editing and let OneDrive finish syncing. Avoid editing during the refresh window;
-a locked or conflicting workbook must be deferred rather than overwriting team
-changes. Email delivery runs separately in Google Cloud and is subject to the
-provider's delivery capacity even if the computer is off.
+The old hourly Codex updater remains paused. Cloud connections and Dylan's
+licensed Power Automate account must remain available; his computer can be off.
+The native writer preserves human fields by stable Action ID and rejects changed
+machine rows or revisions. Save edits and allow them to reach the cloud. A lock or
+conflict defers publication. Capture and publication have separate checkpoints;
+a successful flow badge does not establish complete source coverage.
 
 ## Coverage and limits
 
@@ -82,7 +83,13 @@ Dismissed. Fixed requires a fix reference; Verified also requires retest evidenc
 Concurrent changes reject a stale update. A later occurrence reopens Fixed or
 Verified. A recurrence after Dismissed retains its dismissed state but is emailed.
 
-Emails contain the recorded user identity, operation, platform/build/device and
+Emails separate Account/reporter, Contact email, Target athlete and Attempted
+action. The current name/email comes from a server-side lookup of the exact stored
+Auth UID, with email verification state and lookup time. A failed lookup retains
+the incident and retries; earlier contact evidence is labeled last-known and is
+not represented as a current contact. Target athletes never supply the actor's
+name. Service errors and diagnostic uploads leave an unknown original operator
+explicit. Dylan handles outreach manually. Emails also retain platform/build/device and
 occurrence/receipt times, with a protected admin link. Descriptions, diagnostic
 messages and screenshots stay in the private record; common credentials and email
 addresses in free text are redacted. Screenshot contents cannot be automatically
@@ -99,29 +106,27 @@ issues group by platform, operation, code and kind. Sources without a common
 request ID cannot always be correlated. Repeated reports of the same Error object
 are suppressed in the browser; separate Error objects remain separate attempts.
 
-The server-owned outbox freezes each payload and Resend idempotency key before
-sending. Leases last two minutes; a five-minute sweep retries transient/uncertain
-attempts within 23 hours. Expired ambiguity requires review instead of risking a
-second delivery beyond the provider's idempotency window. Signed callbacks can
-arrive before API acknowledgement and settle the job. Delivered means accepted
-by the recipient mail server, not a verified Inbox placement or read receipt.
-Resend emits a separate callback for each recipient. The issue outbox stores
-`recipientDelivery` with each recipient's status and provider event time; the
-aggregate becomes Delivered only when all frozen recipients have delivered.
-An individual failure remains visible even if the other recipients deliver.
-Earlier Dylan-only jobs retain their original payload, destination and idempotency
-key, including pending retries. This change does not backfill old emails or reset
-uncertain attempts. Recipient verification uses the original frozen payload,
-so callbacks for a newly added recipient cannot settle an old Dylan-only job.
+The server-owned outbox freezes each envelope before sending. Dispatch and the
+transactional Microsoft claim both enforce Dylan-only recipients before consuming
+send permission. A consumed claim binds its payload digest and recipient set;
+callbacks and Exchange traces retain that exact envelope across later changes.
+Historical consumed three-recipient claims keep their original delivery results.
+Recent unclaimed Microsoft failures can use an explicitly audited recipient/body
+amendment while preserving the original payload, attempts and history. The
+operator rechecks job and receipt evidence transactionally while sending is
+paused. Historical Resend jobs are neither amended nor replayed by this release.
+Send-action acceptance and recipient delivery are separate states. Delivered
+requires provider evidence; it does not imply that a message was read. Frozen
+multi-recipient historical jobs require all original recipients to settle and
+preserve partial failure outcomes.
 
 At **9 AM America/Los_Angeles**, a nonempty preceding 9-to-9 reporting period produces
 one summary with incident/crash/report counts, affected accounts or anonymous
 sessions, recurrences, status changes, top issues, unresolved/unverified issues and
 email jobs needing attention. Daylight-saving transitions are tested. The independent
-Cloud Monitoring policy emails all three recipients on alert-service errors; it
-does not use Resend. Its configuration is verified. Historical Dylan Inbox
-messages are included in the tracker; adding recipients alone does not verify
-Nolan's or Taiyo's Inbox delivery.
+Cloud Monitoring policies send alert-pipeline failures and AI-incident notices
+to Dylan independently of the application email provider. Original Outlook rows,
+including repeated notices and unmatched messages, remain in the tracker.
 
 Intake limits are 120 reports per authenticated account per hour, 15 per anonymous
 source IP, and 3,000 client reports globally per hour. Replays do not consume quota.

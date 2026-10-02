@@ -3,8 +3,10 @@ const crypto = require("node:crypto");
 const { isClubAdmin, clubStaffCanAccessPlayer } = require("./club-access");
 const M = require("./user-issue-model");
 const Microsoft = require("./microsoft-email-model");
+const { createIssueContactEnrichment, tokenSnapshot } = require("./user-issue-contacts");
 const LEASE = 120000, RETRY = 23 * 3600000;
-function createUserIssues({ db, HttpsError, provider, now = Date.now, logger = console }) {
+function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = Date.now, logger = console }) {
+  const contacts = createIssueContactEnrichment({ db, auth: authProvider, now });
   const fail = (code, message) => { throw new HttpsError(code, message); };
   const settingsRef = db.doc("userIssueSettings/current");
   const issueRef = id => db.doc(`userIssues/${id}`), jobRef = id => db.doc(`userIssueOutbox/${id}`);
@@ -17,7 +19,7 @@ function createUserIssues({ db, HttpsError, provider, now = Date.now, logger = c
       const owns = owners.length ? owners.every(value => value === auth.uid) : playerId === auth.uid;
       if (doc && (owns || isClubAdmin(auth) || await clubStaffCanAccessPlayer(db, auth.uid, doc))) player = { id: playerId, name: M.clean([doc.firstName, doc.lastName].filter(Boolean).join(" ") || doc.name) };
     }
-    return { uid: auth?.uid || null, name: M.clean(auth?.displayName) || null, player };
+    return { uid: auth?.uid || null, name: M.redact(auth?.displayName, 200) || null, player, authenticatedSnapshot: tokenSnapshot(auth, now()) };
   }
   async function submit(data, auth, ip = "unknown") {
     if (Object.hasOwn(data || {}, "ownerUid") && data.ownerUid !== (auth?.uid || null)) fail("failed-precondition", "Sign in to the account that created this report before retrying.");
@@ -27,6 +29,16 @@ function createUserIssues({ db, HttpsError, provider, now = Date.now, logger = c
   }
   async function ingest(event, who, origin) {
     const at = now(), actor = who.uid || (who.player?.id ? `player:${who.player.id}` : `anonymous:${event.sessionId}`);
+    // Do not collect contact records while intake is disabled or outside its
+    // authorized source window. The transaction below rechecks this gate.
+    const intakeSettings = M.setting((await settingsRef.get()).data(), at);
+    if (!intakeSettings.enabled || intakeSettings.testUids && !intakeSettings.testUids.includes(who.uid)
+      || Object.hasOwn(origin, "receivedAtMillis") && (!Number.isFinite(origin.receivedAtMillis) || origin.receivedAtMillis < intakeSettings.activatedAtMillis)
+      || origin.isTest && !intakeSettings.testUids) return { status: "disabled" };
+    const enrichment = await contacts.resolve(who.uid);
+    const contactSnapshot = { schemaVersion: 1, actorUid: who.uid || null, currentContact: enrichment.contact, lookup: enrichment.lookup,
+      authenticatedSnapshot: who.authenticatedSnapshot || null, player: who.player || null,
+      reporterOnly: /failureCases|fieldReports|system_diagnostic/i.test(`${origin.source} ${event.code}`), operation: event.operation };
     // A correlated request is one incident even when both client and server report it.
     const occurrenceId = M.hash([actor, event.requestId ? `request:${event.requestId}` : `${origin.source}:${origin.sourceEvent}`]);
     const fingerprint = M.hash([event.platform, event.operation, event.code, event.kind === "report" ? occurrenceId : event.kind]);
@@ -47,18 +59,19 @@ function createUserIssues({ db, HttpsError, provider, now = Date.now, logger = c
       if (rateRef && (rate >= (who.uid ? 120 : 15) || global >= 3000)) fail("resource-exhausted", "Report intake is busy. Your report can be retried later.");
       const reopened = issue?.state === "verified" || issue?.state === "fixed";
       const title = `${event.kind === "report" ? "Problem reported" : event.kind === "crash" ? "App crash" : event.kind === "interrupted" ? "Interrupted session — cause unknown" : "Action failed"}: ${event.operation}`;
-      const label = who.player?.name || who.name || (who.uid ? "Signed-in user" : "Anonymous user");
-      const lines = [`Affected user: ${label}${who.uid ? ` (${who.uid})` : ""}`, `Platform: ${event.platform}; build: ${event.build}; device: ${event.device}`,
-        `Operation: ${event.operation}; code: ${event.code}`, `Occurred: ${M.dateText(event.occurredAtMillis)}`, `Received: ${M.dateText(at)}`,
+      const label = enrichment.contact?.name || who.name || (who.uid ? "Signed-in user" : "Unknown actor");
+      const lines = [`Platform: ${event.platform}; build: ${event.build}; device: ${event.device}`,
+        `Error code: ${event.code}`, `Occurred: ${M.dateText(event.occurredAtMillis)}`, `Received: ${M.dateText(at)}`,
         ...(reopened ? ["This issue has returned after being marked fixed or verified."] : [])];
       const count = (issue?.occurrences || 0) + 1;
       tx.create(occurrenceRef, { ...event, id: occurrenceId, issueId: fingerprint, reporterUid: who.uid, reporterName: who.name,
+        authenticatedSnapshot: who.authenticatedSnapshot || null, currentContact: enrichment.contact, contactLookup: enrichment.lookup,
         player: who.player || null, source: origin.source, sourceReference: origin.reference || null, receivedAtMillis: at });
       tx.set(ref, { id: fingerprint, title, platform: event.platform, operation: event.operation, code: event.code, kind: event.kind, severity: event.severity,
         state: reopened ? "new" : issue?.state || "new", firstReceivedAtMillis: issue?.firstReceivedAtMillis || at, updatedAtMillis: Math.max(at, (issue?.updatedAtMillis || 0) + 1),
         occurrences: count, latestOccurrenceId: occurrenceId, latestBuild: event.build, latestUser: label,
         ...(reopened ? { reopenedAtMillis: at } : {}) }, { merge: true });
-      tx.create(out, { id: occurrenceId, issueId: fingerprint, type: "incident", title, lines, createdAtMillis: at, status: "pending", dueAtMillis: at, attempts: 0, actorUid: who.uid });
+      tx.create(out, { id: occurrenceId, issueId: fingerprint, type: "incident", title, lines, contactSnapshot, createdAtMillis: at, status: "pending", dueAtMillis: at, attempts: 0, actorUid: who.uid });
       tx.set(dayRef, { incidents: (day.incidents || 0) + 1, changes: day.changes || 0, lastAtMillis: at,
         affectedActors: (day.affectedActors || 0) + (actorSeen.exists ? 0 : 1), recurrences: (day.recurrences || 0) + (reopened ? 1 : 0),
         crashes: (day.crashes || 0) + (event.kind === "crash" ? 1 : 0), reports: (day.reports || 0) + (event.kind === "report" ? 1 : 0) }, { merge: true });
@@ -129,6 +142,10 @@ function createUserIssues({ db, HttpsError, provider, now = Date.now, logger = c
       if (job.createdAtMillis < settings.activatedAtMillis || settings.testUids && !settings.testUids.includes(job.actorUid)) { tx.update(ref, { status: "cancelled", dueAtMillis: null }); return null; }
       if (deliveryProvider === "resend" && job.firstAttemptAtMillis && at >= job.firstAttemptAtMillis + RETRY) { tx.update(ref, { status: "needs_review", dueAtMillis: null }); logger.error("user_issue_delivery_failed", { code: "retry_window", jobId: id }); return null; }
       const rawPayload = job.payload || M.payload(job, id);
+      if (!Microsoft.issueRecipientAllowed({ ...job, payload: rawPayload })) {
+        tx.update(ref, { status: "needs_review", dueAtMillis: null, failureCode: "provider_recipient_removed" });
+        return null;
+      }
       const route = deliveryProvider === "microsoft" && !job.microsoft ? Microsoft.freeze("issue", id, rawPayload, microsoftConfig, at) : { deliveryProvider, payload: rawPayload };
       const next = { ...route, leaseId: crypto.randomUUID(), firstAttemptAtMillis: job.firstAttemptAtMillis || at,
         attempts: (job.attempts || 0) + 1, status: "sending", dueAtMillis: at + LEASE, uncertain: job.uncertain === true || job.status === "sending" };

@@ -6,6 +6,17 @@ const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const FLOW_SCOPE = "https://service.flow.microsoft.com//.default";
 const TRANSPORT_TIMEOUT_MS = 125000, MAX_ASYNC_POLLS = 24, MIN_POLL_MS = 5000;
 
+// Only fixed reason codes cross the transport boundary. Never attach a response,
+// Location capability, token or provider exception to the persisted error.
+function transportFail(code, reason) {
+  const error = new Error(code); error.code = code; error.transportReasonCode = reason; throw error;
+}
+function asyncStatusMetadata(value) {
+  return value && typeof value === "object" && !Array.isArray(value) &&
+    ["Pending", "Running", "Succeeded", "Failed", "Canceled", "Cancelled"].includes(value.status) &&
+    !["schemaVersion", "verified", "batchId", "workbookKey", "payloadSha256", "revision", "applied", "counts"].some(key => Object.hasOwn(value, key));
+}
+
 function flowEndpoint(value) {
   let url; try { url = new URL(value); } catch (_) { fail("tracker_invalid_endpoint"); }
   const host = url.hostname.toLowerCase();
@@ -63,11 +74,14 @@ function pollDelay(value, now) {
   const seconds = /^\d+$/.test(value) ? Number(value) * 1000 : Date.parse(value) - now;
   return Number.isFinite(seconds) ? Math.max(MIN_POLL_MS, seconds) : MIN_POLL_MS;
 }
-function checkStatus(response) {
+function checkStatus(response, polling) {
   if (response.ok) return;
-  if ([401, 403].includes(response.status)) fail("tracker_remote_auth");
-  if ([409, 412, 423].includes(response.status)) fail("tracker_remote_conflict");
-  fail(response.status >= 500 || response.status === 429 || response.status === 408 ? "tracker_transport_retry" : "tracker_remote_rejected");
+  if ([401, 403].includes(response.status)) transportFail("tracker_remote_auth", "tracker_http_auth");
+  if ([409, 412, 423].includes(response.status)) transportFail("tracker_remote_conflict", "tracker_http_conflict");
+  // An expired/missing async status resource says nothing about the workbook.
+  // The serialized writer can safely replay the identical sealed batch.
+  if (polling && [404, 410].includes(response.status)) transportFail("tracker_transport_retry", "tracker_async_status_unavailable");
+  transportFail(response.status >= 500 || response.status === 429 || response.status === 408 ? "tracker_transport_retry" : "tracker_remote_rejected", "tracker_http_status");
 }
 function createPowerAutomateTransport({ endpoint, getAccessToken, fetchImpl = fetch, now = Date.now,
   wait = ms => new Promise(resolve => setTimeout(resolve, ms)) }) {
@@ -78,9 +92,9 @@ function createPowerAutomateTransport({ endpoint, getAccessToken, fetchImpl = fe
     const deadline = now() + TRANSPORT_TIMEOUT_MS;
     async function request(target, options) {
       const remaining = deadline - now();
-      if (remaining <= 0) fail("tracker_transport_uncertain");
+      if (remaining <= 0) transportFail("tracker_transport_uncertain", "tracker_transport_deadline");
       try { return await fetchImpl(target, { ...options, redirect: "error", signal: AbortSignal.timeout(Math.min(remaining, TRANSPORT_TIMEOUT_MS)) }); }
-      catch (_) { fail("tracker_transport_uncertain"); }
+      catch (_) { transportFail("tracker_transport_uncertain", "tracker_transport_request_failed"); }
     }
     let response;
     response = await request(url, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`,
@@ -91,20 +105,32 @@ function createPowerAutomateTransport({ endpoint, getAccessToken, fetchImpl = fe
       // receipt can release the frozen batch. Flow concurrency MUST remain one:
       // bounded-timeout retries may submit the same batch more than once.
       const location = response.headers?.get("location");
-      pollingUrl = location ? pollEndpoint(location, url) : pollingUrl;
-      if (!pollingUrl) fail("tracker_unverified_receipt");
-      if (polls >= MAX_ASYNC_POLLS) fail("tracker_transport_uncertain");
+      if (location) {
+        try { pollingUrl = pollEndpoint(location, url); }
+        catch (_) { transportFail("tracker_transport_uncertain", "tracker_async_location_rejected"); }
+      }
+      if (!pollingUrl) transportFail("tracker_transport_uncertain", "tracker_async_location_missing");
+      if (polls >= MAX_ASYNC_POLLS) transportFail("tracker_transport_uncertain", "tracker_async_poll_limit");
       const delay = pollDelay(response.headers?.get("retry-after"), now());
-      if (now() + delay >= deadline) fail("tracker_transport_uncertain");
+      if (now() + delay >= deadline) transportFail("tracker_transport_uncertain", "tracker_async_retry_after_deadline");
       await wait(delay);
       const signed = [...new URL(pollingUrl).searchParams.keys()].some(key => ["sig", "signature", "token", "code"].includes(key.toLowerCase()));
       response = await request(pollingUrl, { method: "GET", headers: signed ? { Accept: "application/json" } : { Accept: "application/json", Authorization: `Bearer ${token}` } });
       polls++;
     }
-    checkStatus(response);
-    if (response.status !== 200) fail("tracker_unverified_receipt");
-    let receipt; try { receipt = await response.json(); } catch (_) { fail("tracker_unverified_receipt"); }
-    return verifyReceipt(batch, receipt);
+    checkStatus(response, polls > 0);
+    if (response.status !== 200) transportFail("tracker_unverified_receipt", "tracker_terminal_status_not_receipt");
+    let receipt; try { receipt = await response.json(); }
+    catch (_) { transportFail("tracker_transport_uncertain", "tracker_receipt_body_unreadable"); }
+    if (polls > 0 && asyncStatusMetadata(receipt)) transportFail("tracker_transport_uncertain", "tracker_async_status_metadata");
+    try { return verifyReceipt(batch, receipt); }
+    catch (error) {
+      // A purported terminal receipt still fails closed on every existing
+      // workbook, revision, digest, row-set and count invariant.
+      if (["tracker_unverified_receipt", "tracker_incomplete_receipt", "tracker_invalid_receipt_counts"].includes(error?.code))
+        transportFail(error.code, "tracker_terminal_receipt_invalid");
+      throw error;
+    }
   } };
 }
-module.exports = { FLOW_SCOPE, TRANSPORT_TIMEOUT_MS, MAX_ASYNC_POLLS, MIN_POLL_MS, flowEndpoint, pollEndpoint, pollDelay, createFlowTokenProvider, createPowerAutomateTransport };
+module.exports = { FLOW_SCOPE, TRANSPORT_TIMEOUT_MS, MAX_ASYNC_POLLS, MIN_POLL_MS, flowEndpoint, pollEndpoint, pollDelay, asyncStatusMetadata, createFlowTokenProvider, createPowerAutomateTransport };

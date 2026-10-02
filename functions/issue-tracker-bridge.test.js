@@ -249,7 +249,7 @@ test("Power Automate transport requires OAuth, rejects SAS/redirect destinations
   } });
   await transport.send(batch); assert.equal(calls[0].options.redirect, "error"); assert.equal(calls[0].options.headers.Authorization, "Bearer delegated-trigger-token");
   const accepted = createPowerAutomateTransport({ endpoint: async () => ENDPOINT, getAccessToken: async () => "token", fetchImpl: async () => ({ ok: true, status: 202 }) });
-  await assert.rejects(accepted.send(batch), { code: "tracker_unverified_receipt" });
+  await assert.rejects(accepted.send(batch), { code: "tracker_transport_uncertain", transportReasonCode: "tracker_async_location_missing" });
 });
 
 test("token provider is tenant scoped, cached, refreshes and never exposes provider error body", async () => {

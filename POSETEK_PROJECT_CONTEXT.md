@@ -4,7 +4,52 @@ Reviewed on October 2, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
-## Microsoft email migration and event-triggered tracker activation (2026-10-02)
+## Dylan-only notifications, outreach contacts and tracker recovery (2026-10-02)
+
+Dylan now requires only `dylank@posetek.net` to receive new issue, status,
+daily-summary and workout notifications. Both separate PoseTek Google Cloud
+notification policies were verified with Dylan alone. Nolan and Taiyo retain
+their editing access to the existing shared tracker; their email removal does
+not revoke workbook or mailbox permissions. No additional purchase, automated
+user outreach, historical Resend replay, website or native release is authorized
+by this refinement.
+
+The scoped source/configuration checks verified ten user-issue functions at
+version 5, three Microsoft email functions at version 2 and six tracker functions
+at version 2, preserving existing IAM, schedules and unrelated resources. Dispatch
+and the transactional send claim check Dylan-only effective recipients before
+authorizing a send. Original payloads, consumed claims and recipient receipts
+remain historical evidence. The explicitly approved recent unclaimed Microsoft
+recovery window is `2026-10-02T20:32:00.000Z` inclusive through
+`2026-10-02T21:16:12.577Z` exclusive; an audited amendment never erases the original
+envelope or evidence of a consumed permission.
+
+Exact-UID Auth enrichment covered 101 occurrences across seven recorded accounts:
+three had verified email addresses and four had unverified addresses. Their Auth
+records supplied no display names. The 995 service/anonymous occurrences without
+a recorded Auth UID remain unknown; no athlete, recipient or device is substituted
+as the actor. Historical occurrence-token identity and current outreach contact
+are separate. Failed lookups preserve last-known evidence while marking the current
+contact unavailable. Only counts and methodology belong in this public handoff.
+
+Fresh cloud verification matched the saved revision-87 native receipt to the exact
+frozen backend batch. Its acknowledgement was reconciled without rewriting Excel
+or regenerating that batch. The first ordinary retry then returned revision 88.
+All eleven approved recent Microsoft amendments delivered to Dylan alone,
+preserving their original payload hashes and frozen claim digests. Their separate
+identity fields identify nine diagnostic uploaders and two service failures with
+unknown operators. A fixed-cutoff Outlook review from 21:57 through 22:20 UTC
+found sixteen post-change messages addressed only to Dylan, with no CC or BCC.
+Complete backlog drainage and final physical cloud readback of all contact
+annotations remain separate verification steps. Use the
+[refinement receipt](deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json) for those
+operational outcomes and exact coverage, and
+[the refinement handoff](docs/NOTIFICATION_OUTREACH_REFINEMENT.md) for the contract.
+The hourly Codex updater remains **PAUSED**; native cloud batches are the sole
+writer for the shared master. Preserve the historical receipts below as records
+of their earlier verification times.
+
+## Historical Microsoft migration and initial tracker activation (2026-10-02)
 
 Dylan reported purchasing Power Automate Premium and authorized setup. One
 available Premium license is now assigned to dylank@posetek.net, and the existing
@@ -46,7 +91,7 @@ original responses. One unrelated message omitted headers; relevant messages,
 the Inbox reference, all legacy items and replay retained strict header checks.
 This verifies the delegated reader, not application RBAC or tracker publication.
 Failed v2/v3 attempts remain alongside the successful fresh acceptance receipt.
-The email flow is imported and On after Dylan manually uploaded its ZIP. All four
+At the initial migration, the email flow was imported and On after Dylan manually uploaded its ZIP. All four
 email backend scopes passed exact deployed-source verification, preserving every
 existing function IAM policy and schedule. Its approved one-message setup pilot
 passed send acceptance, Exchange delivery evidence for all three recipients and
@@ -81,12 +126,13 @@ and 1,031 prior links. The updated team guide was published and its fresh cloud
 download verified at `2026-10-02T10:57:04.711Z`; the shared folder contains only
 that guide and the workbook.
 
-The selected migration replaces all Resend notification types with Microsoft
-365 through Power Automate, retaining every existing alert and current recipient
-sets. A durable one-time claim prevents an uncertain send from being blindly
+The initial migration selected Microsoft 365 through Power Automate for new
+notification types, retaining the then-approved recipient sets and existing alert
+history. The later Dylan-only refinement above supersedes those recipient sets.
+A durable one-time claim prevents an uncertain send from being blindly
 replayed. Send acceptance and recipient-level Exchange trace evidence remain
 separate. Previously attempted Resend jobs retain their provider and history.
-The Microsoft sender and trace gates are now enabled for new alerts after the
+At migration activation, the Microsoft sender and trace gates were enabled for new alerts after the
 reviewed creation cutoff `2026-10-02T06:52:17.518Z`. No billing subscription was
 changed; the Resend key/webhook remain for preserved historical jobs and receipts.
 
@@ -156,14 +202,16 @@ against the master. Read
 [the Microsoft email package](deployments/microsoft-email/README.md).
 This backend and automation release did not change website bytes or training/planner records.
 
-## Shared user-issue recipients (2026-10-01)
+## Historical shared user-issue recipients (2026-10-01; superseded)
 
 The user approved Nolan (`nolanj@posetek.net`) and Taiyo (`taiyow@posetek.net`)
 alongside Dylan for ongoing issue/status/daily-summary emails and the independent
-Google Cloud alert policy. New issue messages include all three; old frozen
-Dylan-only messages retain their destination and idempotency keys. Signed callbacks
-record each recipient separately and require all three delivery confirmations before
-the new aggregate job is called Delivered. Workout outcome/inactivity recipients
+Google Cloud alert policy. That rollout made new issue messages include all three;
+old frozen Dylan-only messages retained their destination and idempotency keys.
+Signed callbacks recorded each recipient separately and required all three
+delivery confirmations before that aggregate job was called Delivered. Those
+historical consumed envelopes still retain their individual evidence after the
+October 2 recipient restriction. Workout outcome/inactivity recipients
 remain unchanged. See [the recipient rollout receipt](deployment/USER_ISSUE_RECIPIENTS_PRODUCTION.json).
 This is a backend/configuration-only follow-up; the website release below is unchanged.
 The inspected October 1 failed-email record confirmed Resend daily quota

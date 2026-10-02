@@ -3,7 +3,7 @@ const test = require("node:test"), assert = require("node:assert/strict");
 const { FakeFirestore } = require("./test-support/fake-firestore");
 const { createGraphReader, createGraphTokenProvider, MAILBOX } = require("./issue-tracker-graph-reader");
 const { createEvidenceArchive } = require("./issue-tracker-evidence");
-const { createMailCapture, relevance } = require("./issue-tracker-mail-capture");
+const { createMailCapture, relevance, trustedMailJoin, receivedRecipients } = require("./issue-tracker-mail-capture");
 const { createSourceCapture, createBackendSourceReader } = require("./issue-tracker-source-capture");
 const { digest } = require("./issue-tracker-bridge-model");
 const AT = Date.parse("2026-10-02T02:00:00Z"), INITIAL = "2026-10-02T00:00:00.000Z";

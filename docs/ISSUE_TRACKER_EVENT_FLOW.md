@@ -1,6 +1,46 @@
 # Event-driven issue tracker activation
 
-Status: **active; shared-master revision-eight publication verified, catch-up continuing**. Dylan reported purchasing Power Automate Premium on
+Current contract: **event-driven shared master; Dylan-only notifications; recovery
+and independent final publication verification remain distinct**. New issue,
+status, daily-summary and workout emails target only `dylank@posetek.net`; both
+PoseTek Google Cloud notification policies were separately verified with Dylan
+alone. Nolan and Taiyo keep editing access to the existing shared workbook.
+The hourly Codex automation remains **PAUSED**.
+
+The refinement's deployed source/configuration checks verified ten user-issue
+functions at version 5, three Microsoft email functions at version 2 and six
+tracker functions at version 2. Existing IAM, schedules, native script, schema,
+connections and unrelated resources were preserved. Dispatch and the send claim
+enforce the effective Dylan-only envelope; historical consumed claims and their
+individual delivery receipts retain their original recipient sets.
+
+Exact-UID contact enrichment covered 101 occurrences across seven Auth accounts:
+three verified and four unverified emails, with no Auth display names supplied.
+The 995 service/anonymous records without a recorded Auth UID remain unknown.
+The native writer annotates the existing actor and identity-basis cells with the
+current contact or an explicit unavailable/last-known result, preserving target
+athlete identity, historical wording, stable IDs and human Status/Owner/Due/Fix
+notes. User outreach remains manual.
+
+Fresh cloud verification matched the saved revision-87 receipt to its exact frozen
+backend batch, including the full chain, formulas, original links and saved human
+records. The bridge acknowledged that receipt without a workbook rewrite or a
+replacement batch. Its first ordinary retry returned revision 88. All eleven
+approved recent Microsoft amendments delivered to Dylan alone while preserving
+their original payload hashes and frozen claim digests. Separate identity fields
+identify nine diagnostic uploaders and two service failures with unknown operators.
+A fixed-cutoff Outlook review from 21:57 through 22:20 UTC found sixteen post-change
+messages with Dylan as the sole recipient and no CC or BCC. Complete queue drainage
+and final physical cloud readback of all annotations remain separate verification
+steps. Read
+[the refinement handoff](NOTIFICATION_OUTREACH_REFINEMENT.md) and
+[the refinement receipt](../deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json)
+for current operational evidence and separate source/publication coverage.
+
+## Historical initial activation and acceptance (October 2, 2026)
+
+The initial shared-master revision-eight publication was verified, with catch-up
+still continuing at that audit. Dylan reported purchasing Power Automate Premium on
 October 1 and authorized setup. An available Premium license is now assigned to
 dylank@posetek.net; the saved private writer no longer has the former licensing
 block. Dylan explicitly paused the hourly Codex tracker to finish Power Automate
@@ -12,8 +52,8 @@ principal and eleven fixed credential secrets are configured. The writer is now
 On for the verified shared master and allows only that service principal.
 Actual private Power Automate transport and identical replay returned exact
 revision-six native receipts. Mailbox-reader acceptance and independent shared-master revision-eight readback
-have passed. Full source catch-up remains in progress. The independent email sender is now
-imported and On, with its four backend scopes verified. Its approved one-message
+had passed. Full source catch-up remained in progress. At that initial migration,
+the independent email sender was imported and On, with its four backend scopes verified. Its approved one-message
 pilot passed send acceptance, all three recipient traces and duplicate suppression.
 Both production email domains now use Microsoft for new alerts; historical
 Resend jobs and evidence remain unchanged. The Outlook arrival flow
@@ -149,7 +189,9 @@ not establish a crash. Repeated Google Cloud emails retain separate evidence
 rows while project and incident identifiers link the service incident. A shared
 subject, issue fingerprint or nearby timestamp is not proof of the same attempt.
 Recovery messages do not close manual actions. Partial provider delivery remains
-partial; new three-recipient jobs require evidence for each recipient.
+partial. A historical consumed three-recipient job still requires evidence for
+each original recipient; new claims require Dylan alone. The recipient change
+cannot turn historical partial delivery into an all-delivered result.
 
 The recovery candidate reads at most 200 outbox records per invocation, retaining
 a fixed creation-time upper bound and document-ID cursor across pages. A full
@@ -158,18 +200,19 @@ private `issueTrackerState/outboxRecovery` record distinguishes the active scan,
 last completed enumeration, last check/failure and writer-block reason. Because
 source data can change between pages, completion is not a consistent snapshot
 and never advances backend or Outlook complete-through checkpoints. It supplies
-no mailbox recovery. Scheduled execution and private task IAM require live
-verification before it can be relied on.
+no mailbox recovery. Scheduled execution and private task IAM were verified during
+activation and preserved by the refinement; current results belong in the
+production receipt, not the last enumeration's count.
 
 ## Power Automate setup
 
 The saved flow `PoseTek issue tracker - event writer` has ID
 `b011912f-bb15-453f-92ef-761d223095b4`. Excel Online (Business) is connected as
-`dylank@posetek.net`, and the writer targets only the private test workbook.
-Neither the backend nor Outlook intake is connected to this writer. After
-Premium assignment and resaving, its saved details show **On**, type
-**Automated**, owned by Dylan, running on its owner's plan. This is not a live
-tracker replacement. The dedicated sender mailbox alerts@posetek.net exists;
+`dylank@posetek.net`, and the writer targets the existing shared cloud master.
+Backend and Outlook intake enqueue work for this serialized writer. Its private
+fixture was a completed acceptance stage, not the production target. The flow is
+**Automated**, owned by Dylan and uses his assigned Premium plan; current run state
+and publication must be verified independently. The dedicated sender mailbox alerts@posetek.net exists;
 email migration is described in the [Microsoft package](../deployments/microsoft-email/README.md).
 
 The request trigger is restricted to the dedicated caller's service-principal
@@ -211,17 +254,19 @@ relevance using the sender, project, incident links and content, including Googl
 Cloud/Cloud Monitoring and delivery failures; do not rely on one subject or
 unread status. Do not send emails, move messages or mark them read.
 
-**Live mailbox coverage is still a cutover gate.** The arrival flow covers Inbox;
-the independent candidate Graph reader traverses the entire authorized mailbox
+**The delegated mailbox route passed live acceptance.** The arrival flow covers Inbox;
+the independent configured reader traverses the entire authorized Dylan mailbox
 without folder, subject or read-state filters. It uses fixed UTC bounds, a
 30-minute overlap and persisted full pagination. Capture completion is separate
 from publication: the latter requires native workbook receipts for every queued
 version. Historical Outlook IDs must be directly re-read and mapped to immutable
-IDs before enabling capture. Internet Message-ID alone cannot merge rows. Verify
-Exchange application RBAC restricts content access to Dylan, including negative
-tests for other mailboxes. Offline tests do not establish that live coverage.
+IDs before enabling capture; that acceptance was completed. Internet Message-ID
+alone cannot merge rows. The accepted delegated proxy stays fixed to Dylan's
+mailbox and GET operations. Exchange application RBAC remains unverified and is
+not a fallback route; never substitute tenant-wide Mail.Read. Current coverage
+comes from separately persisted capture and publication receipts.
 
-## Cost and access gates
+## Historical cost selection and current access limits
 
 Before the user's purchase, the account had Office 365 and Free licenses. The
 HTTP integration uses premium capabilities. Microsoft lists Premium at **$15 per
@@ -246,7 +291,8 @@ Business Basic and the following Premium offers:
 one-year prepaid at $180/license/year; annual commitment billed monthly at
 $15.75/month; and monthly commitment at $18/month, before checkout taxes/fees.
 The one-year prepaid option is the lowest regular subscription price shown.
-Nolan and Taiyo do not need Premium solely to edit the tracker or receive alerts.
+Nolan and Taiyo do not need Premium solely to edit the tracker. They are no longer
+recipients of new alerts under the October 2 refinement.
 Pay-as-you-go is $0.60 per billable cloud-flow run and exceeds the $15/month
 annual-plan equivalent above 25 such runs/month; it is not the recommended fit
 for ongoing incident capture. No plan, trial, or billing change was submitted.
@@ -259,7 +305,8 @@ its own per-user limits (currently 1,600 calls/day). No further paid upgrade is 
 
 The dedicated application and service principal now exist. Eleven fixed
 credential/callback/ingress secrets were installed and read back as Secret Manager
-version 1; endpoint secrets are not installed and runtime access remains to be verified. A bounded
+version 1; both reviewed endpoints and runtime access were subsequently verified.
+At the earlier setup stage, a bounded
 live message-trace query returned HTTP 200 with zero matches. That proves query
 access only, not delivery, mailbox-content access or writer transport.
 
@@ -267,19 +314,25 @@ Dylan-only Exchange application RBAC is still blocked: organization customizatio
 completed and `IsDehydrated` is false, but a fresh authenticated session at
 2026-10-02T04:41Z still received the prerequisite error from `New-ManagementScope`.
 The cause of this contradictory Microsoft failure is unconfirmed. Resolve the
-narrow scope without granting tenant-wide Mail.Read. Actual positive Dylan and
-negative other-mailbox reads, followed by direct legacy-to-immutable ID mapping,
-remain required before source capture is enabled.
+narrow scope without granting tenant-wide Mail.Read if adopting that application
+route later. Current source capture uses the separately accepted Dylan-only
+delegated proxy, with full paging and legacy-to-immutable identity acceptance.
 
-The browser upload tool still rejects file selection for the prepared email package.
-Neither the email sender nor cloud-mail intake is installed. Production Resend
-remains active. The hourly workbook publisher is paused by user request; do not
-resume it to work around these setup blockers.
+Earlier browser upload attempts rejected file selection; Dylan subsequently
+uploaded the packages manually, and the sender and cloud-mail intake were
+installed. New production alerts select Microsoft; historical Resend evidence is
+retained. Current email-flow restoration requires fresh evidence in the refinement
+receipt. The hourly workbook publisher stays paused by user request.
 Keep caller credentials and the bounded mailbox-ingress secret in Secret Manager,
 and keep Power Automate action inputs/outputs secure. No credential belongs in
 the workbook, flow screenshots, repository or this document.
 
-## Cutover and recovery gates
+## Historical initial cutover gates (do not repeat initialization)
+
+These steps document the completed initial migration and its acceptance sequence.
+The master is already native and seeded. Current recovery must reconcile the
+existing revision and exact frozen batch; never repeat bootstrap or overwrite it
+with an old local candidate.
 
 1. Obtain a fresh cloud workbook and reconcile any new hourly candidate. The
    earlier b49ac4d/5e209015 discrepancy was resolved: the confirmed master now
@@ -340,7 +393,9 @@ never force a whole-file overwrite to clear a conflict.
 ## Verification history
 
 The prior combined backend and native-model suite passed **212/212 tests**;
-the Microsoft path also passes five actual Firestore SDK tests. Coverage includes replay after an unknown
+the then-current Microsoft path also passed five actual Firestore SDK tests. The
+refinement adds native transaction checks for competing amendments/claims and
+retained receipt evidence; its seven-test SDK suite passed. Coverage includes replay after an unknown
 write outcome, competing workers, concurrent source changes, exact receipt
 counts, sharded historical snapshots larger than a single Firestore document,
 sorted human-field preservation, recurrence evidence, reviewed identity and

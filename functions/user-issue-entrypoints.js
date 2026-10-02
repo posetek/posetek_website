@@ -6,7 +6,7 @@ const { SECRETS } = require("./microsoft-email-transport");
 const { FROM, RECIPIENTS } = require("./user-issue-model");
 function createUserIssueEntrypoints(functions, admin) {
   const db = admin.firestore();
-  const service = createUserIssues({ db, HttpsError: functions.https.HttpsError, logger: functions.logger,
+  const service = createUserIssues({ db, auth: admin.auth(), HttpsError: functions.https.HttpsError, logger: functions.logger,
     provider: createNotificationProvider({ apiKey: () => process.env.RESEND_API_KEY, from: FROM, recipients: RECIPIENTS }) });
   const sources = createIssueSources(service, db);
   const caller = context => context.auth ? { uid: context.auth.uid, email: context.auth.token?.email, emailVerified: context.auth.token?.email_verified === true,

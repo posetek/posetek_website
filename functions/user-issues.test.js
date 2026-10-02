@@ -110,8 +110,12 @@ test("signed delivery callback can beat send acknowledgement and is idempotent",
   await f.service.webhook({ id: "sent", event: { ...event, type: "email.sent", created_at: new Date(AT + 1).toISOString() } });
   assert.equal(f.db.snapshot(`userIssueOutbox/${a.occurrenceId}`).status, "delivered");
 });
-test("each recipient settles independently, without claiming all delivered after the first callback", async () => {
-  const f = fixture(), a = await f.service.submit(input(), { uid: "athlete" }); await f.service.dispatch(a.occurrenceId);
+test("historical three-recipient sends keep separate delivery evidence after recipient removal", async () => {
+  const f = fixture(), a = await f.service.submit(input(), { uid: "athlete" });
+  const jobRef = f.db.doc(`userIssueOutbox/${a.occurrenceId}`);
+  await jobRef.update({ deliveryProvider: "resend", payload: { ...M.payload(f.db.snapshot(jobRef.path), a.occurrenceId),
+    to: [M.TO, "nolanj@posetek.net", "taiyow@posetek.net"] }, status: "accepted", firstAttemptAtMillis: AT,
+    attempts: 1, acceptedAtMillis: AT, providerId: "email-1", dueAtMillis: null });
   const deliver = async (to, type, millis) => f.service.webhook({ id: `${to}-${type}-${millis}`, event: {
     type, created_at: new Date(millis).toISOString(), data: { email_id: "email-1", from: M.FROM, to: [to], tags: { posetek_issue_outbox: a.occurrenceId } },
   } });
@@ -125,7 +129,7 @@ test("each recipient settles independently, without claiming all delivered after
   assert.equal(job.status, "bounced"); assert.equal(job.recipientDelivery[M.TO].status, "delivered");
   assert.equal(job.recipientDelivery["nolanj@posetek.net"].status, "bounced");
   assert.equal(job.recipientDelivery["taiyow@posetek.net"].status, "delivered");
-  assert.equal(f.sends.length, 1);
+  assert.equal(f.sends.length, 0, "historical callbacks do not replay an old send");
 });
 test("old frozen Dylan-only sends retain payload/key and accept only their original recipient", async () => {
   const f = fixture(), a = await f.service.submit(input(), { uid: "athlete" });
@@ -149,7 +153,7 @@ test("issue provider allows only approved recipients and leaves workout provider
     await assert.rejects(issue.send({ ...payload, ...bad }, "invalid"), { code: "recipient_invalid" });
   }
   const workout = createResendProvider(options);
-  await assert.rejects(workout.send({ ...payload, from: "PoseTek Workouts <workouts@alerts.posetek.net>" }, "workout"), { code: "recipient_invalid" });
+  await assert.rejects(workout.send({ ...payload, to: ["nolanj@posetek.net"], from: "PoseTek Workouts <workouts@alerts.posetek.net>" }, "workout"), { code: "recipient_invalid" });
   assert.equal(calls, 2);
 });
 test("a wrong recipient delivery event cannot settle a queued message", async () => {

@@ -68,29 +68,61 @@ test("signed same-workflow polling capabilities stay out of bearer headers", asy
   assert.equal(f.calls[1].url, signed); assert.equal(f.calls[1].options.headers.Authorization, undefined);
 });
 
-test("missing or unsafe async Location fails before any follow-up request", async () => {
+test("missing or unsafe async Location retains a retryable batch without any follow-up request", async () => {
   for (const location of [null, "https://attacker.test/runs/x", POLL.replace("flow-one", "flow-two"), POLL.replace("https:", "http:"),
     POLL.replace("test.environment", "user:pass@test.environment"), `${POLL}#fragment`, ENDPOINT,
     POLL.replace("/runs/run-one", "/runs/%2Foutside"), `${POLL}&access_token=forbidden`, "not a URL"]) {
     const f = transportFixture(() => response(202, {}, location ? { Location: location } : {}));
-    await assert.rejects(f.transport.send(batch()), { code: "tracker_unverified_receipt", message: "tracker_unverified_receipt" });
+    await assert.rejects(f.transport.send(batch()), { code: "tracker_transport_uncertain", message: "tracker_transport_uncertain",
+      transportReasonCode: location ? "tracker_async_location_rejected" : "tracker_async_location_missing" });
     assert.equal(f.calls.length, 1);
   }
 });
 
 test("each replacement Location is validated and redirects never forward authorization", async () => {
   const f = transportFixture((url, options, n) => n === 1 ? response(202, {}, { Location: POLL }) : response(202, {}, { Location: "https://attacker.test/collect" }));
-  await assert.rejects(f.transport.send(batch()), { code: "tracker_unverified_receipt" }); assert.equal(f.calls.length, 2);
+  await assert.rejects(f.transport.send(batch()), { code: "tracker_transport_uncertain", transportReasonCode: "tracker_async_location_rejected" }); assert.equal(f.calls.length, 2);
   const redirected = transportFixture((url, options, n) => n === 1 ? response(202, {}, { Location: POLL }) : response(302, {}, { Location: "https://attacker.test/collect" }));
   await assert.rejects(redirected.transport.send(batch()), { code: "tracker_remote_rejected" }); assert.equal(redirected.calls.length, 2);
 });
 
 test("pending202 and terminal200 status metadata never stand in for a workbook receipt", async () => {
   const f = transportFixture((url, options, n) => n === 1 ? response(202, { verified: true }, { Location: POLL }) : response(200, { status: "Succeeded" }));
-  await assert.rejects(f.transport.send(batch()), { code: "tracker_unverified_receipt" });
+  await assert.rejects(f.transport.send(batch()), { code: "tracker_transport_uncertain", transportReasonCode: "tracker_async_status_metadata" });
   const wrong = batch(); wrong.workbookKey = "another-workbook";
   const g = transportFixture((url, options, n) => n === 1 ? response(202, {}, { Location: POLL }) : response(200, receipt(wrong)));
   await assert.rejects(g.transport.send(batch()), { code: "tracker_unverified_receipt" });
+});
+
+test("a wrong terminal native receipt fails closed even when it includes async status metadata", async () => {
+  const value = batch();
+  for (const change of [{ workbookKey: "wrong" }, { payloadSha256: "0".repeat(64) }, { revision: 9 },
+    { applied: { actions: ["extra"], instances: [], emails: [], dailyRows: [] } },
+    { counts: { actions: -1, instances: 0, emails: 0, dailyRows: 0 } }]) {
+    const f = transportFixture((_url, _options, n) => n === 1 ? response(202, {}, { Location: POLL }) : response(200, { ...receipt(value), status: "Succeeded", ...change }));
+    await assert.rejects(f.transport.send(value), error => {
+      assert.ok(["tracker_unverified_receipt", "tracker_incomplete_receipt", "tracker_invalid_receipt_counts"].includes(error.code));
+      assert.equal(error.transportReasonCode, "tracker_terminal_receipt_invalid"); return true;
+    });
+  }
+  const direct = transportFixture(() => response(200, { status: "Succeeded" }));
+  await assert.rejects(direct.transport.send(value), { code: "tracker_unverified_receipt", transportReasonCode: "tracker_terminal_receipt_invalid" });
+});
+
+test("unreadable receipt bodies and disappeared polling resources remain uncertain, never acknowledged", async () => {
+  const value = batch();
+  for (const status of [404, 410]) {
+    const f = transportFixture((_url, _options, n) => n === 1 ? response(202, {}, { Location: POLL }) : response(status, { private: "omitted" }));
+    await assert.rejects(f.transport.send(value), { code: "tracker_transport_retry", transportReasonCode: "tracker_async_status_unavailable" });
+    assert.equal(f.calls.length, 2);
+    const direct = transportFixture(() => response(status));
+    await assert.rejects(direct.transport.send(value), { code: "tracker_remote_rejected" });
+  }
+  const unreadable = transportFixture(() => ({ ...response(200), json: async () => { throw new Error(`private ${POLL}&sig=secret`); } }));
+  await assert.rejects(unreadable.transport.send(value), error => {
+    assert.equal(error.code, "tracker_transport_uncertain"); assert.equal(error.transportReasonCode, "tracker_receipt_body_unreadable");
+    assert.deepEqual(Object.keys(error).sort(), ["code", "transportReasonCode"]); assert.equal(error.message, error.code); return true;
+  });
 });
 
 test("poll count and total deadline bound perpetual pending without acknowledging it", async () => {
@@ -100,6 +132,29 @@ test("poll count and total deadline bound perpetual pending without acknowledgin
   const g = transportFixture(() => response(202, {}, { Location: POLL, "Retry-After": "120" }));
   await assert.rejects(g.transport.send(batch()), { code: "tracker_transport_uncertain" });
   assert.equal(g.calls.length, 2); assert.deepEqual(g.waits, [120000]);
+});
+
+test("async metadata retries the byte-identical frozen batch without a permanent writer block", async () => {
+  const sourceId = "c".repeat(64), sourceIssue = "d".repeat(64);
+  const db = new FakeFirestore({ [PATHS.settings]: { enabled: true, seedVerified: true, connectionVerified: true, workbookKey: "confirmed-shared-file" },
+    [PATHS.writer]: { revision: 0 }, [PATHS.seed]: { counts: { actions: 0, instances: 0, emails: 0, dailyRows: 0 } },
+    [`userIssueOutbox/${sourceId}`]: { type: "incident", issueId: sourceIssue, createdAtMillis: AT - 1, status: "pending" },
+    [`userIssueOccurrences/${sourceId}`]: { issueId: sourceIssue }, [`userIssues/${sourceIssue}`]: { state: "new" } });
+  let value, succeed = false, serial = 0; const posted = [];
+  const f = transportFixture((_url, options) => {
+    if (options.method === "POST") { value = JSON.parse(options.body); posted.push(options.body); return response(202, {}, { Location: POLL }); }
+    return succeed ? response(200, receipt(value)) : response(200, { status: "Succeeded", private: "never persisted" });
+  });
+  const bridge = createIssueTrackerBridge({ db, now: () => AT + f.elapsed(), randomId: () => `metadata-${++serial}`, scheduleTask: async () => {}, transport: f.transport,
+    normalize: async () => ({ changes: empty(), nextSeed: {} }) });
+  await bridge.observeOutbox(sourceId);
+  await assert.rejects(bridge.drain(), { code: "tracker_transport_uncertain", transportReasonCode: "tracker_async_status_metadata" });
+  assert.equal(db.snapshot(PATHS.writer).blockedReason, undefined);
+  const frozenId = db.snapshot(PATHS.writer).activeBatchId;
+  assert.equal(db.snapshot(PATHS.writer).revision, 0); assert.equal(db.snapshot(`${PATHS.queue}/outbox-${sourceId}`).pending, true);
+  succeed = true; f.advance(90000); await bridge.drain();
+  assert.equal(posted[1], posted[0]); assert.equal(JSON.parse(posted[1]).batchId, frozenId);
+  assert.equal(db.snapshot(PATHS.writer).revision, 1); assert.equal(db.snapshot(`${PATHS.queue}/outbox-${sourceId}`).pending, false);
 });
 
 test("Retry-After supports seconds and HTTP date with a five-second minimum", () => {

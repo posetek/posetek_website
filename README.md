@@ -23,55 +23,42 @@ User crash/bug reporting, the protected issue inbox and email operations are
 documented in [User issue alerts](docs/USER_ISSUE_ALERTS.md). Native rollout and
 Crashlytics export verification have separate acceptance gates.
 
-The October 1 backend follow-up adds `nolanj@posetek.net` and `taiyow@posetek.net`
-to Dylan's ongoing issue emails and the independent Google Cloud alert policy.
-Signed receipts track each recipient; existing frozen emails and workout-alert
-destinations are preserved. The October 1 rollout encountered a verified quota
-failure; later partial recovery does not establish delivery to every new recipient.
-See [recipient rollout and limits](deployment/USER_ISSUE_RECIPIENTS_PRODUCTION.json).
+The October 2 refinement makes **`dylank@posetek.net` the only recipient** of new
+issue, status, daily-summary and workout notifications and both separate PoseTek
+Google Cloud alert policies. Nolan and Taiyo retain editing access to the shared
+Excel workbook in **PoseTek > Technology > Website > User Issue Tracker > PoseTek
+Issue Tracker.xlsx**. Historical consumed recipient sets and receipts are preserved;
+the older Resend backlog is not replayed. Dylan handles outreach manually.
 
-Microsoft email migration is live; the event-triggered Power Automate tracker
-was enabled at `2026-10-02T10:13:41.205Z`. Independent cloud-workbook
-revision-eight readback passed; full source catch-up remains in progress. Premium and the dedicated caller are configured; the
-writer is On for the verified shared master and permits only that service principal.
-Actual Power Automate transport and identical replay returned verified native
-revision-six receipts. Eleven credential secrets and both reviewed endpoints are
-installed. Dylan's Send As permission for `alerts@posetek.net` is verified;
-existing mailbox grants are preserved. The actual email flow is imported and On;
-four scoped backend releases passed source and IAM/schedule preservation checks.
-One approved setup email reached all three recipients with Exchange trace
-evidence, and the duplicate trigger sent nothing. Both production alert domains
-now select Microsoft, preserving their intake cutoffs and historical Resend jobs.
-See [the email release receipt](deployment/MICROSOFT_EMAIL_PRODUCTION.json).
-Mailbox RBAC is blocked
-by an unexplained Microsoft prerequisite error. The delegated Outlook reader is
-now verified; the Outlook arrival flow is On with its saved definition verified.
-The reader's first live attempt read a known Inbox message but failed on its first
-collection page. A narrow v3 correction fixes the empty message-ID boundary;
-the saved export passed validation at `2026-10-02T08:45:14Z`, preserving its
-caller, route and privacy settings. Read-only acceptance passed at
-`2026-10-02T09:12:05.266Z`: 72 pages, 143 mailbox messages, all 128 legacy identity
-aliases and exact replay. One unrelated message lacked provider headers and was
-explicitly counted; relevant and legacy evidence remained strict. Shared-master
-configuration, current script and historical ready revision-zero checkpoint are verified;
-independent real-master revision-eight publication is verified. The six tracker functions are
-deployed and verified; activation preserved existing resources and source cutoffs.
-Older frozen Resend jobs retain their provider and evidence.
-At Dylan's request, the hourly
-Codex tracker remains **paused** after the Power Automate cutover; do not restart
-it against this master. The independently verified shared master at
-`2026-10-02T10:53:58.855Z` has 684 instances, 160 emails, 70 actions and one daily
-record at revision eight. All 882 original source links and 23 human records are
-preserved. The temporary verification pause was reversed; the writer queue is
-RUNNING. Capture and publication are distinct: 490 tickets remained pending at
-that audit, and complete catch-up is not claimed. The A4 label now identifies the
-static imported baseline. Never overwrite this native master with the old
-whole-file renderer or reinitialize its sync state.
-The updated team guide is published in the same shared folder and its cloud bytes
-are verified; the original workbook and folder links are unchanged.
-See [the tracker production receipt](deployment/ISSUE_TRACKER_EVENT_PRODUCTION.json),
+The scoped deployments verified ten user-issue functions at version 5, three
+Microsoft email functions at version 2 and six tracker functions at version 2,
+preserving unrelated resources, IAM and schedules. Exact-UID contact enrichment
+covered 101 occurrences across seven Auth accounts: three verified emails, four
+unverified emails and no Auth display names. The 995 service/anonymous records
+without a recorded Auth UID remain unknown. The tracker keeps actor and target
+athlete separate and preserves stable IDs, evidence and the team's triage notes.
+
+The Power Automate shared tracker is event driven, with an accepted Dylan-only
+delegated mailbox reader and independent cloud source catch-up. The old hourly
+Codex automation remains **paused**. Fresh cloud evidence matched revision 87 to
+the exact frozen batch, allowing its existing receipt to be acknowledged without
+an Excel rewrite; the first ordinary retry returned revision 88. All eleven
+approved recent amendments delivered to Dylan alone with their original payloads
+and frozen claim digests preserved. Their structured identity fields identify nine
+diagnostic uploaders and two service failures with unknown operators. Final
+physical readback of the new annotations and full backlog drainage remain
+separate verification steps. Current sending and
+coverage must come from the [refinement receipt](deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json),
+not an older flow badge or setup result. Never replace or reseed the native master.
+Read [the refinement handoff](docs/NOTIFICATION_OUTREACH_REFINEMENT.md),
 [the tracker handoff](docs/ISSUE_TRACKER_EVENT_FLOW.md) and
-[the Microsoft email package](deployments/microsoft-email/README.md).
+[the Microsoft package](deployments/microsoft-email/README.md).
+
+The October 1 [recipient rollout](deployment/USER_ISSUE_RECIPIENTS_PRODUCTION.json),
+initial October 2 [Microsoft migration](deployment/MICROSOFT_EMAIL_PRODUCTION.json)
+and [tracker activation](deployment/ISSUE_TRACKER_EVENT_PRODUCTION.json) remain
+dated historical receipts. The earlier three-recipient setup pilot and revision-eight
+workbook readback do not establish the refinement's current delivery or coverage.
 
 The unified coach workspace and Astro build are documented in
 [the implementation handoff](docs/UNIFIED_COACH_WORKSPACE.md). Team Insights owns

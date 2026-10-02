@@ -1,5 +1,6 @@
 "use strict";
 const crypto = require("node:crypto");
+const Microsoft = require("./microsoft-email-model");
 
 const GROUPS = Object.freeze(["actions", "instances", "emails", "dailyRows"]);
 function canonical(value) {
@@ -20,16 +21,20 @@ const pick = (value, fields) => Object.fromEntries(fields.filter(field => value?
 function materialOutbox(job) {
   if (!job || !["incident", "status", "daily"].includes(job.type)) return null;
   const value = pick(job, ["type", "issueId", "title", "lines", "createdAtMillis", "actorUid", "providerId", "acceptedAtMillis", "deliveredAtMillis", "deliveryObservedAtMillis", "deliveryProvider", "failureCode", "uncertain"]);
-  if (job.deliveryProvider === "microsoft") value.microsoft = pick(job.microsoft, ["correlation", "senderMailbox", "runId", "receiptAcceptedAtMillis", "receiptUncertainAtMillis", "internetMessageId", "traceErrorCode", "traceAmbiguous"]);
+  if (job.deliveryProvider === "microsoft") value.microsoft = pick(job.microsoft, ["correlation", "senderMailbox", "runId", "receiptAcceptedAtMillis", "receiptUncertainAtMillis", "internetMessageId", "traceErrorCode", "traceAmbiguous", "claimPayloadDigest", "claimRecipients", "deliveryAmendmentId"]);
   value.status = job.status === "sending" ? "pending" : job.status || "unknown";
-  value.recipients = Array.isArray(job.payload?.to) ? [...job.payload.to].sort() : [];
+  const payload = Microsoft.effectiveDeliveryPayload(job);
+  value.recipients = Array.isArray(payload?.to) ? [...payload.to].sort() : [];
+  if (job.deliveryAmendment) value.deliveryAmendment = job.deliveryAmendment;
   value.recipientDelivery = job.recipientDelivery || {};
   return value;
 }
 
 function materialOccurrence(event) {
   if (!event) return null;
-  return pick(event, ["eventId", "sessionId", "issueId", "kind", "operation", "code", "platform", "occurredAtMillis", "receivedAtMillis", "build", "device", "description", "message", "route", "requestId", "severity", "reporterUid", "reporterName", "player", "source", "sourceReference"]);
+  const value = pick(event, ["eventId", "sessionId", "issueId", "kind", "operation", "code", "platform", "occurredAtMillis", "receivedAtMillis", "build", "device", "description", "message", "route", "requestId", "severity", "reporterUid", "reporterName", "player", "source", "sourceReference", "authenticatedSnapshot", "currentContact"]);
+  if (event.contactLookup) value.contactLookup = pick(event.contactLookup, ["status", "code"]);
+  return value;
 }
 const materialIssue = issue => issue ? pick(issue, ["state", "fixRef", "verification", "updatedBy"]) : null;
 
