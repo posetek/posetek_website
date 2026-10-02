@@ -26,10 +26,10 @@ envelope or evidence of a consumed permission.
 
 Exact-UID Auth enrichment covered 101 occurrences across seven recorded accounts:
 three had verified email addresses and four had unverified addresses. Their Auth
-records supplied no display names. The 995 service/anonymous occurrences without
-a recorded Auth UID remain unknown; no athlete, recipient or device is substituted
-as the actor. Historical occurrence-token identity and current outreach contact
-are separate. Failed lookups preserve last-known evidence while marking the current
+records supplied no display names. At the fixed initial review, 995 service/anonymous
+occurrences lacked a recorded Auth UID and remained unknown; no athlete, recipient
+or device is substituted as the actor. Historical occurrence-token identity and
+current outreach contact are separate. Failed lookups preserve last-known evidence while marking the current
 contact unavailable. Only counts and methodology belong in this public handoff.
 
 Fresh cloud verification matched the saved revision-87 native receipt to the exact
@@ -37,11 +37,29 @@ frozen backend batch. Its acknowledgement was reconciled without rewriting Excel
 or regenerating that batch. The first ordinary retry then returned revision 88.
 All eleven approved recent Microsoft amendments delivered to Dylan alone,
 preserving their original payload hashes and frozen claim digests. Their separate
-identity fields identify nine diagnostic uploaders and two service failures with
-unknown operators. A fixed-cutoff Outlook review from 21:57 through 22:20 UTC
+identity fields describe nine diagnostic upload messages and two service failures
+with unknown operators. A fixed-cutoff Outlook review from 21:57 through 22:20 UTC
 found sixteen post-change messages addressed only to Dylan, with no CC or BCC.
-Complete backlog drainage and final physical cloud readback of all contact
-annotations remain separate verification steps. Use the
+Final fresh physical cloud acceptance verifies revision 121: 289 actions, 1,104
+instances, 402 email rows and two daily records. The fixed `23:32:01.540Z` queue audit
+had zero pending tickets. All 180 saved
+human records, 882 historical links, formulas and the full 121-receipt chain passed.
+Independent revision-121 identity acceptance verified all 101 contact annotations
+(77 historical and 24 newer) against exact-account evidence and physically joined
+the eleven delivered amendments through verified Internet-Message-IDs. Diagnostic
+uploads and staff actions targeting a different athlete passed separate checks.
+Nolan and Taiyo's **Can edit** access was freshly confirmed at 23:24 UTC, and the
+revised team guide passed fresh cloud readback.
+
+Guarded recovery reconciled 141 lagging existing publication windows in eight
+transactions, preserving capture fields and making no Excel, Flow, email or seed
+changes. Both sources completed and published all 159 windows through their fixed
+October 2 cutoff at 4:28 PM PDT: Outlook through `2026-10-02T23:28:04.127Z` and
+backend through `2026-10-02T23:28:04.120Z`. A later `23:34:18.201Z` readback found two
+newly queued arrival tickets. The normal native queue resumed **RUNNING**, verified
+at 23:36 UTC with unchanged configuration. These checkpoints cover the verified
+intervals; they do not establish coverage of later arrivals or completion of the
+independent outstanding-delivery scan. Use the
 [refinement receipt](deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json) for those
 operational outcomes and exact coverage, and
 [the refinement handoff](docs/NOTIFICATION_OUTREACH_REFINEMENT.md) for the contract.

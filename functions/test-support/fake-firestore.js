@@ -138,12 +138,17 @@ class Transaction extends Batch {
     if (target instanceof DocumentReference) return new Snapshot(target, this.db.read(target.path));
     return target.get();
   }
+  async getAll(...refs) {
+    if (this.operations.length) throw new Error("Firestore transactions require all reads before writes");
+    return this.db.getAll(...refs);
+  }
 }
 
 class FakeFirestore {
   constructor(seed = {}) {
     this.docs = new Map();
     this.queries = [];
+    this.bulkReads = [];
     this.generated = 0;
     this.transactionTail = Promise.resolve();
     for (const [path, data] of Object.entries(seed)) this.docs.set(path, clone(data));
@@ -158,6 +163,11 @@ class FakeFirestore {
   }
   collection(name) { return new CollectionReference(this, name); }
   doc(path) { return new DocumentReference(this, path); }
+  async getAll(...refs) {
+    if (!refs.length || refs.some(ref => !(ref instanceof DocumentReference))) throw new Error("getAll requires individual document references");
+    this.bulkReads.push(refs.map(ref => ref.path));
+    return refs.map(ref => new Snapshot(ref, this.read(ref.path)));
+  }
   batch() { return new Batch(this); }
   async runTransaction(handler) {
     // Serial transactions model atomic competing claims, with rollback on a

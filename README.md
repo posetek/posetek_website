@@ -34,9 +34,10 @@ The scoped deployments verified ten user-issue functions at version 5, three
 Microsoft email functions at version 2 and six tracker functions at version 2,
 preserving unrelated resources, IAM and schedules. Exact-UID contact enrichment
 covered 101 occurrences across seven Auth accounts: three verified emails, four
-unverified emails and no Auth display names. The 995 service/anonymous records
-without a recorded Auth UID remain unknown. The tracker keeps actor and target
-athlete separate and preserves stable IDs, evidence and the team's triage notes.
+unverified emails and no Auth display names. The fixed initial review retained
+995 service/anonymous records without a recorded Auth UID as unknown. The tracker
+keeps actor and target athlete separate and preserves stable IDs, evidence and the
+team's triage notes.
 
 The Power Automate shared tracker is event driven, with an accepted Dylan-only
 delegated mailbox reader and independent cloud source catch-up. The old hourly
@@ -44,10 +45,27 @@ Codex automation remains **paused**. Fresh cloud evidence matched revision 87 to
 the exact frozen batch, allowing its existing receipt to be acknowledged without
 an Excel rewrite; the first ordinary retry returned revision 88. All eleven
 approved recent amendments delivered to Dylan alone with their original payloads
-and frozen claim digests preserved. Their structured identity fields identify nine
-diagnostic uploaders and two service failures with unknown operators. Final
-physical readback of the new annotations and full backlog drainage remain
-separate verification steps. Current sending and
+and frozen claim digests preserved. Their structured identity fields describe nine
+diagnostic upload messages and two service failures with unknown operators. Final
+fresh cloud acceptance verifies revision 121 with 289 actions, 1,104 instances,
+402 email rows and two daily records. The fixed `23:32:01.540Z` queue audit had zero
+pending tickets. All 180 saved human
+records, 882 historical links, formulas and the full 121-receipt chain passed.
+Independent revision-121 identity acceptance verified all 101 contact annotations
+(77 historical and 24 newer), all eleven Internet-Message-ID joins, and real
+diagnostic upload and staff actions involving a different athlete. Nolan and
+Taiyo's **Can edit** access was freshly confirmed at 23:24 UTC; the revised guide
+passed cloud readback.
+
+Publication metadata recovery reconciled 141 lagging existing windows in eight
+transactions without Excel, Flow, email, seed or capture-field changes. Outlook
+and backend each completed and published all 159 windows through the fixed
+October 2, 4:28 PM PDT cutoff: respectively `2026-10-02T23:28:04.127Z` and
+`2026-10-02T23:28:04.120Z`. Two newly queued arrival tickets appeared in the later
+`23:34:18.201Z` readback. The normal native queue resumed **RUNNING**, verified at
+23:36 UTC with unchanged configuration. This establishes catch-up through those checkpoints,
+not coverage of later arrivals or completion of the independent outstanding-delivery
+scan. Current sending and
 coverage must come from the [refinement receipt](deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json),
 not an older flow badge or setup result. Never replace or reseed the native master.
 Read [the refinement handoff](docs/NOTIFICATION_OUTREACH_REFINEMENT.md),

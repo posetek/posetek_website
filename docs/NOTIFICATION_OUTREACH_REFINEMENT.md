@@ -82,6 +82,38 @@ revision, row-set, count and conflict checks. Only verified native receipts adva
 publication checkpoints; fresh cloud readback independently confirms publication.
 Contact and late-mail repair cursors never claim source completeness.
 
+## Final physical acceptance and fixed-cutoff catch-up
+
+Final fresh cloud readback verified 289 actions, 1,104 instances, 402 email rows
+and two daily records against the exact backend revision-121 chain. The fixed
+`23:32:01.540Z` queue audit had zero pending tickets. All 180 saved human records,
+882 historical source links, formulas and all 121 native receipts were preserved
+and verified. Independent revision-121 identity
+acceptance verified all 101 current-contact annotations: 77 historical occurrences
+and 24 newer occurrences. Real diagnostic uploads and staff actions involving a
+different target athlete passed separate identity acceptance checks.
+
+All eleven approved recent amendments delivered to Dylan alone and are physically
+joined at revision 121 to their workbook incident records by verified Internet-Message-ID. Their
+separate identity fields describe nine diagnostic upload messages and two service
+failures with unknown operators. Original frozen payloads and consumed claim
+digests remain intact. A fresh 23:24 UTC permission review confirmed Nolan and
+Taiyo still have **Can edit** access. The revised team guide passed fresh cloud
+readback with SHA-256
+`4243d2df168b0374eb427604a474d7d62b78352ea0401b911649c5a1981689f1`.
+
+Guarded publication metadata recovery reconciled 141 lagging existing windows in
+eight transactions. Capture fields remained unchanged, with no Excel, Flow, email
+or seed changes. Both sources completed and published all 159 windows through their
+fixed October 2 cutoff at 4:28 PM PDT: Outlook through
+`2026-10-02T23:28:04.127Z` and backend through `2026-10-02T23:28:04.120Z`. A later
+`23:34:18.201Z` readback observed two newly queued arrival tickets. The normal native
+queue resumed **RUNNING**, verified at 23:36 UTC with unchanged configuration.
+This confirms source catch-up through those checkpoints. Later arrivals and the
+independent outstanding-delivery scan require their own completeness evidence.
+The hourly Codex automation remains **PAUSED**. Consult the production receipt
+for exact coverage rather than inferring it from row counts or delivery.
+
 ## Operation and limits
 
 The original sender, Outlook/Excel connections, tenant service-principal restriction,

@@ -1,7 +1,7 @@
 # Event-driven issue tracker activation
 
-Current contract: **event-driven shared master; Dylan-only notifications; recovery
-and independent final publication verification remain distinct**. New issue,
+Current contract: **event-driven shared master; Dylan-only notifications; physical
+revision-121 publication and fixed-cutoff source catch-up verified**. New issue,
 status, daily-summary and workout emails target only `dylank@posetek.net`; both
 PoseTek Google Cloud notification policies were separately verified with Dylan
 alone. Nolan and Taiyo keep editing access to the existing shared workbook.
@@ -16,7 +16,8 @@ individual delivery receipts retain their original recipient sets.
 
 Exact-UID contact enrichment covered 101 occurrences across seven Auth accounts:
 three verified and four unverified emails, with no Auth display names supplied.
-The 995 service/anonymous records without a recorded Auth UID remain unknown.
+The fixed initial review retained 995 service/anonymous records without a recorded
+Auth UID as unknown.
 The native writer annotates the existing actor and identity-basis cells with the
 current contact or an explicit unavailable/last-known result, preserving target
 athlete identity, historical wording, stable IDs and human Status/Owner/Due/Fix
@@ -28,11 +29,30 @@ records. The bridge acknowledged that receipt without a workbook rewrite or a
 replacement batch. Its first ordinary retry returned revision 88. All eleven
 approved recent Microsoft amendments delivered to Dylan alone while preserving
 their original payload hashes and frozen claim digests. Separate identity fields
-identify nine diagnostic uploaders and two service failures with unknown operators.
+describe nine diagnostic upload messages and two service failures with unknown operators.
 A fixed-cutoff Outlook review from 21:57 through 22:20 UTC found sixteen post-change
-messages with Dylan as the sole recipient and no CC or BCC. Complete queue drainage
-and final physical cloud readback of all annotations remain separate verification
-steps. Read
+messages with Dylan as the sole recipient and no CC or BCC.
+
+Final fresh physical cloud acceptance verifies revision 121, containing 289 actions,
+1,104 instances, 402 email rows and two daily records. The fixed `23:32:01.540Z`
+queue audit had zero pending tickets. All
+180 saved human records, 882 historical links, formulas and the full 121-receipt
+chain passed. Independent revision-121 identity acceptance verified all 101 contact
+annotations (77 historical and 24 newer) and physically joined all eleven Dylan-only
+amendments by verified Internet-Message-ID to their incident records. Real diagnostic
+uploads and staff actions involving a different target athlete passed acceptance.
+Nolan and Taiyo's **Can edit** access was freshly verified at
+23:24 UTC. The updated team guide passed fresh cloud readback with SHA-256
+`4243d2df168b0374eb427604a474d7d62b78352ea0401b911649c5a1981689f1`.
+Guarded publication metadata recovery reconciled 141 lagging existing windows in
+eight transactions, preserving all capture fields and making no Excel, Flow,
+email or seed changes. Outlook and backend each completed and published all 159
+windows through the fixed October 2 cutoff at 4:28 PM PDT: Outlook through
+`2026-10-02T23:28:04.127Z`, backend through `2026-10-02T23:28:04.120Z`. A later
+`23:34:18.201Z` readback found two newly queued arrival tickets. The normal native
+queue resumed **RUNNING**, verified at 23:36 UTC with unchanged configuration.
+This verifies catch-up through those checkpoints; later arrivals and the independent
+outstanding-delivery scan have separate completeness requirements. Read
 [the refinement handoff](NOTIFICATION_OUTREACH_REFINEMENT.md) and
 [the refinement receipt](../deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json)
 for current operational evidence and separate source/publication coverage.
