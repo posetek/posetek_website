@@ -5,9 +5,13 @@ October 1 and authorized setup. An available Premium license is now assigned to
 dylank@posetek.net; the saved private writer no longer has the former licensing
 block. The existing hourly Codex tracker remains active until the replacement
 passes all acceptance gates. No backend deployment or shared-master cutover has
-occurred. Excel and Outlook connections are confirmed. Microsoft setup consent,
-mailbox delegation and the dedicated automation identity remain pending approval.
-Native Excel acceptance passes; final Power Automate transport verification remains.
+occurred. Excel and Outlook connections, the dedicated application/service
+principal and eleven fixed credential secrets are configured. The writer is On
+only for the private synthetic workbook and allows only that service principal.
+Actual private Power Automate transport and identical replay returned exact
+revision-six native receipts. Mailbox-scoped access, backend deployment and
+shared-master migration remain gates. Neither cloud-mail intake nor the email
+sender flow is imported; production Resend and the hourly tracker are unchanged.
 
 ## Intended behavior
 
@@ -69,23 +73,36 @@ The saved flow `PoseTek issue tracker - event writer` has ID
 `b011912f-bb15-453f-92ef-761d223095b4`. Excel Online (Business) is connected as
 `dylank@posetek.net`, and the writer targets only the private test workbook.
 Neither the backend nor Outlook intake is connected to this writer. After
-Premium assignment and resaving, its saved details show **Off**, type
+Premium assignment and resaving, its saved details show **On**, type
 **Automated**, owned by Dylan, running on its owner's plan. This is not a live
 tracker replacement. The dedicated sender mailbox alerts@posetek.net exists;
 email migration is described in the [Microsoft package](../deployments/microsoft-email/README.md).
 
-The request trigger is restricted to specific tenant identities, with concurrency
-set to one and secure inputs/outputs. Saving with concurrency one and a synchronous
-Response failed; this configuration requires an asynchronous Response. The
+The request trigger is restricted to the dedicated caller's service-principal
+object ID, with concurrency set to one and secure inputs/outputs. Saving with
+concurrency one and a synchronous Response failed; this configuration requires an asynchronous Response. The
 candidate transport polls for a final, verified script receipt, with at most 24
 polls inside 125 seconds. Polling stays on the original HTTPS origin and workflow;
 redirects are rejected. Timeout retains the frozen batch for identical retry.
-The actual tenant's polling URL and final receipt still need live verification.
-An initial HTTP 202 is never a confirmed workbook write.
+Actual tenant calls now pass through HTTP 202 polling to the exact final native
+receipt, including identical replay. The observed Location omits the invoke URL's
+`/cu/30/` routing segment. Only that Power Platform route segment is normalized
+for comparison; origin, workflow and `/runs/` remain exact, and the returned URL
+is requested unchanged. An initial HTTP 202 is never a confirmed workbook write.
 
 Complete licensing and caller setup before activation. Allowlist the dedicated
 caller's service-principal object ID; do not
 use the trigger's legacy `Anyone` option or treat a secret URL as authentication.
+Request the client-credentials scope `https://service.flow.microsoft.com//.default`.
+The second slash retains the exact `https://service.flow.microsoft.com/` audience
+required by the [public-cloud HTTP trigger](https://learn.microsoft.com/en-us/power-automate/oauth-authentication).
+Microsoft's [v2 scope rules](https://learn.microsoft.com/en-us/entra/identity-platform/scopes-oidc#trailing-slash-and-default)
+append `/.default` to the complete resource identifier. The single-slash scope
+issued an audience without the final slash during private setup and was rejected
+with HTTP 403 `MisMatchingOAuthClaims`; no flow run was recorded for that attempt.
+Safe claim comparison confirmed the corrected audience with the same tenant and
+service-principal identity. Subsequent final receipts independently established
+the private writer's actual transport and replay result.
 Pass the serialized request to the script's `payloadJson` input. Disable the
 Run script action's automatic retries, because the backend owns the frozen-batch
 retry and call budget. Only the final successful response containing the exact
@@ -121,8 +138,9 @@ Dylan's plan. [Microsoft's licensing FAQ](https://learn.microsoft.com/en-us/powe
 says automated flows use the owner's license regardless of who starts them;
 only the owner needs Premium for premium connectors. On that evidence, the
 recommended path is **one Premium license for
-Dylan, $180/year before tax**, retaining his ownership. Verify Microsoft accepts
-the assigned entitlement in an actual run; the agent did not submit a purchase or trial.
+Dylan, $180/year before tax**, retaining his ownership. Microsoft accepted the
+assigned entitlement in the actual private writer runs; the agent did not submit
+a purchase or trial.
 
 The earlier service-principal-owned/designated-user alternative is unnecessary
 for this confirmed Automated flow. It would add Dataverse and ownership-rights
@@ -145,9 +163,23 @@ The bridge limits writer transport attempts to 1,200 per UTC day; this does not
 reserve Office Script quota from the user's other flows. Excel Run script has
 its own per-user limits (currently 1,600 calls/day). No further paid upgrade is authorized.
 
-The Excel connection is confirmed; the dedicated backend caller is not configured.
-Creating that caller grants persistent Microsoft access. Obtain the applicable
-access approval at that setup step.
+The dedicated application and service principal now exist. Eleven fixed
+credential/callback/ingress secrets were installed and read back as Secret Manager
+version 1; endpoint secrets are not installed and runtime access remains to be verified. A bounded
+live message-trace query returned HTTP 200 with zero matches. That proves query
+access only, not delivery, mailbox-content access or writer transport.
+
+Dylan-only Exchange application RBAC is still blocked: organization customization
+completed and `IsDehydrated` is false, but a fresh authenticated session at
+2026-10-02T04:41Z still received the prerequisite error from `New-ManagementScope`.
+The cause of this contradictory Microsoft failure is unconfirmed. Resolve the
+narrow scope without granting tenant-wide Mail.Read. Actual positive Dylan and
+negative other-mailbox reads, followed by direct legacy-to-immutable ID mapping,
+remain required before source capture is enabled.
+
+The browser upload tool still rejects file selection for the prepared email package.
+Neither the email sender nor cloud-mail intake is installed. These setup blockers
+do not stop the existing production Resend route or hourly workbook publisher.
 Keep caller credentials and the bounded mailbox-ingress secret in Secret Manager,
 and keep Power Automate action inputs/outputs secure. No credential belongs in
 the workbook, flow screenshots, repository or this document.
@@ -156,9 +188,9 @@ the workbook, flow screenshots, repository or this document.
 
 1. Obtain a fresh cloud workbook and reconcile any new hourly candidate. The
    earlier b49ac4d/5e209015 discrepancy was resolved: the confirmed master now
-   contains 23 actions, 560 instances and 128 emails, SHA-256
-   `9e4d825ce1af5de8e85032e53ec70167e911fd312f3f95e731ac3e99c89c1586`, with
-   both source cutoffs at `2026-10-02T00:23:48.011Z`. There was no unfinished
+   contains 23 actions, 586 instances and 128 emails, SHA-256
+   `6e719cabf1639d3ae0792b03ce4aa87b8197a5c04360b3b95e5ae0bd827b25fd`, with
+   both source cutoffs at `2026-10-02T02:47:19.937Z`. There was no unfinished
    candidate at that checkpoint. Exact receipts and recovery instructions are
    private in `.netlify/error-tracker-2026-10-01/RECURRING-TRACKER.md`.
 2. Complete licensing, access, flow configuration and private backend deployment
@@ -179,6 +211,15 @@ the workbook, flow screenshots, repository or this document.
    Append took 20,281 ms; an ordinary update took 17,485 ms, with exact replay
    taking 1,160 ms. Saved fields, adjacent daily data and the Monitoring footer
    survived. These are browser-host tests, not Power Automate transport tests.
+   The fresh read-only preflight at `2026-10-02T04:20:06.051Z` verified ready
+   revision five with no pending batch, current fixture counts 23/561/131/1,
+   all 23 saved human-field records, 716 source rows, 858 links, formulas, five
+   receipts and the moved footer. Actual flow transport then returned two exact
+   final receipts for the identical batch at revision six, with no duplicate
+   rows. The earlier revision-six native readback preserved all human fields,
+   links, formulas and footer. The final post-replay inspection at
+   `2026-10-02T04:51:56.787Z` confirmed those values, six receipts and ready
+   revision six with no pending batch.
    See [native acceptance](../scripts/issue-tracker/NATIVE_ACCEPTANCE.md).
 4. Prepare a verified migration seed from the confirmed master and ledger. Reuse
    all Action/Instance/Email IDs and machine hashes; review legacy action mappings.
@@ -202,20 +243,24 @@ never force a whole-file overwrite to clear a conflict.
 
 ## Candidate verification
 
-The current combined backend and native-model suite passes **212/212 tests**;
+The prior combined backend and native-model suite passed **212/212 tests**;
 the Microsoft path also passes five actual Firestore SDK tests. Coverage includes replay after an unknown
 write outcome, competing workers, concurrent source changes, exact receipt
 counts, sharded historical snapshots larger than a single Firestore document,
 sorted human-field preservation, recurrence evidence, reviewed identity and
 diagnosis preservation, partial recipient delivery and the real normalizer to
 writer contract. Isolated packaging and paste-ready script generation passed.
+After the OAuth-audience and canonical polling-route corrections, all 57 affected
+tests passed on Node 22. The private acceptance helper and endpoint-configuration
+helper each passed seven offline tests. Two actual Power Automate calls returned
+the identical verified revision-six receipt; private evidence remains outside Git.
 
 Offline checks use fake Firestore and native API fixtures. The separate native
 synthetic workbook run confirms the limited initialize/upsert/replay behavior
 described above, including literal date/numeric-ID preservation. The optimized
-writer is saved in Dylan's private Office Scripts folder. Native fixes remain
-subject to actual Power Automate acceptance. Neither offline checks nor a private workbook establish live
-mailbox coverage or shared-master publication. The shared workbook and committed
+writer is saved in Dylan's private Office Scripts folder. Actual private transport
+and exact replay now pass. Neither offline checks nor that private workbook
+establish live mailbox coverage or shared-master publication. The shared workbook and committed
 source checkpoints were unchanged by this migration setup.
 
 The exact deployed Firestore ruleset

@@ -1,7 +1,9 @@
 "use strict";
 const { fail, verifyReceipt } = require("./issue-tracker-bridge-model");
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const FLOW_SCOPE = "https://service.flow.microsoft.com/.default";
+// The HTTP trigger requires aud=https://service.flow.microsoft.com/ exactly.
+// The v2 token scope is that resource URI plus /.default; keep both slashes.
+const FLOW_SCOPE = "https://service.flow.microsoft.com//.default";
 const TRANSPORT_TIMEOUT_MS = 125000, MAX_ASYNC_POLLS = 24, MIN_POLL_MS = 5000;
 
 function flowEndpoint(value) {
@@ -44,9 +46,14 @@ function createFlowTokenProvider({ credentials, fetchImpl = fetch, now = Date.no
 function pollEndpoint(value, invoke) {
   let url, source;
   try { source = new URL(invoke); url = new URL(value, source); } catch (_) { fail("tracker_unverified_receipt"); }
-  const base = source.pathname.slice(0, -"/triggers/manual/paths/invoke".length);
+  // Power Platform may omit the documented /cu/<scale-unit> routing segment
+  // from its async Location. Canonicalize that segment only; origin, workflow
+  // identity and the /runs/ boundary must still match exactly.
+  const route = pathname => source.hostname.endsWith(".environment.api.powerplatform.com")
+    ? pathname.replace(/^\/powerautomate\/automations\/direct\/cu\/\d+\/workflows\//, "/powerautomate/automations/direct/workflows/") : pathname;
+  const base = route(source.pathname).slice(0, -"/triggers/manual/paths/invoke".length);
   if (typeof value !== "string" || !value || value.length > 8192 || url.protocol !== "https:" || url.origin !== source.origin ||
-      url.username || url.password || url.hash || !url.pathname.startsWith(`${base}/runs/`) ||
+      url.username || url.password || url.hash || !route(url.pathname).startsWith(`${base}/runs/`) ||
       /%(?:2e|2f|5c)/i.test(url.pathname) || /[\\\u0000-\u0020]/.test(value) ||
       [...url.searchParams.keys()].some(key => ["access_token", "authorization"].includes(key.toLowerCase()))) fail("tracker_unverified_receipt");
   return url.href;

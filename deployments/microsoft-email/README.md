@@ -1,10 +1,27 @@
 # Microsoft email delivery candidate
 
 Source candidate only. The user selected Power Automate Premium and the dedicated
-shared mailbox `alerts@posetek.net`. This document does not assert a deployed
-function, imported flow, mailbox permission, or successful tenant send. Keep the
-new route disabled until the live acceptance below is complete. The issue tracker
-and its workbook migration are independent.
+shared mailbox `alerts@posetek.net`. The application/service principal and eleven
+fixed credential/callback/ingress secrets are configured; the secrets were read
+back as Secret Manager version 1. Endpoint secrets are not installed and runtime
+grants remain gates. A bounded live trace query returned HTTP 200 with zero matches, proving
+trace query access only, not email delivery. No email flow is imported, function
+deployed or production provider setting changed. Keep the new route disabled
+until the live acceptance below is complete. The issue tracker and its workbook
+migration are independent.
+
+The separate tracker writer is On only for its private synthetic fixture and
+allows the dedicated service principal. Actual Power Automate transport and
+identical replay returned exact revision-six native receipts. The shared-master
+hourly writer continues. Dylan-only mailbox reading for tracker recovery remains
+blocked by a contradictory Microsoft prerequisite error in a fresh session despite
+`IsDehydrated:false`; the cause is unconfirmed. Mailbox reading is not a permission
+needed by this email sender. See [the tracker handoff](../../docs/ISSUE_TRACKER_EVENT_FLOW.md).
+
+Dylan has Full Access to the shared sender mailbox; his separate Send As grant
+remains pending approval. Preserve the existing mailbox grants. Browser file upload
+currently blocks email-flow package import. Neither that flow nor cloud-mail
+intake is installed; actual send/recipient-trace acceptance remains required.
 
 The existing Firebase workout and issue outboxes remain authoritative. Workout
 recipients remain Dylan only. New issue/status/daily messages retain Dylan, Nolan
@@ -26,7 +43,12 @@ The backend caller is a dedicated Entra application/service principal. The flow'
 Request trigger must use **Specific users in my tenant**, containing the caller's
 **service-principal object ID**, not its application/client ID and not `Anyone`.
 The backend obtains a client-credentials token for
-`https://service.flow.microsoft.com/.default`. For reconciliation, the same app
+`https://service.flow.microsoft.com//.default`. The doubled slash preserves the
+exact public-cloud audience `https://service.flow.microsoft.com/`; removing it
+produces an audience without the required trailing slash and the trigger rejects
+the token. See Microsoft's [HTTP-trigger audience requirements](https://learn.microsoft.com/en-us/power-automate/oauth-authentication)
+and [v2 resource/.default construction](https://learn.microsoft.com/en-us/entra/identity-platform/scopes-oidc#trailing-slash-and-default).
+For reconciliation, the same app
 requests `https://graph.microsoft.com/.default` with application permission
 `ExchangeMessageTrace.Read.All` and tenant admin consent. Provision Microsoft's
 message-trace service principal `8bd644d1-64a1-4d4b-ae52-2e0cbf64e373` as required

@@ -65,9 +65,15 @@ payload. Therefore verified trigger concurrency **one**, Run script retries
 **None**, and native exact-batch replay are mandatory acceptance gates. The
 240-second backend lease alone cannot prevent remote overlap after a caller
 timeout. Do not disable flow concurrency to obtain a synchronous response.
-The 9 async transport tests cover URL boundaries, missing/invalid receipts,
-pending deadlines and identical retry. The actual tenant's Location URL shape,
-authentication and final receipt still require a live test before activation.
+The async transport tests cover URL boundaries, missing/invalid receipts,
+pending deadlines and identical retry. Actual tenant authentication, polling and
+two exact terminal receipts now pass against the private synthetic workbook.
+Microsoft's Location omitted the invoke URL's numeric `/cu/30/` routing segment;
+the comparison normalizes only that segment while retaining the exact origin
+and workflow. The final native readback confirmed ready revision six, no pending
+batch, preserved team fields and all 858 evidence links. This establishes the
+private writer path; production intake and shared-master cutover remain separate
+requirements. See [native acceptance](../../scripts/issue-tracker/NATIVE_ACCEPTANCE.md).
 
 The installed Admin SDK enqueues tasks with an OIDC token for the runtime service
 account. Before activation, record that actual service-account identity, its
@@ -124,7 +130,8 @@ Before activation, import verified native seed and identity aliases, then set
 `sourceRecoveryEnabled`, `graphMailboxVerified`, `mailAliasesVerified`,
 `sourceCaptureStart` and `sourceCheckpoints: {outlook, backend}`. The two initial
 checkpoints must come from confirmed publication, not a local save. The last
-published local ledger during implementation was `2026-10-02T00:23:48.011Z`;
+confirmed publication during implementation was `2026-10-02T02:47:19.937Z`, with
+586 instances, 128 emails and 23 actions;
 re-read the current committed ledger before seeding. For each original Outlook
 row, `createMailCapture().verifiedAliases(originalIds)` reads that original ID
 with `Prefer: IdType="ImmutableId"` and returns a map to preserve its original

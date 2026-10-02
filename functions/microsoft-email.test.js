@@ -4,7 +4,7 @@ const { FakeFirestore, HttpsError } = require("./test-support/fake-firestore");
 const M = require("./microsoft-email-model");
 const { createMicrosoftEmail, TRACE_WINDOW, RECIPIENT_BUCKET, RECIPIENT_WINDOW } = require("./microsoft-email");
 const { createUserIssues } = require("./user-issues");
-const { createTraceReader, createFlowTransport, createTokenProvider, flowEndpoint } = require("./microsoft-email-transport");
+const { createTraceReader, createFlowTransport, createTokenProvider, createMicrosoftProvider, flowEndpoint } = require("./microsoft-email-transport");
 const AT = Date.parse("2026-10-02T02:00:00Z"), ID = "a".repeat(64), PATH = `userIssueOutbox/${ID}`;
 const config = () => ({ enabled: true, connectionVerified: true, traceEnabled: true, activatedAtMillis: AT - 1, senderMailbox: "alerts@posetek.net" });
 class QueueFirestore extends FakeFirestore {
@@ -189,6 +189,30 @@ test("flow wakeups carry only job references; HTTP 202 never synthesizes a provi
   assert.equal(request.options.redirect, "error"); assert.equal(request.options.body.includes("private athlete"), false);
   assert.deepEqual(JSON.parse(request.options.body), { schemaVersion: 1, kind: "issue", jobId: ID });
   for (const url of ["http://unit.logic.azure.com/workflows/x/triggers/manual/paths/invoke", endpoint + "&sig=secret", "https://evil.example/workflows/x/triggers/manual/paths/invoke"]) assert.throws(() => flowEndpoint(url));
+});
+test("real Microsoft provider requests the exact slash-terminated Flow audience before its reference-only wakeup", async t => {
+  const values = { MICROSOFT_EMAIL_TENANT_ID: "11111111-1111-1111-1111-111111111111", MICROSOFT_EMAIL_CLIENT_ID: "22222222-2222-2222-2222-222222222222",
+    MICROSOFT_EMAIL_CLIENT_SECRET: "fixture-only-client-secret", MICROSOFT_EMAIL_FLOW_ENDPOINT: "https://unit.logic.azure.com/workflows/test/triggers/manual/paths/invoke" };
+  const original = Object.fromEntries(Object.keys(values).map(key => [key, process.env[key]])), calls = [];
+  try {
+    Object.assign(process.env, values);
+    t.mock.method(globalThis, "fetch", async (url, options) => {
+      calls.push({ url, options });
+      if (url.endsWith("/oauth2/v2.0/token")) {
+        const parameters = new URLSearchParams(options.body), scope = parameters.get("scope");
+        assert.equal(parameters.get("grant_type"), "client_credentials");
+        assert.equal(scope, "https://service.flow.microsoft.com//.default");
+        assert.equal(scope.slice(0, -"/.default".length), "https://service.flow.microsoft.com/");
+        return { ok: true, json: async () => ({ token_type: "Bearer", access_token: "fixture-flow-token-long-enough", expires_in: 3600 }) };
+      }
+      assert.equal(url, values.MICROSOFT_EMAIL_FLOW_ENDPOINT);
+      assert.deepEqual(JSON.parse(options.body), { schemaVersion: 1, kind: "issue", jobId: ID });
+      return { status: 202 };
+    });
+    const provider = createMicrosoftProvider();
+    for (let i = 0; i < 2; i++) assert.deepEqual(await provider.send({}, "unused", { kind: "issue", id: ID, deliveryProvider: "microsoft" }), { pending: true });
+    assert.equal(calls.filter(call => call.url.endsWith("/oauth2/v2.0/token")).length, 1, "cache keeps the same correctly scoped token");
+  } finally { for (const key of Object.keys(values)) { if (original[key] === undefined) delete process.env[key]; else process.env[key] = original[key]; } }
 });
 test("Graph trace completes pages before returning and never sends bearer credentials to another origin", async () => {
   const f = fixture(); await claimed(f); f.advance(300000);

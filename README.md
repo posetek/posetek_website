@@ -31,10 +31,16 @@ failure; later partial recovery does not establish delivery to every new recipie
 See [recipient rollout and limits](deployment/USER_ISSUE_RECIPIENTS_PRODUCTION.json).
 
 Microsoft email and event-triggered Power Automate tracker candidates are prepared
-but not live. Premium is assigned, the private writer saves without licensing
-errors, and native Excel acceptance passes. Microsoft access grants, live flow
-verification and shared-master migration remain; existing email and hourly tracker
-routes stay active. See [the tracker handoff](docs/ISSUE_TRACKER_EVENT_FLOW.md) and
+but not live. Premium and the dedicated caller are configured; the writer is On
+only for its private synthetic workbook and permits only that service principal.
+Actual Power Automate transport and identical replay returned verified native
+revision-six receipts. Eleven credential secrets are installed; endpoint secrets
+are not. Message-trace HTTP 200 establishes access, not delivery. Mailbox RBAC is
+blocked by an unexplained Microsoft prerequisite error, and package upload is
+blocking email-flow import. Backend deployment, mailbox intake and shared-master
+migration remain. Production Resend and the hourly tracker stay active; the last confirmed
+master has 586 instances, 128 emails and 23 actions through
+`2026-10-02T02:47:19.937Z`. See [the tracker handoff](docs/ISSUE_TRACKER_EVENT_FLOW.md) and
 [the Microsoft email package](deployments/microsoft-email/README.md).
 
 The unified coach workspace and Astro build are documented in

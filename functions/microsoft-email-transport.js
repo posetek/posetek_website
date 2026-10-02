@@ -1,6 +1,8 @@
 "use strict";
 const M = require("./microsoft-email-model");
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Preserve the Flow resource's trailing slash in aud when using v2 /.default.
+const FLOW_SCOPE = "https://service.flow.microsoft.com//.default";
 const TRACE = "https://graph.microsoft.com/v1.0/admin/exchange/tracing/messageTraces";
 const SECRETS = ["MICROSOFT_EMAIL_FLOW_ENDPOINT", "MICROSOFT_EMAIL_TENANT_ID", "MICROSOFT_EMAIL_CLIENT_ID", "MICROSOFT_EMAIL_CLIENT_SECRET"];
 function flowEndpoint(value) {
@@ -82,6 +84,6 @@ function createTraceReader({ getAccessToken, fetchImpl = fetch, now = Date.now, 
 const credentialsFromEnv = () => ({ tenantId: process.env.MICROSOFT_EMAIL_TENANT_ID, clientId: process.env.MICROSOFT_EMAIL_CLIENT_ID, clientSecret: process.env.MICROSOFT_EMAIL_CLIENT_SECRET });
 function createMicrosoftProvider() {
   return createFlowTransport({ endpoint: () => process.env.MICROSOFT_EMAIL_FLOW_ENDPOINT,
-    getAccessToken: createTokenProvider({ credentials: credentialsFromEnv, scope: "https://service.flow.microsoft.com/.default" }) });
+    getAccessToken: createTokenProvider({ credentials: credentialsFromEnv, scope: FLOW_SCOPE }) });
 }
-module.exports = { SECRETS, TRACE, flowEndpoint, traceUrl, createTokenProvider, createFlowTransport, createTraceReader, credentialsFromEnv, createMicrosoftProvider };
+module.exports = { SECRETS, TRACE, FLOW_SCOPE, flowEndpoint, traceUrl, createTokenProvider, createFlowTransport, createTraceReader, credentialsFromEnv, createMicrosoftProvider };

@@ -8,11 +8,24 @@ business document is included.
 
 Dylan reported purchasing Power Automate Premium and authorized setup. One
 available Premium license is now assigned to dylank@posetek.net, and the existing
-private test writer saves without the former licensing block. It remains Off,
-Automated, owned by Dylan, with ID b011912f-bb15-453f-92ef-761d223095b4. Existing
-Excel and Outlook connections are confirmed. The shared mailbox alerts@posetek.net
-is created; its delegation and dedicated backend identity are pending setup
-permission approval. No additional subscription was purchased by the agent.
+private test writer saves without the former licensing block. It is On,
+Automated, owned by Dylan, with ID b011912f-bb15-453f-92ef-761d223095b4, targeting
+only the private synthetic workbook. Its trigger permits only the newly created
+dedicated service principal. Existing Excel and Outlook connections are confirmed.
+The shared mailbox alerts@posetek.net exists; the email sender's complete
+delegation remains an acceptance gate. No additional subscription was purchased
+by the agent.
+
+Eleven fixed credential/callback/ingress secrets were installed and read back as
+Secret Manager version 1. Endpoint secrets are not installed and runtime access
+still requires verification. A bounded live message-trace query returned HTTP 200 with zero
+matches, proving query access only, not email delivery. Dylan-only mailbox RBAC
+is not verified: organization customization completed and `IsDehydrated` is false,
+but `New-ManagementScope` still returned its prerequisite error in a fresh
+authenticated session. The contradictory Microsoft failure has no confirmed cause;
+do not substitute tenant-wide Mail.Read. Browser file upload currently blocks the
+email-flow package import. No backend deployment, cloud-mail intake, email-flow
+import or production provider change has occurred.
 
 The selected migration replaces all Resend notification types with Microsoft
 365 through Power Automate, retaining every existing alert and current recipient
@@ -27,15 +40,26 @@ backend occurrences and repeated scans of historical delivery jobs. Native
 acceptance against a private fixture matching 23 actions, 560 instances and 128
 emails found and fixed Excel timestamp rounding and a synthetic hyperlink overlap
 edge case. Native append, exact recovery and ordinary updates now pass: an
-ordinary update took 17.5 seconds, with a 1.2-second exact replay. These browser
-tests do not establish Power Automate transport or shared-master acceptance.
+ordinary update took 17.5 seconds, with a 1.2-second exact replay. Those initial
+browser tests did not establish Power Automate transport or shared-master acceptance.
+The fresh read-only native preflight at 2026-10-02T04:20:06.051Z verified ready
+revision five with no pending batch, 23 actions/561 instances/131 emails/one daily
+row, all 23 human-field records, 716 source rows, 858 links, formulas and footer.
+Actual Power Automate transport now passes: two calls of the identical frozen
+batch returned exact verified revision-six receipts with unchanged counts. The
+OAuth resource's trailing slash and canonical polling route were corrected while
+retaining the original batch and prior attempts. A revision-six native readback
+also verified the same human fields, 858 links, formulas and footer. The final
+post-replay inspection at 2026-10-02T04:51:56.787Z confirmed those preserved values
+and ready revision six with no pending batch. This is private-fixture acceptance,
+not shared-master publication or email delivery.
 Concurrency one, bounded asynchronous receipt polling and exact replay remain
 required. See [native acceptance](scripts/issue-tracker/NATIVE_ACCEPTANCE.md).
 
 The earlier cloud/local workbook discrepancy is resolved. The confirmed shared
-master has 560 instances, 128 emails and 23 actions, with both source cutoffs at
-2026-10-02T00:23:48.011Z. Its verified SHA-256 is
-9e4d825ce1af5de8e85032e53ec70167e911fd312f3f95e731ac3e99c89c1586.
+master has 586 instances, 128 emails and 23 actions, with both source cutoffs at
+2026-10-02T02:47:19.937Z. Its verified SHA-256 is
+6e719cabf1639d3ae0792b03ce4aa87b8197a5c04360b3b95e5ae0bd827b25fd.
 No unfinished hourly candidate remains at that checkpoint. Obtain a fresh cloud
 copy before migration; do not resurrect the older unpublished candidate.
 

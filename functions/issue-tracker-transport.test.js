@@ -29,6 +29,36 @@ test("async acceptance is polled on the same workflow until the final exact200 r
   assert.equal(f.calls[1].options.headers.Authorization, "Bearer authorized-token");
   assert.ok(f.calls.every(call => call.options.redirect === "error")); assert.deepEqual(f.waits, [5000, 5000]);
 });
+test("Power Platform CU routing accepts the observed same-origin same-workflow async Location unchanged", async () => {
+  const value = batch(), invoke = ENDPOINT.replace("/direct/workflows/", "/direct/cu/30/workflows/"), location = POLL + "&islandNumber=30";
+  const calls = [], waits = [];
+  const transport = createPowerAutomateTransport({ endpoint: async () => invoke, getAccessToken: async () => "scoped-token",
+    wait: async ms => waits.push(ms), fetchImpl: async (url, options) => {
+      calls.push({ url, options }); return calls.length === 1 ? response(202, {}, { Location: location, "Retry-After": "10" }) : response(200, receipt(value));
+    } });
+  assert.deepEqual(await transport.send(value), receipt(value));
+  assert.deepEqual(calls.map(call => call.options.method), ["POST", "GET"]); assert.equal(calls[1].url, location);
+  assert.equal(calls[1].options.headers.Authorization, "Bearer scoped-token"); assert.deepEqual(waits, [10000]);
+  const withUnit = POLL.replace("/direct/workflows/", "/direct/cu/30/workflows/");
+  assert.equal(pollEndpoint(withUnit, ENDPOINT), withUnit);
+  const signed = location + "&sig=private-capability";
+  let requests = 0;
+  const capability = createPowerAutomateTransport({ endpoint: async () => invoke, getAccessToken: async () => "scoped-token", wait: async () => {},
+    fetchImpl: async (_url, options) => { if (++requests === 1) return response(202, {}, { Location: signed });
+      assert.equal(options.headers.Authorization, undefined); return response(200, receipt(value)); } });
+  await capability.send(value);
+});
+test("CU canonicalization does not loosen origin, workflow, path boundaries or encoded-path guards", () => {
+  const invoke = ENDPOINT.replace("/direct/workflows/", "/direct/cu/30/workflows/");
+  for (const location of [POLL.replace("flow-one", "flow-two"), POLL.replace("flow-one", "flow-one-other"),
+    POLL.replace("test.environment", "other.environment"), POLL.replace("/direct/workflows/", "/unrelated/workflows/"),
+    POLL.replace("/direct/workflows/", "/direct/cu/not-a-number/workflows/"), POLL.replace("/runs/", "/runs-other/"),
+    POLL.replace("/runs/run-one", "/runs/%2Foutside"), `${POLL}&access_token=forbidden`, `${POLL}#fragment`, invoke]) {
+    assert.throws(() => pollEndpoint(location, invoke), { code: "tracker_unverified_receipt" });
+  }
+  const legacy = "https://unit.logic.azure.com/workflows/flow-one/triggers/manual/paths/invoke";
+  assert.throws(() => pollEndpoint("https://unit.logic.azure.com/powerautomate/automations/direct/workflows/flow-one/runs/run-one", legacy), { code: "tracker_unverified_receipt" });
+});
 
 test("signed same-workflow polling capabilities stay out of bearer headers", async () => {
   const value = batch(), signed = `${POLL}&sig=synthetic-private-capability`;

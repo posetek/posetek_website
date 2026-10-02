@@ -255,7 +255,11 @@ test("Power Automate transport requires OAuth, rejects SAS/redirect destinations
 test("token provider is tenant scoped, cached, refreshes and never exposes provider error body", async () => {
   let time = AT, calls = 0;
   const token = createFlowTokenProvider({ now: () => time, credentials: async () => ({ tenantId: "11111111-1111-1111-1111-111111111111", clientId: "22222222-2222-2222-2222-222222222222", clientSecret: "fixture-only-secret-value" }),
-    fetchImpl: async (url, options) => { calls++; assert.match(url, /^https:\/\/login.microsoftonline.com\/111/); assert.match(options.body, /client_credentials/); return { ok: true, json: async () => ({ access_token: "example-token-1234567890", expires_in: 3600, token_type: "Bearer" }) }; } });
+    fetchImpl: async (url, options) => { calls++; assert.match(url, /^https:\/\/login.microsoftonline.com\/111/); assert.match(options.body, /client_credentials/);
+      const scope = new URLSearchParams(options.body).get("scope");
+      assert.equal(scope, "https://service.flow.microsoft.com//.default");
+      assert.equal(scope.slice(0, -"/.default".length), "https://service.flow.microsoft.com/", "v2 resource extraction must retain the HTTP trigger audience's trailing slash");
+      return { ok: true, json: async () => ({ access_token: "example-token-1234567890", expires_in: 3600, token_type: "Bearer" }) }; } });
   await token(); await token(); assert.equal(calls, 1); time += 3600000; await token(); assert.equal(calls, 2);
 });
 
