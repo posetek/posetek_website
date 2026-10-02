@@ -17,7 +17,8 @@ pilot passed send acceptance, all three recipient traces and duplicate suppressi
 Both production email domains now use Microsoft for new alerts; historical
 Resend jobs and evidence remain unchanged. The Outlook arrival flow
 `6956b87e-6556-4ab6-8709-ac866cf417b2` is imported and Off; its native checker
-reported zero errors and warnings. The delegated reader is not imported. The pause does not
+reported zero errors and warnings. Its actual saved export passed exact execution,
+ingress and Dylan connection validation. The delegated reader is not imported. The pause does not
 establish replacement coverage; migration must catch up from the committed cutoffs.
 The separately approved Dylan Send As grant for `alerts@posetek.net` was verified
 at `2026-10-02T05:29:31.9389018Z`, preserving Nolan's grant, Dylan's Full Access

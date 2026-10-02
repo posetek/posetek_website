@@ -56,7 +56,17 @@
     "historicalOutboxWritesDuringActivation": 0,
     "pendingHistoricalResendJobsPreservedAtActivation": 489
   },
-  "limits": {
+  "postActivationChecks": {
+    "checkedAtUtc": "2026-10-02T07:26:01.381Z",
+    "nonPilotIncidentAlertsWithDeliveryEvidence": 2,
+    "verifiedRecipientDeliveries": 6,
+    "allThreeIssueRecipientsVerifiedForEach": true,
+    "productionSettingsMatchActivationReceipt": true,
+    "trackerSettingsAbsent": true,
+    "workoutMicrosoftJobsObserved": 0,
+    "sourceCompletenessOrWorkbookCoverageClaimed": false
+  },
+  "limitsAtEmailActivation": {
     "eventTrackerLive": false,
     "sharedWorkbookChanged": false,
     "hourlyCodexTrackerState": "PAUSED",
