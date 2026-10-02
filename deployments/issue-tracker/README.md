@@ -1,15 +1,17 @@
 # Isolated tracker bridge candidate
 
 Read [the event-flow handoff](../../docs/ISSUE_TRACKER_EVENT_FLOW.md) before setup.
-This package is not deployed or wired into `functions/index.js`. It adds four
+This package is not deployed or wired into `functions/index.js`. It adds six
 candidate entrypoints and no changes to the existing email delivery functions:
 
 | Entrypoint | Purpose | Required access |
 | --- | --- | --- |
 | `observeUserIssueTracker` | Observe material changes to `userIssueOutbox/{id}` and queue reporting work | Firestore event retry; private source/state access |
+| `observeUserIssueTrackerOccurrence` | Independently capture `userIssueOccurrences/{id}`, including records with no email outbox | Firestore event retry; private source/state access |
 | `drainUserIssueTracker` | Send one frozen batch to Power Automate and verify its receipt | Private Cloud Tasks invocation and task enqueue permissions |
-| `ingestUserIssueTrackerMail` | Accept bounded mailbox evidence into the reporting queue | Dedicated server-verified ingress secret |
+| `ingestUserIssueTrackerMail` | Resolve an arrival ID to authoritative Graph evidence and immutable identity | Ingress secret plus verified, mailbox-scoped Graph reader |
 | `recoverUserIssueTracker` | Every 15 minutes, resume bounded outbox enumeration and wake stranded queued work | Scheduled Pub/Sub trigger, private source/state access and task enqueue permissions |
+| `captureUserIssueTrackerSources` | Every five minutes, resume bounded whole-mailbox and independent backend receipt-time recovery | Mailbox-scoped Graph reader, private source/state access and task enqueue permissions |
 
 `prepare.cjs` only packages source into a new ignored directory; it does not read
 credentials, install dependencies, enable APIs, deploy or modify remote resources.
@@ -17,7 +19,8 @@ credentials, install dependencies, enable APIs, deploy or modify remote resource
 ```powershell
 node deployments/issue-tracker/prepare.cjs .netlify/issue-tracker-candidate-UNIQUE
 node scripts/issue-tracker/build-office-scripts.cjs .netlify/issue-tracker-scripts-UNIQUE
-node --test functions/issue-tracker-bridge.test.js functions/issue-tracker-recovery.test.js functions/issue-tracker-transport.test.js functions/issue-tracker-normalize.test.js scripts/issue-tracker/office-script.test.cjs
+node --test functions/issue-tracker-bridge.test.js functions/issue-tracker-recovery.test.js functions/issue-tracker-source-capture.test.js functions/issue-tracker-transport.test.js functions/issue-tracker-normalize.test.js scripts/issue-tracker/office-script.test.cjs
+python -m unittest discover -s deployments/issue-tracker -p '*_test.py'
 ```
 
 Use the configured Node runtime if `node` is not on PATH. Inspect the generated
@@ -33,14 +36,17 @@ and `issueTrackerState/seed` holds compact preserved IDs and machine hashes.
 `issueTrackerRows` holds the full per-row machine snapshots, outside the seed
 document, so reviewed descriptions survive later delivery-only updates.
 Queue/batch collections are `issueTrackerQueue` and `issueTrackerBatches`.
+Source windows and original body/backend snapshots live in private
+`issueTrackerCaptureWindows` and `issueTrackerEvidence` (including subcollections).
 Verify the deployed
 rules deny client access before activation; do not infer that from local rules.
 
 The worker binds `ISSUE_TRACKER_FLOW_ENDPOINT`, `ISSUE_TRACKER_FLOW_TENANT_ID`,
 `ISSUE_TRACKER_FLOW_CLIENT_ID` and `ISSUE_TRACKER_FLOW_CLIENT_SECRET` from Secret
-Manager. The intake binds `ISSUE_TRACKER_MAIL_INGRESS_SECRET`. The dedicated caller
-needs permission to invoke only the authenticated Power Automate flow, not broad
-Graph mailbox/file permissions. Review actual task invoker/enqueuer IAM and retry
+Manager. The intake binds `ISSUE_TRACKER_MAIL_INGRESS_SECRET` and the Graph
+credentials below. The flow-caller credential needs only the authenticated
+Power Automate flow. Graph reader authorization is separately scoped to Dylan's
+mailbox; it does not grant workbook writes. Review actual task invoker/enqueuer IAM and retry
 configuration in the deployed definitions. Never make the drain endpoint public.
 
 The serialized Power Automate request trigger requires the Response action's
@@ -90,14 +96,95 @@ Inspect `activeScan`, `lastCompletedScan`, `lastCheckedAtMillis`,
 `writerBlockedReason` for recovery evidence. A completed scan means the last
 document-ID page was reached; concurrent source changes make it **not** a
 point-in-time snapshot. An insertion behind the cursor can be found next pass.
-No source complete-through checkpoint or workbook publication state advances,
-and this sweep provides no mailbox coverage. Existing source-recovery gates
-remain required. The 13 offline recovery tests cover these distinctions; live
+Each observed full job snapshot is retained privately before the cursor advances;
+`deliveryStatuses` counts the statuses observed during that enumeration. No
+source complete-through checkpoint or workbook publication state advances,
+and this sweep provides no mailbox coverage. Receipt-time source capture below
+is separate. The offline recovery tests cover these distinctions; live
 Scheduler, IAM and task delivery acceptance remain unverified.
 
 Unknown delivery outcomes retry the identical frozen batch. A rejected or
 conflicting receipt stops the writer. Retries are bounded; persisted pending work
 does not itself prove future execution. The bounded queue-recovery candidate
-still needs live acceptance; tested mailbox/source recovery, operational review
-of persistent failure state, seed migration and live Excel acceptance remain
+still needs live acceptance; mailbox authorization, operational review of
+persistent failure state, seed migration and live Excel acceptance remain
 activation gates. See the handoff for source coverage and licensing limits.
+
+## Receipt-time source recovery and arrival intake
+
+`ISSUE_TRACKER_GRAPH_TENANT_ID`, `ISSUE_TRACKER_GRAPH_CLIENT_ID` and
+`ISSUE_TRACKER_GRAPH_CLIENT_SECRET` use client credentials with Graph `.default`.
+Verify Exchange application RBAC restricts Mail.Read to `dylank@posetek.net`;
+the code never requests another mailbox and does not grant tenant-wide Mail.Read.
+Both Graph endpoints bind these secrets. The scheduled capture's backend side
+still runs when Outlook reads fail; their leases, failures and checkpoints are
+independent. Permission errors and unfinished pagination fail closed.
+
+Before activation, import verified native seed and identity aliases, then set
+`sourceRecoveryEnabled`, `graphMailboxVerified`, `mailAliasesVerified`,
+`sourceCaptureStart` and `sourceCheckpoints: {outlook, backend}`. The two initial
+checkpoints must come from confirmed publication, not a local save. The last
+published local ledger during implementation was `2026-10-02T00:23:48.011Z`;
+re-read the current committed ledger before seeding. For each original Outlook
+row, `createMailCapture().verifiedAliases(originalIds)` reads that original ID
+with `Prefer: IdType="ImmutableId"` and returns a map to preserve its original
+row key. Merge this map into the reviewed seed before enabling intake. A missing
+old item or conflicting alias stops migration; matching a subject, time or
+Internet-Message-ID is not a substitute. No User.Read.All translation permission
+is needed.
+
+`issueTrackerState/capture-outlook` and `capture-backend` maintain separate
+`capturedThrough`, `publishedThrough`, `lastCheckedAtMillis`, `lastFailedAtMillis`
+and `lastErrorCode`. Capture resumes no more than two pages per scheduled run,
+using the same fixed UTC upper bound, a two-minute settle delay, 30-minute
+overlap and at most one day per catch-up window. All normal mailbox folders are
+enumerated through `/users/dylank@posetek.net/messages`, including read messages;
+neither subject nor read-state filters are used. Exact nextLinks are retained,
+with immutable-ID preference on every request. Known project notices and Google
+Cloud notices whose project needs verification are both considered. Unrelated
+mail is counted with an exclusion reason. Relevant original bodies/selected
+headers and each backend snapshot are archived privately; original Outlook items
+remain untouched. Attachments remain at the original Outlook source.
+
+Backend receipt windows enumerate occurrences by `receivedAtMillis`, then
+incident/status/daily outbox records by `createdAtMillis`, with document ID as a
+tie-breaker. Independent historical outbox recovery above continues to inspect
+older delivery changes. Neither cursor proves a point-in-time snapshot of all
+delivery states. Missing outbox records remain explicit unknown delivery;
+previously recorded delivery cannot disappear on refresh. Actor and athlete are
+separate, and generic diagnostics do not establish crashes. Microsoft send
+acceptance, Exchange trace observation and Exchange receipt time stay distinct.
+
+Established nonempty source hyperlinks remain stable because native Excel can
+share a hyperlink across adjacent cells. Blank links can be enriched. When a
+current Outlook or verified correlation URL differs, the row explicitly notes
+that the established link is preserved, may be stale, and needs reviewed
+migration; new raw evidence retains the current URL privately. Verified instance
+and action correlations still update. No automatic hyperlink clearing occurs.
+Machine numbers are canonicalized to Excel's 15 significant digits before
+freezing hashes; untouched historical seed snapshots keep their exact hashes.
+
+Capture completeness advances only after the page's originals and queue tickets
+are durable. Publication completeness advances in order only when every relevant
+ticket version has a verified native workbook receipt; a newer pending version
+does not erase an earlier confirmed version. Arrival notifications advance no
+coverage checkpoint. The source-window ledger and queue provide the audit trail.
+
+Build the separate Outlook flow ZIP with:
+
+```powershell
+python deployments/issue-tracker/build_mail_flow.py --output .netlify/mail-intake-UNIQUE.zip --private-config .netlify/mail-intake.config.private.json
+```
+
+The private config has `outlookConnectionName` and `ingressSecret` (the same value
+as `ISSUE_TRACKER_MAIL_INGRESS_SECRET`). Without a secret the ZIP is explicitly an
+unconfigured template. The existing Dylan Outlook connection must be selected on
+import. The V3 Inbox arrival trigger sends only its item ID, fixed mailbox and
+schema version to `ingestUserIssueTrackerMail`; the backend fetches authoritative
+content and immutable identity. Secure inputs/outputs are enabled on both steps;
+four bounded exponential HTTP retries are safe through queue identity. It sends
+no mail and changes no read state. The connector can miss oversized/protected
+messages or moved-folder events, so live acceptance must cover both arrival and
+independent recovery. This local builder does not import, enable or purchase
+anything. Endpoint receipt validation and real connection behavior still need
+live acceptance before replacing the hourly desktop tracker.

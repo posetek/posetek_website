@@ -92,6 +92,9 @@ test("previously acknowledged old delivery changes are found without an updatedA
   f.advance(900000); await f.recovery.run();
   const after = f.db.snapshot(key); assert.equal(after.version, 2); assert.equal(after.pending, true);
   assert.notEqual(after.desiredHash, before.desiredHash);
+  assert.equal(f.db.snapshot(STATE_PATH).lastCompletedScan.deliveryStatuses.bounced, 1);
+  const evidence = await f.db.collection("issueTrackerEvidence").get();
+  assert.equal(evidence.size, 2); assert.ok(evidence.docs.every(doc => doc.data().complete && doc.data().source === "backend-outbox"));
 });
 
 test("blocked writer remains blocked and recovery records the condition without a new task", async () => {

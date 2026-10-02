@@ -25,7 +25,7 @@ function createIssueSources(service, db, now = Date.now) {
     const p = entry.jsonPayload || {}, crash = entry.logName === "projects/kickai-69dd0/logs/firebasecrashlytics.googleapis.com%2Fevents";
     if (!crash && (!['cloud_run_revision', 'cloud_function'].includes(entry.resource?.type) || !["ERROR", "CRITICAL", "ALERT", "EMERGENCY"].includes(entry.severity))) return;
     const serviceName = entry.resource?.labels?.service_name || entry.resource?.labels?.function_name || "backend";
-    if (!crash && (/userissue|user-issue|observeissue|workoutnotification|resend/i.test(serviceName) || p.event === "ai_incident" || entry.labels?.event === "ai_incident" || !entry.insertId)) return;
+    if (!crash && (/userissue|user-issue|observeissue|workoutnotification|resend|microsoftemail/i.test(serviceName) || p.event === "ai_incident" || entry.labels?.event === "ai_incident" || !entry.insertId)) return;
     const keys = p.customKeys || {};
     const sourceEvent = crash ? p.eventId : entry.insertId;
     if (!sourceEvent || crash && p.platform !== "IOS") return;

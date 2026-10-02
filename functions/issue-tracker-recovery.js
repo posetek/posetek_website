@@ -1,6 +1,7 @@
 "use strict";
 const crypto = require("node:crypto");
 const { fail, materialOutbox } = require("./issue-tracker-bridge-model");
+const { createEvidenceArchive } = require("./issue-tracker-evidence");
 const STATE_PATH = "issueTrackerState/outboxRecovery";
 const PAGE_SIZE = 100, MAX_PAGES = 2, LEASE_MS = 240000;
 const ID = /^[a-f0-9]{64}$/;
@@ -12,7 +13,7 @@ const ready = settings => settings?.enabled === true && settings.seedVerified ==
  * can see concurrent writes. A finished enumeration never advances source
  * complete-through checkpoints or claims that the workbook was published.
  */
-function createIssueTrackerRecovery({ db, bridge, now = Date.now, randomId = crypto.randomUUID }) {
+function createIssueTrackerRecovery({ db, bridge, archive = createEvidenceArchive(db), now = Date.now, randomId = crypto.randomUUID }) {
   const ref = db.doc(STATE_PATH), settingsRef = db.doc("issueTrackerSettings/current");
   async function run() {
     const leaseId = randomId();
@@ -23,7 +24,7 @@ function createIssueTrackerRecovery({ db, bridge, now = Date.now, randomId = cry
       if (state.leaseUntilMillis > now()) return { skipped: "recovery_busy" };
       if (state.workbookKey && state.workbookKey !== settings.workbookKey) fail("tracker_recovery_workbook_changed");
       const scan = state.activeScan || { id: randomId(), startedAtMillis: now(), createdBeforeMillis: now(), cursor: null,
-        documentsExamined: 0, eligibleDocuments: 0, queuedDocuments: 0, skippedNewerDocuments: 0, unknownTimeDocuments: 0 };
+        documentsExamined: 0, eligibleDocuments: 0, queuedDocuments: 0, skippedNewerDocuments: 0, unknownTimeDocuments: 0, deliveryStatuses: {} };
       if (typeof scan.id !== "string" || !Number.isFinite(scan.createdBeforeMillis) || scan.cursor !== null && !ID.test(scan.cursor || "") ||
           ["documentsExamined", "eligibleDocuments", "queuedDocuments", "skippedNewerDocuments", "unknownTimeDocuments"].some(key => !Number.isSafeInteger(scan[key]) || scan[key] < 0)) fail("tracker_recovery_invalid_cursor");
       tx.set(ref, { ...state, schemaVersion: 1, workbookKey: settings.workbookKey, activeScan: scan, leaseId,
@@ -47,6 +48,12 @@ function createIssueTrackerRecovery({ db, bridge, now = Date.now, randomId = cry
           if (Number.isFinite(job.createdAtMillis) && job.createdAtMillis >= scan.createdBeforeMillis) { next.skippedNewerDocuments++; continue; }
           if (!Number.isFinite(job.createdAtMillis)) next.unknownTimeDocuments++;
           next.eligibleDocuments++;
+          // Retain each observed original delivery snapshot before a later
+          // provider callback can change it. This includes historical jobs.
+          await archive("backend-outbox", doc.id, job);
+          next.deliveryStatuses = { ...(next.deliveryStatuses || {}) };
+          const status = ["pending", "sending", "accepted", "delivered", "failed", "bounced", "suppressed", "delayed", "partial", "needs_review"].includes(job.status) ? job.status : "unknown";
+          next.deliveryStatuses[status] = (next.deliveryStatuses[status] || 0) + 1;
           if ((await bridge.observeOutbox(doc.id, { schedule: false })).queued) next.queuedDocuments++;
         }
         next.cursor = page.docs.at(-1)?.id || scan.cursor;

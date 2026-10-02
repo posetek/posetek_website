@@ -2,6 +2,7 @@
 const crypto = require("node:crypto");
 const { isClubAdmin, clubStaffCanAccessPlayer } = require("./club-access");
 const M = require("./user-issue-model");
+const Microsoft = require("./microsoft-email-model");
 const LEASE = 120000, RETRY = 23 * 3600000;
 function createUserIssues({ db, HttpsError, provider, now = Date.now, logger = console }) {
   const fail = (code, message) => { throw new HttpsError(code, message); };
@@ -122,25 +123,30 @@ function createUserIssues({ db, HttpsError, provider, now = Date.now, logger = c
     const claimed = await db.runTransaction(async tx => {
       const at = now(), settings = M.setting((await tx.get(settingsRef)).data(), at), ref = jobRef(id), job = (await tx.get(ref)).data();
       if (!settings.enabled || settings.sendEnabled !== true || !job || !["pending", "sending"].includes(job.status) || !job.dueAtMillis || job.dueAtMillis > at) return null;
+      const deliveryProvider = Microsoft.providerFor(job, settings);
+      const microsoftConfig = deliveryProvider === "microsoft" ? (await tx.get(db.doc(Microsoft.SETTINGS))).data() : null;
+      if (!deliveryProvider || deliveryProvider === "microsoft" && (!Microsoft.enabled(microsoftConfig, "issue", id, job.createdAtMillis, at) || job.microsoft?.claimedAtMillis)) return null;
       if (job.createdAtMillis < settings.activatedAtMillis || settings.testUids && !settings.testUids.includes(job.actorUid)) { tx.update(ref, { status: "cancelled", dueAtMillis: null }); return null; }
-      if (job.firstAttemptAtMillis && at >= job.firstAttemptAtMillis + RETRY) { tx.update(ref, { status: "needs_review", dueAtMillis: null }); logger.error("user_issue_delivery_failed", { code: "retry_window", jobId: id }); return null; }
-      const next = { payload: job.payload || M.payload(job, id), leaseId: crypto.randomUUID(), firstAttemptAtMillis: job.firstAttemptAtMillis || at,
+      if (deliveryProvider === "resend" && job.firstAttemptAtMillis && at >= job.firstAttemptAtMillis + RETRY) { tx.update(ref, { status: "needs_review", dueAtMillis: null }); logger.error("user_issue_delivery_failed", { code: "retry_window", jobId: id }); return null; }
+      const rawPayload = job.payload || M.payload(job, id);
+      const route = deliveryProvider === "microsoft" && !job.microsoft ? Microsoft.freeze("issue", id, rawPayload, microsoftConfig, at) : { deliveryProvider, payload: rawPayload };
+      const next = { ...route, leaseId: crypto.randomUUID(), firstAttemptAtMillis: job.firstAttemptAtMillis || at,
         attempts: (job.attempts || 0) + 1, status: "sending", dueAtMillis: at + LEASE, uncertain: job.uncertain === true || job.status === "sending" };
       tx.update(ref, next); return { ...job, ...next };
     });
     if (!claimed) return;
     let result, error;
-    try { result = await provider.send(claimed.payload, `posetek-user-issue/${id}`); } catch (e) { error = e; }
+    try { result = await provider.send(claimed.payload, `posetek-user-issue/${id}`, { ...claimed, kind: "issue", id }); } catch (e) { error = e; }
     await db.runTransaction(async tx => {
       const ref = jobRef(id), current = (await tx.get(ref)).data();
       if (current?.leaseId !== claimed.leaseId || current.status !== "sending") return;
-      if (result?.id) { tx.update(ref, { status: "accepted", providerId: result.id, acceptedAtMillis: now(), dueAtMillis: null, leaseId: null }); return; }
+      if (result?.id && claimed.deliveryProvider !== "microsoft") { tx.update(ref, { status: "accepted", providerId: result.id, acceptedAtMillis: now(), dueAtMillis: null, leaseId: null }); return; }
       const delay = Math.max(Math.min(3600000, 60000 * 2 ** Math.min(claimed.attempts - 1, 6)), Number(error?.retryAfterMs) || 0);
-      const expired = now() + delay >= claimed.firstAttemptAtMillis + RETRY;
+      const expired = claimed.deliveryProvider !== "microsoft" && now() + delay >= claimed.firstAttemptAtMillis + RETRY;
       const status = expired || error?.permanent && claimed.uncertain ? "needs_review" : error?.permanent ? "failed" : "pending";
       tx.update(ref, { status, dueAtMillis: status === "pending" ? now() + delay : null, leaseId: null, uncertain: claimed.uncertain || !error?.permanent,
-        failureCode: /^provider_[a-z0-9_]{1,50}$/.test(error?.code || "") ? error.code : "provider_uncertain" });
-      logger.error("user_issue_delivery_failed", { code: status, jobId: id });
+        failureCode: result?.pending ? null : /^provider_[a-z0-9_]{1,50}$/.test(error?.code || "") ? error.code : "provider_uncertain" });
+      if (!result?.pending) logger.error("user_issue_delivery_failed", { code: status, jobId: id });
     });
   }
   async function sweep() {
@@ -180,7 +186,7 @@ function createUserIssues({ db, HttpsError, provider, now = Date.now, logger = c
     await db.runTransaction(async tx => {
       const ref = jobRef(id), job = (await tx.get(ref)).data(), receiptRef = ref.collection("receipts").doc(M.hash(eventId)), receipt = await tx.get(receiptRef);
       const recipient = event.data.to?.[0], recipients = job?.payload?.to;
-      if (receipt.exists || !job?.firstAttemptAtMillis || !job.payload || job.providerId && job.providerId !== providerId || eventAt < job.firstAttemptAtMillis - 300000
+      if (receipt.exists || !job?.firstAttemptAtMillis || job.deliveryProvider === "microsoft" || !job.payload || job.providerId && job.providerId !== providerId || eventAt < job.firstAttemptAtMillis - 300000
         || ![M.FROM, "support@alerts.posetek.net"].includes(event.data.from) || !Array.isArray(event.data.to) || event.data.to.length !== 1
         || !Array.isArray(recipients) || !recipients.includes(recipient)) return;
       tx.create(receiptRef, { type: event.type, recipient, at: eventAt, receivedAtMillis: now() });

@@ -52,7 +52,7 @@ const pacific = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angele
 function pacificExcelSerial(value) {
   const ms = timestamp(value); if (ms == null) return "";
   const parts = Object.fromEntries(pacific.formatToParts(new Date(ms)).map(p => [p.type, p.value]));
-  return Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second, ((ms % 1000) + 1000) % 1000) / 86400000 + 25569;
+  return Number((Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second, ((ms % 1000) + 1000) % 1000) / 86400000 + 25569).toPrecision(15));
 }
 function httpsUrl(value) {
   if (!value) return "";
@@ -155,11 +155,19 @@ function deliveryDescription(job) {
     parts.push(`Frozen recipients: ${recipients.join(", ")}`);
     parts.push(...recipients.map(recipient => {
       const state = states[recipient];
+      if (state?.evidence === "microsoft_trace") return `${recipient}: ${state.status || "unknown"} (Exchange trace${state.traceStatus ? `: ${state.traceStatus}` : ""}; observed ${timestamp(state.observedAtMillis) != null ? new Date(timestamp(state.observedAtMillis)).toISOString() : "time unknown"}${timestamp(state.exchangeReceivedAtMillis) != null ? `; Exchange received ${new Date(timestamp(state.exchangeReceivedAtMillis)).toISOString()}` : ""}; recipient inbox/read state not inspected)`;
+      if (state?.evidence === "flow_action") return `${recipient}: ${state.status || "unknown"} (Microsoft send action accepted; not delivery confirmation${timestamp(state.at) != null ? `; receipt observed ${new Date(timestamp(state.at)).toISOString()}` : ""})`;
       return `${recipient}: ${state?.status || "no recipient confirmation"}${timestamp(state?.at) != null ? ` at ${new Date(timestamp(state.at)).toISOString()}` : ""}`;
     }));
     if (status === "delivered" && !recipients.every(to => states[to]?.status === "delivered")) parts.push("Aggregate delivery is recorded; individual confirmation is incomplete in the supplied record");
   } else parts.push("Frozen recipient payload unavailable; destinations and individual delivery not inferred from current settings");
   if (job.failureCode) parts.push(`Provider code: ${job.failureCode}`);
+  if (job.deliveryProvider === "microsoft") {
+    parts.push("Transport: Microsoft; flow run ID is not an email message ID");
+    if (job.microsoft?.internetMessageId) parts.push(`Exchange Internet message ID: ${job.microsoft.internetMessageId}`);
+    if (job.microsoft?.traceAmbiguous) parts.push("Trace association is ambiguous; individual status requires review");
+    if (job.microsoft?.traceErrorCode) parts.push(`Trace check: ${job.microsoft.traceErrorCode}`);
+  }
   if (job.attempts != null) parts.push(`Attempts: ${job.attempts}`);
   return parts.join("; ");
 }
@@ -228,15 +236,27 @@ function normalizeIssueTracker({ occurrences = [], outbox = [], issues = [], ide
     if (table === "emails" && previous?.values) {
       const candidate = values, candidateLinks = links;
       values = { ...previous.values }; links = { ...previous.links };
-      if (candidateLinks["Outlook source"]) {
-        links["Outlook source"] = candidateLinks["Outlook source"];
-        values["Outlook source"] = values["Outlook source"] || candidate["Outlook source"];
-      }
       if (metadata.eventRef && metadata.eventRef !== previous.eventRef) {
         values["Linked instance"] = candidate["Linked instance"]; values["Action ID"] = candidate["Action ID"];
         values["Message / linked diagnosis"] = `Earlier tracker evidence: ${previous.values["Message / linked diagnosis"]}\n\n[Verified later correlation]\nNow linked to ${candidate["Linked instance"]} by a durable exact identifier. ${candidate["Message / linked diagnosis"]}`;
-        links["Issue / service incident"] = candidateLinks["Issue / service incident"];
-        values["Issue / service incident"] = candidate["Issue / service incident"];
+      }
+      // Native Excel can share one hyperlink across adjacent cells; replacing
+      // it can affect a teammate's neighboring source link. Keep established
+      // addresses, enrich blanks, and expose current-source differences rather
+      // than freezing a known-invalid hyperlink migration or hiding a new join.
+      const notes = [];
+      for (const column of ["Outlook source", "Issue / service incident"]) {
+        const current = candidateLinks[column];
+        if (current && !links[column]) { links[column] = current; values[column] = values[column] || candidate[column]; }
+        else if (current && links[column] !== current) notes.push(column === "Outlook source"
+          ? "The current Outlook URL differs from the established link, which is preserved and may no longer open the current item. The changed URL is retained in private source evidence for reviewed link migration."
+          : "The current issue/service evidence URL differs from the established link, which is preserved. Current correlation fields reflect the verified evidence; the changed URL remains in private source evidence and requires reviewed link migration.");
+      }
+      if (notes.length) {
+        const marker = "\n\n[Preserved source links]\n";
+        // An existing limitation belongs to the old summary, not between the
+        // newly verified correlation and its evidence. Avoid growing on replay.
+        values["Message / linked diagnosis"] = text(values["Message / linked diagnosis"]).replace(/\n\n\[Preserved source links\]\n[^]*?(?=\n\n\[Verified later correlation\]\n|$)/g, "") + marker + notes.join(" ");
       }
     }
     if (table === "dailyRows" && previous?.values) {
@@ -247,6 +267,10 @@ function normalizeIssueTracker({ occurrences = [], outbox = [], issues = [], ide
     if (values[KEY_HEADERS[table]] !== id) fail(`${table} row key mismatch`);
     if (Object.keys(links).length !== LINK_HEADERS[table].length || LINK_HEADERS[table].some(h => !own(links, h))) fail(`incomplete ${table} links`);
     for (const value of Object.values(values)) if (!["string", "number", "boolean"].includes(typeof value) || typeof value === "number" && !Number.isFinite(value) || typeof value === "string" && value.length > 30000) fail("invalid Excel cell value");
+    // Excel stores numbers to 15 significant digits. Canonicalize the actual
+    // machine cells before freezing their digest; do not mutate prior seed
+    // snapshots or weaken the expected previous-hash conflict check.
+    values = Object.fromEntries(Object.entries(values).map(([column, value]) => [column, typeof value === "number" ? Number(value.toPrecision(15)) : value]));
     const hash = machineRowSha256({ values, links });
     if (!previous || previous.hash !== hash) changes[table].push({ key: id, expectedMachineSha256: previous?.hash || null, values, links });
     const { sourceIssueSummary: _sourceIssueSummary, sourceHasPeriod: _sourceHasPeriod, ...storedMetadata } = metadata;
@@ -352,7 +376,7 @@ function normalizeIssueTracker({ occurrences = [], outbox = [], issues = [], ide
   for (const [id, event] of events) {
     const info = eventInfo.get(id), issue = issueDocs.get(event.issueId), job = jobs.get(id);
     if (job && job.type !== "incident") fail("occurrence id collides with a non-incident outbox job");
-    if (own(inputSeed.rows?.instances || {}, id) && !job) fail("existing occurrence refresh requires its incident outbox snapshot; absent delivery evidence cannot erase prior delivery");
+    if (own(inputSeed.rows?.instances || {}, id) && inputSeed.rows.instances[id].outboxObserved !== false && !job) fail("existing occurrence refresh requires its incident outbox snapshot; absent delivery evidence cannot erase prior delivery");
     if (job?.issueId && event.issueId && job.issueId !== event.issueId) fail("incident job and occurrence issue IDs disagree");
     const links = { "Private issue": issueUrl(event.issueId) };
     const correlation = ["One retained backend occurrence; not a unique-person count."];
@@ -361,7 +385,7 @@ function normalizeIssueTracker({ occurrences = [], outbox = [], issues = [], ide
     const sourceIssueSummary = issue ? `Grouped source issue state: ${text(issue.state) || "unknown"}; recorded occurrences: ${Number.isSafeInteger(issue.occurrences) && issue.occurrences >= 0 ? issue.occurrences : "unknown"}. This does not change the manual action status.` : "";
     if (/system_diagnostic|interrupt/i.test(`${event.code} ${event.kind}`)) correlation.push("Diagnostic/interrupted label is not proof of a crash or its cause; inspect the original diagnostic.");
     const evidence = [event.message, event.description].filter(Boolean).join("\n") || `No error detail stored. Recorded code: ${text(event.code) || "unknown"}; kind: ${text(event.kind) || "unknown"}.`;
-    emit("instances", id, { Instance: info.rowId, "Occurred (Pacific)": pacificExcelSerial(event.occurredAtMillis), "User who acted / reported": info.who.actor, "Target athlete": info.who.target, "Attempted action": event.operation ? `Recorded operation: ${event.operation}` : "Unknown; operation not recorded", "Error / actual evidence": evidence, "Action ID": info.actionId, "Email delivery": deliveryDescription(job), "Recorded operation": text(event.operation), "Identity basis": info.who.basis, "Recorded actor UID": text(event.reporterUid), "Target player ID": text(event.player?.id), "Page / device": `${event.route || "No page recorded"}; ${event.device || "Unknown device"}`, "Received (Pacific)": pacificExcelSerial(event.receivedAtMillis), "Email IDs": (seed.emailLinks[id] || []).join(", ") || "No matching email", "Correlation / limits": correlation.join(" ") + (sourceIssueSummary ? `\n\n[Latest source issue]\n${sourceIssueSummary}` : ""), "Private issue": links["Private issue"] ? "Open issue" : "", "Source record": text(event.sourceReference || event.source), Build: text(event.build), "Request / job ID": text(event.requestId), "Occurrence ID": id, "Provider email ID": text(job?.providerId), "Delivery error code": text(job?.failureCode) }, links, { rowId: info.rowId, actionId: info.actionId, sourceIssueSummary });
+    emit("instances", id, { Instance: info.rowId, "Occurred (Pacific)": pacificExcelSerial(event.occurredAtMillis), "User who acted / reported": info.who.actor, "Target athlete": info.who.target, "Attempted action": event.operation ? `Recorded operation: ${event.operation}` : "Unknown; operation not recorded", "Error / actual evidence": evidence, "Action ID": info.actionId, "Email delivery": deliveryDescription(job), "Recorded operation": text(event.operation), "Identity basis": info.who.basis, "Recorded actor UID": text(event.reporterUid), "Target player ID": text(event.player?.id), "Page / device": `${event.route || "No page recorded"}; ${event.device || "Unknown device"}`, "Received (Pacific)": pacificExcelSerial(event.receivedAtMillis), "Email IDs": (seed.emailLinks[id] || []).join(", ") || "No matching email", "Correlation / limits": correlation.join(" ") + (sourceIssueSummary ? `\n\n[Latest source issue]\n${sourceIssueSummary}` : ""), "Private issue": links["Private issue"] ? "Open issue" : "", "Source record": text(event.sourceReference || event.source), Build: text(event.build), "Request / job ID": text(event.requestId), "Occurrence ID": id, "Provider email ID": text(job?.providerId), "Delivery error code": text(job?.failureCode) }, links, { rowId: info.rowId, actionId: info.actionId, sourceIssueSummary, outboxObserved: Boolean(job) || inputSeed.rows?.instances?.[id]?.outboxObserved === true });
   }
   for (const [id, job] of jobs) if (job.type === "daily" || job.type === "status") {
     const sourceIssue = issueDocs.get(job.issueId);

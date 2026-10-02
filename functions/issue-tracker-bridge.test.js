@@ -79,6 +79,8 @@ test("new material state during remote write remains pending for next revision",
   f = fixture({ send: async batch => { await f.db.doc(`userIssueOutbox/${ID}`).update({ status: "delivered" }); await f.service.observeOutbox(ID); return receipt(batch); } });
   await f.service.observeOutbox(ID); await f.service.drain();
   assert.equal(f.db.snapshot(`${PATHS.queue}/outbox-${ID}`).pending, true);
+  assert.equal(f.db.snapshot(`${PATHS.queue}/outbox-${ID}`).appliedVersion, 1);
+  assert.equal(f.db.snapshot(`${PATHS.queue}/outbox-${ID}`).version, 2);
   assert.equal(f.db.snapshot(PATHS.writer).revision, 1);
   f.advance(5000); await f.service.drain(); assert.equal(f.db.snapshot(`${PATHS.queue}/outbox-${ID}`).pending, false);
 });
@@ -170,6 +172,28 @@ test("real normalizer produces a machine-only frozen batch and replay updates sa
   assert.equal(f.sent[1].changes.instances[0].key, instanceKey);
   assert.equal(f.sent[1].changes.instances[0].values.Instance, "EV-001");
   assert.match(f.sent[1].changes.instances[0].expectedMachineSha256, /^[a-f0-9]{64}$/);
+});
+
+test("independent occurrence capture persists missing-outbox incidents and later attaches exact delivery without reallocating", async () => {
+  const f = fixture({ normalize: require("./issue-tracker-normalize").normalizeIssueTracker });
+  await f.db.doc(PATHS.seed).set({ schemaVersion: 1, counts: { actions: 0, instances: 0, emails: 0, dailyRows: 0 } });
+  await f.db.doc(`userIssueOutbox/${ID}`).delete();
+  const ticket = await f.service.observeOccurrence(ID); assert.equal(ticket.ticket.version, 1);
+  await f.service.drain(); assert.match(f.sent[0].changes.instances[0].values["Email delivery"], /delivery unknown/);
+  await f.db.doc(`userIssues/${ISSUE}`).update({ state: "fix_proposed" }); await f.service.observeOccurrence(ID); f.advance(5000); await f.service.drain();
+  assert.equal(f.sent[1].changes.instances[0].values.Instance, "EV-001");
+  await f.db.doc(`userIssueOutbox/${ID}`).set({ type: "incident", issueId: ISSUE, status: "accepted", createdAtMillis: AT });
+  await f.service.observeOutbox(ID); f.advance(5000); await f.service.drain();
+  assert.equal(f.sent[2].changes.instances[0].values.Instance, "EV-001"); assert.match(f.sent[2].changes.instances[0].values["Email delivery"], /accepted/);
+  assert.equal((await f.db.collection(PATHS.queue).get()).size, 1);
+});
+
+test("mailbox sweep does not erase arrival-discovered aliases or churn unchanged queue versions", async () => {
+  const f = fixture(), message = { id: "immutable", immutableId: "immutable", mailbox: "dylank@posetek.net", aliases: ["old-id"] };
+  await f.service.enqueueMessage(message, { schedule: false });
+  await f.service.enqueueMessage({ ...message, aliases: [] }, { schedule: false });
+  const key = `mail-${M.digest([message.mailbox, message.id])}`, state = f.db.snapshot(`${PATHS.queue}/${key}`);
+  assert.equal(state.version, 1); assert.deepEqual(state.message.aliases, ["old-id"]); assert.equal(f.tasks.length, 0);
 });
 
 test("matched email-only updates hydrate current backend snapshots through durable aliases", async () => {

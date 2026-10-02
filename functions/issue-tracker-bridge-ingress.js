@@ -1,7 +1,7 @@
 "use strict";
 const crypto = require("node:crypto");
 const hash = value => crypto.createHash("sha256").update(value).digest();
-const STRINGS = ["id", "originalId", "immutableId", "internetMessageId", "receivedDateTime", "received", "subject", "summary", "bodyPreview", "category", "functionName", "operation", "affected", "webLink", "url", "detailUrl", "issueId", "from", "sender"];
+const STRINGS = ["id", "originalId", "immutableId", "internetMessageId", "receivedDateTime", "received", "subject", "summary", "bodyPreview", "category", "functionName", "operation", "affected", "webLink", "url", "detailUrl", "issueId", "from", "sender", "evidenceRef"];
 const validKey = (value, max = 1024) => typeof value === "string" && value.trim().length > 0 && value.length <= max && !/[\u0000-\u001f]/.test(value);
 function validMessage(message) {
   if (!validKey(message.originalId || message.id)) return false;
@@ -18,7 +18,7 @@ function validMessage(message) {
 /** Separate mailbox-to-queue authorization. The secret grants only this bounded
  * enqueue operation, never Firestore/Excel access or arbitrary HTTP forwarding.
  */
-function createTrackerMailIngress({ bridge, secret, mailbox = "dylank@posetek.net" }) {
+function createTrackerMailIngress({ bridge, secret, mailbox = "dylank@posetek.net", ingestMessage }) {
   return async function receive(req, res) {
     if (req.method !== "POST") { res.status(405).json({ error: "method_not_allowed" }); return; }
     const expected = await secret(), supplied = req.get?.("X-PoseTek-Tracker-Key") || req.headers?.["x-posetek-tracker-key"];
@@ -28,7 +28,7 @@ function createTrackerMailIngress({ bridge, secret, mailbox = "dylank@posetek.ne
     const data = req.body;
     if (!data || data.schemaVersion !== 1 || typeof data.mailbox !== "string" || data.mailbox.toLowerCase() !== mailbox.toLowerCase() || !data.message || typeof data.message !== "object" || Array.isArray(data.message) || !validMessage(data.message)) { res.status(400).json({ error: "invalid_message" }); return; }
     try {
-      const result = await bridge.enqueueMessage({ ...data.message, mailbox: mailbox.toLowerCase() });
+      const result = await (ingestMessage || bridge.enqueueMessage)({ ...data.message, mailbox: mailbox.toLowerCase() });
       res.status(200).json({ accepted: true, queued: result.queued });
     } catch (error) {
       if (["tracker_wrong_mailbox", "tracker_invalid_message", "tracker_message_too_large"].includes(error?.code)) { res.status(400).json({ error: "invalid_message" }); return; }

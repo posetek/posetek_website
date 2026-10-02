@@ -4,6 +4,8 @@ This source is not deployed. No Excel connection, paid plan, live workbook
 bootstrap, flow activation, or production trigger is established by these tests.
 The existing hourly publisher must be stopped only at an approved, verified
 cutover; two writers must never target this workbook concurrently.
+See [native Excel acceptance](NATIVE_ACCEPTANCE.md) for the separate browser
+results and the remaining Power Automate and cloud-master cutover boundaries.
 
 `office-script.ts` is a self-contained Office Script. Its entry point is
 `main(workbook, payloadJson: string): string`. The Power Automate Run script action
@@ -36,7 +38,13 @@ still validates the native workbook, postread and revision before acknowledgemen
 A backend delivery
 may expand into several row changes; split before freezing a batch if needed.
 Dates are numeric Excel serial values representing Pacific wall-clock time; the
-normalizer owns daylight-saving conversion. Null cells are represented by `""`.
+normalizer owns daylight-saving conversion. Normalize emitted numbers to 15
+significant digits (`Number(value.toPrecision(15))`) before hashing or freezing
+the payload. Native Excel rounded longer fractional serials during acceptance,
+which otherwise caused a postread or later expected-hash conflict. The writer
+rejects higher-precision input before accessing the workbook. Existing native
+seed hashes remain exact; never round the stored seed or weaken conflict checks.
+Null cells are represented by `""`.
 
 | Group | Native table | Stable source key | Omitted fields | Hyperlink fields |
 | --- | --- | --- | --- | --- |
@@ -48,6 +56,15 @@ normalizer owns daylight-saving conversion. Null cells are represented by `""`.
 `SPECS` in `office-script.ts` is the complete column-order contract. The writer
 rejects missing/extra machine columns. It never updates existing human Status,
 Owner, Due or Fix notes. Existing order and filters remain; new records append.
+Immediately before an existing-row write, it re-reads that row's source key,
+machine values/links, editable fields and formula locations. A source edit,
+inserted formula, changed human input or intervening sort stops the write. This
+narrows the race after planning but does not acquire a coauthor lock.
+Unchanged source URLs are retained without resetting their native hyperlinks.
+Blank-to-URL enrichment and new-row links are supported. Replacing or removing
+an existing nonempty source URL stops before source writes for reviewed migration:
+Excel can represent one hyperlink across multiple cells, and clearing one cell
+can remove its neighbors' links. The writer never clears hyperlinks automatically.
 IDs are retained exactly. Every nonempty source string is escaped as literal
 text before writing, including ISO date labels, numeric-looking IDs, existing
 apostrophes and formula-like strings. Native readback must preserve their exact
@@ -136,8 +153,10 @@ daily-delivery row into `DailyDeliveries` at `Instances!Z5:AD`, archives the exa
 old footer contents at `Instances!AG5:BD`, then clears only the verified former
 footer contents. The three existing user-facing sheets stay intact. It adds a
 hidden `_TrackerSync` sheet with state in B1 and a bounded receipt table. Source
-rows and human inputs are not regenerated. It installs structured formulas and
-returns fresh seeds for all four native tables.
+rows and human inputs are not regenerated. The daily and archive destinations
+are checked before the first migration write. After installing structured
+formulas, bootstrap rechecks original source order, values, links and human inputs
+and validates calculated totals before returning fresh seeds for all four tables.
 
 Initialization deliberately starts with `mode:"paused"`. Enabling requires an
 approved operator to reconcile counts, source IDs, native formula behavior,
@@ -178,6 +197,12 @@ its live stable-key column. It deliberately retains live table structure checks,
 per-write key lookup, source fingerprints, human-field comparison and complete
 postread checks. Row positions and mutable metadata are not cached across writes.
 Those reductions do not provide an exclusive editing lock or a runtime guarantee.
+
+Bootstrap reads all existing source hyperlinks and can take substantially longer
+than an incremental writer call. Run its read-only inspection against the latest
+verified cloud master at cutover, inspect the actual footer region and retain its
+returned fingerprint. A private representative fixture and a historical local
+snapshot cannot supply the live initialization fingerprint or seed records.
 
 Official API references: [tables and append semantics](https://learn.microsoft.com/en-us/javascript/api/office-scripts/excelscript/excelscript.table?view=office-scripts),
 [range and literal/formula APIs](https://learn.microsoft.com/en-us/javascript/api/office-scripts/excelscript/excelscript.range?view=office-scripts),

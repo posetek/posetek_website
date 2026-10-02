@@ -83,7 +83,7 @@ function validateEnvelope(batch: Envelope): void {
       requireCondition(same(Object.keys(row.values).sort(),machineHeaders(spec).sort()),'Machine column schema mismatch: '+spec.table);
       requireCondition(same(Object.keys(row.links).sort(),spec.linkColumns.slice().sort()),'Link schema mismatch');
       requireCondition(row.values[spec.key]===row.key,'Stable source key mismatch');
-      Object.keys(row.values).forEach(key=>{const v=row.values[key];requireCondition(typeof v==='string'||typeof v==='boolean'||typeof v==='number'&&Number.isFinite(v),'Invalid cell value');if(typeof v==='string')requireCondition(v.length<=30000,'Cell text exceeds safe Excel limit');});
+      Object.keys(row.values).forEach(key=>{const v=row.values[key];requireCondition(typeof v==='string'||typeof v==='boolean'||typeof v==='number'&&Number.isFinite(v),'Invalid cell value');if(typeof v==='string')requireCondition(v.length<=30000,'Cell text exceeds safe Excel limit');if(typeof v==='number')requireCondition(Number(v.toPrecision(15))===v,'Numeric cell exceeds Excel precision; normalize before hashing');});
       Object.keys(row.links).forEach(key=>requireCondition(row.links[key]===''||/^https:\/\/[^\s]+$/.test(row.links[key]),'Unsupported source URL'));
     });
   });
@@ -94,7 +94,7 @@ function planTable(image: TableImage, changes: RowChange[], recovering: boolean)
   image.rows.forEach(row=>{requireCondition(keys.indexOf(row.key)<0,'Duplicate workbook source key');keys.push(row.key);const visible=String(row.values[image.spec.displayKey]);requireCondition(visible!==''&&display.indexOf(visible)<0,'Duplicate/blank visible record ID');display.push(visible);human[row.key]=row.human;});
   const updates:PlannedRow[]=changes.map(change=>{
     const row=image.rows.find(r=>r.key===change.key);
-    if(row){const current=rowDigest(row),already=current===rowDigest(change);requireCondition(change.expectedMachineSha256===current||recovering&&already,'Machine row conflict: '+image.spec.table+' / '+change.key);requireCondition(change.values[image.spec.displayKey]===row.values[image.spec.displayKey],'Cannot change stable display ID');return {change,existed:true,alreadyApplied:already};}
+    if(row){const current=rowDigest(row),already=current===rowDigest(change);requireCondition(change.expectedMachineSha256===current||recovering&&already,'Machine row conflict: '+image.spec.table+' / '+change.key);requireCondition(change.values[image.spec.displayKey]===row.values[image.spec.displayKey],'Cannot change stable display ID');image.spec.linkColumns.forEach(h=>requireCondition(!row.links[h]||row.links[h]===change.links[h],'Existing source URL replacement/removal requires reviewed migration'));return {change,existed:true,alreadyApplied:already};}
     requireCondition(change.expectedMachineSha256===null,'Missing existing source row: '+change.key);
     const visible=String(change.values[image.spec.displayKey]);requireCondition(visible!==''&&display.indexOf(visible)<0,'Duplicate new display ID');display.push(visible);return {change,existed:false,alreadyApplied:false};
   });
@@ -160,13 +160,34 @@ function currentRowIndex(table: ExcelScript.Table,spec:Spec,key:string): number 
   const keys=table.getColumnByName(spec.key).getRangeBetweenHeaderAndTotal().getValues(),matches:number[]=[];
   keys.forEach((row,i)=>{if(row[0]===key)matches.push(i);});requireCondition(matches.length===1,'Source row moved/deleted/duplicated during write');return matches[0];
 }
+function liveRowBeforeWrite(table: ExcelScript.Table,spec:Spec,index:number,key:string):RowImage {
+  const range=table.getRangeBetweenHeaderAndTotal().getRow(index),cells=range.getValues()[0];
+  requireCondition(cells[spec.headers.indexOf(spec.key)]===key,'Source row moved during write');
+  const formulaAreas=range.getSpecialCells(ExcelScript.SpecialCellType.formulas);
+  if(formulaAreas){
+    const left=range.getColumnIndex(),areas=formulaAreas.getAreas();
+    for(let i=0;i<areas.length;i++){
+      const start=areas[i].getColumnIndex()-left,width=areas[i].getColumnCount();
+      for(let col=start;col<start+width;col++)requireCondition(spec.calculated.indexOf(spec.headers[col])>=0,'Unexpected formula appeared before write');
+    }
+  }
+  const values:Fields={},human:Fields={},links:Links={};
+  spec.headers.forEach((header,col)=>{if(spec.human.indexOf(header)>=0)human[header]=cells[col];else if(spec.calculated.indexOf(header)<0)values[header]=cells[col];});
+  spec.linkColumns.forEach(header=>{const link=range.getCell(0,spec.headers.indexOf(header)).getHyperlink();links[header]=link?.address||'';});
+  return {key,values,links,human,formulas:{}};
+}
 function writeRow(workbook: ExcelScript.Workbook, plan: TablePlan, update: PlannedRow): void {
   const table=getTable(workbook,plan.spec),spec=plan.spec,row=update.change;
+  let priorLinks:Links={};
   if(update.alreadyApplied)return;
   if(!update.existed){const cells=spec.headers.map(h=>spec.human.indexOf(h)>=0?(h==='Status'?'Not started':''):spec.calculated.indexOf(h)>=0?'':safeLiteral(row.values[h]));table.addRows(-1,[cells]);}
   const index=currentRowIndex(table,spec,row.key),range=table.getRangeBetweenHeaderAndTotal();
   // Target only machine-owned cells. Never set an existing entire row.
   if(update.existed){
+    const live=liveRowBeforeWrite(table,spec,index,row.key);
+    requireCondition(rowDigest(live)===row.expectedMachineSha256,'Machine row changed before write');
+    requireCondition(same(live.human,plan.human[row.key]),'Human fields changed before write');
+    spec.linkColumns.forEach(h=>requireCondition(!live.links[h]||live.links[h]===row.links[h],'Existing source URL replacement/removal requires reviewed migration'));priorLinks=live.links;
     // Contiguous machine bands keep API calls bounded without touching input columns.
     let start=-1,band:Cell[]=[];
     for(let col=0;col<=spec.headers.length;col++){
@@ -175,7 +196,10 @@ function writeRow(workbook: ExcelScript.Workbook, plan: TablePlan, update: Plann
       else if(start>=0){range.getCell(index,start).getResizedRange(0,band.length-1).setValues([band]);start=-1;band=[];}
     }
   }
-  spec.linkColumns.forEach(h=>{const cell=range.getCell(index,spec.headers.indexOf(h));if(row.links[h])cell.setHyperlink({address:row.links[h],textToDisplay:String(row.values[h])});else cell.clear(ExcelScript.ClearApplyTo.hyperlinks);});
+  // Replacing one cell inside a native multi-cell hyperlink makes an overlapping
+  // link; clearing that cell can remove the neighbors' links too. Preserve any
+  // unchanged URL, and never clear source hyperlinks automatically.
+  spec.linkColumns.forEach(h=>{if(row.links[h]&&(!update.existed||priorLinks[h]!==row.links[h]))range.getCell(index,spec.headers.indexOf(h)).setHyperlink({address:row.links[h],textToDisplay:String(row.values[h])});});
 }
 function calculatedFormula(spec: Spec, header: string): string {
   if(spec.group==='actions')return header==='Records'?'=COUNTIF(IncidentInstances[Action ID],[@[Action ID]])':'=COUNTIF(EmailEvidence[Action ID],[@[Action ID]])';

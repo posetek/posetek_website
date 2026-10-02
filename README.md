@@ -15,9 +15,12 @@ Signed receipts track each recipient; existing frozen emails and workout-alert
 destinations are preserved. The provider's current daily quota prevents a claim of
 new-recipient delivery. See [recipient rollout and limits](deployment/USER_ISSUE_RECIPIENTS_PRODUCTION.json).
 
-An event-triggered Power Automate issue-tracker candidate is being prepared to
-replace the hourly local update. It is not live; connection, licensing, migration
-and source-coverage gates remain. See [the tracker handoff](docs/ISSUE_TRACKER_EVENT_FLOW.md).
+Microsoft email and event-triggered Power Automate tracker candidates are prepared
+but not live. Premium is assigned, the private writer saves without licensing
+errors, and native Excel acceptance passes. Microsoft access grants, live flow
+verification and shared-master migration remain; existing email and hourly tracker
+routes stay active. See [the tracker handoff](docs/ISSUE_TRACKER_EVENT_FLOW.md) and
+[the Microsoft email package](deployments/microsoft-email/README.md).
 
 The unified coach workspace and Astro build are documented in
 [the implementation handoff](docs/UNIFIED_COACH_WORKSPACE.md). Team Insights owns

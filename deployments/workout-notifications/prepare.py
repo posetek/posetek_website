@@ -21,14 +21,16 @@ DOCUMENTS = {
     'observePersonalWorkoutNotifications': 'players/{playerId}/personalWorkoutLogs/{logId}',
     'dispatchWorkoutNotification': 'workoutNotificationOutbox/{notificationId}',
 }
+MICROSOFT_SECRETS = ['MICROSOFT_EMAIL_FLOW_ENDPOINT', 'MICROSOFT_EMAIL_TENANT_ID', 'MICROSOFT_EMAIL_CLIENT_ID', 'MICROSOFT_EMAIL_CLIENT_SECRET']
 SECRETS = {
-    'dispatchWorkoutNotification': ['RESEND_API_KEY'],
-    'sweepWorkoutNotifications': ['RESEND_API_KEY'],
+    'dispatchWorkoutNotification': ['RESEND_API_KEY', *MICROSOFT_SECRETS],
+    'sweepWorkoutNotifications': ['RESEND_API_KEY', *MICROSOFT_SECRETS],
     'resendWorkoutNotificationWebhook': ['RESEND_WEBHOOK_SECRET'],
 }
 HTTPS = ('recordWorkoutActivity', 'getWorkoutNotificationStatus', 'resendWorkoutNotificationWebhook')
 CALLABLES = HTTPS[:2]
 FILES = ('workout-notifications.js', 'workout-notifications-entrypoints.js', 'workout-notifications-provider.js',
+         'microsoft-email-model.js', 'microsoft-email-transport.js',
          'user-issues.js', 'user-issue-model.js',
          'club-access.js', 'athlete-storage-paths.js', 'insights-v2-qualification.js', 'package.json', 'package-lock.json')
 

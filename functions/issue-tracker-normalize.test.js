@@ -38,6 +38,20 @@ test("uses America/Los_Angeles DST and leaves unknown/zone-less times unknown", 
   assert.match(result.changes.instances[0].values["Correlation / limits"], /receipt time has not been substituted/);
 });
 
+test("machine dates freeze to Excel's 15 significant digits and untouched historical seed remains exact", () => {
+  const stamp = "2026-10-01T07:09:20Z", first = one(occurrence("occ-1", { occurredAtMillis: Date.parse(stamp) }));
+  assert.equal(first.changes.instances[0].values["Occurred (Pacific)"], 46296.0064814815);
+  const previous = first.nextSeed.rows.instances["occ-1"];
+  previous.values["Occurred (Pacific)"] = 46296.00648148148; previous.hash = machineRowSha256(previous);
+  const original = structuredClone(first.nextSeed), untouched = normalize({ seed: original });
+  assert.equal(untouched.nextSeed.rows.instances["occ-1"].values["Occurred (Pacific)"], 46296.00648148148);
+  const next = normalize({ seed: original, occurrences: [occurrence("occ-1")], outbox: [job()] });
+  assert.equal(next.changes.instances[0].expectedMachineSha256, previous.hash);
+  assert.equal(next.changes.instances[0].values["Occurred (Pacific)"], 46296.0064814815);
+  assert.equal(canonicalJson(original), canonicalJson(first.nextSeed));
+  assert.equal(normalize({ seed: next.nextSeed, occurrences: [occurrence("occ-1")], outbox: [job()] }).changes.instances.length, 0);
+});
+
 test("reads current issue state and occurrences, never obsolete field names or manual status", () => {
   const r = normalize({ occurrences: [occurrence()], outbox: [job()], issues: [{ id: "group-1", state: "verified", occurrences: 12, status: "wrong", occurrenceCount: 99 }] });
   assert.match(r.changes.instances[0].values["Correlation / limits"], /state: verified; recorded occurrences: 12/);
@@ -102,6 +116,29 @@ test("partial delivery is not represented as confirmed delivery to every recipie
   assert.match(r.changes.instances[0].values["Email delivery"], /two@example.test: no recipient confirmation/);
   assert.match(r.changes.instances[0].values["Email delivery"], /individual confirmation is incomplete/);
   assert.match(one().changes.instances[0].values["Email delivery"], /destinations and individual delivery not inferred/);
+});
+
+test("Microsoft send acceptance, trace observation and Exchange received time remain distinct", () => {
+  const r = one(occurrence(), job("occ-1", { deliveryProvider: "microsoft", status: "partial", providerId: "microsoft-run-id", microsoft: { internetMessageId: "<exact-message>", traceAmbiguous: true }, payload: { to: ["one@example.test", "two@example.test", "three@example.test"] }, recipientDelivery: {
+    "one@example.test": { status: "accepted", at: AT, evidence: "flow_action" },
+    "two@example.test": { status: "delivered", at: AT + 60000, observedAtMillis: AT + 60000, exchangeReceivedAtMillis: AT - 1000, evidence: "microsoft_trace", traceStatus: "Delivered" },
+  } }));
+  const description = r.changes.instances[0].values["Email delivery"];
+  assert.match(description, /accepted; not delivery confirmation/); assert.match(description, /observed 2026-10-01T19:01:00.000Z/);
+  assert.match(description, /Exchange received 2026-10-01T18:59:59.000Z/); assert.match(description, /recipient inbox\/read state not inspected/);
+  assert.match(description, /three@example.test: no recipient confirmation/); assert.match(description, /flow run ID is not an email message ID/);
+  assert.match(description, /association is ambiguous/);
+});
+
+test("occurrences without an outbox remain reportable; disappearance of previously known delivery still fails", () => {
+  const first = normalize({ occurrences: [occurrence()] });
+  assert.equal(first.nextSeed.rows.instances["occ-1"].outboxObserved, false);
+  assert.match(first.changes.instances[0].values["Email delivery"], /delivery unknown/);
+  const repeated = normalize({ seed: first.nextSeed, occurrences: [occurrence()], issues: [{ id: "group-1", state: "new", occurrences: 2 }] });
+  assert.equal(repeated.changes.instances[0].values.Instance, "EV-001");
+  const linked = normalize({ seed: repeated.nextSeed, occurrences: [occurrence()], outbox: [job()] });
+  assert.equal(linked.nextSeed.rows.instances["occ-1"].outboxObserved, true);
+  assert.throws(() => normalize({ seed: linked.nextSeed, occurrences: [occurrence()] }), /absent delivery evidence cannot erase/);
 });
 
 test("email with only issue link, subject, affected label and time remains unmatched", () => {
@@ -273,16 +310,38 @@ test("delivery refresh preserves reviewed instance identity, attempted action an
   assert.equal(noChanges(replay), true);
 });
 
-test("mail refresh preserves reviewed diagnosis and label while updating its moved source URL", () => {
+test("mail refresh preserves reviewed diagnosis, label and established link while exposing its moved URL limit", () => {
   const first = normalize({ messages: [mail("old", { immutableId: "stable" })] });
   const saved = first.nextSeed.rows.emails.old;
   saved.values["Message / linked diagnosis"] = "Reviewed service failure with confirmed diagnostic evidence";
   saved.values["Original affected-user label"] = "Original reviewed label";
   saved.hash = machineRowSha256(saved);
   const next = normalize({ seed: first.nextSeed, messages: [mail("moved", { immutableId: "stable", webLink: "https://outlook.office.com/mail/item/moved" })] });
-  assert.equal(next.changes.emails[0].values["Message / linked diagnosis"], saved.values["Message / linked diagnosis"]);
+  assert.ok(next.changes.emails[0].values["Message / linked diagnosis"].startsWith(saved.values["Message / linked diagnosis"]));
+  assert.match(next.changes.emails[0].values["Message / linked diagnosis"], /current Outlook URL differs.*may no longer open/);
   assert.equal(next.changes.emails[0].values["Original affected-user label"], "Original reviewed label");
-  assert.equal(next.changes.emails[0].links["Outlook source"], "https://outlook.office.com/mail/item/moved");
+  assert.equal(next.changes.emails[0].links["Outlook source"], saved.links["Outlook source"]);
+  assert.equal(noChanges(normalize({ seed: next.nextSeed, messages: [mail("moved", { immutableId: "stable", webLink: "https://outlook.office.com/mail/item/moved" })] })), true);
+});
+
+test("later exact correlation updates actor/action linkage while preserving a conflicting established evidence link", () => {
+  const original = mail("m", { detailUrl: "https://posetek.net/admin/user-issues?issue=earlier-group" });
+  const first = normalize({ messages: [original] });
+  const joined = { ...original, webLink: "https://outlook.office.com/mail/item/moved", exactJoin: { type: "occurrenceId", value: "occ-1", evidence: "Verified internal exact reference" } };
+  const next = normalize({ seed: first.nextSeed, occurrences: [occurrence()], outbox: [job()], messages: [joined] });
+  const row = next.changes.emails[0];
+  assert.equal(row.values["Linked instance"], "EV-001"); assert.equal(row.values["Action ID"], next.changes.instances[0].values["Action ID"]);
+  assert.equal(row.links["Issue / service incident"], original.detailUrl);
+  assert.match(row.values["Message / linked diagnosis"], /Now linked to EV-001/); assert.match(row.values["Message / linked diagnosis"], /Current correlation fields reflect the verified evidence/);
+  assert.match(row.values["Message / linked diagnosis"], /current Outlook URL differs/);
+  assert.equal(noChanges(normalize({ seed: next.nextSeed, occurrences: [occurrence()], outbox: [job()], messages: [joined] })), true);
+});
+
+test("an empty source hyperlink can still be enriched without replacing an established link", () => {
+  const first = normalize({ messages: [mail("m", { webLink: "" })] });
+  const next = normalize({ seed: first.nextSeed, messages: [mail("m")] });
+  assert.equal(next.changes.emails[0].links["Outlook source"], mail().webLink);
+  assert.doesNotMatch(next.changes.emails[0].values["Message / linked diagnosis"], /Preserved source links/);
 });
 
 test("status-only notifications keep original transition evidence, actor UID and current source state", () => {

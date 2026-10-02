@@ -63,4 +63,11 @@ function verifyResendWebhook(rawBody, headers, secret, now = Date.now()) {
   return { id, event };
 }
 
-module.exports = { createResendProvider, verifyResendWebhook, RECIPIENT, FROM };
+function createNotificationProvider(options) {
+  const resend = createResendProvider(options);
+  const microsoft = require("./microsoft-email-transport").createMicrosoftProvider();
+  return { send(payload, key, job) {
+    return job?.deliveryProvider === "microsoft" ? microsoft.send(payload, key, job) : resend.send(payload, key);
+  } };
+}
+module.exports = { createResendProvider, createNotificationProvider, verifyResendWebhook, RECIPIENT, FROM };

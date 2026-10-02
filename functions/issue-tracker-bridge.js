@@ -22,30 +22,40 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
     catch (error) { if (error?.code !== "functions/task-already-exists") throw error; }
   }
 
-  async function observeOutbox(id, { schedule = true } = {}) {
+  async function observeSource(id, { schedule = true, occurrenceRequired = false } = {}) {
     if (!SAFE_ID.test(id || "")) M.fail("tracker_invalid_outbox_id");
     const ref = db.doc(`${PATHS.queue}/outbox-${id}`);
-    const queued = await db.runTransaction(async tx => {
+    const result = await db.runTransaction(async tx => {
       const settings = (await tx.get(db.doc(PATHS.settings))).data();
-      if (settings?.enabled !== true) return false;
+      if (settings?.enabled !== true) return { queued: false };
       // Read the current document, not the possibly out-of-order trigger image.
       const job = (await tx.get(db.doc(`userIssueOutbox/${id}`))).data();
-      const material = M.materialOutbox(job);
-      if (!material) return false;
+      const occurrence = job?.type === "incident" || occurrenceRequired ? (await tx.get(db.doc(`userIssueOccurrences/${id}`))).data() : null;
+      if (occurrenceRequired && !occurrence) M.fail("tracker_occurrence_unavailable");
+      if (occurrence && job && job.type !== "incident") M.fail("tracker_source_identity_conflict");
+      const issueId = occurrence?.issueId || job?.issueId;
+      const issue = issueId ? (await tx.get(db.doc(`userIssues/${issueId}`))).data() : null;
+      const outboxMaterial = M.materialOutbox(job);
+      if (!outboxMaterial && !occurrence) return { queued: false };
+      const material = { outbox: outboxMaterial, occurrence: M.materialOccurrence(occurrence), issue: M.materialIssue(issue) };
       const old = (await tx.get(ref)).data();
       const desiredHash = M.digest(material);
-      if (old?.desiredHash === desiredHash) return old.pending === true;
-      tx.set(ref, { source: "outbox", sourceId: id, desiredHash, version: (old?.version || 0) + 1, pending: true,
-        changedAtMillis: now(), firstQueuedAtMillis: old?.firstQueuedAtMillis || now(), appliedHash: old?.appliedHash || null });
-      return true;
+      const version = old?.desiredHash === desiredHash ? old.version : (old?.version || 0) + 1;
+      const ticket = { queueId: `outbox-${id}`, version };
+      if (old?.desiredHash === desiredHash) return { queued: old.pending === true, ticket };
+      tx.set(ref, { source: occurrence ? "occurrence" : "outbox", sourceId: id, desiredHash, version, pending: true,
+        changedAtMillis: now(), firstQueuedAtMillis: old?.firstQueuedAtMillis || now(), appliedHash: old?.appliedHash || null, appliedVersion: old?.appliedVersion || 0 });
+      return { queued: true, ticket };
     });
-    if (queued && schedule) await wake();
-    return { queued };
+    if (result.queued && schedule) await wake();
+    return result;
   }
+  const observeOutbox = (id, options) => observeSource(id, options);
+  const observeOccurrence = (id, options) => observeSource(id, { ...options, occurrenceRequired: true });
 
   // Adapter boundary only: callers must authenticate and authorize the mailbox
   // before invoking this method. No public HTTP ingress is exported here.
-  async function enqueueMessage(message) {
+  async function enqueueMessage(message, { schedule = true } = {}) {
     if (!message || !validKey(message.mailbox, 320)) M.fail("tracker_invalid_message");
     const { mailbox: _mailbox, exactJoin, ...mail } = message;
     if (!validMessage(mail) || exactJoin && (!["occurrenceId", "outboxId", "providerId"].includes(exactJoin.type) || !validKey(exactJoin.value) || !validKey(exactJoin.evidence))) M.fail("tracker_invalid_message");
@@ -58,19 +68,26 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
     // Distinct Outlook items can share InternetMessageId (e.g. copies). Use the
     // immutable item ID when supplied; explicit aliases are resolved by adapter.
     const sourceId = M.digest([message.mailbox.toLowerCase(), message.immutableId || message.originalId || message.id]);
-    const ref = db.doc(`${PATHS.queue}/mail-${sourceId}`), desiredHash = M.digest(message);
-    const queued = await db.runTransaction(async tx => {
+    const ref = db.doc(`${PATHS.queue}/mail-${sourceId}`);
+    const result = await db.runTransaction(async tx => {
       const settings = (await tx.get(db.doc(PATHS.settings))).data();
       if (settings?.enabled !== true) M.fail("tracker_disabled");
       if (message.mailbox.toLowerCase() !== settings.mailbox?.toLowerCase()) M.fail("tracker_wrong_mailbox");
       const old = (await tx.get(ref)).data();
-      if (old?.desiredHash === desiredHash) return old.pending === true;
-      tx.set(ref, { source: "outlook", sourceId, message, desiredHash, version: (old?.version || 0) + 1, pending: true,
-        changedAtMillis: now(), firstQueuedAtMillis: old?.firstQueuedAtMillis || now(), appliedHash: old?.appliedHash || null });
-      return true;
+      // Arrival notifications may know an additional REST alias that the next
+      // whole-mailbox read does not. Do not erase it or oscillate queue versions.
+      const storedMessage = { ...message, aliases: [...new Set([...(old?.message?.aliases || []), ...(message.aliases || [])])].sort() };
+      if (storedMessage.aliases.length > 20 || size(storedMessage) > 48000) M.fail("tracker_message_too_large");
+      const desiredHash = M.digest(storedMessage);
+      const version = old?.desiredHash === desiredHash ? old.version : (old?.version || 0) + 1;
+      const ticket = { queueId: `mail-${sourceId}`, version };
+      if (old?.desiredHash === desiredHash) return { queued: old.pending === true, ticket };
+      tx.set(ref, { source: "outlook", sourceId, message: storedMessage, desiredHash, version: (old?.version || 0) + 1, pending: true,
+        changedAtMillis: now(), firstQueuedAtMillis: old?.firstQueuedAtMillis || now(), appliedHash: old?.appliedHash || null, appliedVersion: old?.appliedVersion || 0 });
+      return { queued: true, ticket };
     });
-    if (queued) await wake();
-    return { queued };
+    if (result.queued && schedule) await wake();
+    return result;
   }
 
   async function claim() {
@@ -120,9 +137,23 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
         issues.push({ ...issue, id: job.issueId }); seenIssues.add(job.issueId);
       }
     }
+    async function hydrateOccurrence(id) {
+      if (seenJobs.has(id)) return;
+      const job = (await db.doc(`userIssueOutbox/${id}`).get()).data();
+      if (job) return hydrateJob(id, true);
+      const occurrence = (await db.doc(`userIssueOccurrences/${id}`).get()).data();
+      if (!occurrence) M.fail("tracker_occurrence_unavailable");
+      await seedStore.hydrate(seed, "instances", id);
+      occurrences.push({ ...occurrence, id }); seenJobs.add(id);
+      if (occurrence.issueId && !seenIssues.has(occurrence.issueId)) {
+        const issue = (await db.doc(`userIssues/${occurrence.issueId}`).get()).data();
+        if (issue) { issues.push({ ...issue, id: occurrence.issueId }); seenIssues.add(occurrence.issueId); }
+      }
+    }
     for (const row of pending.docs) {
       const queued = row.data();
       if (queued.source === "outlook") { messages.push(queued.message); continue; }
+      if (queued.source === "occurrence") { await hydrateOccurrence(queued.sourceId); continue; }
       if (queued.source !== "outbox") M.fail("tracker_unknown_source");
       await hydrateJob(queued.sourceId);
     }
@@ -186,7 +217,11 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
       }
       if (state?.leaseId !== claimed.leaseId || state.activeBatchId !== batch.payload.batchId || state.revision !== batch.payload.expectedRevision) M.fail("tracker_lease_lost");
       for (const { selected, ref, current } of rows) {
-        if (current?.version === selected.version && current.desiredHash === selected.desiredHash) tx.update(ref, { pending: false, appliedHash: selected.desiredHash, appliedAtMillis: now(), batchId: batch.payload.batchId });
+        // A newer desired version may have arrived while Excel wrote this
+        // batch. Preserve that pending work AND record which older version was
+        // actually published, so source-window receipts can advance truthfully.
+        if (current) tx.update(ref, { appliedVersion: Math.max(current.appliedVersion || 0, selected.version), appliedAtMillis: now(),
+          ...(current.version === selected.version && current.desiredHash === selected.desiredHash ? { pending: false, appliedHash: selected.desiredHash, batchId: batch.payload.batchId } : {}) });
       }
       tx.set(seedRef, batch.nextSeedMetadata);
       for (const row of seedRows) tx.set(db.doc(`${ROWS}/${row.id}`), { group: row.group, key: row.key, value: row.value });
@@ -242,6 +277,6 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
       });
     }
   }
-  return { observeOutbox, enqueueMessage, drain, wake };
+  return { observeOutbox, observeOccurrence, enqueueMessage, drain, wake };
 }
 module.exports = { createIssueTrackerBridge, PATHS, COALESCE_MS, LEASE_MS, MAX_BATCH, DAILY_ATTEMPT_LIMIT };

@@ -4,34 +4,47 @@ Reviewed on October 1, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
-## Event-triggered issue tracker candidate (2026-10-01)
+## Microsoft email and event-triggered tracker candidate (2026-10-01)
 
-Dylan selected Power Automate to replace the hourly Excel tracker, with costs
-shown before any purchase. The event queue, conservative normalization and native
-Office Script writer are source candidates only; the existing hourly Codex task
-remains active. Dylan's Excel connection and a saved test-only writer flow
-(`b011912f-bb15-453f-92ef-761d223095b4`) are confirmed. Native synthetic
-initialize/upsert/replay passed with two actions, three instances, three emails
-and one daily row at revision one, preserving human fields. The flow has no
-backend or Outlook intake connected, and Microsoft blocks activation pending
-Premium licensing. Its saved details show Suspended, type Automated, owned by
-Dylan and running on its owner's plan. No purchase, trial or backend deployment
-occurred.
+Dylan reported purchasing Power Automate Premium and authorized setup. One
+available Premium license is now assigned to dylank@posetek.net, and the existing
+private test writer saves without the former licensing block. It remains Off,
+Automated, owned by Dylan, with ID b011912f-bb15-453f-92ef-761d223095b4. Existing
+Excel and Outlook connections are confirmed. The shared mailbox alerts@posetek.net
+is created; its delegation and dedicated backend identity are pending setup
+permission approval. No additional subscription was purchased by the agent.
 
-Concurrency one requires an asynchronous Response; bounded final-receipt polling
-and native performance changes remain in progress. Microsoft documents that an
-Automated flow uses its owner's license regardless of who starts it. The current
-recommendation is one Premium license for Dylan at $180/year before tax, retaining
-his ownership; the earlier service-principal-owned/Dataverse alternative is not
-needed for this flow type. Entitlement acceptance, source recovery and full
-native acceptance remain cutover gates. Fresh cloud download `(10).xlsx` still
-contains the older `b49ac4d...`
-workbook; local `5e209015...` is unpublished and checkpoints are unchanged.
-Reconcile these versions before migration. Do not run both writers against the
-master. Read
-[ISSUE_TRACKER_EVENT_FLOW.md](docs/ISSUE_TRACKER_EVENT_FLOW.md) and
-[the isolated candidate](deployments/issue-tracker/README.md). This work does not
-change the live website or existing email delivery setup.
+The selected migration replaces all Resend notification types with Microsoft
+365 through Power Automate, retaining every existing alert and current recipient
+sets. A durable one-time claim prevents an uncertain send from being blindly
+replayed. Send acceptance and recipient-level Exchange trace evidence remain
+separate. Previously attempted Resend jobs retain their provider and history.
+The Microsoft source candidate is disabled by default and has not been deployed.
+
+Tracker capture is independent of email delivery. Candidate recovery includes
+fully paged whole-mailbox reads, separate capture/publication checkpoints, direct
+backend occurrences and repeated scans of historical delivery jobs. Native
+acceptance against a private fixture matching 23 actions, 560 instances and 128
+emails found and fixed Excel timestamp rounding and a synthetic hyperlink overlap
+edge case. Native append, exact recovery and ordinary updates now pass: an
+ordinary update took 17.5 seconds, with a 1.2-second exact replay. These browser
+tests do not establish Power Automate transport or shared-master acceptance.
+Concurrency one, bounded asynchronous receipt polling and exact replay remain
+required. See [native acceptance](scripts/issue-tracker/NATIVE_ACCEPTANCE.md).
+
+The earlier cloud/local workbook discrepancy is resolved. The confirmed shared
+master has 560 instances, 128 emails and 23 actions, with both source cutoffs at
+2026-10-02T00:23:48.011Z. Its verified SHA-256 is
+9e4d825ce1af5de8e85032e53ec70167e911fd312f3f95e731ac3e99c89c1586.
+No unfinished hourly candidate remains at that checkpoint. Obtain a fresh cloud
+copy before migration; do not resurrect the older unpublished candidate.
+
+The hourly Codex tracker and existing production email route remain active.
+Never run both workbook writers against the master. Read
+[ISSUE_TRACKER_EVENT_FLOW.md](docs/ISSUE_TRACKER_EVENT_FLOW.md),
+[the tracker package](deployments/issue-tracker/README.md) and
+[the Microsoft email package](deployments/microsoft-email/README.md).
+This candidate does not change website bytes or training/planner records.
 
 ## Shared user-issue recipients (2026-10-01)
 

@@ -11,6 +11,17 @@ function bootstrapSource(workbook: ExcelScript.Workbook): TableImage[] {
 function bootstrapDigest(images: TableImage[]): string {
   return sha256(canonical(images.map(image=>({table:image.spec.table,rows:image.rows.slice().sort((a,b)=>a.key.localeCompare(b.key))}))));
 }
+function verifyBootstrapPreservation(before:TableImage[],after:TableImage[]):void {
+  before.forEach((image,index)=>{
+    const current=after[index];
+    requireCondition(!!current&&same(image.rows.map(row=>row.key),current.rows.map(row=>row.key)),'Source order/count changed during bootstrap');
+    image.rows.forEach((row,rowIndex)=>{
+      const actual=current.rows[rowIndex];
+      requireCondition(rowDigest(actual)===rowDigest(row),'Source values/links changed during bootstrap');
+      requireCondition(same(actual.human,row.human),'Human fields changed during bootstrap');
+    });
+  });
+}
 function main(workbook: ExcelScript.Workbook, bootstrapJson: string): string {
   const input=JSON.parse(bootstrapJson) as BootstrapRequest;
   requireCondition(input.mode==='inspect'||input.mode==='initialize','Invalid bootstrap mode');
@@ -35,14 +46,14 @@ function main(workbook: ExcelScript.Workbook, bootstrapJson: string): string {
   requireCondition(same(extracted,daily),'Daily history does not match source footer');
   const target=sheet.getRangeByIndexes(4,25,Math.max(2,daily.length+1),5);
   requireCondition(target.getValues().every(row=>row.every(v=>v==='')),'Daily target contains existing content');
+  const archive=sheet.getRangeByIndexes(4,32,footerValues.length,24);
+  requireCondition(archive.getValues().every(row=>row.every(v=>v==='')),'Footer archive target occupied; original retained');
   // Freeze approved source fingerprints in hidden state only after all preflight.
   target.getCell(0,0).getResizedRange(0,4).setValues([DAILY_HEADERS]);
   const dailyTable=sheet.addTable(target.getCell(0,0).getResizedRange(daily.length,4),true);dailyTable.setName('DailyDeliveries');
   if(daily.length)dailyTable.getRangeBetweenHeaderAndTotal().setValues(daily.map(row=>row.map(value=>safeLiteral(value))));
   requireCondition(same(dailyTable.getRangeBetweenHeaderAndTotal().getValues(),daily),'Daily copy verification failed; old footer retained');
   // Preserve non-daily footer context at AG:BD before clearing the old footprint.
-  const archive=sheet.getRangeByIndexes(4,32,footerValues.length,24);
-  requireCondition(archive.getValues().every(row=>row.every(v=>v==='')),'Footer archive target occupied; old footer retained');
   archive.setValues(footerValues.map(row=>row.map(value=>safeLiteral(value))));requireCondition(same(archive.getValues(),footerValues),'Footer archive verification failed; original retained');
   requireCondition(bootstrapDigest(bootstrapSource(workbook))===sourceSha256,'Source changed during bootstrap; old footer retained');
   requireCondition(same(footer.getValues(),footerValues),'Footer changed during bootstrap; original retained');
@@ -55,6 +66,8 @@ function main(workbook: ExcelScript.Workbook, bootstrapJson: string): string {
   refreshFormulas(workbook);
   requireCondition(same(readState(workbook),state),'Bootstrap state postread failed');
   const seeded=SPECS.map(spec=>readImage(workbook,spec,null));
-  checkManagedFormulas(seeded);
+  verifyBootstrapPreservation(images,seeded);
+  requireCondition(same(tableCounts(seeded),counts),'Bootstrap postread row counts differ');
+  checkManagedFormulas(seeded);verifyCalculatedValues(workbook,seeded);
   return canonical({initialized:true,mode:'paused',workbookKey:input.workbookKey,revision:0,sourceSha256,counts,seed:seeded.map(image=>({group:image.spec.group,rows:image.rows.map(row=>({key:row.key,values:row.values,links:row.links,machineSha256:rowDigest(row)}))}))});
 }

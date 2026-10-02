@@ -19,12 +19,19 @@ const pick = (value, fields) => Object.fromEntries(fields.filter(field => value?
 // confirmed delivery. Sending is presented as pending until the provider replies.
 function materialOutbox(job) {
   if (!job || !["incident", "status", "daily"].includes(job.type)) return null;
-  const value = pick(job, ["type", "issueId", "title", "lines", "createdAtMillis", "actorUid", "providerId", "acceptedAtMillis", "deliveredAtMillis", "failureCode", "uncertain"]);
+  const value = pick(job, ["type", "issueId", "title", "lines", "createdAtMillis", "actorUid", "providerId", "acceptedAtMillis", "deliveredAtMillis", "deliveryObservedAtMillis", "deliveryProvider", "failureCode", "uncertain"]);
+  if (job.deliveryProvider === "microsoft") value.microsoft = pick(job.microsoft, ["correlation", "senderMailbox", "runId", "receiptAcceptedAtMillis", "receiptUncertainAtMillis", "internetMessageId", "traceErrorCode", "traceAmbiguous"]);
   value.status = job.status === "sending" ? "pending" : job.status || "unknown";
   value.recipients = Array.isArray(job.payload?.to) ? [...job.payload.to].sort() : [];
   value.recipientDelivery = job.recipientDelivery || {};
   return value;
 }
+
+function materialOccurrence(event) {
+  if (!event) return null;
+  return pick(event, ["eventId", "sessionId", "issueId", "kind", "operation", "code", "platform", "occurredAtMillis", "receivedAtMillis", "build", "device", "description", "message", "route", "requestId", "severity", "reporterUid", "reporterName", "player", "source", "sourceReference"]);
+}
+const materialIssue = issue => issue ? pick(issue, ["state", "fixRef", "verification", "updatedBy"]) : null;
 
 function sealBatch({ batchId, workbookKey, expectedRevision, generatedAt, changes }) {
   if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) fail("tracker_invalid_revision");
@@ -52,4 +59,4 @@ function verifyReceipt(batch, receipt) {
   if (Object.keys(receipt.counts).sort().join(",") !== [...GROUPS].sort().join(",")) fail("tracker_invalid_receipt_counts");
   return receipt;
 }
-module.exports = { GROUPS, canonical, digest, fail, materialOutbox, sealBatch, verifyReceipt };
+module.exports = { GROUPS, canonical, digest, fail, materialOutbox, materialOccurrence, materialIssue, sealBatch, verifyReceipt };
