@@ -1,0 +1,389 @@
+{
+  "schemaVersion": 1,
+  "status": "production-configured-delivery-limited-by-provider-quota",
+  "recordedAt": "2026-10-01T19:37:07.309Z",
+  "sourceCommit": "6e3fa0bf325eb598206284b8e64ded55c0558721",
+  "scope": "Future user issue, status change and daily summary recipients; independent Google Cloud fallback alert recipients. No website release.",
+  "notifications": {
+    "from": "PoseTek Support <support@alerts.posetek.net>",
+    "recipients": [
+      "dylank@posetek.net",
+      "nolanj@posetek.net",
+      "taiyow@posetek.net"
+    ],
+    "earlierFrozenPayloadsAndKeysPreserved": true,
+    "historicalEmailBackfill": false,
+    "workoutRecipientsUnchanged": true,
+    "perRecipientSignedReceipts": true,
+    "aggregateDeliveredRequiresAllFrozenRecipients": true
+  },
+  "backend": {
+    "project": "kickai-69dd0",
+    "functions": {
+      "submitUserIssue": {
+        "versionId": "3",
+        "sourceSha256": "c59d335407ea024ba68b6c1a955a6bb2303c5ce4222506ab1e24ab23fe05f6f2",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "60s",
+          "availableMemoryMb": 256,
+          "maxInstances": 10,
+          "secrets": [],
+          "httpsTrigger": true,
+          "publicInvoker": true,
+          "ingressSettings": "ALLOW_ALL",
+          "callable": true
+        },
+        "iamSha256": "e6d3b33c675e91952197875328dd540c4d4d00f13e5fc31748288b7ebc7fdd37",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "getUserIssues": {
+        "versionId": "3",
+        "sourceSha256": "c59d335407ea024ba68b6c1a955a6bb2303c5ce4222506ab1e24ab23fe05f6f2",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "60s",
+          "availableMemoryMb": 256,
+          "maxInstances": 10,
+          "secrets": [],
+          "httpsTrigger": true,
+          "publicInvoker": true,
+          "ingressSettings": "ALLOW_ALL",
+          "callable": true
+        },
+        "iamSha256": "fb40533670906e22ea7ef3c3ac23ce14b2059cc52f0462fd4c6144fbcc3dcac8",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "updateUserIssue": {
+        "versionId": "3",
+        "sourceSha256": "c59d335407ea024ba68b6c1a955a6bb2303c5ce4222506ab1e24ab23fe05f6f2",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "60s",
+          "availableMemoryMb": 256,
+          "maxInstances": 10,
+          "secrets": [],
+          "httpsTrigger": true,
+          "publicInvoker": true,
+          "ingressSettings": "ALLOW_ALL",
+          "callable": true
+        },
+        "iamSha256": "23dcfc66d4802b200763619373b49d33dc1cb922a2b0beca66df2962082b5257",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "observeIssueAi": {
+        "versionId": "3",
+        "sourceSha256": "c59d335407ea024ba68b6c1a955a6bb2303c5ce4222506ab1e24ab23fe05f6f2",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "120s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "secrets": [],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/databases/(default)/documents/aiIncidents/{id}",
+            "eventType": "providers/cloud.firestore/eventTypes/document.create",
+            "service": "firestore.googleapis.com",
+            "failurePolicy": {
+              "retry": {}
+            }
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "observeIssueReport": {
+        "versionId": "3",
+        "sourceSha256": "c59d335407ea024ba68b6c1a955a6bb2303c5ce4222506ab1e24ab23fe05f6f2",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "120s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "secrets": [],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/databases/(default)/documents/fieldReports/{id}",
+            "eventType": "providers/cloud.firestore/eventTypes/document.create",
+            "service": "firestore.googleapis.com",
+            "failurePolicy": {
+              "retry": {}
+            }
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "observeIssueDiagnostic": {
+        "versionId": "3",
+        "sourceSha256": "c59d335407ea024ba68b6c1a955a6bb2303c5ce4222506ab1e24ab23fe05f6f2",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "120s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "secrets": [],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/databases/(default)/documents/failureCases/{id}",
+            "eventType": "providers/cloud.firestore/eventTypes/document.create",
+            "service": "firestore.googleapis.com",
+            "failurePolicy": {
+              "retry": {}
+            }
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "observeIssueLog": {
+        "versionId": "3",
+        "sourceSha256": "c59d335407ea024ba68b6c1a955a6bb2303c5ce4222506ab1e24ab23fe05f6f2",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "120s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "secrets": [],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/topics/posetek-user-issues",
+            "eventType": "google.pubsub.topic.publish",
+            "service": "pubsub.googleapis.com",
+            "failurePolicy": {
+              "retry": {}
+            }
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "dispatchUserIssue": {
+        "versionId": "3",
+        "sourceSha256": "c59d335407ea024ba68b6c1a955a6bb2303c5ce4222506ab1e24ab23fe05f6f2",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "120s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "secrets": [
+            "RESEND_API_KEY"
+          ],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/databases/(default)/documents/userIssueOutbox/{id}",
+            "eventType": "providers/cloud.firestore/eventTypes/document.write",
+            "service": "firestore.googleapis.com",
+            "failurePolicy": {
+              "retry": {}
+            }
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "sweepUserIssues": {
+        "versionId": "3",
+        "sourceSha256": "c59d335407ea024ba68b6c1a955a6bb2303c5ce4222506ab1e24ab23fe05f6f2",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "300s",
+          "availableMemoryMb": 256,
+          "maxInstances": 1,
+          "secrets": [
+            "RESEND_API_KEY"
+          ],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/topics/firebase-schedule-sweepUserIssues-us-central1",
+            "eventType": "google.pubsub.topic.publish",
+            "service": "pubsub.googleapis.com"
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "dailyUserIssues": {
+        "versionId": "3",
+        "sourceSha256": "c59d335407ea024ba68b6c1a955a6bb2303c5ce4222506ab1e24ab23fe05f6f2",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "300s",
+          "availableMemoryMb": 256,
+          "maxInstances": 1,
+          "secrets": [
+            "RESEND_API_KEY"
+          ],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/topics/firebase-schedule-dailyUserIssues-us-central1",
+            "eventType": "google.pubsub.topic.publish",
+            "service": "pubsub.googleapis.com"
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      }
+    },
+    "webhook": {
+      "versionId": "3",
+      "sourceSha256": "8105f47230f49e0c2084c356e88f99eb68df562eb62d4308a4bccdddea9bc0c3",
+      "status": "ACTIVE",
+      "definition": {
+        "timeout": "60s",
+        "availableMemoryMb": 256,
+        "maxInstances": 10,
+        "secrets": [
+          "RESEND_WEBHOOK_SECRET"
+        ],
+        "httpsTrigger": true,
+        "publicInvoker": true,
+        "ingressSettings": "ALLOW_ALL",
+        "callable": false
+      },
+      "iamSha256": "07f46fff5ffce36f5be85a0bed63c6deb4626ccbb3fa6c09e0be40268c82207e",
+      "runtimeConfig": {
+        "present": true,
+        "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+        "bytes": 112,
+        "schema": "firebase-project-and-bucket"
+      }
+    },
+    "unrelatedFunctionsPreserved": true,
+    "triggerRuntimeTransportAndSourceVerified": true,
+    "settingsUnchanged": true,
+    "schedulers": [
+      {
+        "name": "projects/kickai-69dd0/locations/us-central1/jobs/firebase-schedule-dailyUserIssues-us-central1",
+        "schedule": "0 9 * * *",
+        "timeZone": "America/Los_Angeles",
+        "state": "ENABLED"
+      },
+      {
+        "name": "projects/kickai-69dd0/locations/us-central1/jobs/firebase-schedule-sweepUserIssues-us-central1",
+        "schedule": "every 5 minutes",
+        "timeZone": "America/Los_Angeles",
+        "state": "ENABLED"
+      }
+    ],
+    "rulesDeployed": false,
+    "gatewayDeployed": false,
+    "websiteDeployed": false,
+    "nativeDeployed": false
+  },
+  "monitoring": {
+    "at": "2026-10-01T19:30:33.765Z",
+    "policy": "projects/kickai-69dd0/alertPolicies/6520825830736261069",
+    "notificationChannels": [
+      {
+        "name": "projects/kickai-69dd0/notificationChannels/17819036609163820276",
+        "email": "dylank@posetek.net",
+        "enabled": true,
+        "verificationStatus": "not_required_or_unspecified"
+      },
+      {
+        "name": "projects/kickai-69dd0/notificationChannels/1643439989627158215",
+        "email": "nolanj@posetek.net",
+        "enabled": true,
+        "verificationStatus": "not_required_or_unspecified"
+      },
+      {
+        "name": "projects/kickai-69dd0/notificationChannels/13952378452960206658",
+        "email": "taiyow@posetek.net",
+        "enabled": true,
+        "verificationStatus": "not_required_or_unspecified"
+      }
+    ],
+    "conditionsAndRateSettingsPreserved": true,
+    "emailInboxDeliveryVerified": false
+  },
+  "verification": {
+    "issueAndWorkoutTestsPassed": 48,
+    "cases": [
+      "All approved issue recipients; default workout recipient remains Dylan-only",
+      "Per-recipient out-of-order signed outcomes and partial failures",
+      "All-recipient delivery requirement",
+      "Callbacks before API response",
+      "Legacy frozen payload/key and callback compatibility",
+      "Wrong recipient and CC/BCC rejection"
+    ],
+    "naturalOutboxRead": {
+      "at": "2026-10-01T19:37:07.191Z",
+      "latestJobsSampled": 10,
+      "threeRecipientPayloadJobs": 0,
+      "threeRecipientDeliveredJobs": 0
+    },
+    "syntheticEmailsSent": 0,
+    "newRecipientInboxDeliveryVerified": false
+  },
+  "providerLimit": {
+    "observedOn": "2026-10-01",
+    "timeZone": "America/Los_Angeles",
+    "evidence": "Authenticated Resend dashboard for one previously failed user-issue email reports that the daily sending quota was reached. This is not a separate investigation of all twelve failed emails.",
+    "usageApi": "Production sending-only API key correctly denies read access to usage; permissions were not broadened.",
+    "currentAttemptEvidence": "Recent existing issue jobs still have provider_http_429. No synthetic message was added while the known daily quota was exhausted.",
+    "billingOrPlanChanged": false,
+    "quotaResetTimeVerified": false
+  },
+  "sharedTracker": {
+    "location": "PoseTek > Technology > Website > User Issue Tracker > PoseTek Issue Tracker.xlsx",
+    "owner": "Dylan Keller",
+    "editors": [
+      "nolanj@posetek.net",
+      "taiyow@posetek.net"
+    ],
+    "permissionsVerifiedInOneDrive": true,
+    "includesGoogleCloudEmailEvidence": true,
+    "refresh": "Hourly local Codex automation; requires Dylan computer, Codex, OneDrive and connected accounts. Defer locked/conflicting workbooks and preserve manual triage fields."
+  },
+  "remaining": [
+    "After verified provider capacity resumes, confirm signed delivered receipts for each of the three recipients and distinguish delivery from Inbox placement.",
+    "Retain and review old failed/expired emails separately; do not reset frozen payloads, first-attempt timestamps or idempotency keys.",
+    "Google Cloud channel configuration is verified; new-recipient Inbox arrival has not been verified. Existing notification rate and incident caps remain unchanged."
+  ],
+  "recovery": "Disable only issue sending if needed while retaining intake and outbox evidence. Keep a webhook capable of per-recipient callbacks while any three-recipient payload can still receive receipts. Do not restore an older Dylan-only webhook blindly, rewrite pending payloads, or replay delivered jobs. Scoped predecessor source archives and inventory are retained privately."
+}

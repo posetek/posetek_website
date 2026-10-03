@@ -3,7 +3,28 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
-Guided personal workouts are live as deployment `6abeaf5702a9c9983c7a41b9`, source
+The October 2–3 notification coverage correction is published as application
+deployment `6ac06e0d420f2b6b34129fb5`. Full provider and served-content verification
+checked all 1,485 files, preserving the current marketing, protected files and
+platform configuration. The website now assigns fresh request references to supported
+social attempts; compatible backend observations retain both sources, while
+conflicting actions or known targets remain distinct. Ten user-issue functions
+at version 8, six tracker functions at version 5 and fourteen individually scoped
+social endpoints passed exact source/configuration/IAM checks. Read
+[the current handoff](docs/NOTIFICATION_COVERAGE_CORRECTION.md) and
+[correction receipt](deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
+for release and current workbook evidence. Baseline adoption passed with 1,482
+protected application/public files. The historical
+revision-121 results below do not establish the latest source coverage.
+
+Dylan alone receives alerts; Nolan and Taiyo retain shared workbook editing.
+Native Crashlytics export is configured On for the registered iOS app, but the
+owning-Mac/iPhone/TestFlight genuine crash acceptance gate remains held. Approval
+of the new Microsoft mailbox identity-conversion connection remains unconfirmed.
+The hourly Codex updater stays paused. No automatic outreach or historical Resend
+replay is included.
+
+Guided personal workouts were published as deployment `6abeaf5702a9c9983c7a41b9`, source
 `8956871`, published October 1, 2026 at 12:18:33 PM PDT. Players choose focus,
 location, available time and readiness one step at a time; age is confirmed only
 when needed. Code-only assessment and shared deterministic composition produce
@@ -23,6 +44,61 @@ User crash/bug reporting, the protected issue inbox and email operations are
 documented in [User issue alerts](docs/USER_ISSUE_ALERTS.md). Native rollout and
 Crashlytics export verification have separate acceptance gates.
 
+The preceding October 2 refinement made **`dylank@posetek.net` the only recipient** of new
+issue, status, daily-summary and workout notifications and both separate PoseTek
+Google Cloud alert policies. Nolan and Taiyo retain editing access to the shared
+Excel workbook in **PoseTek > Technology > Website > User Issue Tracker > PoseTek
+Issue Tracker.xlsx**. Historical consumed recipient sets and receipts are preserved;
+the older Resend backlog is not replayed. Dylan handles outreach manually.
+
+The scoped deployments verified ten user-issue functions at version 5, three
+Microsoft email functions at version 2 and six tracker functions at version 2,
+preserving unrelated resources, IAM and schedules. Exact-UID contact enrichment
+covered 101 occurrences across seven Auth accounts: three verified emails, four
+unverified emails and no Auth display names. The fixed initial review retained
+995 service/anonymous records without a recorded Auth UID as unknown. The tracker
+keeps actor and target athlete separate and preserves stable IDs, evidence and the
+team's triage notes.
+
+The Power Automate shared tracker is event driven, with an accepted Dylan-only
+delegated mailbox reader and independent cloud source catch-up. The old hourly
+Codex automation remains **paused**. Fresh cloud evidence matched revision 87 to
+the exact frozen batch, allowing its existing receipt to be acknowledged without
+an Excel rewrite; the first ordinary retry returned revision 88. All eleven
+approved recent amendments delivered to Dylan alone with their original payloads
+and frozen claim digests preserved. Their structured identity fields describe nine
+diagnostic upload messages and two service failures with unknown operators. Final
+fresh cloud acceptance verifies revision 121 with 289 actions, 1,104 instances,
+402 email rows and two daily records. The fixed `23:32:01.540Z` queue audit had zero
+pending tickets. All 180 saved human
+records, 882 historical links, formulas and the full 121-receipt chain passed.
+Independent revision-121 identity acceptance verified all 101 contact annotations
+(77 historical and 24 newer), all eleven Internet-Message-ID joins, and real
+diagnostic upload and staff actions involving a different athlete. Nolan and
+Taiyo's **Can edit** access was freshly confirmed at 23:24 UTC; the revised guide
+passed cloud readback.
+
+Publication metadata recovery reconciled 141 lagging existing windows in eight
+transactions without Excel, Flow, email, seed or capture-field changes. Outlook
+and backend each completed and published all 159 windows through the fixed
+October 2, 4:28 PM PDT cutoff: respectively `2026-10-02T23:28:04.127Z` and
+`2026-10-02T23:28:04.120Z`. Two newly queued arrival tickets appeared in the later
+`23:34:18.201Z` readback. The normal native queue resumed **RUNNING**, verified at
+23:36 UTC with unchanged configuration. This establishes catch-up through those checkpoints,
+not coverage of later arrivals or completion of the independent outstanding-delivery
+scan. Current sending and
+coverage must come from the [refinement receipt](deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json),
+not an older flow badge or setup result. Never replace or reseed the native master.
+Read [the refinement handoff](docs/NOTIFICATION_OUTREACH_REFINEMENT.md),
+[the tracker handoff](docs/ISSUE_TRACKER_EVENT_FLOW.md) and
+[the Microsoft package](deployments/microsoft-email/README.md).
+
+The October 1 [recipient rollout](deployment/USER_ISSUE_RECIPIENTS_PRODUCTION.json),
+initial October 2 [Microsoft migration](deployment/MICROSOFT_EMAIL_PRODUCTION.json)
+and [tracker activation](deployment/ISSUE_TRACKER_EVENT_PRODUCTION.json) remain
+dated historical receipts. The earlier three-recipient setup pilot and revision-eight
+workbook readback do not establish the refinement's current delivery or coverage.
+
 The unified coach workspace and Astro build are documented in
 [the implementation handoff](docs/UNIFIED_COACH_WORKSPACE.md). Team Insights owns
 the coach roster, progress, player details and embedded Community. Astro builds
@@ -30,7 +106,7 @@ the three public/application entries while retaining existing React and Svelte
 interactions. Use `node scripts/build-astro-release.mjs` for a deliberate
 application release; ordinary builds retain the protected live application.
 
-Coach percentile presentation is live as deployment `6abb9f1e6c2c84772de67005`, source
+The preceding coach percentile presentation release is deployment `6abb9f1e6c2c84772de67005`, source
 `684528b`, published September 29, 2026 at 4:25:34 AM PDT. The card pairs a compact
 radar with readable skill positions, measured-player counts and concise scale
 explanations. Phone layouts show skill positions first. Scoring and access are
@@ -42,15 +118,17 @@ and [PR #14](https://github.com/posetek/posetek_website/pull/14).
 The preceding workspace and Astro release is recorded in
 [its production receipt](deployment/UNIFIED_COACH_WORKSPACE_PRODUCTION.json).
 
-Workout email alerts are live for all players from September 28, 2026 at
+The original workout-alert rollout activated for all players on September 28, 2026 at
 4:06:30 PM PDT. Saved outcomes go to `dylank@posetek.net`; web-observed sessions
 also qualify for an inactivity notice after 30 minutes, processed every five
 minutes. Emails include the player, recorded time/progress and a protected link
 to the exact workout history. Native-only sessions have saved-ending coverage.
-There is no historical backfill. All seven scoped functions, the verified
+There was no historical backfill. At that rollout, all seven scoped functions, the verified
 Resend sender and signed delivery webhook are live. Three synthetic emails
 received delivery receipts, and the final quiet email was confirmed in Outlook
 Inbox. Test records were removed before a fresh all-player activation cutoff.
+The subsequent Microsoft migration replaced Resend for new alerts; the dated
+Resend receipt remains historical evidence.
 
 The preceding workout-alert website checkpoint used source `d814225` and deployment
 `6abadd8abff0a78fde2fbe28`; its baseline protected 1,207 application/public files.

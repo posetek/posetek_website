@@ -1,0 +1,102 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "$authentication": { "defaultValue": {}, "type": "SecureObject" },
+    "$connections": { "defaultValue": {}, "type": "Object" },
+    "emailCallbackSecret": { "defaultValue": "REPLACE_PRIVATE_CALLBACK_SECRET_BEFORE_IMPORT", "type": "SecureString" }
+  },
+  "triggers": {
+    "manual": {
+      "type": "Request",
+      "kind": "Http",
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion", "kind", "jobId"],
+          "properties": {
+            "schemaVersion": { "type": "integer", "enum": [1] },
+            "kind": { "type": "string", "enum": ["workout", "issue"] },
+            "jobId": { "type": "string", "maxLength": 80 }
+          }
+        },
+        "triggerAuthenticationType": "User",
+        "triggerAllowedUsers": "REPLACE_DEDICATED_CALLER_SERVICE_PRINCIPAL_OBJECT_ID"
+      },
+      "runtimeConfiguration": { "concurrency": { "runs": 1 }, "secureData": { "properties": ["inputs", "outputs"] } }
+    }
+  },
+  "actions": {
+    "Claim": {
+      "type": "Http",
+      "runAfter": {},
+      "inputs": {
+        "uri": "https://us-central1-kickai-69dd0.cloudfunctions.net/claimMicrosoftEmail",
+        "method": "POST",
+        "headers": { "Content-Type": "application/json", "x-posetek-email-secret": "@parameters('emailCallbackSecret')" },
+        "body": { "schemaVersion": 1, "kind": "@triggerBody()?['kind']", "jobId": "@triggerBody()?['jobId']", "runId": "@workflow()?['run']?['name']" },
+        "retryPolicy": { "type": "none" }
+      },
+      "runtimeConfiguration": { "secureData": { "properties": ["inputs", "outputs"] } }
+    },
+    "Has_send_permission": {
+      "type": "If",
+      "runAfter": { "Claim": ["Succeeded"] },
+      "expression": { "equals": ["@body('Claim')?['allowSend']", true] },
+      "actions": {
+        "Send_email_once": {
+          "type": "OpenApiConnection",
+          "runAfter": {},
+          "inputs": {
+            "parameters": {
+              "emailMessage/MailboxAddress": "@body('Claim')?['fromMailbox']",
+              "emailMessage/To": "@body('Claim')?['to']",
+              "emailMessage/Subject": "@body('Claim')?['subject']",
+              "emailMessage/Body": "@body('Claim')?['html']",
+              "emailMessage/Importance": "Normal"
+            },
+            "host": { "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365", "connectionName": "shared_office365", "operationId": "SharedMailboxSendEmailV2" },
+            "retryPolicy": { "type": "none" },
+            "authentication": "@parameters('$authentication')"
+          },
+          "runtimeConfiguration": { "secureData": { "properties": ["inputs", "outputs"] } }
+        },
+        "Record_accepted": {
+          "type": "Http",
+          "runAfter": { "Send_email_once": ["Succeeded"] },
+          "inputs": {
+            "uri": "https://us-central1-kickai-69dd0.cloudfunctions.net/receiptMicrosoftEmail",
+            "method": "POST",
+            "headers": { "Content-Type": "application/json", "x-posetek-email-secret": "@parameters('emailCallbackSecret')" },
+            "body": { "schemaVersion": 1, "kind": "@triggerBody()?['kind']", "jobId": "@triggerBody()?['jobId']", "runId": "@workflow()?['run']?['name']", "claimToken": "@body('Claim')?['claimToken']", "outcome": "accepted" },
+            "retryPolicy": { "type": "exponential", "count": 4, "interval": "PT10S" }
+          },
+          "runtimeConfiguration": { "secureData": { "properties": ["inputs", "outputs"] } }
+        },
+        "Record_uncertain": {
+          "type": "Http",
+          "runAfter": { "Send_email_once": ["Failed", "TimedOut"] },
+          "inputs": {
+            "uri": "https://us-central1-kickai-69dd0.cloudfunctions.net/receiptMicrosoftEmail",
+            "method": "POST",
+            "headers": { "Content-Type": "application/json", "x-posetek-email-secret": "@parameters('emailCallbackSecret')" },
+            "body": { "schemaVersion": 1, "kind": "@triggerBody()?['kind']", "jobId": "@triggerBody()?['jobId']", "runId": "@workflow()?['run']?['name']", "claimToken": "@body('Claim')?['claimToken']", "outcome": "uncertain" },
+            "retryPolicy": { "type": "exponential", "count": 4, "interval": "PT10S" }
+          },
+          "runtimeConfiguration": { "secureData": { "properties": ["inputs", "outputs"] } }
+        }
+      },
+      "else": { "actions": {} }
+    },
+    "Response": {
+      "type": "Response",
+      "kind": "Http",
+      "runAfter": { "Has_send_permission": ["Succeeded", "Failed", "TimedOut", "Skipped"] },
+      "inputs": { "statusCode": 200, "headers": { "Content-Type": "application/json" }, "body": { "schemaVersion": 1, "wakeAcknowledged": true } },
+      "operationOptions": "Asynchronous",
+      "runtimeConfiguration": { "secureData": { "properties": ["inputs"] } }
+    }
+  },
+  "outputs": {}
+}
