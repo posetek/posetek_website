@@ -14,7 +14,7 @@ describe("privacy policy page", () => {
   });
 
   it("renders every section once, in order, under a stable anchor", () => {
-    expect(POLICY_SECTIONS).toHaveLength(13);
+    expect(POLICY_SECTIONS).toHaveLength(14);
     expect(new Set(POLICY_SECTIONS.map(section => section.id)).size).toBe(POLICY_SECTIONS.length);
     const rendered = [...html.matchAll(/<section id="([^"]+)"/g)].map(match => match[1]);
     expect(rendered).toEqual(POLICY_SECTIONS.map(section => section.id));

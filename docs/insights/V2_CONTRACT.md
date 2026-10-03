@@ -2,12 +2,16 @@
 
 Implementation contract, not a production receipt. The existing V1 callable remains unchanged.
 
+See [COACH_WORKSPACE_CONTRACT.md](COACH_WORKSPACE_CONTRACT.md) for the additive
+independent-coach scope, player comparison, roster search and rollout contract.
+
 `getClubInsightsV2` accepts:
 
 ```ts
 {
   scope: { kind: 'global' } | { kind: 'organization'; organizationId: string }
-    | { kind: 'team'; organizationId: string; teamId: string },
+    | { kind: 'team'; organizationId: string; teamId: string }
+    | { kind: 'coachRoster' }, // caller resolved; no coach ID input
   timeZone?: string, // IANA; default America/Los_Angeles
   startDate?: string, endDate?: string, // YYYY-MM-DD, inclusive, default last 56 local dates
   testingMode?: 'cumulative' | 'period', // default cumulative, through selected end
@@ -21,6 +25,7 @@ Implementation contract, not a production receipt. The existing V1 callable rema
     usageFeature?: 'workout' | 'video' | 'training' | 'results' | 'planner' | 'feed' | 'overview' | 'other',
     teamAssignment?: 'assigned' | 'unassigned'
   },
+  nameSearch?: string, // <=120 characters; roster only, not report totals
   pageSize?: number, // 1..100, default 50
   cursor?: string // opaque; reset when selection changes or failed-precondition asks to refresh
 }
@@ -31,17 +36,17 @@ The response is an allowlisted object:
 ```ts
 {
   schemaVersion: 2,
-  scope: { kind, organizationId?: string, teamId?: string, label: string,
+  scope: { kind, organizationId?: string, teamId?: string, coachId?: string, label: string,
     access: 'admin' | 'manager' | 'coach', assignedTeamsOnly: boolean },
-  choices: { global: boolean, organizations: Array<{id: string; name: string;
+  choices: { global: boolean, coachRoster: {coachId: string; label: string} | null, organizations: Array<{id: string; name: string;
     role: 'admin' | 'manager' | 'coach'; teams: Array<{id: string; name: string}>}> },
   period: {startDate: string; endDate: string; timeZone: string;
     startMillis: number; endMillis: number}, // end exclusive, observations never beyond now
-  testingMode: 'cumulative' | 'period', filters: {...}, generatedAtMillis: number,
+  testingMode: 'cumulative' | 'period', filters: {...}, nameSearch: string, generatedAtMillis: number,
   freshness: {complete: true; projectionVersion: number;
     oldestRebuiltAtMillis: number | null; newestRebuiltAtMillis: number | null;
     qualification: 'verified-artifacts'; historicalOwnership: 'current'},
-  roster: {total: number; included: number; excluded: number; filtered: number},
+  roster: {total: number; included: number; excluded: number; filtered: number; matched?: number},
   participation: {testingPlayers: number; workoutPlayers: number; anyPlayers: number},
   demographics: {division: Array<{key: string; count: number}>;
     ageBand: Array<{key: string; count: number}>},
@@ -85,7 +90,7 @@ The response is an allowlisted object:
   players: Array<{
     id: string; firstName: string; lastName: string; organizationId: string;
     organizationName: string; teamId: string | null; teamName: string | null;
-    division: string; age: number | null; ageBand: string;
+    division: string; age: number | null; ageBand: string; registered: boolean; signupInvitationReady: boolean;
     testing: {status: string; exercisesComplete: number; recordedDocuments: number;
       distinctAttempts: number; qualifyingTests: number; exerciseKeys: string[];
       missingExerciseKeys: string[]; undatedDocuments: number; futureDatedDocuments: number;
@@ -100,7 +105,9 @@ The response is an allowlisted object:
 }
 ```
 
-Charts and totals cover every filtered player, independent of the displayed page.
+Charts and totals cover every filtered player, independent of the displayed page
+or roster name search. Pagination totals count search matches; roster.filtered
+retains the complete reporting-filter population.
 Participation counts distinct athletes with selected-period recording documents
 and actual workout starts/endings, plus their union. Plans and usage time do not
 substitute for either activity.
@@ -150,7 +157,9 @@ counts remain visible. Null team identifiers in scope breakdown mean unassigned.
 Use organization scope plus the unassigned filter for that drilldown.
 
 Global access is verified PoseTek admin only and includes canonical organizations;
-independent legacy profiles are excluded. Managers include unassigned organization
+independent legacy profiles are excluded from global. The separate coachRoster
+scope resolves only the current independent coach, rejects managed/inactive staff
+fallback and excludes organization-owned players. Managers include unassigned organization
 players. Coach organization scope is the intersection of current assigned teams
 and canonical team ownership. Current memberships and profile ownership are
 rechecked after reads. New profiles are included unless server-owned
@@ -160,12 +169,14 @@ DOB first, then a legacy age recorded within 365 days, otherwise Unknown.
 
 The service publishes only complete, versioned server projections. Its factory is
 `createInsightsV2({db, bucket, HttpsError})` in `functions/insights-v2.js`, returning
-`getClubInsightsV2(data, caller)`, `invalidateInsightPlayer(playerId)`,
+`getClubInsightsV2(data, caller)`, `getCoachPlayerComparison(data, caller)`,
+`invalidateInsightPlayer(playerId)`,
 `rebuildInsightPlayer(playerId)` and `loadInsightPlayer(playerId)`. Caller fields
 are the existing verified callable wrapper's `uid`, `email`, `emailVerified` and
 `isAnonymous`. The root index owns callable and trigger wiring.
 
-Projection version 2 includes duration-source and failure-report facts. Older
+Projection version 4 adds qualified profile metrics for player comparison, retaining
+duration-source and failure-report facts. Older
 versions rebuild automatically. Projections use server-only `players/{id}/insightSummaries/current` and `state`,
 with immutable `players/{id}/insightSummaryDays/{generation-page}` documents. A
 complete manifest publishes only after checking its invalidation token. Previous
@@ -194,7 +205,8 @@ failing the all-prescribed-sets-completed condition.
 Operational
 read bounds fail explicitly with `resource-exhausted`; missing, dirty or old
 projections are rebuilt automatically, at most 25 players per request. Additional
-work fails with `failed-precondition`; a retry advances the remaining rebuild, and
+work fails with `failed-precondition` and `details.reason: 'insights-rebuild-required'`;
+a retry advances the remaining rebuild, and
 missing immutable pages also trigger repair. Other
 errors use standard callable `unauthenticated`, `permission-denied`, `not-found`
 and `invalid-argument`, plus retryable `aborted` on concurrent change. Bounds are

@@ -1,15 +1,21 @@
 # Expanded Insights scoped backend release
 
-This directory prepares and verifies the eight additive Expanded Insights
+This directory prepares and verifies the nine Expanded Insights
 functions. It does not deploy automatically. Existing V1 Insights, personalized
 planning, video processing and other functions remain outside this codebase.
 The application release and reporting/rules/usage control-plane changes have
 separate receipts and rollback steps.
 
 Use the reviewed source and one operator window. Generation 1 deployment does not
-offer an atomic compare-and-swap across eight endpoints. Coordinate with other
+offer an atomic compare-and-swap across nine endpoints. Coordinate with other
 operators, keep the prepared source immutable, and stop if inventory or IAM changes
 unexpectedly. This guide is not a production receipt.
+
+The coach workspace adds one comparison callable and projection version 4. Deploy
+all nine functions together so event writers retain the new measured-axis projection.
+`recordInsightUsage` is included without behavior changes. Existing testing-event
+processors may still write version 3; the report rebuilds those snapshots on demand.
+No athlete source record or canonical rule changes.
 
 ## Prepare, deploy and verify
 
@@ -41,11 +47,11 @@ python -B deployments/expanded-insights/prepare.py --mode verify --run-dir $rele
 Use only `--only functions:expanded-insights` with the generated configuration.
 The 60-second discovery timeout allows this bundle's dependencies to initialize.
 `--force` acknowledges the new event functions' reviewed retry policies during a
-noninteractive deployment; keep it restricted to this exact eight-function scope.
+noninteractive deployment; keep it restricted to this exact nine-function scope.
 Do not use a project-wide `--only functions` deployment or the root Firebase
 configuration for this release. The generated codebase exposes exactly:
 
-- `getClubInsightsV2` and `recordInsightUsage`.
+- `getClubInsightsV2`, `getCoachPlayerComparison` and `recordInsightUsage`.
 - `projectInsightPlayer`, `projectInsightRecords`, `projectInsightRevisions` and
   `projectInsightFailures`.
 - `projectInsightArtifacts` and `projectInsightArtifactDeletes`.
@@ -65,7 +71,7 @@ accepts it only when its complete JSON is exactly `firebase.projectId` and
 `firebase.storageBucket` with this release's expected project and bucket. Extra
 fields, duplicate keys, differing values and oversized content fail verification.
 Its SHA-256 and byte count are recorded without copying configuration values into
-the sanitized verification metadata. The ten prepared source-file hashes remain
+the sanitized verification metadata. All fourteen prepared source-file hashes remain
 unchanged.
 It checks ACTIVE Node 22 endpoints, execution timeouts, memory and maximum instance
 counts, exact event resource/type/service/retry policy, callable labels, expected

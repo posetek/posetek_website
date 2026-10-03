@@ -37,8 +37,11 @@ const AnalysisWorkspace = lazy(() => import("./views/AnalysisWorkspace"));
 const PersonalizedPrograms = lazy(() => import("./views/PersonalizedPrograms"));
 const AiIncidents = lazy(() => import("./views/AiIncidents"));
 const AccountAccess = lazy(() => import("./views/AccountAccess"));
+const PhonePerformance = lazy(() => import("./views/PhonePerformance"));
 const DevicePerformance = lazy(() => import("./views/DevicePerformance"));
 const DevicePerformanceDetail = lazy(() => import("./views/DevicePerformanceDetail"));
+const UserIssues = lazy(() => import("./views/UserIssues"));
+const AppFeedback = lazy(() => import("./views/AppFeedback"));
 
 export default function AdminPage() {
   const location = useLocation();
@@ -63,6 +66,7 @@ function AuthenticatedAdminConsole() {
 
 function AdminConsole({ session, preview = false }: { session: AdminSession; preview?: boolean }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   async function signOut() {
     if (preview) return;
@@ -84,7 +88,7 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
         icon="lock"
         title="Sign in with your PoseTek account"
         body="The admin console is for verified @posetek.net accounts."
-        action={<Link className="primary-cta" to="/signin?returnTo=%2Fadmin">Go to sign in</Link>}
+        action={<Link className="primary-cta" to={`/signin?returnTo=${encodeURIComponent(location.pathname + location.search)}`}>Go to sign in</Link>}
       />
     );
   } else if (session.kind === "notAdmin") {
@@ -124,8 +128,12 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
           <Route path="programs" element={<PersonalizedPrograms />} />
           <Route path="analysis" element={<AnalysisWorkspace />} />
           <Route path="ai-incidents" element={<AiIncidents />} />
-          <Route path="device-performance" element={<DevicePerformance preview={preview} />} />
-          <Route path="device-performance/:installId" element={<DevicePerformanceDetail preview={preview} />} />
+          <Route path="device-performance" element={<PhonePerformance preview={preview} />} />
+          <Route path="device-performance/advanced" element={<DevicePerformance preview={preview} />} />
+          <Route path="device-performance/advanced/:installId" element={<DevicePerformanceDetail preview={preview} />} />
+          <Route path="device-performance/:installId" element={<PhonePerformance preview={preview} />} />
+          <Route path="user-issues" element={<UserIssues preview={preview} />} />
+          <Route path="feedback" element={<AppFeedback preview={preview} />} />
           <Route path="programs/personalized" element={<PlannerRedirect />} />
           <Route
             path="accounts/player/:playerId/plan/:planId/workout/:workoutId"

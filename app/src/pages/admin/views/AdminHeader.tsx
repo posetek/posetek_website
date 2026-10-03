@@ -13,6 +13,8 @@ const SECTIONS = [
   { path: "/admin/drills", icon: "library_books", label: "Drill library" },
   { path: "/admin/ai-incidents", icon: "report", label: "AI incidents" },
   { path: "/admin/device-performance", icon: "speed", label: "Device performance" },
+  { path: "/admin/user-issues", icon: "bug_report", label: "User issues" },
+  { path: "/admin/feedback", icon: "feedback", label: "App feedback" },
 ];
 
 export default function AdminHeader({ ready, email, preview = false, onSignOut }: {

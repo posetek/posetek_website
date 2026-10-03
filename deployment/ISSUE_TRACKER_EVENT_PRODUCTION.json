@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "projectId": "kickai-69dd0",
+  "region": "us-central1",
+  "status": "active_with_verified_publication_and_partial_catchup",
+  "sourceCommit": "c9289bc9b37c63b5c816aaf2c302ffcc8dd3a179",
+  "activationUtc": "2026-10-02T10:13:41.205Z",
+  "scopedDeployment": {
+    "codebase": "issue-tracker",
+    "functionCount": 6,
+    "version": "1",
+    "runtime": "nodejs22",
+    "verifiedAtUtc": "2026-10-02T09:37:27.725Z",
+    "deployedSourceSha256": "e32cf4750588bb6e55adf299bb942a2a3db6a567aee7bbd52cb9c9a1a050a048",
+    "preexistingFunctionIamPoliciesPreserved": 114,
+    "preexistingSchedulesPreserved": 5,
+    "runtimeSecretPoliciesPreserved": 9,
+    "totalFunctionsAfterDeployment": 120,
+    "totalSchedulesAfterDeployment": 7,
+    "cliRetryAcknowledgementWasExplicit": true,
+    "cliEmptyQueueIamResponseErrorResolvedByReadbackWithoutRepair": true
+  },
+  "reader": {
+    "provider": "power_automate",
+    "applicationMailboxRbacVerified": false,
+    "nativeAcceptanceUtc": "2026-10-02T09:12:05.266Z",
+    "pages": 72,
+    "messages": 143,
+    "legacyIdentityAliases": 128,
+    "originalResponsesReviewed": 206,
+    "exactImmutableReplayVerified": true,
+    "unrelatedMessagesMissingHeaders": 1,
+    "relevantAndLegacyMessagesRequireHeaders": true,
+    "differentAuthenticatedPrincipalRuntimeTested": false
+  },
+  "publication": {
+    "verifiedAtUtc": "2026-10-02T10:53:58.855Z",
+    "backendSnapshotUtc": "2026-10-02T10:52:46.722Z",
+    "revision": 8,
+    "counts": {
+      "actions": 70,
+      "instances": 684,
+      "emails": 160,
+      "dailyRows": 1
+    },
+    "rows": 915,
+    "sourceLinks": 1076,
+    "preservedOriginalSourceLinks": 882,
+    "originalHumanRecordsVerified": 23,
+    "nativeReceiptsVerified": 8,
+    "allMachineHashesVerified": true,
+    "formulasAndCachedResultsVerified": true,
+    "archivedFooterPreserved": true,
+    "emptyNativePending": true,
+    "workbookSha256": "685dd676867737f10d4b6d004dd55d543ee4a1c19218d575b72448a5d76b99e8",
+    "snapshotSha256": "9b3331a3f3b805443036a27d85d73f086ea9318bbac2a1099f4fe345de4eadb6"
+  },
+  "coverage": {
+    "initialBaselineUtc": "2026-10-02T04:56:51.854Z",
+    "sources": {
+      "outlook": {
+        "capturedThrough": "2026-10-02T10:46:03.715Z",
+        "publishedThrough": "2026-10-02T10:21:03.004Z",
+        "completedSequence": 7,
+        "publishedSequence": 2,
+        "allCapturedWindowsPublished": false
+      },
+      "backend": {
+        "capturedThrough": "2026-10-02T10:46:03.664Z",
+        "publishedThrough": "2026-10-02T04:56:51.854Z",
+        "completedSequence": 7,
+        "publishedSequence": 0,
+        "allCapturedWindowsPublished": false
+      }
+    },
+    "pendingQueueAtSnapshot": 490,
+    "fullCatchupComplete": false,
+    "outstandingHistoricalDeliveryRecoveryComplete": false,
+    "captureDoesNotImplyPublication": true
+  },
+  "headerClarification": {
+    "cell": "Actions!A4",
+    "verifiedSingleCellChange": true,
+    "otherStoredWorksheetCellsPreserved": true,
+    "meaning": "Cloud event updates and static imported baseline; current coverage is in cloud receipts",
+    "nativeWriterDoesNotUpdateCoverageLabel": true
+  },
+  "setupClassification": {
+    "approvedSetupEmailOnly": true,
+    "nativeReceiptRevision": 7,
+    "machineRowsCorrected": 2,
+    "originalMessageIdsLinksAndHistoryPreserved": true,
+    "noAthleteIncidentCreated": true,
+    "incorporatedInVerifiedRevision": 8,
+    "independentCloudVerifiedAtUtc": "2026-10-02T10:54:39.568Z",
+    "preCorrectionHumanRecordsPreserved": 63,
+    "preCorrectionSourceLinksPreserved": 1031,
+    "preCorrectionRowsPreserved": 882,
+    "originalEmailAndHistoryRetained": true
+  },
+  "operations": {
+    "captureSchedule": "every 5 minutes",
+    "historicalRecoverySchedule": "every 15 minutes",
+    "writerQueueState": "RUNNING",
+    "queueRestoredAtUtc": "2026-10-02T10:54:07.925Z",
+    "allTemporaryHoldsRestored": true,
+    "hourlyCodexUpdater": "PAUSED",
+    "oldWholeFileRendererMustNotResume": true,
+    "computerRequiredForCloudOperation": false,
+    "oneTimeBootstrapMustNotRepeat": true,
+    "validMicrosoftConnectionsAndLicensedOwnerRequired": true
+  },
+  "emailMigrationReceipt": "deployment/MICROSOFT_EMAIL_PRODUCTION.json",
+  "emailDeliveryVerifiedSeparately": true,
+  "teamGuide": {
+    "cloudPublicationVerified": true,
+    "cloudVerifiedAtUtc": "2026-10-02T10:57:04.711Z",
+    "sha256": "cb48a5741550f83479a7e975527e9acb41a3c5b35e106f936c3858932be94f70",
+    "sharedFolderContainsOnlyWorkbookAndGuide": true,
+    "stableWorkbookAndFolderLinksPreserved": true
+  },
+  "limits": [
+    "This is the verified publication checkpoint, not a claim that all captured or historical records are already published.",
+    "Do not replace the shared native workbook with an older download or regenerate the entire file.",
+    "Private raw mailbox and authentication evidence is excluded from this receipt."
+  ]
+}

@@ -189,6 +189,13 @@ export default function PrivacyPage() {
           <p>We encourage teen players to use PoseTek with a parent or guardian's knowledge. The same limits apply: no advertising, no sale of personal information, and no public profiles.</p>
         </PolicySection>
 
+        <PolicySection id="app-feedback">
+          <p>Giving feedback is optional and does not affect access to results or saved progress. The public feedback form requires no name or login. PoseTek administrators read the responses to improve the application. Please do not include names, contact details or other personal information in the optional comment.</p>
+          <p>We store the form version, selected answers, optional comment, broad invitation source (such as workouts or results), submission time and optional time taken. These records are separate from player records and are not linked to player, workout, team or account identifiers. A random identifier for each form opening deduplicates retries and counts form opens, starts and successful submissions. These counts describe form sessions, not individual people. The feedback page does not load session replay or advertising scripts.</p>
+          <p>A browser timestamp limits automatic workout invitations to once every seven days on that browser; it is not sent with feedback. For abuse prevention, the submission service briefly processes a network address to create a secret-protected, time-window counter. These counters are separate from answers, are not used to identify players, and expire within 30 minutes of their window starting. Hosting and cloud providers may also process network addresses in their ordinary service logs.</p>
+          <p>Individual feedback responses and form-session diagnostic records expire after 90 days. Database expiry removal is asynchronous, so physical deletion can follow the expiry time; expired records are excluded from the admin review. Feedback is optional even when a coach or parent shares the form.</p>
+        </PolicySection>
+
         <PolicySection id="data-retention">
           <ul>
             <li>We keep account, profile, video, and performance information for as long as the account is active, so that players can see their progress over time.</li>

@@ -11,6 +11,7 @@ export type PolicySectionId =
   | "ai-and-automated-processing"
   | "how-we-share-information"
   | "childrens-privacy"
+  | "app-feedback"
   | "data-retention"
   | "your-choices-and-rights"
   | "security"
@@ -26,6 +27,7 @@ export const POLICY_SECTIONS: ReadonlyArray<{ id: PolicySectionId; title: string
   { id: "ai-and-automated-processing", title: "AI and automated processing" },
   { id: "how-we-share-information", title: "How we share information" },
   { id: "childrens-privacy", title: "Children's privacy" },
+  { id: "app-feedback", title: "Optional application feedback" },
   { id: "data-retention", title: "Data retention" },
   { id: "your-choices-and-rights", title: "Your choices and rights" },
   { id: "security", title: "Security" },
@@ -35,7 +37,7 @@ export const POLICY_SECTIONS: ReadonlyArray<{ id: PolicySectionId; title: string
 ];
 
 export const POLICY_EFFECTIVE_DATE = "September 20, 2026";
-export const POLICY_LAST_UPDATED = "September 20, 2026";
+export const POLICY_LAST_UPDATED = "October 3, 2026";
 export const POLICY_CONTACT_EMAIL = "nolanj@posetek.net";
 
 /** 1-based section number shown in the heading badge and the contents list. */

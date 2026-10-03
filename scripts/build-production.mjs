@@ -5,6 +5,7 @@ import { resolve, dirname, relative, isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
+import { mergeAstroAssets } from "./astro-assets.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const app = join(root, "app");
@@ -39,12 +40,12 @@ if (!preserveApplicationEntry && liveHtml.includes("<!-- posetek-marketing-entry
 if (hash(current) !== entry.sha) throw new Error("Production application changed; reconcile homepage-baseline.json with its latest deployment.");
 
 function command(file, args) {
-  const result = spawnSync(process.execPath, [file, ...args], { cwd: app, stdio: "inherit", windowsHide: true });
+  const result = spawnSync(process.execPath, [file, ...args], { cwd: app, stdio: "inherit", windowsHide: true, env: { ...process.env, ASTRO_TELEMETRY_DISABLED: "1" } });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`Build command failed: ${file}`);
 }
 command(join(app, "node_modules/typescript/bin/tsc"), ["-b"]);
-command(join(app, "node_modules/vite/bin/vite.js"), ["build", "--config", "vite.marketing.config.ts"]);
+command(join(app, "node_modules/astro/bin/astro.mjs"), ["build"]);
 
 // Validate the absolute target immediately before the recursive operation.
 if (relative(root, output) !== "production-dist" || isAbsolute(relative(root, output))) throw new Error("Invalid output directory");
@@ -106,14 +107,14 @@ if (!preserveApplicationEntry) {
   if (!applicationHtml.includes("</body>")) throw new Error("Unexpected application shell");
   await writeFile(shellPath, applicationHtml.replace("</body>", '\n<!-- homepage-navigation:start -->\n<script src="/marketing/home-navigation.js" defer></script>\n<!-- homepage-navigation:end -->\n</body>'));
 }
-const marketingHtml = await readFile(join(root, "marketing-dist/index.html"), "utf8");
+const marketingHtml = await readFile(join(root, "app/astro-dist/index.html"), "utf8");
 if (!marketingHtml.includes("<!-- posetek-marketing-entry -->")) throw new Error("Missing marketing entry marker");
 await writeFile(join(output, "index.html"), marketingHtml);
-const coachesHtml = await readFile(join(root, "marketing-dist/coaches/index.html"), "utf8");
+const coachesHtml = await readFile(join(root, "app/astro-dist/coaches/index.html"), "utf8");
 if (!coachesHtml.includes("<!-- posetek-coaches-entry -->")) throw new Error("Missing coaches entry marker");
 await mkdir(join(output, "coaches"), { recursive: true });
 await writeFile(join(output, "coaches/index.html"), coachesHtml);
-await cp(join(root, "marketing-dist/assets"), join(output, "marketing/assets"), { recursive: true });
+await mergeAstroAssets(join(root, "app/astro-dist"), output, manifest.files);
 if (!preserveApplicationEntry) await cp(join(root, "deployment/home-navigation.js"), join(output, "marketing/home-navigation.js"));
 
 for (const file of manifest.files) {

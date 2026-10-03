@@ -1,14 +1,15 @@
 import { Suspense, lazy } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { coachWorkspacePath } from "./lib/coach-navigation";
 import UsageTracking from "./lib/insight-usage/UsageTracking";
+import UserIssueBoundary, { UserIssueCapture } from "./components/UserIssueBoundary";
+import "./pages/support/user-issues.scss";
 
 const HomePage = lazy(() => import("./pages/home/HomePage"));
 const LandingPage = lazy(() => import("./pages/landing/LandingPage"));
 const FeedPage = lazy(() => import("./pages/feed/FeedPage"));
 const OrganizationPage = lazy(() => import("./pages/organization/OrganizationPage"));
 const StaffInvitePage = lazy(() => import("./pages/staff-invite/StaffInvitePage"));
-const RosterPage = lazy(() => import("./pages/roster/RosterPage"));
-const CoachDashboardPage = lazy(() => import("./pages/coach-dashboard/CoachDashboardPage"));
 const AthletePortalPage = lazy(() => import("./pages/athlete-portal/AthletePortalPage"));
 const DrillSharePage = lazy(() => import("./pages/drill-share/DrillSharePage"));
 const InsightsPage = lazy(() => import("./pages/insights/InsightsPage"));
@@ -26,6 +27,11 @@ function Fallback() {
   );
 }
 
+function CoachWorkspaceAlias() {
+  const location = useLocation();
+  return <Navigate to={coachWorkspacePath(location.search)} replace />;
+}
+
 // Every page answers on BOTH its clean route and its legacy *.html URL so links
 // already in the wild (emails, texts, the mobile app, unported legacy pages)
 // keep working. Query strings (?share=…, ?player=…, ?returnTo=…) pass through
@@ -34,6 +40,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <UsageTracking />
+      <UserIssueCapture />
+      <UserIssueBoundary>
       <Suspense fallback={<Fallback />}>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -48,10 +56,10 @@ export default function App() {
           <Route path="/organization" element={<OrganizationPage />} />
           <Route path="/join" element={<StaffInvitePage />} />
 
-          <Route path="/roster" element={<RosterPage />} />
-          <Route path="/coachesview.html" element={<RosterPage />} />
+          <Route path="/roster" element={<CoachWorkspaceAlias />} />
+          <Route path="/coachesview.html" element={<CoachWorkspaceAlias />} />
 
-          <Route path="/dashboard" element={<CoachDashboardPage />} />
+          <Route path="/dashboard" element={<CoachWorkspaceAlias />} />
           <Route path="/programs" element={<ProgramsPage />} />
           <Route path="/insights" element={<InsightsPage />} />
 
@@ -77,6 +85,7 @@ export default function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
+      </UserIssueBoundary>
     </BrowserRouter>
   );
 }

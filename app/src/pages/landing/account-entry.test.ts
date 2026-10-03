@@ -22,12 +22,12 @@ describe("account entry destinations", () => {
   it("uses current role homes without a return request", () => {
     expect(route("admin")).toBe("/admin");
     expect(route("manager")).toBe("/organization");
-    expect(route("coach")).toBe("/organization");
-    expect(route("independent")).toBe("/roster?userType=coach");
+    expect(route("coach")).toBe("/insights");
+    expect(route("independent")).toBe("/insights");
     expect(route("player")).toBe("/feed?player=canonical-player&userType=player");
     expect(route("pending")).toBe("/join");
   });
-  it.each(["/admin", "/admin/access"])("preserves the admin destination only for administrators: %s", target => {
+  it.each(["/admin", "/admin/access", "/admin/user-issues?issue=" + "a".repeat(64), "/admin/accounts/player/example?workoutSource=personalWorkoutLogs&workoutLog=log-1"])("preserves the admin destination only for administrators: %s", target => {
     expect(route("admin", target)).toBe(origin + target);
     for (const role of ["coach", "manager", "independent", "player", "pending"] as const) expect(route(role, target)).toBe(route(role));
   });
@@ -39,7 +39,7 @@ describe("account entry destinations", () => {
     expect(route("player", target)).toBe("/feed?player=canonical-player&userType=player");
   });
   it("does not confuse independent coaches with managed staff", () => {
-    expect(route("independent", "/insights")).toBe("/roster?userType=coach");
+    expect(route("independent", "/insights")).toBe(origin + "/insights");
     expect(route("independent", "/organization")).toBe(origin + "/organization");
     expect(route("independent", "/join")).toBe(origin + "/join");
   });

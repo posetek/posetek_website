@@ -2,10 +2,11 @@
   command = "npm --prefix app ci && node scripts/build-production.mjs"
   publish = "production-dist"
 
-# Vite 8 and TypeScript 6 need a current Node; the site's default runtime was
+# Astro 7, Vite 8 and TypeScript 6 need a current Node; the site's default runtime was
 # older, which failed every build since the React port with "exit code 2".
 [build.environment]
   NODE_VERSION = "22"
+  ASTRO_TELEMETRY_DISABLED = "1"
   # Netlify's smart secrets detection fails the build on the Firebase web API key,
   # which is a public project identifier (access is enforced by Firestore/Storage
   # rules and App Check, not by this value). Every deploy since the React port
@@ -59,6 +60,16 @@
   status = 200
 
 # The public pages are isolated entries. Existing app routes use application.html.
+[[redirects]]
+  from = "/feedback"
+  to = "/feedback.html"
+  status = 200
+
+[[redirects]]
+  from = "/feedback/"
+  to = "/feedback.html"
+  status = 200
+
 # SPA fallback: files that exist in dist/ (unported legacy pages, assets) are
 # served directly; everything else — including the ported legacy URLs like
 # /profile.html that are intentionally absent from dist/ — is handled by the
@@ -70,6 +81,20 @@
   status = 200
 
 [[headers]]
+  for = "/feedback*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Referrer-Policy = "no-referrer"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://us-central1-kickai-69dd0.cloudfunctions.net; img-src 'self' data:; font-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+
+[[headers]]
   for = "/marketing/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/_astro/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"

@@ -1,5 +1,44 @@
 # Training access catalog requirements
 
+## Optional comfort mats (October 1 implementation)
+
+`content/training-access/floor-substitutions.json` is a separate, narrowly
+reviewable follow-up to the historical September 26 requirements manifest. It
+makes a mat optional for STR-005, STR-006, STR-008, STR-501 and STR-502, and adds
+clear, non-slipping floor guidance to their existing setup text. STR-008 still
+requires a bench and two people; STR-501 retains its 1.524 m crawl bound. The
+authored equipment, setup text and source-bound requirements change together.
+No dose, media, publication state or review clearance is changed.
+
+Run the following from the website repository root:
+
+```powershell
+node scripts/training-floor-catalog.cjs --lint
+node --test scripts/training-floor-catalog.test.cjs scripts/training-access-catalog.test.cjs
+node scripts/training-floor-catalog.cjs
+node scripts/training-floor-catalog.cjs --apply --expected-plan-sha <reviewed-plan-sha256>
+node scripts/training-floor-catalog.cjs --verify
+```
+
+The default command is read-only and saves an exact plan in ignored
+`.netlify/training-floor/catalog-plan.json`. Publication requires that reviewed
+digest. A transaction rereads all 208 catalog records, all authoring records,
+catalog metadata and AI configuration, rejecting any drift. The five target
+documents must have no authoring record or content-review state, and may not
+belong to restricted whole-body training. Every write has an updateTime
+precondition. Nested `howTo.setup` masks preserve existing steps and unrelated
+Firestore value types. Independent readback proves the other 203 records, all
+doses/media/reviews/configuration and 80 held drafts remain unchanged, including
+the false mobile acceptance gate. Lost replies use the original plan's
+`--verify`; do not replan or automatically restore concurrent changes.
+
+The guided player setup can explicitly declare `space.assumedSufficient: true`.
+That assumption satisfies omitted horizontal/overhead clearance only. Supplied
+dimensions and `overheadClear: false` take precedence. Equipment, participants,
+surface requirements, unresolved authored requirements and marked goal-area
+access remain separate. Legacy requests without the assumption retain the
+previous strict clearance behavior.
+
 Published September 26, 2026 as catalog version `1.0.92`. The guarded transaction
 committed at `08:26:04.508195Z`; independent readback verified preservation at
 `08:27:57.605Z`. All 54 requirement maps and the two equipment corrections are

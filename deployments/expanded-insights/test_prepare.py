@@ -49,8 +49,10 @@ class ReleaseTests(unittest.TestCase):
         self.api.deployed(self.run)
         with contextlib.redirect_stdout(io.StringIO()): release.verify(self.run, self.api)
         self.assertTrue(json.loads((self.run / 'verified.json').read_text())['unrelatedFunctionsPreserved'])
-        self.assertEqual(len(list((self.run / 'source').iterdir())), 12)
+        self.assertEqual(len(list((self.run / 'source').iterdir())), 15)
         self.assertTrue((self.run / 'source' / 'processing-evidence.js').is_file())
+        self.assertTrue((self.run / 'source' / 'effective-rep.js').is_file())
+        self.assertTrue((self.run / 'source' / 'athlete-profile-spec.json').is_file())
     def test_refuses_local_source_drift(self):
         self.api.deployed(self.run)
         (self.run / 'source' / 'index.js').write_text('changed')
@@ -107,6 +109,8 @@ class ReleaseTests(unittest.TestCase):
     def test_pinned_definitions_match_observed_sdk_contract(self):
         definitions = release.expected_definitions()
         self.assertEqual(definitions['recordInsightUsage']['availableMemoryMb'], 256)
+        self.assertEqual(definitions['getCoachPlayerComparison']['availableMemoryMb'], 1024)
+        self.assertTrue(definitions['getCoachPlayerComparison']['publicInvoker'])
         self.assertEqual(definitions['projectInsightRecords']['eventTrigger'], {
             'resource': 'projects/kickai-69dd0/databases/(default)/documents/players/{playerId}/{collectionId}/{recordId}',
             'eventType': 'providers/cloud.firestore/eventTypes/document.write', 'service': 'firestore.googleapis.com', 'failurePolicy': {'retry': {}}})
