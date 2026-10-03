@@ -1,5 +1,6 @@
 "use strict";
 const M = require("./user-issue-model");
+const { documentKind, callableOutcomeEvidence, validReporterUid } = require("./user-issue-classification");
 const millis = value => typeof value?.toMillis === "function" ? value.toMillis() : typeof value === "number" ? value : Date.parse(value || "");
 function createIssueSources(service, db, now = Date.now) {
   async function document(source, snapshot, context) {
@@ -11,7 +12,7 @@ function createIssueSources(service, db, now = Date.now) {
     // active athlete for the identity captured on the original record.
     const player = M.ID.test(playerId || "") ? (await db.doc(`players/${playerId}`).get()).data() : null;
     const event = M.normalize({ eventId: M.hash([source, snapshot.id]), sessionId: M.hash(d.launchId || d.requestId || d.jobId || snapshot.id),
-      kind: source === "fieldReports" || d.stage === "user_report" ? "report" : source === "failureCases" && /launch|system|interrupt/i.test(d.kind || "") ? "interrupted" : "error",
+      kind: documentKind(source, d).kind,
       platform: source === "aiIncidents" ? "backend" : "ios", operation: d.capability || d.stage || d.kind || "application",
       code: d.code || d.errorCode || source, description: d.description || "User submitted a diagnostic report.", message: d.message,
       occurredAtMillis: millis(d.occurredAt || d.createdAt), build: d.build || d.appVersion, device: d.deviceModel,
@@ -32,7 +33,8 @@ function createIssueSources(service, db, now = Date.now) {
     // Crashlytics user.id is the legacy player document ID, not an Auth UID.
     const playerId = crash ? p.user?.id : null;
     const player = M.ID.test(playerId || "") ? (await db.doc(`players/${playerId}`).get()).data() : null;
-    const uid = crash ? (M.ID.test(keys.reporter_uid || "") ? keys.reporter_uid : null) : (M.ID.test(p.reporterUid || "") ? p.reporterUid : null);
+    const recordedUid = crash ? keys.reporter_uid : p.reporterUid;
+    const uid = validReporterUid(recordedUid) ? recordedUid : null;
     const event = M.normalize({ eventId: M.hash([entry.logName, sourceEvent]), sessionId: M.hash(crash ? p.sessionId || sourceEvent : entry.trace || sourceEvent),
       kind: crash && (p.issue?.errorType === "FATAL" || p.threads?.some(thread => thread.crashed === true)) ? "crash" : "error", platform: crash ? "ios" : "backend",
       operation: crash ? keys.flow || keys.processing_stage || "application" : p.operation || serviceName,
@@ -40,6 +42,10 @@ function createIssueSources(service, db, now = Date.now) {
       message: crash ? p.issueTitle : p.message || entry.textPayload, build: crash ? [p.version?.displayVersion, p.version?.buildVersion].filter(Boolean).join(" ") : entry.resource?.labels?.revision_name,
       device: crash ? [p.device?.model, p.operatingSystem?.displayVersion].filter(Boolean).join(" ") : "server",
       occurredAtMillis: Date.parse(crash ? p.eventTime : entry.timestamp), requestId: crash ? keys.llm_job_id : p.requestId }, now(), true);
+    // Keep the verified structured request evidence after normalization. Public
+    // issue intake cannot retain a client-supplied marker through M.normalize.
+    const callableOutcome = !crash && callableOutcomeEvidence(entry);
+    if (callableOutcome) event.callableOutcome = callableOutcome;
     return service.ingest(event, { uid, name: null, player: player ? { id: playerId, name: M.clean([player.firstName, player.lastName].filter(Boolean).join(" ")) } : null },
       { source: crash ? "crashlytics" : "cloudLogging", sourceEvent, reference: crash ? M.clean(p.name, 300) : null, receivedAtMillis: Date.parse(crash ? p.receivedTime : entry.receiveTimestamp || entry.timestamp) });
   }

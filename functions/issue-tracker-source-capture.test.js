@@ -69,7 +69,7 @@ test("raw evidence is immutable and complete only after all chunks, with idempot
 test("intake refetches authoritative immutable item, keeps original body privately and never trusts supplied joins", async () => {
   const db = new FakeFirestore(), queued = [], lookups = [];
   await db.doc("issueTrackerSettings/current").set({ enabled: true, mailReadProvider: "graph", graphMailboxVerified: true, mailAliasesVerified: true, mailbox: MAILBOX });
-  const service = createMailCapture({ db, graph: { message: async old => { lookups.push(old); return mail("immutable", { body: { contentType: "HTML", content: "PoseTek failed " + "x".repeat(40000) } }); } },
+  const service = createMailCapture({ db, graph: { canonicalMessage: async old => { lookups.push(old); return mail("immutable", { body: { contentType: "HTML", content: "PoseTek failed " + "x".repeat(40000) }, itemIdentity: require("./issue-tracker-mail-identity").itemIdentity({ sourceId: old, canonicalId: "immutable", sourceIdType: "restId", responseSha256: "a".repeat(64) }) }); } },
     bridge: { enqueueMessage: async (message, options) => { queued.push({ message, options }); return { ticket: { queueId: "mail", version: 1 } }; } } });
   await service.ingress({ id: "movable-old", mailbox: MAILBOX, subject: "Untrusted replacement", exactJoin: { type: "occurrenceId", value: id(1) } });
   assert.deepEqual(lookups, ["movable-old"]); assert.equal(queued[0].message.immutableId, "immutable");
@@ -97,12 +97,13 @@ test("long Google messages retain exact incident links after display excerpting 
 });
 
 test("historical alias migration proves each old ID directly and refuses unavailable or conflicting originals", async () => {
-  const service = createMailCapture({ db: new FakeFirestore(), bridge: {}, graph: { message: async old => mail(old === "one" ? "immutable-one" : "immutable-two") } });
+  const canonical = (old, target) => mail(target, { itemIdentity: require("./issue-tracker-mail-identity").itemIdentity({ sourceId: old, canonicalId: target, sourceIdType: "restId", responseSha256: "a".repeat(64) }) });
+  const service = createMailCapture({ db: new FakeFirestore(), bridge: {}, graph: { canonicalMessage: async old => canonical(old, old === "one" ? "immutable-one" : "immutable-two") } });
   const aliases = await service.verifiedAliases(["one", "two"]);
   assert.equal(aliases.emailAliases[digest([MAILBOX, "immutable-one"])], "one"); assert.equal(aliases.checked, 2);
-  const conflict = createMailCapture({ db: new FakeFirestore(), bridge: {}, graph: { message: async () => mail("same") } });
+  const conflict = createMailCapture({ db: new FakeFirestore(), bridge: {}, graph: { canonicalMessage: async old => canonical(old, "same") } });
   await assert.rejects(conflict.verifiedAliases(["one", "two"]), { code: "tracker_alias_migration_conflict" });
-  const missing = createMailCapture({ db: new FakeFirestore(), bridge: {}, graph: { message: async () => { throw Object.assign(new Error("unavailable"), { code: "tracker_graph_message_unavailable" }); } } });
+  const missing = createMailCapture({ db: new FakeFirestore(), bridge: {}, graph: { canonicalMessage: async () => { throw Object.assign(new Error("unavailable"), { code: "tracker_graph_message_unavailable" }); } } });
   await assert.rejects(missing.verifiedAliases(["one"]), { code: "tracker_graph_message_unavailable" });
 });
 

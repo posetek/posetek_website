@@ -3,6 +3,7 @@ const crypto = require("node:crypto");
 const M = require("./issue-tracker-bridge-model");
 const { ROWS, createSeedStore, splitSeed } = require("./issue-tracker-bridge-seed");
 const { validMessage, validKey } = require("./issue-tracker-bridge-ingress");
+const MailIdentity = require("./issue-tracker-mail-identity");
 const COALESCE_MS = 90000, LEASE_MS = 240000, MAX_BATCH = 40, MAX_DOCUMENT_BYTES = 700000, DAILY_ATTEMPT_LIMIT = 1200;
 const PATHS = Object.freeze({ settings: "issueTrackerSettings/current", writer: "issueTrackerState/writer", seed: "issueTrackerState/seed", queue: "issueTrackerQueue", batches: "issueTrackerBatches" });
 const SAFE_ID = /^[a-f0-9]{64}$/;
@@ -57,13 +58,15 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
   // before invoking this method. No public HTTP ingress is exported here.
   async function enqueueMessage(message, { schedule = true } = {}) {
     if (!message || !validKey(message.mailbox, 320)) M.fail("tracker_invalid_message");
-    const { mailbox: _mailbox, exactJoin, ...mail } = message;
-    if (!validMessage(mail) || exactJoin && (!["occurrenceId", "outboxId", "providerId"].includes(exactJoin.type) || !validKey(exactJoin.value) || !validKey(exactJoin.evidence))) M.fail("tracker_invalid_message");
+    const { mailbox: _mailbox, exactJoin, itemIdentity, aliasReconciliation, deliveryRecommendationReview, ...mail } = message;
+    if (!validMessage(mail) || itemIdentity && !MailIdentity.validItemIdentity(itemIdentity, message.immutableId) || aliasReconciliation && !MailIdentity.validReconciliation(aliasReconciliation, message)
+      || deliveryRecommendationReview && (!MailIdentity.validDeliveryReview(deliveryRecommendationReview) || ![message.originalId || message.id, message.immutableId, ...(message.aliases || [])].includes(deliveryRecommendationReview.primaryId))
+      || exactJoin && (!["occurrenceId", "outboxId", "providerId"].includes(exactJoin.type) || !validKey(exactJoin.value) || !validKey(exactJoin.evidence))) M.fail("tracker_invalid_message");
     if (size(message) > 48000) M.fail("tracker_message_too_large");
     // Reject deterministic input-only failures before acknowledging Outlook.
     // This pure dry run persists no IDs or seed; the worker later resolves all
     // historical aliases/joins against its authoritative sharded snapshots.
-    try { await normalize({ outbox: [], occurrences: [], issues: [], messages: [message], seed: {} }); }
+    try { const { aliasReconciliation: _repair, deliveryRecommendationReview: _deliveryReview, ...snapshot } = message; await normalize({ outbox: [], occurrences: [], issues: [], messages: [snapshot], seed: {} }); }
     catch (_) { M.fail("tracker_invalid_message"); }
     // Distinct Outlook items can share InternetMessageId (e.g. copies). Use the
     // immutable item ID when supplied; explicit aliases are resolved by adapter.
@@ -73,6 +76,16 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
       const settings = (await tx.get(db.doc(PATHS.settings))).data();
       if (settings?.enabled !== true) M.fail("tracker_disabled");
       if (message.mailbox.toLowerCase() !== settings.mailbox?.toLowerCase()) M.fail("tracker_wrong_mailbox");
+      if (aliasReconciliation) {
+        // Only a separately archived authoritative fixed-mailbox proof can
+        // authorize reconciliation of already seeded duplicate captures.
+        const evidence = (await tx.get(db.doc(`issueTrackerEvidence/${aliasReconciliation.evidenceRef}`))).data();
+        if (evidence?.complete !== true || evidence.source !== "outlook_alias_verification" || evidence.sourceId !== `${message.mailbox}/${aliasReconciliation.canonicalId}` || evidence.sha256 !== aliasReconciliation.proofSha256) M.fail("tracker_alias_group_unverified");
+      }
+      if (deliveryRecommendationReview) {
+        const evidence = (await tx.get(db.doc(`issueTrackerEvidence/${deliveryRecommendationReview.evidenceRef}`))).data();
+        if (evidence?.complete !== true || evidence.source !== "delivery_recommendation_review" || evidence.sourceId !== `${message.mailbox}/${deliveryRecommendationReview.primaryId}` || evidence.sha256 !== deliveryRecommendationReview.proofSha256) M.fail("tracker_delivery_review_unverified");
+      }
       const old = (await tx.get(ref)).data();
       // Arrival notifications may know an additional REST alias that the next
       // whole-mailbox read does not. Do not erase it or oscillate queue versions.
@@ -81,6 +94,7 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
         if (message.exactJoin && M.canonical(message.exactJoin) !== M.canonical(old.message.exactJoin)) M.fail("tracker_mail_join_changed");
         storedMessage.exactJoin = old.message.exactJoin;
       }
+      if (old?.message?.deliveryRecommendationReview && !deliveryRecommendationReview) storedMessage.deliveryRecommendationReview = old.message.deliveryRecommendationReview;
       if (storedMessage.aliases.length > 20 || size(storedMessage) > 48000) M.fail("tracker_message_too_large");
       const desiredHash = M.digest(storedMessage);
       const version = old?.desiredHash === desiredHash ? old.version : (old?.version || 0) + 1;
@@ -165,6 +179,12 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
       const originalId = message.originalId || message.id;
       const aliases = [...new Set([originalId, message.immutableId, ...(message.aliases || [])].filter(Boolean))];
       const canonicalIds = new Set([originalId, ...aliases.map(alias => seed.emailAliases?.[M.digest([message.mailbox.toLowerCase(), alias])]).filter(Boolean)]);
+      if (message.aliasReconciliation) for (const id of message.aliasReconciliation.retainedIds) canonicalIds.add(id);
+      for (const alias of aliases) {
+        const groupKey = seed.emailCanonicalAliases?.[M.digest([message.mailbox.toLowerCase(), alias])];
+        const group = groupKey && seed.emailCanonicalItems?.[groupKey];
+        if (group) for (const id of group.retainedIds) canonicalIds.add(id);
+      }
       for (const id of canonicalIds) {
         await seedStore.hydrate(seed, "emails", id);
         const eventRef = seed.rows?.emails?.[id]?.eventRef;

@@ -4,6 +4,10 @@ const { isClubAdmin, clubStaffCanAccessPlayer } = require("./club-access");
 const M = require("./user-issue-model");
 const Microsoft = require("./microsoft-email-model");
 const { createIssueContactEnrichment, tokenSnapshot } = require("./user-issue-contacts");
+const { classifyOccurrence, occurrenceTitle, validCallableOutcome } = require("./user-issue-classification");
+const { reportingSummary, deliveryReviewSummary } = require("./user-issue-summary");
+const Observations = require("./user-issue-observations");
+const RequestIdentity = require("./user-issue-request-identity");
 const LEASE = 120000, RETRY = 23 * 3600000;
 function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = Date.now, logger = console }) {
   const contacts = createIssueContactEnrichment({ db, auth: authProvider, now });
@@ -28,6 +32,11 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
     return ingest(event, who, { source: "client", sourceEvent: event.eventId, rateKey: M.hash(auth?.uid || ip) });
   }
   async function ingest(event, who, origin) {
+    if (Object.hasOwn(event, "callableOutcome")) {
+      const { callableOutcome, ...original } = event;
+      event = validCallableOutcome(callableOutcome, { ...original, source: origin.source })
+        ? { ...original, callableOutcome: { ...callableOutcome } } : original;
+    }
     const at = now(), actor = who.uid || (who.player?.id ? `player:${who.player.id}` : `anonymous:${event.sessionId}`);
     // Do not collect contact records while intake is disabled or outside its
     // authorized source window. The transaction below rechecks this gate.
@@ -39,16 +48,70 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
     const contactSnapshot = { schemaVersion: 1, actorUid: who.uid || null, currentContact: enrichment.contact, lookup: enrichment.lookup,
       authenticatedSnapshot: who.authenticatedSnapshot || null, player: who.player || null,
       reporterOnly: /failureCases|fieldReports|system_diagnostic/i.test(`${origin.source} ${event.code}`), operation: event.operation };
-    // A correlated request is one incident even when both client and server report it.
-    const occurrenceId = M.hash([actor, event.requestId ? `request:${event.requestId}` : `${origin.source}:${origin.sourceEvent}`]);
-    const fingerprint = M.hash([event.platform, event.operation, event.code, event.kind === "report" ? occurrenceId : event.kind]);
-    const ref = issueRef(fingerprint), occurrenceRef = db.doc(`userIssueOccurrences/${occurrenceId}`), out = jobRef(occurrenceId);
+    // Preserve the legacy primary ID. Reused caller request references are
+    // corroboration only when server-owned action/target evidence is compatible.
+    const primaryId = M.hash([actor, event.requestId ? `request:${event.requestId}` : `${origin.source}:${origin.sourceEvent}`]);
+    const sourceKey = RequestIdentity.sourceKey(actor, event, origin), sourceClaimRef = db.doc(`userIssueSourceClaims/${sourceKey}`);
+    const registryRef = event.requestId ? db.doc(`userIssueRequestIdentities/${primaryId}`) : null;
+    // Preserve the historical aggregate key for the corrected generic upload
+    // classification. Stored new evidence/title use diagnostic, while prior
+    // triage and recurrence state stay attached to the same issue.
+    const fingerprintKind = origin.source === "failureCases" && event.kind === "diagnostic" ? "interrupted" : event.kind;
+    const observationId = M.hash([origin.source, origin.sourceEvent || event.eventId, event.eventId]);
+    const sourceObservation = { ...event, reporterUid: who.uid || null, reporterName: who.name || null, player: who.player || null,
+      authenticatedSnapshot: who.authenticatedSnapshot || null, source: origin.source, sourceEvent: origin.sourceEvent || event.eventId,
+      sourceReference: origin.reference || null, receivedAtMillis: at,
+      sourceReceivedAtMillis: Number.isSafeInteger(origin.receivedAtMillis) ? origin.receivedAtMillis : null };
     const dayRef = db.doc(`userIssueDays/${M.periodKey(at)}`);
     return db.runTransaction(async tx => {
       const settings = M.setting((await tx.get(settingsRef)).data(), at);
       if (!settings.enabled || settings.testUids && !settings.testUids.includes(who.uid) || Object.hasOwn(origin, "receivedAtMillis") && (!Number.isFinite(origin.receivedAtMillis) || origin.receivedAtMillis < settings.activatedAtMillis) || origin.isTest && !settings.testUids) return { status: "disabled" };
-      const existing = await tx.get(occurrenceRef);
-      if (existing.exists) return { status: "received", reference: existing.data().issueId, occurrenceId, duplicate: true };
+      const sourceClaim = (await tx.get(sourceClaimRef)).data();
+      if (sourceClaim) {
+        if (sourceClaim.schemaVersion !== 1 || sourceClaim.source !== RequestIdentity.SOURCE || sourceClaim.sourceKey !== sourceKey
+          || sourceClaim.primaryOccurrenceId !== primaryId || !/^[a-f0-9]{64}$/.test(sourceClaim.occurrenceId || "")) throw new Error("invalid_server_source_claim");
+        const claimed = (await tx.get(db.doc(`userIssueOccurrences/${sourceClaim.occurrenceId}`))).data();
+        if (!claimed || claimed.issueId !== sourceClaim.issueId) throw new Error("source_claim_occurrence_unavailable");
+        return { status: "received", reference: claimed.issueId, occurrenceId: sourceClaim.occurrenceId, duplicate: true };
+      }
+      const primaryRef = db.doc(`userIssueOccurrences/${primaryId}`), primary = await tx.get(primaryRef);
+      const primaryObservation = await tx.get(primaryRef.collection("observations").doc(observationId));
+      const primaryReplay = primary.exists && (primaryObservation.exists || primary.data().eventId === event.eventId && primary.data().source === origin.source);
+      let plan = RequestIdentity.route({ original: primary.data(), catalog: registryRef ? (await tx.get(registryRef)).data() : null,
+        event, who, origin, actor, primaryId, key: sourceKey, primaryReplay });
+      if (!event.requestId && primary.exists && !primaryReplay) plan = { ...plan,
+        occurrenceId: M.hash(["uncorrelated-source-v1", primaryId, sourceKey]), reason: "source_evidence_unconfirmed" };
+      let occurrenceRef = db.doc(`userIssueOccurrences/${plan.occurrenceId}`), existing = plan.occurrenceId === primaryId ? primary : await tx.get(occurrenceRef);
+      let observationRef = occurrenceRef.collection("observations").doc(observationId), observation = plan.occurrenceId === primaryId ? primaryObservation : await tx.get(observationRef);
+      const exactReplay = () => existing.exists && (observation.exists || existing.data().eventId === event.eventId && existing.data().source === origin.source);
+      if (existing.exists && !exactReplay() && !Observations.sameRequest(existing.data(), event, who, origin, plan.branch)) {
+        // A mismatched or ambiguous historical branch is never acknowledged as
+        // a duplicate. Retain this independent source with a stable secondary ID.
+        plan = event.requestId ? RequestIdentity.isolate(plan, event, who, origin, sourceKey)
+          : { ...plan, occurrenceId: M.hash(["uncorrelated-source-v1", primaryId, sourceKey]), reason: "source_evidence_unconfirmed" };
+        occurrenceRef = db.doc(`userIssueOccurrences/${plan.occurrenceId}`); existing = await tx.get(occurrenceRef);
+        observationRef = occurrenceRef.collection("observations").doc(observationId); observation = await tx.get(observationRef);
+        if (existing.exists && !exactReplay()) throw new Error("source_identity_collision");
+      }
+      const occurrenceId = plan.occurrenceId;
+      const recordIdentity = issueId => {
+        if (registryRef) tx.set(registryRef, plan.catalog);
+        tx.create(sourceClaimRef, { schemaVersion: 1, source: RequestIdentity.SOURCE, sourceKey, primaryOccurrenceId: primaryId,
+          occurrenceId, issueId, sourceEvent: origin.sourceEvent || event.eventId, eventId: event.eventId, createdAtMillis: at });
+      };
+      if (existing.exists) {
+        const original = existing.data();
+        if (!exactReplay() && Observations.sameRequest(original, event, who, origin, plan.branch)) {
+          // Exact actor/request corroboration is retained privately. A second
+          // source never rewrites the canonical actor, athlete or frozen job.
+          tx.create(observationRef, sourceObservation);
+          tx.update(occurrenceRef, { sourceObservationSummary: Observations.appendSummary(original, sourceObservation) });
+        }
+        recordIdentity(original.issueId);
+        return { status: "received", reference: original.issueId, occurrenceId, duplicate: true };
+      }
+      const fingerprint = M.hash([event.platform, event.operation, event.code, event.kind === "report" ? occurrenceId : fingerprintKind]);
+      const ref = issueRef(fingerprint), out = jobRef(occurrenceId);
       const issue = (await tx.get(ref)).data(), day = (await tx.get(dayRef)).data() || {};
       const actorRef = dayRef.collection("actors").doc(M.hash(actor)), actorSeen = await tx.get(actorRef);
       const dailyIssueRef = dayRef.collection("issues").doc(fingerprint), dailyIssue = (await tx.get(dailyIssueRef)).data();
@@ -58,17 +121,26 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
       const global = globalRef ? (await tx.get(globalRef)).data()?.count || 0 : 0;
       if (rateRef && (rate >= (who.uid ? 120 : 15) || global >= 3000)) fail("resource-exhausted", "Report intake is busy. Your report can be retried later.");
       const reopened = issue?.state === "verified" || issue?.state === "fixed";
-      const title = `${event.kind === "report" ? "Problem reported" : event.kind === "crash" ? "App crash" : event.kind === "interrupted" ? "Interrupted session — cause unknown" : "Action failed"}: ${event.operation}`;
+      const classification = classifyOccurrence({ ...event, source: origin.source, reporterUid: who.uid });
+      const title = occurrenceTitle(event, classification);
       const label = enrichment.contact?.name || who.name || (who.uid ? "Signed-in user" : "Unknown actor");
       const lines = [`Platform: ${event.platform}; build: ${event.build}; device: ${event.device}`,
         `Error code: ${event.code}`, `Occurred: ${M.dateText(event.occurredAtMillis)}`, `Received: ${M.dateText(at)}`,
+        ...(classification.effectiveKind === "diagnostic" ? ["Evidence classification: Diagnostic upload; subtype unconfirmed. This record does not establish a crash or an interrupted session."] : []),
+        ...(classification.scope === "automated_service" ? ["Evidence scope: Automated service occurrence; no affected operator is established by this service record."] : []),
+        ...(classification.scope === "unknown_actor" && validCallableOutcome(event.callableOutcome, { ...event, source: origin.source }) ? ["Evidence scope: Verified failed callable request; no accepted authenticated reporter is recorded. The actor and contact remain unknown."] : []),
+        ...(occurrenceId !== primaryId ? ["Request correlation: This source shares a request reference with another incident, but a distinct or unconfirmed attempted action is retained separately."] : []),
         ...(reopened ? ["This issue has returned after being marked fixed or verified."] : [])];
       const count = (issue?.occurrences || 0) + 1;
       tx.create(occurrenceRef, { ...event, id: occurrenceId, issueId: fingerprint, reporterUid: who.uid, reporterName: who.name,
         authenticatedSnapshot: who.authenticatedSnapshot || null, currentContact: enrichment.contact, contactLookup: enrichment.lookup,
-        player: who.player || null, source: origin.source, sourceReference: origin.reference || null, receivedAtMillis: at });
+        player: who.player || null, source: origin.source, sourceReference: origin.reference || null, classification,
+        ...(event.requestId ? { requestCorrelation: { schemaVersion: 1, source: RequestIdentity.SOURCE, primaryOccurrenceId: primaryId,
+          mode: occurrenceId === primaryId ? "primary" : "separate_attempt", reason: plan.reason || null } } : {}),
+        sourceObservationSummary: Observations.initialSummary(sourceObservation), receivedAtMillis: at });
+      if (!observation.exists) tx.create(observationRef, sourceObservation);
       tx.set(ref, { id: fingerprint, title, platform: event.platform, operation: event.operation, code: event.code, kind: event.kind, severity: event.severity,
-        state: reopened ? "new" : issue?.state || "new", firstReceivedAtMillis: issue?.firstReceivedAtMillis || at, updatedAtMillis: Math.max(at, (issue?.updatedAtMillis || 0) + 1),
+        classification, state: reopened ? "new" : issue?.state || "new", firstReceivedAtMillis: issue?.firstReceivedAtMillis || at, updatedAtMillis: Math.max(at, (issue?.updatedAtMillis || 0) + 1),
         occurrences: count, latestOccurrenceId: occurrenceId, latestBuild: event.build, latestUser: label,
         ...(reopened ? { reopenedAtMillis: at } : {}) }, { merge: true });
       tx.create(out, { id: occurrenceId, issueId: fingerprint, type: "incident", title, lines, contactSnapshot, createdAtMillis: at, status: "pending", dueAtMillis: at, attempts: 0, actorUid: who.uid });
@@ -79,6 +151,7 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
       tx.set(dailyIssueRef, { title, count: (dailyIssue?.count || 0) + 1 });
       if (who.uid) tx.set(db.doc(`userIssueActors/${M.hash([who.uid, fingerprint])}`), { uid: who.uid, issueId: fingerprint, updatedAtMillis: at });
       if (rateRef) { tx.set(rateRef, { count: rate + 1, expiresAtMillis: at + 86400000 }); tx.set(globalRef, { count: global + 1, expiresAtMillis: at + 86400000 }); }
+      recordIdentity(fingerprint);
       return { status: "received", reference: fingerprint, occurrenceId };
     });
   }
@@ -172,20 +245,27 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
     return { checked: rows.size };
   }
   async function daily() {
-    const period = M.previousPeriod(now()), ref = db.doc(`userIssueDays/${period}`), id = M.hash(["daily", period]);
+    const at = now(), period = M.previousPeriod(at), ref = db.doc(`userIssueDays/${period}`), id = M.hash(["daily", period]);
+    const [settingsSnapshot, daySnapshot, existingJob] = await Promise.all([settingsRef.get(), ref.get(), jobRef(id).get()]);
+    const before = daySnapshot.data();
+    // Existing summaries and their frozen payload/receipts remain historical.
+    if (!M.setting(settingsSnapshot.data(), at).enabled || !before || existingJob.exists || !(before.incidents || before.changes)) return;
+    const [summary, deliveryReview] = await Promise.all([reportingSummary(db, period), deliveryReviewSummary(db)]);
+    if (summary.occurrences !== (before.incidents || 0)) throw Object.assign(new Error("summary_occurrence_count_mismatch"), { code: "summary_occurrence_count_mismatch" });
     const counts = await Promise.all(["new", "investigating", "fixed"].map(state => db.collection("userIssues").where("state", "==", state).count().get()));
-    const failures = await Promise.all(["failed", "bounced", "suppressed", "needs_review"].map(status => db.collection("userIssueOutbox").where("status", "==", status).count().get()));
-    const top = await ref.collection("issues").orderBy("count", "desc").limit(5).get();
     await db.runTransaction(async tx => {
       const day = (await tx.get(ref)).data(), job = await tx.get(jobRef(id));
       const settings = M.setting((await tx.get(settingsRef)).data(), now());
       if (!settings.enabled) return;
       if (!day || job.exists || !(day.incidents || day.changes)) return;
-      tx.create(jobRef(id), { id, type: "daily", actorUid: settings.testUids?.[0] || null, title: `User issues: reporting day ${period}`, lines: ["Reporting window: 9 AM Pacific to 9 AM Pacific.",
-        `${day.incidents || 0} distinct user incidents; ${day.crashes || 0} crashes; ${day.reports || 0} user reports; ${day.changes || 0} status changes.`,
-        `${day.affectedActors || 0} affected accounts or anonymous sessions; ${day.recurrences || 0} recurrences after a fix.`,
-        `${failures.reduce((sum, count) => sum + count.data().count, 0)} email jobs currently failed or require delivery review.`,
-        ...top.docs.map(row => `${row.data().count} incidents: ${row.data().title}`),
+      if ((day.incidents || 0) !== summary.occurrences || day.lastAtMillis !== before.lastAtMillis || (day.changes || 0) !== (before.changes || 0)) throw Object.assign(new Error("summary_day_changed"), { code: "summary_day_changed" });
+      tx.create(jobRef(id), { id, type: "daily", actorUid: settings.testUids?.[0] || null, title: `Issue evidence: reporting day ${period}`, summary, deliveryReview, lines: ["Reporting window: 9 AM Pacific to 9 AM Pacific; counts use server receipt time.",
+        `${summary.occurrences} captured issue and diagnostic occurrences; ${summary.crashes} confirmed crashes; ${summary.reports} user-submitted reports; ${summary.interruptions} explicit interruption records; ${day.changes || 0} status changes.`,
+        `Source scope: ${summary.serviceOccurrences} automated service occurrences; ${summary.diagnostics} diagnostic uploads; ${summary.otherOccurrences} other issue/report occurrences.`,
+        `${summary.accountOccurrences} occurrences have a recorded reporting Auth UID across ${summary.reportingAccounts} accounts; ${summary.noAccountOccurrences} occurrences have no recorded account UID. Reporting accounts may be uploaders or staff; affected users are not inferred.`,
+        `${summary.unknownDiagnosticSubtype} diagnostic uploads have an unknown subtype and do not establish a crash or an interrupted session; ${day.recurrences || 0} recurrences after a fix.`,
+        `${deliveryReview.total} email jobs currently failed or require delivery review across all time: ${deliveryReview.microsoft} Microsoft, ${deliveryReview.resend} Resend, ${deliveryReview.unassigned} unassigned provider. This backlog is separate from reporting-day incident counts.`,
+        ...summary.top.map(row => `${row.count} occurrences: ${row.title}`),
         `${counts.reduce((sum, count) => sum + count.data().count, 0)} issues currently await resolution or verification.`], createdAtMillis: now(), status: "pending", dueAtMillis: now(), attempts: 0 });
     });
     await dispatch(id);

@@ -1,10 +1,45 @@
 # PoseTek website project context
 
-Reviewed on October 2, 2026. This guide summarizes the available repository and
+Reviewed on October 2–3, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
-## Dylan-only notifications, outreach contacts and tracker recovery (2026-10-02)
+## Notification coverage correction (2026-10-02–03)
+
+The current authenticated application is Netlify deployment
+`6ac06e0d420f2b6b34129fb5`, from frozen source digest
+`e7ad1aaa6b2b87b17b8c6885ea263e35170b86e95759e304bc3cdb8244876e88`.
+Full provider inventory and served-content checks passed for 1,485 files,
+preserving current marketing source, protected files and platform configuration.
+Baseline adoption passed and protects 1,482 application/public files; its exact
+verification result is in
+[the correction receipt](deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json).
+Do not infer it from a successful deployment badge.
+
+Ten user-issue functions at version 8 and six tracker functions at version 5
+passed exact source/configuration/IAM verification. Fourteen social endpoints
+passed the same scoped checks with their differing original implementations,
+runtime configuration and helper variants preserved. The website generates a
+fresh diagnostic UUID for every supported social invocation, retaining the same
+ID for SDK transport retries. Server-owned replay claims require compatible
+known operation and authorized target evidence; reused IDs with conflicts remain
+distinct. Both source observations retain provenance. Timings remain in raw
+Cloud Logging, with no new workbook timing column. Diagnostic/service counts are
+not unique-user counts, and generic diagnostic uploads do not prove a crash or
+interrupted workout.
+
+Dylan remains the sole alert recipient; Nolan and Taiyo retain editing access to
+the shared tracker. The hourly Codex updater stays paused. Crashlytics Cloud
+Logging export is On for the one registered iOS app, but genuine symbolicated
+device export and owning-Mac/iPhone/TestFlight acceptance remain held. The new
+Microsoft mailbox identity-conversion connection approval is unconfirmed; retain
+all historical email rows and unconfirmed aliases. No automatic outreach,
+historical Resend replay, native release or training-rule change is included.
+Read [the correction handoff](docs/NOTIFICATION_COVERAGE_CORRECTION.md) for current
+contracts and limits; final workbook/source cutoffs come from its production
+receipt. Preserve the earlier dated receipts and results below.
+
+## Historical Dylan-only notifications, outreach contacts and tracker recovery (2026-10-02)
 
 Dylan now requires only `dylank@posetek.net` to receive new issue, status,
 daily-summary and workout notifications. Both separate PoseTek Google Cloud
@@ -103,9 +138,12 @@ URL, caller, fixed GET and privacy policy. The existing flow was edited while Of
 its actual saved export passed validation at `2026-10-02T08:45:14Z`. The validator
 permits only the two observed branch-entry omissions of empty `runAfter` alongside
 editor metadata; all real dependencies stay exact. Read-only v3 acceptance passed
-at `2026-10-02T09:12:05.266Z`: 72 pages and 143 mailbox messages, all 128 legacy
-immutable-ID aliases and exact immutable replay. The private audit retained 206
-original responses. One unrelated message omitted headers; relevant messages,
+at `2026-10-02T09:12:05.266Z`: 72 pages and 143 mailbox messages, with replay of all
+128 then-recorded legacy ID aliases through the connector. The dated receipt
+described these as immutable-ID aliases; later review found that connector echo
+and ignored preferences do not prove authoritative Graph ID types or canonical
+same-item aliases. The private audit retained 206 original responses.
+One unrelated message omitted headers; relevant messages,
 the Inbox reference, all legacy items and replay retained strict header checks.
 This verifies the delegated reader, not application RBAC or tracker publication.
 Failed v2/v3 attempts remain alongside the successful fresh acceptance receipt.

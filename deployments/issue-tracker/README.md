@@ -2,11 +2,16 @@
 
 Read [the event-flow handoff](../../docs/ISSUE_TRACKER_EVENT_FLOW.md) before setup.
 This package is not wired into `functions/index.js`. Its isolated six-function
-deployment passed actual source/configuration verification at
-`2026-10-02T09:37:27Z`; guarded activation passed at
-`2026-10-02T10:13:41.205Z`. Independent shared-master revision-eight publication has passed;
-full source catch-up continues. It adds six
-entrypoints and no changes to the existing email delivery functions:
+release is now **ACTIVE at version 5** for all six endpoints, with exact
+source/configuration/IAM and unrelated-resource verification complete. The
+shared native master is event driven; the hourly Codex updater stays **PAUSED**.
+Dylan alone receives alerts, while Nolan and Taiyo retain workbook editing.
+Use [the current coverage handoff](../../docs/NOTIFICATION_COVERAGE_CORRECTION.md)
+and [correction receipt](../../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
+for the latest physical workbook revision, separate capture/publication cutoffs,
+queue state and delivery review. Earlier revision-eight and revision-121 results
+are dated historical checkpoints, not current completeness claims. This scope
+contains six entrypoints and does not redeploy the email sender:
 
 | Entrypoint | Purpose | Required access |
 | --- | --- | --- |
@@ -21,13 +26,16 @@ entrypoints and no changes to the existing email delivery functions:
 credentials, install dependencies, enable APIs, deploy or modify remote resources.
 
 ```powershell
-node deployments/issue-tracker/prepare.cjs .netlify/issue-tracker-candidate-UNIQUE
-node scripts/issue-tracker/build-office-scripts.cjs .netlify/issue-tracker-scripts-UNIQUE
-node --test functions/issue-tracker-bridge.test.js functions/issue-tracker-recovery.test.js functions/issue-tracker-source-capture.test.js functions/issue-tracker-transport.test.js functions/issue-tracker-normalize.test.js scripts/issue-tracker/office-script.test.cjs
-python -m unittest discover -s deployments/issue-tracker -p '*_test.py'
+$node = 'C:/Users/dylan/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe'
+$python = 'C:/Users/dylan/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe'
+& $node deployments/issue-tracker/prepare.cjs .netlify/issue-tracker-candidate-UNIQUE
+& $node scripts/issue-tracker/build-office-scripts.cjs .netlify/issue-tracker-scripts-UNIQUE
+& $node --test functions/issue-tracker-bridge.test.js functions/issue-tracker-recovery.test.js functions/issue-tracker-source-capture.test.js functions/issue-tracker-transport.test.js functions/issue-tracker-normalize.test.js functions/issue-tracker-mail-identity.test.js functions/issue-tracker-mail-correlation.test.js functions/issue-tracker-mail-read-proxy.test.js functions/issue-tracker-mail-relevance.test.js functions/issue-tracker-source-observation.test.js scripts/issue-tracker/office-script.test.cjs
+& $python -B -m unittest discover -s deployments/issue-tracker -p '*_test.py'
 ```
 
-Use the configured Node runtime if `node` is not on PATH. Inspect the generated
+The cloud package remains `nodejs22`; the local bundled v24.19.0 runtime also
+satisfies the application engine `>=22.19.0`. Inspect the generated
 manifest and exact endpoint list before any later deployment. An approved
 deployment must be scoped to these endpoints; never deploy the entire root
 functions project or unrelated Firestore rules as part of this setup.
@@ -40,6 +48,31 @@ checks. The observer reads current source state transactionally, coalesces
 unchanged material hashes and retries scheduling with deterministic task IDs.
 Queue acknowledgement requires an exact verified writer receipt. The scoped
 source, control-plane and IAM/schedule readbacks remain required after deploy.
+
+The current package includes separate mail-identity, identity-proxy and
+mail-classification modules; exact contact and issue classification helpers; and
+Microsoft effective-envelope validation. Generic diagnostics and automated service
+failures remain distinct from proven user attempts. Actor/contact/target evidence,
+source observations and historical wording use the existing workbook columns;
+duration stays in linked Cloud Logging, with no workbook timing column. Human
+Status, Owner, Due and Fix notes remain keyed by stable Action ID after sorting.
+
+## Mailbox identity correction held
+
+The current version-5 entrypoint explicitly has `mailIdentityEnabled = false`; packaging
+checks that disabled flag. The translation connector requires its separately
+reviewed connection, tenant/caller/endpoint/export proof and exact mailbox-ID probes
+before a later cutover. The old reader's `Prefer: IdType="ImmutableId"` header and
+corrected inputs were saved through code view. Its actual export passed exact
+runtime-definition review and the flow is On; canonical ID conversion and
+same-item alias acceptance remain pending for the dedicated Graph connection.
+Do not claim all reader/translation changes are complete or enable the translation secret
+from local builder tests alone. The ordinary approved delegated mailbox route
+and independent backend capture remain separate from this unfinished correction.
+Retain every original row and unconfirmed alias until exact Exchange identity
+evidence proves the mapping; similar subject/body/time is insufficient.
+
+## Historical initial activation
 
 The first release's interactive CLI run reported an invoker error after creating
 the private drain and queue: CLI14.14 called `bindings.filter` on an empty queue
@@ -62,6 +95,8 @@ was acknowledged at revision seven and is included in the verified workbook.
 Read [the production receipt](../../deployment/ISSUE_TRACKER_EVENT_PRODUCTION.json). Do not rebuild or replace the master with the old whole-file renderer
 or run bootstrap again. Use native revisions and exact receipt-based recovery.
 
+## Private state and safe operation
+
 The configuration lives in the private `issueTrackerSettings/current` record.
 It requires `enabled`, `seedVerified`, `connectionVerified`, `workbookKey` and the
 exact authorized `mailbox`. Keep all three gates false until verified. The
@@ -72,6 +107,10 @@ document, so reviewed descriptions survive later delivery-only updates.
 Queue/batch collections are `issueTrackerQueue` and `issueTrackerBatches`.
 Source windows and original body/backend snapshots live in private
 `issueTrackerCaptureWindows` and `issueTrackerEvidence` (including subcollections).
+Contact and late-email repair use separate bounded cursors in `issueTrackerState`;
+they never advance source completeness just because a lookup or join succeeded.
+The identity modules retain verified alias proof and original row keys in native
+state/evidence; they do not delete historical aliases to make counts agree.
 Verify the deployed
 rules deny client access before activation; do not infer that from local rules.
 
@@ -140,15 +179,16 @@ Each observed full job snapshot is retained privately before the cursor advances
 `deliveryStatuses` counts the statuses observed during that enumeration. No
 source complete-through checkpoint or workbook publication state advances,
 and this sweep provides no mailbox coverage. Receipt-time source capture below
-is separate. The offline recovery tests cover these distinctions; live
-Scheduler, IAM and task delivery acceptance remain unverified.
+is separate. The offline recovery tests cover these distinctions; actual
+Scheduler, IAM, task delivery and workbook acceptance require their own dated
+proof. The current receipt records the latest verified operational state.
 
 Unknown delivery outcomes retry the identical frozen batch. A rejected or
 conflicting receipt stops the writer. Retries are bounded; persisted pending work
-does not itself prove future execution. The bounded queue-recovery candidate
-still needs live acceptance; mailbox authorization, operational review of
-persistent failure state, seed migration and live Excel acceptance remain
-activation gates. See the handoff for source coverage and licensing limits.
+does not itself prove future execution. Reverify mailbox authorization,
+persistent failure state and fresh cloud Excel publication before another
+activation or recovery change. The master is already initialized: do not reseed
+it or repeat bootstrap. See the handoff for source coverage and licensing limits.
 
 ## Receipt-time source recovery and arrival intake
 
@@ -174,8 +214,8 @@ pre-migration publication covered both sources through `2026-10-02T04:56:51.854Z
 598 instances, 128 emails and 23 actions, workbook SHA-256
 `c9bf937b4cd1507d9f376bc861d0cb3779443b6a522e190ac48fb79c68f69d19`.
 The hourly Codex updater is now **PAUSED** at Dylan's request; do not restart it
-automatically. The replacement is enabled and independent shared-master revision-eight
-publication is verified; full source catch-up remains in progress. Those original
+automatically. The replacement is enabled; the original revision-eight
+publication remains historical evidence. Those original
 cutoffs remain the initialization basis; ongoing catch-up resumes from each
 source's verified publication checkpoint in the production receipt. Never run
 the old renderer against the initialized native master. For each original Outlook
@@ -239,5 +279,6 @@ four bounded exponential HTTP retries are safe through queue identity. It sends
 no mail and changes no read state. The connector can miss oversized/protected
 messages or moved-folder events, so live acceptance must cover both arrival and
 independent recovery. This local builder does not import, enable or purchase
-anything. Endpoint receipt validation and real connection behavior still need
-live acceptance before replacing the hourly desktop tracker.
+anything. Endpoint receipt validation and real connection behavior require
+fresh acceptance for a later flow change. The hourly desktop tracker has already
+been replaced and stays paused; do not restart it during this correction.

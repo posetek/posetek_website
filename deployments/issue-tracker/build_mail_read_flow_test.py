@@ -61,7 +61,7 @@ class Expressions:
                     'substring':self.substring, 'slice':lambda s,start,*end:s[start:end[0]] if end else s[start:],
                     'concat':lambda *s:''.join(s), 'length':len, 'min':min, 'range':self.integer_range,
                     'contains':lambda s,v:v in s, 'not':lambda x:not x, 'equals':lambda a,b:a==b,
-                    'greater':lambda a,b:a>b, 'lessOrEquals':lambda a,b:a<=b, 'take':lambda s,n:s[:n],
+                    'greater':lambda a,b:a>b, 'lessOrEquals':lambda a,b:a<=b, 'take':lambda s,n:s[:n], 'union':lambda a,b:list(dict.fromkeys(a+b)),
                     'and':lambda *a:all(a), 'or':lambda *a:any(a)}
                 value = ops[token](*args)
             if pos < len(tokens) and tokens[pos] == '?[':
@@ -101,7 +101,7 @@ class MailReadFlowTests(unittest.TestCase):
             self.assertFalse(permitted(base+'/'))
             self.assertFalse(permitted(base+'/?$top=2'))
             self.assertTrue(permitted(base+'/A'))
-            self.assertFalse(permitted(base+'/A%2fB'))
+            self.assertTrue(permitted(base+'/A%2fB'))
 
     def test_generated_expressions_allow_only_fixed_route_and_preserve_opaque_query(self):
         for base in [m.BASE,m.BASE.replace('@','%40')]:
@@ -114,7 +114,7 @@ class MailReadFlowTests(unittest.TestCase):
         bad=[m.BASE.replace('dylank',name) for name in ['nolanj','taiyow','alerts']]
         bad += [m.BASE.replace('/users/dylank@posetek.net','/me'),m.BASE.replace('https:','http:'),m.BASE.replace('graph.microsoft.com','graph.microsoft.com:443'),
             m.BASE.replace('graph.microsoft.com','user@graph.microsoft.com'),m.BASE.replace('/v1.0/','/beta/'),m.BASE.replace('https://','HTTPS://'),
-            m.BASE+'#fragment',m.BASE+'\\escaped',m.BASE+'/../messages',m.BASE+'/%2e%2e',m.BASE+'/%2F',m.BASE+'/%252F',m.BASE+'/one/two',
+            m.BASE+'#fragment',m.BASE+'\\escaped',m.BASE+'/../messages',m.BASE+'/%2e%2e',m.BASE+'/%252F',m.BASE+'/one/two',
             m.BASE+'/one%40two',m.BASE+'/one%3Ftwo',m.BASE+'/',m.BASE+'?x=raw space',m.BASE+'?x=\n',m.BASE+'?x=é',m.BASE+'?x=<bad>',
             m.BASE+'/'+m.BASE+'/id']
         for url in bad:

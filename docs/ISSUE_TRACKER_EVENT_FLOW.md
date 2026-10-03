@@ -1,11 +1,24 @@
 # Event-driven issue tracker activation
 
-Current contract: **event-driven shared master; Dylan-only notifications; physical
-revision-121 publication and fixed-cutoff source catch-up verified**. New issue,
+Current contract: **event-driven shared master; Dylan-only notifications**. See
+[the coverage correction](NOTIFICATION_COVERAGE_CORRECTION.md) and
+[its production receipt](../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
+for the latest publication revision, separate source cutoffs and scoped release
+checks. User-issue version 8 and tracker version 5 preserve the existing workbook
+schema and human fields. Compatible request observations retain both sources;
+conflicting known operations or authorized targets remain distinct. Generic
+diagnostics and automated service failures do not identify an operator by
+themselves. Counts of actions, instances and original email rows are not counts of
+unique users. Historical mailbox aliases stay intact while the new Microsoft
+identity-conversion approval remains unconfirmed.
+
+New issue,
 status, daily-summary and workout emails target only `dylank@posetek.net`; both
 PoseTek Google Cloud notification policies were separately verified with Dylan
 alone. Nolan and Taiyo keep editing access to the existing shared workbook.
 The hourly Codex automation remains **PAUSED**.
+
+## Historical October 2 refinement and revision-121 acceptance
 
 The refinement's deployed source/configuration checks verified ten user-issue
 functions at version 5, three Microsoft email functions at version 2 and six
@@ -89,8 +102,11 @@ started at the path's end. V3 repairs only that boundary and the empty-ID
 character scan. Its actual saved export passed at `2026-10-02T08:45:14Z`, with
 the same caller, fixed Dylan GET, immutable preference and security policy.
 Read-only acceptance passed at `2026-10-02T09:12:05.266Z`: 72 complete pages,
-143 mailbox messages, all 128 original-to-immutable identity aliases and exact
-immutable replay. Independent private review checked 206 original responses.
+143 mailbox messages and replay of all 128 then-recorded ID aliases through the
+connector. The dated receipt described these as immutable-ID aliases; later
+review showed that connector echo and ignored preferences do not prove
+authoritative Graph ID types or canonical same-item aliases. Independent private
+review checked 206 original responses.
 One unrelated message had no provider headers and is explicitly counted;
 relevant messages, the Inbox reference, all legacy fetches and replay require
 headers. Body, folder and read-state checks remain strict for every item.
@@ -274,14 +290,18 @@ relevance using the sender, project, incident links and content, including Googl
 Cloud/Cloud Monitoring and delivery failures; do not rely on one subject or
 unread status. Do not send emails, move messages or mark them read.
 
-**The delegated mailbox route passed live acceptance.** The arrival flow covers Inbox;
+**The delegated mailbox route passed dated paging and connector replay checks.**
+Those earlier responses did not prove authoritative Graph ID types or equivalence
+between historical ID forms for one physical mailbox item. The arrival flow covers Inbox;
 the independent configured reader traverses the entire authorized Dylan mailbox
 without folder, subject or read-state filters. It uses fixed UTC bounds, a
 30-minute overlap and persisted full pagination. Capture completion is separate
 from publication: the latter requires native workbook receipts for every queued
-version. Historical Outlook IDs must be directly re-read and mapped to immutable
-IDs before enabling capture; that acceptance was completed. Internet Message-ID
-alone cannot merge rows. The accepted delegated proxy stays fixed to Dylan's
+version. The old ImmutableId preference is restored, and the actual saved reader
+export passed exact runtime-definition review. Canonical ID conversion and
+same-item alias acceptance remain held for the dedicated Graph connection;
+preserve all historical rows and unconfirmed aliases. Internet Message-ID alone
+cannot merge rows. The accepted delegated proxy stays fixed to Dylan's
 mailbox and GET operations. Exchange application RBAC remains unverified and is
 not a fallback route; never substitute tenant-wide Mail.Read. Current coverage
 comes from separately persisted capture and publication receipts.

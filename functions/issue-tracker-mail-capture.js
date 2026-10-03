@@ -4,6 +4,7 @@ const { MAILBOX } = require("./issue-tracker-graph-reader");
 const { createEvidenceArchive } = require("./issue-tracker-evidence");
 const { mailReadBinding } = require("./issue-tracker-mail-read-proxy");
 const Microsoft = require("./microsoft-email-model");
+const Identity = require("./issue-tracker-mail-identity");
 
 function receivedRecipients(mail) {
   if (Array.isArray(mail.toRecipients)) {
@@ -34,12 +35,14 @@ function relevance(mail) {
   const sender = String(mail.from?.emailAddress?.address || mail.sender?.emailAddress?.address || "").toLowerCase();
   const subject = String(mail.subject || ""), body = String(mail.body?.content || "");
   const all = subject + "\n" + body;
+  const warning = require("./issue-tracker-mail-classification").powerAutomateWarning(mail);
+  if (warning) return { relevant: true, reason: warning.reason, category: warning.category, operation: warning.operation, scope: warning.scope };
   const knownProject = /kickai-69dd0|posetek|postek\.net/i.test(all);
   const cloud = /(?:google\.com|googlecloud\.com)$/.test(sender.split("@")[1] || "") || /console\.cloud\.google\.com\/monitoring\//i.test(all);
   if (cloud && knownProject) return { relevant: true, reason: "google_cloud_project_notice" };
   if (cloud && /google\s+cloud|cloud\s+(?:monitoring|billing)|stackdriver|googlecloud|console\.cloud\.google\.com/i.test(all + "\n" + sender)) return { relevant: true, reason: "google_cloud_notice_project_needs_verification" };
   if ((/@alerts\.posetek\.net$/.test(sender) || sender === "alerts@posetek.net") && /(?:issue|error|fail|crash|bug|interrupt|undeliver|bounce|status)/i.test(all)) return { relevant: true, reason: "posetek_issue_notice" };
-  if (knownProject && /(?:error|fail(?:ed|ure)?|crash|bug|exception|interrupt|undeliver|bounce|unavailable|monitoring|incident|quota|timeout)/i.test(all)) return { relevant: true, reason: "posetek_problem_evidence" };
+  if (knownProject && /(?:error|fail(?:ed|ure)?|crash|bug|exception|interrupt|undeliver|bounce|unavailable|monitoring|incident|quota|timeout|throttl)/i.test(all)) return { relevant: true, reason: "posetek_problem_evidence" };
   if (/\b(?:bug report|app (?:crashed|crash|error)|failed workout|workout (?:failed|crashed|error)|crash report)\b/i.test(all)) return { relevant: true, reason: "user_problem_report_needs_triage" };
   return { relevant: false, reason: "no_relevant_incident_evidence" };
 }
@@ -53,11 +56,13 @@ function createMailCapture({ db, bridge, graph, archive = createEvidenceArchive(
     const event = (await db.doc(`userIssueOccurrences/${doc.id}`).get()).data();
     return trustedMailJoin(message, job, event ? { ...event, id: doc.id } : null);
   }
-  async function capture(mail, { aliases = [], schedule = false } = {}) {
+  async function capture(mail, { aliases = [], schedule = false, aliasReconciliation } = {}) {
     if (!mail || typeof mail.id !== "string" || !Number.isFinite(Date.parse(mail.receivedDateTime))) fail("tracker_graph_invalid_message");
+    const original = mail.sourceMessage || mail;
+    if (typeof graph.canonicalize === "function") mail = await graph.canonicalize(mail);
     const decision = relevance(mail);
     if (!decision.relevant) return { ...decision, ticket: null };
-    const proof = await archive("outlook", `${MAILBOX}/${mail.id}`, mail);
+    const proof = await archive("outlook", `${MAILBOX}/${mail.itemIdentity?.sourceId || mail.id}`, original);
     const body = mail.body.content;
     const excerpt = body.length <= 20000 ? body : body.slice(0, 20000) + "\n[Display excerpt; full message body retained in Outlook and private evidence archive.]";
     // Extract evidence URLs from the FULL body before excerpting. Long Google
@@ -70,16 +75,21 @@ function createMailCapture({ db, bridge, graph, archive = createEvidenceArchive(
     if (links.length > 20) fail("tracker_mail_evidence_links_exceeded");
     const issueLinks = links.filter(value => new URL(value).hostname === "posetek.net");
     const from = mail.from?.emailAddress?.address || mail.sender?.emailAddress?.address;
-    const message = { mailbox: MAILBOX, originalId: mail.id, immutableId: mail.id,
+    const verifiedIdentity = Identity.validItemIdentity(mail.itemIdentity, mail.id);
+    const message = { mailbox: MAILBOX, originalId: mail.id,
+      ...(verifiedIdentity ? { immutableId: mail.id, itemIdentity: mail.itemIdentity } : {}),
       receivedDateTime: mail.receivedDateTime, subject: mail.subject || "", body: { contentType: mail.body.contentType.toLowerCase(), content: excerpt },
       ...(from ? { from } : {}), ...(mail.internetMessageId ? { internetMessageId: mail.internetMessageId } : {}),
       receivedRecipients: receivedRecipients(mail),
       webLink: mail.webLink || `https://outlook.office.com/mail/deeplink/read/${encodeURIComponent(mail.id)}`,
-      aliases: [...new Set(aliases.filter(id => id && id !== mail.id))],
+      // A supplied arrival ID is an alias only after exact item-ID evidence.
+      // An ignored Prefer header must never label a REST ID as immutable.
+      aliases: [...new Set([...(aliasReconciliation ? aliases : []), ...(verifiedIdentity ? [mail.itemIdentity.sourceId] : [])].filter(id => id && id !== mail.id))],
       links, ...(issueLinks.length === 1 ? { detailUrl: issueLinks[0] } : {}),
       // Archive identity is internal evidence, never an instruction or a match to
       // a backend request. No exactJoin is derived from message text or headers.
       evidenceRef: proof.id,
+      ...(aliasReconciliation ? { aliasReconciliation } : {}),
     };
     const join = await findJoin(message);
     if (join) message.exactJoin = join;
@@ -123,7 +133,7 @@ function createMailCapture({ db, bridge, graph, archive = createEvidenceArchive(
       const settings = (await db.doc("issueTrackerSettings/current").get()).data();
       const binding = mailReadBinding(settings);
       if (settings?.enabled !== true || !binding || settings.mailAliasesVerified !== true) fail("tracker_mail_not_configured");
-      const mail = await graph.message(supplied);
+      const mail = await (graph.canonicalMessage || graph.message)(supplied);
       const current = (await db.doc("issueTrackerSettings/current").get()).data();
       if (current?.enabled !== true || current.mailAliasesVerified !== true || mailReadBinding(current) !== binding) fail("tracker_capture_configuration_changed");
       const result = await capture(mail, { aliases: [supplied], schedule: true });
@@ -133,7 +143,9 @@ function createMailCapture({ db, bridge, graph, archive = createEvidenceArchive(
       if (!Array.isArray(originalIds) || originalIds.length > 1000 || new Set(originalIds).size !== originalIds.length) fail("tracker_invalid_alias_list");
       const aliases = {}, targets = new Map();
       for (const id of originalIds) {
-        const mail = await graph.message(id);
+        if (typeof graph.canonicalMessage !== "function") fail("tracker_mail_identity_unverified");
+        const mail = await graph.canonicalMessage(id);
+        if (!Identity.validItemIdentity(mail.itemIdentity, mail.id) || mail.itemIdentity.sourceId !== id) fail("tracker_mail_identity_unverified");
         // Two original canonical rows resolving to the same immutable item are
         // a migration conflict, not permission to silently drop a source row.
         if (targets.has(mail.id) && targets.get(mail.id) !== id) fail("tracker_alias_migration_conflict");
@@ -142,6 +154,24 @@ function createMailCapture({ db, bridge, graph, archive = createEvidenceArchive(
         aliases[digest([MAILBOX, id])] = id;
       }
       return { mailbox: MAILBOX, verified: true, emailAliases: aliases, checked: originalIds.length };
+    },
+    async proveAliasGroup(originalIds, { sourceIdTypes = {} } = {}) {
+      if (!Array.isArray(originalIds) || originalIds.length < 2 || originalIds.length > 20 || new Set(originalIds).size !== originalIds.length || typeof graph.canonicalMessage !== "function") fail("tracker_invalid_alias_group");
+      const items = [];
+      for (const requestedId of originalIds) {
+        const mail = await graph.canonicalMessage(requestedId, { sourceIdType: sourceIdTypes[requestedId] || "restId" });
+        items.push({ requestedId, itemIdentity: mail.itemIdentity, mail });
+      }
+      return Identity.aliasGroupProof(items);
+    },
+    async reconcileAliasGroup(proof, { primaryId, schedule = true } = {}) {
+      Identity.verifyAliasGroup(proof);
+      if (!proof.ids.includes(primaryId)) fail("tracker_invalid_alias_group");
+      const archived = await archive("outlook_alias_verification", `${MAILBOX}/${proof.canonicalId}`, proof);
+      return capture(proof.items[0].mail, { aliases: proof.ids, schedule, aliasReconciliation: {
+        schemaVersion: 1, canonicalId: proof.canonicalId, primaryId, retainedIds: proof.ids,
+        evidenceRef: archived.id, proofSha256: archived.sha256,
+      } });
     },
   };
 }

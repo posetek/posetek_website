@@ -16,7 +16,7 @@ MAILBOX = 'dylank@posetek.net'
 API = '/providers/Microsoft.PowerApps/apis/shared_office365'
 BASE = 'https://graph.microsoft.com/v1.0/users/dylank@posetek.net/messages'
 URL_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?[]@!$&'()*+,;=%"
-ITEM_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_+=-'
+ITEM_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_+/=-'
 SECURE = {'secureData': {'properties': ['inputs', 'outputs']}}
 SECURE_INPUTS = {'secureData': {'properties': ['inputs']}}
 SCHEMA = {'type': 'object', 'additionalProperties': False, 'required': ['schemaVersion', 'requestId', 'url'], 'properties': {
@@ -54,6 +54,7 @@ def definition():
     allowed += [f'equals(body(\'Validate_schema\')?[\'schemaVersion\'],1)', f'equals(length({req}),36)']
     allowed += [f"equals(substring({req},{n},1),'-')" for n in [8,13,18,23]]
     allowed += [f"equals(length(split({req},'-')),5)", f'lessOrEquals(length({url}),8192)',
+        f"equals(length(split({tail},'/')),1)",
         f"or(equals({path},{literal(BASE)}),and(equals(take({path},{len(BASE)+1}),{literal(BASE+'/')}),greater(length({tail}),0),lessOrEquals(length({tail}),6144)))"]
     read = action('OpenApiConnection', {'parameters': {'Uri': '@' + url, 'Method': 'GET',
         'CustomHeader1': 'Prefer: IdType="ImmutableId", outlook.body-content-type="html"'},
@@ -66,7 +67,7 @@ def definition():
         # slice explicitly permits a start beyond the collection path's end;
         # substring has bounds-sensitive native behavior unlike Python slicing.
         'Message_id': action('Compose', f'@slice({path},{len(BASE)+1})', {'Message_path':['Succeeded']}),
-        'Decoded_message_id': action('Compose', f"@replace(replace(replace(replace({tail},'%2B','+'),'%2b','+'),'%3D','='),'%3d','=')", {'Message_id':['Succeeded']}),
+        'Decoded_message_id': action('Compose', f"@replace(replace(replace(replace(replace(replace({tail},'%2B','+'),'%2b','+'),'%2F','/'),'%2f','/'),'%3D','='),'%3d','=')", {'Message_id':['Succeeded']}),
         'Invalid_URL_characters': bad_characters(url, URL_CHARS, 'Decoded_message_id'),
         # Collection requests have no ID. Scan one known-allowed sentinel too,
         # so range always gets a positive count without changing the predicate.

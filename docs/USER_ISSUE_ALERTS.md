@@ -6,8 +6,11 @@ Microsoft 365 sends application alerts from `alerts@posetek.net` through the
 existing Power Automate connection. Both PoseTek Cloud Monitoring policies also
 target Dylan only. The prior three-recipient expansion and Resend deliveries are
 historical evidence; their original envelopes and partial outcomes stay intact.
-See [the refinement receipt](../deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json)
-and [the outreach handoff](NOTIFICATION_OUTREACH_REFINEMENT.md).
+See [the current coverage correction](NOTIFICATION_COVERAGE_CORRECTION.md) and
+[its receipt](../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json).
+The [October 2 refinement receipt](../deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json)
+and [outreach handoff](NOTIFICATION_OUTREACH_REFINEMENT.md) retain their dated
+contact, delivery and recovery evidence.
 
 ## Shared issue tracker
 
@@ -35,8 +38,12 @@ a successful flow badge does not establish complete source coverage.
 
 The React application captures uncaught errors, rejected promises, render failures,
 unexpected callable and sign-in failures, failed training-job submission, workout
-save errors with a service code, and catalog upload failures. Expected validation,
-incorrect-password and cancellation outcomes are excluded. Existing `aiIncidents`,
+save errors with a service code, and catalog upload failures. The fourteen
+instrumented social callables retain unsuccessful user attempts, including
+blocking validation, permission, internal, deadline and unavailable failures;
+expected validation is labelled separately. Expected incorrect-password outcomes
+and cancellations do not raise incidents. Other handled failures are covered only
+where their operation is instrumented. Existing `aiIncidents`,
 `fieldReports` and `failureCases` are observed on creation. Cloud Run and Cloud
 Functions ERROR-level logs enter through the dedicated Logging sink and Pub/Sub
 topic; the alert pipeline excludes its own errors and canonical AI log copies.
@@ -44,13 +51,23 @@ An unhandled error before the reporting code loads, a blocked network request or
 an uninstrumented handled failure can still escape detection. Historical static
 marketing/legacy entry points are not instrumented by this application release.
 
-Crashlytics is the native crash recorder. Its per-event Cloud Logging adapter is
-implemented and was tested with a synthetic payload, not a real device crash.
-**Firebase's Crashlytics → Cloud Logging integration and a genuine device export
-remain unverified.** No events appeared in the bounded read-only export check;
-the Firebase console browser connection was unavailable. Enable the iOS app under
-[Firebase integrations](https://console.firebase.google.com/project/kickai-69dd0/settings/integrations),
-then verify an intentional test-device crash after relaunch. Google's
+The validated null-caller source correction keeps missing or rejected anonymous
+credentials as **Action failed** with an unknown actor and unavailable contact.
+It requires the original supported generation-1 function identity, failed outcome,
+operation, code/category and request reference; client-supplied markers are removed.
+Private observations, summaries and workbook annotations preserve that evidence.
+Generic service logs remain service evidence, and no historical actor or failed
+request is inferred from a failure code or similar wording alone. Its isolated
+release acceptance is recorded separately in the correction receipt.
+
+Crashlytics is the native crash recorder. Its per-event Cloud Logging adapter was
+tested with a synthetic payload as an earlier setup check. The October 2–3 console
+review confirms Cloud Logging export **On for the registered iOS app**
+`1:839600313930:ios:bfa3172fbaa7b521e3f8b3`, bundle `Nolan-Jetter.KickAI`.
+**A genuine symbolicated device export remains unverified.** Configuration alone
+does not prove delivery. Verify an identified test-device crash after relaunch
+through the exact export, backend occurrence, Dylan-only delivery and published
+workbook evidence. Google's
 [export setup](https://firebase.google.com/docs/crashlytics/cloud-logging-export)
 describes the console step and possible export delays. Lack of events alone does
 not prove that a link is disabled. Unknown interrupted sessions are labeled with
@@ -99,12 +116,19 @@ staff/admin access. Anonymous reports are labeled anonymous, not guessed identit
 
 ## Delivery contract
 
-An occurrence key binds the original actor and event/request ID. Retries and
-correlated client/server copies do not create another email; distinct attempts or
-different affected users do. Manual reports have individual issue records. Automatic
-issues group by platform, operation, code and kind. Sources without a common
-request ID cannot always be correlated. Repeated reports of the same Error object
-are suppressed in the browser; separate Error objects remain separate attempts.
+Legacy primary occurrence keys bind the original actor and event/request ID.
+Server-owned source claims and bounded branch registries preserve replay identity.
+Client/server observations share an occurrence and send permission only when the
+exact actor/reference and known operation/authorized target evidence are
+compatible. Reused references with conflicting known endpoints, target athletes
+or anonymous sessions remain distinct; missing context cannot choose between
+conflicting branches. Each original observation retains its provenance. Manual
+reports have individual issue records; automatic issues group by platform,
+operation, code and kind. Sources without exact common evidence cannot always be
+correlated. The website supplies a fresh diagnostic UUID per supported social
+invocation, keeping it stable for SDK retries. Bounded Error-object suppression is
+request aware: different scoped attempts retain reused Error objects, while a
+global unhandled copy of an already captured wrapper error is suppressed.
 
 The server-owned outbox freezes each envelope before sending. Dispatch and the
 transactional Microsoft claim both enforce Dylan-only recipients before consuming
@@ -121,9 +145,13 @@ multi-recipient historical jobs require all original recipients to settle and
 preserve partial failure outcomes.
 
 At **9 AM America/Los_Angeles**, a nonempty preceding 9-to-9 reporting period produces
-one summary with incident/crash/report counts, affected accounts or anonymous
-sessions, recurrences, status changes, top issues, unresolved/unverified issues and
-email jobs needing attention. Daylight-saving transitions are tested. The independent
+one source-aware summary distinguishing recorded user attempts, automated service
+failures, diagnostics and confirmed crash evidence, plus recurrences, status
+changes, top issues, unresolved/unverified issues and email jobs needing attention.
+The enumeration must complete the fixed period; partial pagination does not claim
+complete coverage. Incident, actor/reference, action and email-row totals are not
+counts of unique people. Generic diagnostic uploads and unclean exits do not prove
+crashes or interrupted workouts. Daylight-saving transitions are tested. The independent
 Cloud Monitoring policies send alert-pipeline failures and AI-incident notices
 to Dylan independently of the application email provider. Original Outlook rows,
 including repeated notices and unmatched messages, remain in the tracker.
@@ -144,10 +172,13 @@ the verified admin callable. Canonical rules remain owned by the mobile reposito
 |---|---|
 | `userIssueSettings/current` | Collection/delivery gates and activation cutoff |
 | `userIssues` | Grouped status, evidence and latest occurrence |
-| `userIssueOccurrences` | Private original event and optional screenshot |
+| `userIssueOccurrences` | Private original event/contact evidence, optional screenshot and immutable `observations` subcollection |
 | `userIssueActors` | Exact account-to-issue lookup |
+| `userIssueContacts` | Server-owned bounded exact-UID contact cache; lookup failure and last-known evidence remain explicit |
+| `userIssueSourceClaims` | Durable source-observation replay binding to its stable occurrence |
+| `userIssueRequestIdentities` | Bounded server-owned request branches; conflicting or ambiguous evidence remains distinct |
 | `userIssueDays` | Daily counts plus actor/issue aggregation subcollections |
-| `userIssueOutbox` | Immutable email job and signed `receipts` |
+| `userIssueOutbox` | Frozen email job, provider claim/trace state and retained historical `receipts` |
 | `userIssueLimits` | Bounded intake counters |
 
 Missing/invalid settings fail closed. Activation requires `enabled: true`,
@@ -158,5 +189,8 @@ new receipts preserve the original occurrence time. There is no historical scan.
 Disable intake and sending to stop the feature, or only sending to retain intake.
 Never replay delivered jobs or blindly reset uncertain provider attempts.
 
-See [the scoped release guide](../deployments/user-issues/README.md). The [production receipt](../deployment/USER_ISSUE_ALERTS_PRODUCTION.json) records
-the verified website deployment, activation, delivery acceptance and remaining native gates.
+See [the scoped release guide](../deployments/user-issues/README.md). The
+[original production receipt](../deployment/USER_ISSUE_ALERTS_PRODUCTION.json)
+retains initial deployment/activation evidence; the
+[coverage correction receipt](../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
+records the later scoped releases and remaining gates.

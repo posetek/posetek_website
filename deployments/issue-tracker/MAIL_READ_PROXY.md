@@ -5,13 +5,31 @@ Power Automate Outlook connection. It does not establish an Exchange application
 RBAC role. No import, mailbox read, deployment, setting change or shared-workbook
 cutover is implied by the offline tests.
 
+For the October 2–3 correction, the tracker six-function source release is version
+5 with the mail-identity cutover flag explicitly disabled. The old reader's
+ImmutableId preference and corrected inputs were saved through code view; its
+actual export passed exact runtime-definition review and the flow is On. These
+checks do not prove canonical mailbox IDs or same-item alias equivalence. The
+dedicated Graph connection and semantic acceptance remain pending. Do not
+claim all reader/translation changes passed, or enable the separate Graph ID
+translation route from a generated ZIP. Preserve the existing delegated route,
+original email rows and unconfirmed aliases until exact identity proof passes.
+See [the current handoff](../../docs/NOTIFICATION_COVERAGE_CORRECTION.md) and
+[correction receipt](../../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
+for that pending state and later acceptance. No broader mailbox authorization
+is inferred.
+
+## Historical initial reader acceptance
+
 The actual reader `950eee98-d71a-48b8-b0b3-5fa5f2bd3c31` is now imported. Its v3
 saved export passed exact validation at `2026-10-02T08:45:14Z` after the two-action
 collection-path correction below. The reader-only validator also accounts for
 Microsoft omitting empty `runAfter` at exactly the two branch-entry actions;
 null, nonempty and other dependency changes still refuse. Read-only acceptance
-passed at `2026-10-02T09:12:05.266Z`: 72 pages, 143 messages, all 128 legacy
-identity aliases and exact immutable replay. The private audit checked 206
+passed at `2026-10-02T09:12:05.266Z`: 72 pages, 143 messages and replay of all 128
+then-recorded legacy aliases using the connector-returned IDs. Those observations
+did not establish authoritative Graph ID types or canonical same-item mappings.
+The private audit checked 206
 original responses. The receipt explicitly counts one unrelated message whose
 provider response omitted headers; headers remain mandatory for every relevant
 message, the Inbox reference, legacy alias fetches and fresh replay. Body, folder
@@ -19,8 +37,10 @@ and read-state remain mandatory for every item. No capture/publication checkpoin
 was advanced, and no application RBAC claim is made. A different authenticated
 principal was not runtime-tested. Guarded tracker activation passed at
 `2026-10-02T10:13:41.205Z`; independent shared-master revision-eight readback
-subsequently passed. Capture and published coverage remain distinct; full catch-up
-is still in progress.
+subsequently passed. These are historical checkpoints. Current capture/publication
+coverage is recorded separately in the correction receipt.
+
+## Read-only flow contract
 
 `build_mail_read_flow.py` creates a new private import ZIP. Its HTTP trigger permits
 only service principal object `cd9fa4b9-7716-4534-9cf1-620422f48aba`. The one external

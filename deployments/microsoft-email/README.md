@@ -14,20 +14,43 @@ approved three recipients, and a duplicate trigger skipped Outlook sending. Thos
 are historical three-recipient results, not evidence of the new Dylan-only
 configuration. Preserve that [migration receipt](../../deployment/MICROSOFT_EMAIL_PRODUCTION.json).
 Use the [notification refinement receipt](../../deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json)
-for current deployed-source, recipient, recovery, flow-state and delivery evidence.
+for that dated deployed-source, recipient, recovery, flow-state and delivery evidence.
+The later [coverage correction handoff](../../docs/NOTIFICATION_COVERAGE_CORRECTION.md)
+and [receipt](../../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
+record user-issue version 8, tracker version 5, current application release and
+current separate source/publication evidence. Earlier totals and cutoffs remain
+historical; they do not establish the latest mailbox coverage.
 Importing a flow or retaining an older On receipt does not prove that sending has
 been restored after the later Off state; restoration requires fresh verification.
+
+The current email-flow UI is On and shows a trigger concurrency throttling
+warning. Its configured single concurrent run allows eleven waiting runs under
+[Microsoft's concurrency limits](https://learn.microsoft.com/en-us/power-automate/limits-and-config#concurrency-looping-and-debatching-limits).
+The warning indicates admission pressure; it does not prove an active sending
+failure. Visible October 2 runs from 6:24–6:33 PM Pacific are marked Succeeded,
+which does not establish a send after the latest scoped release or recipient
+delivery by itself. Preserve serial execution, send-once claims and disabled
+automatic Outlook Send retries. If fresh pressure persists, investigate paced
+unclaimed wake-ups with bounded backoff; do not replay consumed or uncertain
+claims or disable concurrency to clear the warning.
 
 The event-based shared tracker is live in **PoseTek > Technology > Website > User
 Issue Tracker > PoseTek Issue Tracker.xlsx**. Dylan owns it; Nolan and Taiyo remain
 editors. Backend observers and Outlook arrivals enqueue updates for the native
 Power Automate writer, with independent cloud source catch-up. The Dylan-only
-delegated mailbox reader passed full pagination and immutable-ID acceptance;
-this does not establish Exchange application mailbox RBAC or authorize a broader
-mailbox route. The old hourly Codex updater is **paused by Dylan's request** and
+delegated mailbox reader passed dated pagination and ID replay checks using the
+then-current connector responses. Those observations did not prove authoritative
+Graph ID types or that historical ID forms identify the same physical mailbox
+item. They do not establish Exchange application mailbox RBAC or authorize a
+broader mailbox route. The old hourly Codex updater is **paused by Dylan's request** and
 must remain paused. Capture progress and confirmed workbook publication are
 separate: a pending queue or failed acknowledgement must not be described as a
-fully refreshed workbook. Read the [event tracker receipt](../../deployment/ISSUE_TRACKER_EVENT_PRODUCTION.json)
+fully refreshed workbook. The new mailbox-ID translation connection is not yet
+accepted. The reader's ImmutableId header and corrected inputs were saved through
+code view; the actual export passed exact runtime-definition review and the flow
+is On. This does not establish canonical ID conversion or alias equivalence.
+Retain unconfirmed aliases and every historical row. Read the
+[historical event tracker receipt](../../deployment/ISSUE_TRACKER_EVENT_PRODUCTION.json)
 and [tracker handoff](../../docs/ISSUE_TRACKER_EVENT_FLOW.md).
 
 Dylan has Full Access to the shared sender mailbox. After his explicit approval,
@@ -37,8 +60,9 @@ No email was sent by that permission step. Preserve the existing mailbox grants.
 Dylan manually uploaded the email ZIP; its actual saved export passed exact
 caller, connection, callback, retry and secure-data validation before activation.
 The cloud-mail intake and delegated reader were subsequently activated for the
-shared tracker. Their saved definitions, paging and legacy immutable-ID acceptance
-were verified; see [the reader handoff](../issue-tracker/MAIL_READ_PROXY.md) and the
+shared tracker. Their saved definitions and paging passed the dated acceptance;
+legacy ID replay was a connector observation, not proof of canonical same-item
+aliases. See [the reader handoff](../issue-tracker/MAIL_READ_PROXY.md) and the
 event tracker receipt. Mailbox reading is separate from the email sender's
 permissions and connection.
 

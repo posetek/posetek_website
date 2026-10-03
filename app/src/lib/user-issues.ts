@@ -80,17 +80,37 @@ export async function queueIssue(input: IssueInput, owner: string | null = curre
   void drainIssues(); return input.eventId;
 }
 const recent = new Map<string, number>();
-const capturedErrors = new WeakSet<object>();
+// A wrapper and the global rejection handler can observe the same object. Keep
+// those copies together without hiding a later, distinct callable attempt.
+// Weak keys do not retain errors; each surviving object's request history is bounded.
+const capturedErrors = new WeakMap<object, Set<string>>();
+const ERROR_REQUEST_HISTORY_LIMIT = 32;
+// These endpoints explicitly accept an opaque request reference. Do not inject
+// extra fields into unrelated callables or positional authentication arguments.
+const CORRELATED_CALLABLES = new Set(["getSocialAdminDirectory", "getSocialContext", "getSocialFeed", "getSocialActivity",
+  "saveSocialPreferences", "setSocialVisibility", "getSocialPeople", "socialConnection", "setSocialKudos",
+  "getSocialComments", "saveSocialComment", "reportSocialActivity", "moderateSocialActivity", "getSocialMedia"]);
+const REQUEST_ID = /^[A-Za-z0-9_-]{1,160}$/;
 export function captureIssue(error: unknown, operation: string, context: { playerId?: string; requestId?: string; force?: boolean; ownerUid?: string | null } = {}) {
   if (typeof window === "undefined" || import.meta.env.DEV || !context.force && expectedIssueError(error)) return;
   try {
     const value = error as { code?: string; name?: string; message?: string };
+    if (String(value?.code || "").replace(/^(functions|auth)\//, "") === "cancelled") return;
     const code = String(value?.code || value?.name || "unexpected_error").slice(0, 100);
     const owner = context.ownerUid === undefined ? currentOwner() : context.ownerUid;
     const key = `${owner}:${operation}:${code}:${context.requestId || ""}`;
     if (error && typeof error === "object") {
-      if (capturedErrors.has(error)) return;
-      capturedErrors.add(error);
+      const history = capturedErrors.get(error);
+      const requestKey = context.requestId ? JSON.stringify([owner, operation, context.requestId]) : null;
+      // An unscoped global observer must not duplicate a known wrapper capture.
+      // A new scoped attempt remains distinct even if its transport reuses Error.
+      if (history && (!requestKey || history.has(requestKey))) return;
+      const requests = history || new Set<string>();
+      if (requestKey) {
+        requests.add(requestKey);
+        if (requests.size > ERROR_REQUEST_HISTORY_LIMIT) requests.delete(requests.values().next().value!);
+      }
+      capturedErrors.set(error, requests);
     } else {
       if (Date.now() - (recent.get(key) || 0) < 30000) return;
       recent.set(key, Date.now()); if (recent.size > 100) recent.delete(recent.keys().next().value!);
@@ -104,7 +124,25 @@ export function instrumentIssueCallable<T extends (...args: any[]) => Promise<an
   if (/UserIssue|UserIssues|WorkoutActivity|WorkoutNotificationStatus/.test(name)) return call;
   return (async (...args: Parameters<T>) => {
     const ownerUid = currentOwner();
+    const correlated = CORRELATED_CALLABLES.has(name);
+    const input = args[0];
+    const supplied = input?.requestId || input?.jobId;
+    const requestId = correlated ? crypto.randomUUID()
+      : typeof supplied === "string" && REQUEST_ID.test(supplied) ? supplied : undefined;
+    if (correlated && (input === undefined || input === null || typeof input === "object" && !Array.isArray(input))) {
+      // These callables have no caller-supplied request-ID retry contract. Every
+      // explicit invocation is a new attempt, even when the UI reuses its input.
+      // Firebase's transport retries still receive this same copied argument.
+      args[0] = { ...(input || {}), requestId };
+    }
     try { return await call(...args); }
-    catch (error) { captureIssue(error, name, { ownerUid, requestId: args[0]?.requestId || args[0]?.jobId, playerId: args[0]?.playerId || args[0]?.playerDocumentID }); throw error; }
+    catch (error) {
+      const cancelled = String((error as { code?: string })?.code || "").replace(/^functions\//, "") === "cancelled";
+      if (!cancelled) captureIssue(error, name, { ownerUid, requestId,
+        // The intake server separately verifies access to this requested target;
+        // it is never used as the authenticated actor.
+        playerId: input?.playerId || input?.playerDocumentID || (correlated ? input?.viewAsPlayerId : undefined), force: correlated });
+      throw error;
+    }
   }) as T;
 }

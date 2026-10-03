@@ -12,7 +12,7 @@ function redact(value, max = 2000) {
     .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, "[email]");
 }
 const ID = /^[A-Za-z0-9_-]{1,160}$/;
-const KINDS = ["crash", "error", "report", "interrupted"];
+const KINDS = ["crash", "error", "report", "interrupted", "diagnostic"];
 const STATES = ["new", "investigating", "fixed", "verified", "dismissed"];
 function setting(doc, at) {
   const pilot = doc?.testUids;
@@ -42,7 +42,7 @@ function normalize(data, at, trusted = false) {
     message: redact(data.message), route: clean(data.route, 200).split(/[?#]/)[0],
     requestId: ID.test(data.requestId || "") ? data.requestId : null,
     screenshot: kind === "report" ? screenshot(data.screenshot) : null,
-    severity: kind === "crash" ? "critical" : kind === "report" ? "reported" : "error" };
+    severity: kind === "crash" ? "critical" : kind === "report" ? "reported" : kind === "diagnostic" ? "diagnostic" : "error" };
 }
 // Reporting periods start at 09:00 Pacific, including across DST changes.
 function periodKey(at) {
@@ -51,6 +51,18 @@ function periodKey(at) {
   return Number(parts.hour) < 9 ? new Date(Date.parse(`${date}T12:00:00Z`) - 86400000).toISOString().slice(0, 10) : date;
 }
 function previousPeriod(at) { return new Date(Date.parse(`${periodKey(at)}T12:00:00Z`) - 86400000).toISOString().slice(0, 10); }
+function periodBounds(period) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(period) || new Date(`${period}T12:00:00Z`).toISOString().slice(0, 10) !== period) throw new Error("Invalid reporting period.");
+  // At 9 AM Pacific the DST transition, if any, has already happened. Derive
+  // each endpoint separately so the reporting day can contain 23 or 25 hours.
+  const start = date => {
+    const probe = Date.parse(`${date}T17:00:00Z`);
+    const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", hour: "2-digit", hourCycle: "h23" }).format(probe));
+    return probe + (9 - hour) * 3600000;
+  };
+  const next = new Date(Date.parse(`${period}T12:00:00Z`) + 86400000).toISOString().slice(0, 10);
+  return { lower: start(period), upper: start(next) };
+}
 const dateText = at => new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", dateStyle: "medium", timeStyle: "long" }).format(at);
 function payload(job, id) {
   const snapshot = job.type === "incident" && job.contactSnapshot?.schemaVersion === 1 ? job.contactSnapshot : null;
@@ -69,4 +81,4 @@ function payload(job, id) {
   return { from: FROM, to: [...RECIPIENTS], subject: `[PoseTek ${job.type === "daily" ? "daily summary" : "user issue"}] ${clean(job.title, 130)}`,
     text: lines.join("\n\n"), tags: [{ name: "posetek_issue_outbox", value: id }] };
 }
-module.exports = { FROM, TO, RECIPIENTS, ID, STATES, hash, clean, redact, setting, normalize, screenshot, periodKey, previousPeriod, dateText, payload };
+module.exports = { FROM, TO, RECIPIENTS, ID, STATES, hash, clean, redact, setting, normalize, screenshot, periodKey, previousPeriod, periodBounds, dateText, payload };

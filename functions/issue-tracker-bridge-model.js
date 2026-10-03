@@ -32,7 +32,7 @@ function materialOutbox(job) {
 
 function materialOccurrence(event) {
   if (!event) return null;
-  const value = pick(event, ["eventId", "sessionId", "issueId", "kind", "operation", "code", "platform", "occurredAtMillis", "receivedAtMillis", "build", "device", "description", "message", "route", "requestId", "severity", "reporterUid", "reporterName", "player", "source", "sourceReference", "authenticatedSnapshot", "currentContact"]);
+  const value = pick(event, ["eventId", "sessionId", "issueId", "kind", "operation", "code", "platform", "occurredAtMillis", "receivedAtMillis", "build", "device", "description", "message", "route", "requestId", "severity", "reporterUid", "reporterName", "player", "source", "sourceReference", "authenticatedSnapshot", "currentContact", "classification", "diagnosticSubtype", "callableOutcome", "sourceObservationSummary", "recommendationReview"]);
   if (event.contactLookup) value.contactLookup = pick(event.contactLookup, ["status", "code"]);
   return value;
 }

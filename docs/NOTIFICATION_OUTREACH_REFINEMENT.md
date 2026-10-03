@@ -1,5 +1,14 @@
 # Notification recipients, outreach identity and native tracker recovery
 
+The following dated October 2 results are historical checkpoints. The later
+[coverage correction](NOTIFICATION_COVERAGE_CORRECTION.md) and
+[its production receipt](../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
+record the current application release, user-issue version 8, tracker version 5,
+scoped social observation wrappers and current cloud-workbook verification status. Preserve
+the original revision-121 receipt and its source intervals. Current unknown
+operators, unverified contacts, mailbox alias approval and native device gates
+remain explicit; row counts never establish unique affected-user counts.
+
 The October 2 refinement makes Dylan the only receiver of new application issue,
 status, daily-summary and workout emails and both PoseTek Google Cloud alert
 policies. Nolan and Taiyo retain editing access to the existing shared workbook:

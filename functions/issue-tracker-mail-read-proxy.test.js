@@ -43,10 +43,11 @@ test("proxy pagination preserves opaque nextLink, full HTML and headers without 
 test("URL validation rejects hostile paths before credentials or network but preserves accepted query bytes",async()=>{
   const bad=[URL.replace("dylank","nolanj"),URL.replace("dylank","taiyow"),URL.replace("dylank","alerts"),URL.replace("/users/dylank%40posetek.net","/me"),
     URL.replace("graph.microsoft.com","graph.microsoft.com:443"),URL.replace("graph.microsoft.com","user@graph.microsoft.com"),URL.replace("https:","http:"),
-    URL+"#fragment",URL+"/../messages",URL+"/%2e%2e",URL+"/%2f",URL+"/%252f",URL+"/one/two",URL+"\\other",URL+"?$skiptoken=raw value",URL+"\n",URL+"/one%40two",URL+"/one%3Ftwo"];
+    URL+"#fragment",URL+"/../messages",URL+"/%2e%2e",URL+"/%252f",URL+"/one/two",URL+"\\other",URL+"?$skiptoken=raw value",URL+"\n",URL+"/one%40two",URL+"/one%3Ftwo"];
   for(const url of bad){const f=fixture();await assert.rejects(f.request(url,{item:true}),{code:"tracker_graph_invalid_page"});assert.equal(f.tokenCalls(),0);assert.equal(f.calls.length,0);}
   assert.equal(safeGraphUrl(URL+"?$skiptoken=%2F..%252F%40%23%20"),URL+"?$skiptoken=%2F..%252F%40%23%20");
   assert.equal(safeGraphUrl(URL+"/A_B-c%2BD%3D",true),URL+"/A_B-c%2BD%3D");
+  assert.equal(safeGraphUrl(URL+"/A%2FB%2fC%3D",true),URL+"/A%2FB%2fC%3D");
   assert.throws(()=>safeGraphUrl(URL+"/message"),{code:"tracker_graph_invalid_page"});
 });
 test("wrong endpoint, runtime identity and unverified authorization proof refuse before token/network",async()=>{
@@ -83,7 +84,7 @@ test("revoked or changed proxy proof during read refuses returned evidence; expl
 });
 test("mail proxy endpoint is bound only to arrival/source capture and is included in isolated source package",()=>{
   const source=fs.readFileSync(require.resolve("./issue-tracker-bridge-entrypoints"),"utf8");
-  assert.equal((source.match(/secrets: MAIL_READ_SECRETS/g)||[]).length,1);assert.equal((source.match(/\.\.\.MAIL_READ_SECRETS/g)||[]).length,1);
+  assert.equal((source.match(/secrets: mailReadSecrets/g)||[]).length,1);assert.equal((source.match(/\.\.\.mailReadSecrets/g)||[]).length,1);
   const writer=source.split("drainUserIssueTracker: functions.runWith")[1].split("ingestUserIssueTrackerMail:")[0];assert.doesNotMatch(writer,/MAIL_READ/);
   assert.match(fs.readFileSync(require.resolve("../deployments/issue-tracker/prepare.cjs"),"utf8"),/issue-tracker-mail-read-proxy\.js/);
 });

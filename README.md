@@ -3,7 +3,28 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
-Guided personal workouts are live as deployment `6abeaf5702a9c9983c7a41b9`, source
+The October 2–3 notification coverage correction is published as application
+deployment `6ac06e0d420f2b6b34129fb5`. Full provider and served-content verification
+checked all 1,485 files, preserving the current marketing, protected files and
+platform configuration. The website now assigns fresh request references to supported
+social attempts; compatible backend observations retain both sources, while
+conflicting actions or known targets remain distinct. Ten user-issue functions
+at version 8, six tracker functions at version 5 and fourteen individually scoped
+social endpoints passed exact source/configuration/IAM checks. Read
+[the current handoff](docs/NOTIFICATION_COVERAGE_CORRECTION.md) and
+[correction receipt](deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
+for release and current workbook evidence. Baseline adoption passed with 1,482
+protected application/public files. The historical
+revision-121 results below do not establish the latest source coverage.
+
+Dylan alone receives alerts; Nolan and Taiyo retain shared workbook editing.
+Native Crashlytics export is configured On for the registered iOS app, but the
+owning-Mac/iPhone/TestFlight genuine crash acceptance gate remains held. Approval
+of the new Microsoft mailbox identity-conversion connection remains unconfirmed.
+The hourly Codex updater stays paused. No automatic outreach or historical Resend
+replay is included.
+
+Guided personal workouts were published as deployment `6abeaf5702a9c9983c7a41b9`, source
 `8956871`, published October 1, 2026 at 12:18:33 PM PDT. Players choose focus,
 location, available time and readiness one step at a time; age is confirmed only
 when needed. Code-only assessment and shared deterministic composition produce
@@ -23,7 +44,7 @@ User crash/bug reporting, the protected issue inbox and email operations are
 documented in [User issue alerts](docs/USER_ISSUE_ALERTS.md). Native rollout and
 Crashlytics export verification have separate acceptance gates.
 
-The October 2 refinement makes **`dylank@posetek.net` the only recipient** of new
+The preceding October 2 refinement made **`dylank@posetek.net` the only recipient** of new
 issue, status, daily-summary and workout notifications and both separate PoseTek
 Google Cloud alert policies. Nolan and Taiyo retain editing access to the shared
 Excel workbook in **PoseTek > Technology > Website > User Issue Tracker > PoseTek
@@ -97,15 +118,17 @@ and [PR #14](https://github.com/posetek/posetek_website/pull/14).
 The preceding workspace and Astro release is recorded in
 [its production receipt](deployment/UNIFIED_COACH_WORKSPACE_PRODUCTION.json).
 
-Workout email alerts are live for all players from September 28, 2026 at
+The original workout-alert rollout activated for all players on September 28, 2026 at
 4:06:30 PM PDT. Saved outcomes go to `dylank@posetek.net`; web-observed sessions
 also qualify for an inactivity notice after 30 minutes, processed every five
 minutes. Emails include the player, recorded time/progress and a protected link
 to the exact workout history. Native-only sessions have saved-ending coverage.
-There is no historical backfill. All seven scoped functions, the verified
+There was no historical backfill. At that rollout, all seven scoped functions, the verified
 Resend sender and signed delivery webhook are live. Three synthetic emails
 received delivery receipts, and the final quiet email was confirmed in Outlook
 Inbox. Test records were removed before a fresh all-player activation cutoff.
+The subsequent Microsoft migration replaced Resend for new alerts; the dated
+Resend receipt remains historical evidence.
 
 The preceding workout-alert website checkpoint used source `d814225` and deployment
 `6abadd8abff0a78fde2fbe28`; its baseline protected 1,207 application/public files.
