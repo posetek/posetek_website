@@ -18,7 +18,7 @@ test("one event joins four players and keeps all three assigned phones visible",
  const r=(await report(s)).session;assert.equal(r.participants.length,4);assert.equal(r.rows.length,4);assert.equal(r.stations.length,3);assert.equal(r.stations[2].phones[0].runs,0);assert.equal(r.stations[0].plannedReps,12);assert.equal(r.stations[1].plannedReps,28);assert.equal(r.stations[2].plannedReps,40);assert.equal(r.stations[0].phones[0].installId,uid(9000));
 });
 test("unique throughput excludes partial, failed, undated, unidentified, and reprocessed runs",()=>{
- const base=run();const rows=[base,run(2,{logicalRepId:base.logicalRepId}),run(3,{outcome:"partial"}),run(4,{outcome:"failed"}),run(5,{terminalAt:null}),run(6,{mode:"reprocess"}),run(7,{logicalRepId:null}),run(8,{terminalAt:at+1}),run(9,{terminalAt:at+400000})];
+ const base=run();const rows=[base,run(2,{logicalRepId:base.logicalRepId}),run(3,{outcome:"partial"}),run(4,{outcome:"failed"}),run(5,{terminalAt:null}),run(6,{mode:"reprocess"}),run(7,{logicalRepId:null}),run(8,{terminalAt:at+1}),run(9,{terminalAt:at+400000}),run(10,{dateReliable:false})];
  assert.equal(completionPoints(rows,at+10000).length,1);assert.equal(completionPoints(rows,at+10000)[0].runId,base.runId);
 });
 test("station attribution follows each attempt even when the assigned phone changes",async()=>{

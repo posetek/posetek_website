@@ -22,7 +22,7 @@ const eventRow = (id,e) => ({id,name:label(e.name,"Unnamed testing session"),sta
 function completionPoints(rows, now) {
   const known = new Map();
   for (const r of rows) {
-    if (!r.logicalRepId || r.mode !== "liveCapture" || r.outcome !== "valid" || !validTime(r.terminalAt,now) || r.startedAt === null || r.terminalAt < r.startedAt) continue;
+    if (r.dateReliable === false || !r.logicalRepId || r.mode !== "liveCapture" || r.outcome !== "valid" || !validTime(r.terminalAt,now) || r.startedAt === null || r.terminalAt < r.startedAt) continue;
     const key = `${r.stationId}|${r.playerDocumentID}|${r.logicalRepId}`;
     if (!known.has(key) || known.get(key).at > r.terminalAt) known.set(key, {key,stationId:r.stationId,at:r.terminalAt,runId:r.runId});
   }
