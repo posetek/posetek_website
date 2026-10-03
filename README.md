@@ -3,6 +3,11 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
+For the current coach/admin interface and the next engineering direction, read
+[Kai's dashboard handoff](docs/KAI_DASHBOARD_HANDOFF.md). It covers navigation,
+functionality, metric definitions and verification cases, followed by Dylan's
+open-ended brief for simpler coach use and admin oversight across clubs.
+
 Optional app feedback uses public `/feedback` and verified PoseTek-admin review
 at `/admin/feedback`, including a locally generated QR code and copyable share
 links. Assigned and personal workouts invite only after an acknowledged completed

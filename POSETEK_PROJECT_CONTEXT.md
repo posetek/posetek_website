@@ -4,6 +4,25 @@ Reviewed on October 2–3, 2026. This guide summarizes the available repository 
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
+## Coach and admin engineering handoff for Kai (2026-10-03)
+
+[Kai's dashboard handoff](docs/KAI_DASHBOARD_HANDOFF.md) documents current coach
+Team Insights and the admin workspace, their data definitions, source entry
+points and verification cases. The companion Word document includes desktop
+screen captures and is a generated deliverable kept outside Git. Credentials,
+signup codes and identifiable player screenshots are not included in the shared
+repository handoff.
+
+Dylan's requested direction is to help coaches understand player standing and
+development needs with fewer steps, without making workout prescription a
+required path, and to simplify admin interpretation and oversight across clubs.
+Kai has creative discretion to propose information hierarchy and workflows.
+Automatic reconciliation, exception monitoring and revised navigation are
+directions to explore, not newly released functionality or approved final designs.
+The current membership, qualification, comparison, privacy and release contracts
+remain binding. This documentation review does not change website behavior,
+production records, permissions or deployment.
+
 ## Optional app feedback (2026-10-03)
 
 The current website is Netlify deployment `6ac17bc21377cbeaea114800`, published
