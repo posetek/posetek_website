@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-03",
+  "status": "code complete; callable IAM approval and authenticated release acceptance pending",
+  "applicationSourceCommit": "1750403",
+  "preservedProductionSource": "eb6215a",
+  "website": {
+    "draftDeploymentId": "6ac18baf9e70ce60e8b4baac",
+    "draftUrl": "https://6ac18baf9e70ce60e8b4baac--posetek.netlify.app",
+    "productionDeploymentId": "6ac17bc21377cbeaea114800",
+    "promoted": false,
+    "providerInventoryFiles": 1593,
+    "artifactFilesVerified": 1592,
+    "artifactMismatches": 0,
+    "marketingPreserved": true,
+    "hostedAuthGatePassed": true,
+    "productionPreviewBypassDenied": true,
+    "feedbackHeadersPreserved": true
+  },
+  "backend": {
+    "project": "kickai-69dd0",
+    "region": "us-central1",
+    "unchangedOtherFunctions": 122,
+    "functions": [
+      {
+        "name": "projects/kickai-69dd0/locations/us-central1/functions/getDeviceProcessingV1",
+        "status": "ACTIVE",
+        "runtime": "nodejs22",
+        "entryPoint": "getDeviceProcessingV1",
+        "versionId": "3",
+        "updateTime": "2026-10-03T23:10:44.670Z",
+        "availableMemoryMb": 512,
+        "timeout": "120s",
+        "maxInstances": 10,
+        "eventTrigger": null,
+        "httpsTrigger": {
+          "securityLevel": "SECURE_ALWAYS",
+          "url": "https://us-central1-kickai-69dd0.cloudfunctions.net/getDeviceProcessingV1"
+        },
+        "serviceAccountEmail": "kickai-69dd0@appspot.gserviceaccount.com"
+      },
+      {
+        "name": "projects/kickai-69dd0/locations/us-central1/functions/observeDeviceProcessingManifest",
+        "status": "ACTIVE",
+        "runtime": "nodejs22",
+        "entryPoint": "observeDeviceProcessingManifest",
+        "versionId": "1",
+        "updateTime": "2026-10-03T23:04:18.698750302Z",
+        "availableMemoryMb": 512,
+        "timeout": "120s",
+        "maxInstances": 5,
+        "eventTrigger": {
+          "eventType": "google.storage.object.finalize",
+          "failurePolicy": {
+            "retry": {}
+          },
+          "resource": "projects/_/buckets/kickai-69dd0.firebasestorage.app",
+          "service": "storage.googleapis.com"
+        },
+        "httpsTrigger": null,
+        "serviceAccountEmail": "kickai-69dd0@appspot.gserviceaccount.com"
+      }
+    ],
+    "callablePublicInvoker": false,
+    "sourceSha256": "058ae6072cf4f4bedde6b583d356002d8a52e3230d16742570828e4b1b069d7d",
+    "observerPilotPassed": true,
+    "pilotCleanupVerified": true
+  },
+  "import": {
+    "range": "2026-10-01T07:00:00Z to 2026-10-04T07:00:00Z",
+    "manifests": 65,
+    "runsInManifests": 64,
+    "knownInstallations": 5,
+    "currentPhoneRunsReconciled": 8,
+    "athleteRecordsChanged": false
+  },
+  "checks": {
+    "backendTests": 15,
+    "performanceFrontendTests": 132,
+    "mergedFeedbackNavigationTests": 28,
+    "canonicalRuleDenialAssertions": 60,
+    "releasePreservationTests": 25,
+    "typeScript": true,
+    "productionBuild": true,
+    "browserWidths": [
+      1440,
+      1024,
+      390,
+      320
+    ],
+    "browserPageErrors": 0
+  },
+  "pending": [
+    "Explicit approval of allUsers roles/cloudfunctions.invoker on getDeviceProcessingV1 only",
+    "Normal approval review of that exact IAM action",
+    "Deployed callable admin-success and nonadmin-denial checks",
+    "Authenticated browser acceptance against real summaries",
+    "Promote the exact verified draft and reconcile production inventory"
+  ],
+  "noPushPerformed": true,
+  "rulesDeployed": false,
+  "newNativeBuildRequired": false
+}

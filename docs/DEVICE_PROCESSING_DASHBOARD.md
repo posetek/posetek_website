@@ -1,6 +1,6 @@
 # Phone processing dashboard
 
-Status: implemented and locally verified; production release verification in progress (2026-10-03).
+Status: code complete; backend import/observer and website draft verified. Callable IAM approval and authenticated release acceptance pending (2026-10-03).
 
 The admin overview starts with one condensed table: installation UUID, phone type,
 per-drill successful average time, largest sampled memory footprint, total frame
@@ -93,8 +93,19 @@ import plan contains 65 authoritative manifests, 64 runs, five installation IDs.
 Backend functions are deployed and 65 reviewed manifests were imported. Readback
 reconciles all eight current-source iPhone observations. Callable public-invoker
 permission awaits explicit user approval after automatic review rejected that
-IAM change. Pending: deployed callable/auth and new-upload observer acceptance,
-production website artifact/browser validation. Unknown executing installations
+IAM change. The new-upload observer passed an end-to-end synthetic-object check and cleanup.
+Draft `6ac18baf9e70ce60e8b4baac` has all 1,592 artifact files verified against
+its provider inventory; marketing bytes match production. Hosted admin guards
+and preserved feedback headers passed with zero browser errors. Pending: deployed
+callable/auth, authenticated browser acceptance and promotion of this exact draft.
+See [release receipt](../deployment/DEVICE_PROCESSING_DRAFT.json). Unknown executing installations
 are counted in coverage and never pooled into a fictional phone average.
 The 8 new iPhone observations verify reported data only, not a controlled hardware
 benchmark or a physical-device regression suite.
+
+The local design preview remains running at `http://127.0.0.1:4175/admin?preview=1`
+with clearly labeled synthetic data. Remove `preview=1` to use real data after
+callable reachability is approved and verified. User data is never a public preview
+fallback. Local source is committed and will be merged to main; no remote push
+is authorized or performed. The public production website remains the feedback
+release until the pending acceptance steps pass.

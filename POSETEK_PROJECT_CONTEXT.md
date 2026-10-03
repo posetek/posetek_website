@@ -4,14 +4,17 @@ Reviewed on October 2–3, 2026. This guide summarizes the available repository 
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
-## Device performance integration (2026-10-03, in progress)
+## Device performance integration (2026-10-03, acceptance pending)
 
-The existing ingestion, reporting and admin device pages are implemented locally.
-The current task integrates them with the shared website and adds summaries from
-existing diagnostic manifests, current-algorithm comparisons, a home overview and
-per-session charts. Backend-derived summaries support current TestFlight builds;
-new native performance facts are optional enrichment. Deployment and end-to-end
-verification remain pending. See [the handoff](docs/DEVICE_PERFORMANCE_PLAN_HANDOFF.md).
+The admin home phone table, selected-phone drill table and detailed session/run
+charts are implemented and verified locally. Existing TestFlight diagnostics now
+feed a deployed backend observer; 65 historical manifests were imported and the
+observer pilot passed with cleanup. A reviewed website draft is ready at
+`6ac18baf9e70ce60e8b4baac`; production is unchanged. Automatic approval review
+requires explicit user approval for the callable's public invoker reachability.
+Authenticated API/browser acceptance and draft promotion remain pending. See
+[the dashboard contract](docs/DEVICE_PROCESSING_DASHBOARD.md) and
+[the exact receipt](deployment/DEVICE_PROCESSING_DRAFT.json).
 
 ## Optional app feedback (2026-10-03)
 
