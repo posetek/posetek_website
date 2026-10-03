@@ -220,7 +220,7 @@ function createDeviceProcessingReports({ db, HttpsError, now = Date.now }) {
     const chosen=filtered.filter(r=>!sessionId||r.sessionId===sessionId).sort((a,b)=>(a.startedAt||a.capturedAt)-(b.startedAt||b.capturedAt)||a.runId.localeCompare(b.runId));
     const inventoryRows=inventory.map(d=>d.data());
     const known=new Map(inventoryRows.map(d=>[d.installId,d]));
-    for(const r of allRuns) if(!known.has(r.installId)) known.set(r.installId,{installId:r.installId,machine:r.machine,label:null,lastCapturedAt:r.capturedAt,lastReceivedAt:null});
+    for(const r of allRuns) if(r.installId && !known.has(r.installId)) known.set(r.installId,{installId:r.installId,machine:r.machine,label:null,lastCapturedAt:r.capturedAt,lastReceivedAt:null});
     const phones=[...known.values()].filter(p=>!install||p.installId===install).map(p=>({
       installId:p.installId,label:p.label||null,machine:p.machine||null,osVersion:p.osVersion||null,
       lastCapturedAt:p.lastCapturedAt||null,lastReceivedAt:p.lastReceivedAt||null,

@@ -90,3 +90,10 @@ test("obsolete storage generation is acknowledged instead of retried forever",as
  const bucket={file:()=>({download:async()=>{throw Object.assign(new Error("Gone"),{code:404});}})};
  assert.equal((await createDiagnosticPerformance({db,bucket,FieldValue}).importObject({bucket:BUCKET,name:f.path,generation:"100",size:100})).status,"superseded");
 });
+
+test("unknown execution identities are coverage gaps, not one combined fictional phone",async()=>{
+ const a=summary(1),b=summary(2);a.runs[0].installId=b.runs[0].installId=null;
+ const db=new FakeFirestore({[`${ROOT}/${a.attemptId}`]:a,[`${ROOT}/${b.attemptId}`]:b});
+ const result=await createDeviceProcessingReports({db,HttpsError,now:()=>at+1000000}).report({startDate:"2026-10-02",endDate:"2026-10-02",algorithm:"all"},admin);
+ assert.equal(result.phones.length,0);assert.equal(result.coverage.unknownDevice,2);
+});

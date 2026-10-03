@@ -83,14 +83,18 @@ node scripts/device-processing-backfill.cjs --from 2026-10-01T07:00:00Z --until 
 node scripts/device-processing-backfill.cjs --apply --plan /private/tmp/processing-plan.json --output /private/tmp/processing-import.json
 ```
 
-Verified locally: 14 backend tests, 12 focused frontend/navigation tests,
+Verified locally: 15 backend tests, 132 performance/frontend tests plus 28 merged feedback/navigation tests,
 TypeScript, canonical-rule emulator (60 client-denial assertions), and Chromium
 at 1440/1024/390/320 widths. Phone selection, detail navigation and chart-to-run
 opening passed; no page errors or document-width overflow. Private source-data
 checks normalized 133 cached manifests without errors. The fresh October 1–3
 import plan contains 65 authoritative manifests, 64 runs, five installation IDs.
 
-Pending: scoped backend deployment, historical import, deployed callable/auth
-and new-upload observer readback, production website artifact/browser validation.
+Backend functions are deployed and 65 reviewed manifests were imported. Readback
+reconciles all eight current-source iPhone observations. Callable public-invoker
+permission awaits explicit user approval after automatic review rejected that
+IAM change. Pending: deployed callable/auth and new-upload observer acceptance,
+production website artifact/browser validation. Unknown executing installations
+are counted in coverage and never pooled into a fictional phone average.
 The 8 new iPhone observations verify reported data only, not a controlled hardware
 benchmark or a physical-device regression suite.
