@@ -106,6 +106,6 @@ benchmark or a physical-device regression suite.
 The local design preview remains running at `http://127.0.0.1:4175/admin?preview=1`
 with clearly labeled synthetic data. Remove `preview=1` to use real data after
 callable reachability is approved and verified. User data is never a public preview
-fallback. Local source is committed and will be merged to main; no remote push
+fallback. Local source is committed and merged to main; no remote push
 is authorized or performed. The public production website remains the feedback
 release until the pending acceptance steps pass.

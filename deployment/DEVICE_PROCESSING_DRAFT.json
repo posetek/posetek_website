@@ -37,7 +37,8 @@
           "securityLevel": "SECURE_ALWAYS",
           "url": "https://us-central1-kickai-69dd0.cloudfunctions.net/getDeviceProcessingV1"
         },
-        "serviceAccountEmail": "kickai-69dd0@appspot.gserviceaccount.com"
+        "serviceAccountEmail": "kickai-69dd0@appspot.gserviceaccount.com",
+        "adapterSourceSha256": "058ae6072cf4f4bedde6b583d356002d8a52e3230d16742570828e4b1b069d7d"
       },
       {
         "name": "projects/kickai-69dd0/locations/us-central1/functions/observeDeviceProcessingManifest",
@@ -58,11 +59,11 @@
           "service": "storage.googleapis.com"
         },
         "httpsTrigger": null,
-        "serviceAccountEmail": "kickai-69dd0@appspot.gserviceaccount.com"
+        "serviceAccountEmail": "kickai-69dd0@appspot.gserviceaccount.com",
+        "adapterSourceSha256": "586e33f3ec95df982cb921ddbdc88028d8e9cf0e266e87b44fd7128bda35ef5b"
       }
     ],
     "callablePublicInvoker": false,
-    "sourceSha256": "058ae6072cf4f4bedde6b583d356002d8a52e3230d16742570828e4b1b069d7d",
     "observerPilotPassed": true,
     "pilotCleanupVerified": true
   },
