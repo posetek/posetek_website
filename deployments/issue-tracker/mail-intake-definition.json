@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "$authentication": { "defaultValue": {}, "type": "SecureObject" },
+    "$connections": { "defaultValue": {}, "type": "Object" },
+    "trackerIngressSecret": { "defaultValue": "REPLACE_PRIVATE_TRACKER_INGRESS_SECRET_BEFORE_IMPORT", "type": "SecureString" }
+  },
+  "triggers": {
+    "When_a_new_email_arrives": {
+      "type": "OpenApiConnectionNotification",
+      "inputs": {
+        "parameters": { "folderPath": "Inbox", "includeAttachments": false, "fetchOnlyWithAttachment": false, "importance": "Any" },
+        "host": { "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365", "connectionName": "shared_office365", "operationId": "OnNewEmailV3" },
+        "authentication": "@parameters('$authentication')"
+      },
+      "splitOn": "@triggerOutputs()?['body/value']",
+      "runtimeConfiguration": { "secureData": { "properties": ["inputs", "outputs"] } }
+    }
+  },
+  "actions": {
+    "Queue_authoritative_mail_lookup": {
+      "type": "Http",
+      "runAfter": {},
+      "inputs": {
+        "uri": "https://us-central1-kickai-69dd0.cloudfunctions.net/ingestUserIssueTrackerMail",
+        "method": "POST",
+        "headers": { "Content-Type": "application/json", "X-PoseTek-Tracker-Key": "@parameters('trackerIngressSecret')" },
+        "body": { "schemaVersion": 1, "mailbox": "dylank@posetek.net", "message": { "id": "@triggerBody()?['id']" } },
+        "retryPolicy": { "type": "exponential", "count": 4, "interval": "PT30S", "minimumInterval": "PT20S", "maximumInterval": "PT5M" }
+      },
+      "runtimeConfiguration": { "secureData": { "properties": ["inputs", "outputs"] } }
+    }
+  },
+  "outputs": {}
+}

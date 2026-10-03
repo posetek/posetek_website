@@ -5,6 +5,7 @@ const { isClubAdmin } = require("./club-access");
 const { playerSegment } = require("./athlete-storage-paths");
 const { millis, workoutEvents } = require("./insights-v2-qualification");
 const { RECIPIENT, FROM } = require("./workout-notifications-provider");
+const Microsoft = require("./microsoft-email-model");
 const QUIET_MS = 30 * 60000, RETRY_WINDOW_MS = 23 * 3600000, LEASE_MS = 120000;
 const SOURCES = ["workoutLogs", "personalWorkoutLogs"];
 const TYPES = ["resume", "progress", "pause", "heartbeat"];
@@ -20,7 +21,7 @@ function settingsValue(doc, now) {
   const validPilot = testPlayerIds === undefined || Array.isArray(testPlayerIds) && testPlayerIds.length >= 1 && testPlayerIds.length <= 50
     && testPlayerIds.every(playerSegment) && new Set(testPlayerIds).size === testPlayerIds.length;
   return { enabled: doc?.enabled === true && activatedAtMillis !== null && activatedAtMillis <= now && validPilot,
-    sendEnabled: doc?.sendEnabled === true, activatedAtMillis, recipient: RECIPIENT, quietMinutes: 30,
+    sendEnabled: doc?.sendEnabled === true, emailProvider: doc?.emailProvider, activatedAtMillis, recipient: RECIPIENT, quietMinutes: 30,
     pilot: testPlayerIds !== undefined, testPlayerIds: validPilot && testPlayerIds !== undefined ? testPlayerIds : null };
 }
 function playerIncluded(settings, playerId) { return !settings.pilot || settings.testPlayerIds?.includes(playerId) === true; }
@@ -279,6 +280,9 @@ function createWorkoutNotifications({ db, HttpsError, provider, now = Date.now, 
       if (!settings.enabled || !settings.sendEnabled) return null;
       const ref = outboxRef(id), snapshot = await tx.get(ref), job = snapshot.data();
       if (!job || FINAL_DELIVERY.has(job.status) || !job.dispatchAfterMillis || job.dispatchAfterMillis > at) return null;
+      const deliveryProvider = Microsoft.providerFor(job, settings);
+      const microsoftConfig = deliveryProvider === "microsoft" ? (await tx.get(db.doc(Microsoft.SETTINGS))).data() : null;
+      if (!deliveryProvider || deliveryProvider === "microsoft" && (!Microsoft.enabled(microsoftConfig, "workout", id, job.createdAtMillis, at) || job.microsoft?.claimedAtMillis)) return null;
       const stateRef = activityRef(job.executionId), state = (await tx.get(stateRef)).data();
       const logDoc = await tx.get(logRef(job.playerId, job.source, job.logId)), log = logDoc.data();
       const records = await related(tx, job.playerId);
@@ -294,34 +298,37 @@ function createWorkoutNotifications({ db, HttpsError, provider, now = Date.now, 
       // Reconcile the actual saved version inside this transaction before any
       // external request can claim that the execution has been quiet.
       if (job.eventType === "inactivity" && reconcileQuiet(tx, stateRef, state, logDoc, snapshot, at)) return null;
-      if (job.firstAttemptAtMillis && at >= job.firstAttemptAtMillis + RETRY_WINDOW_MS) {
+      if (deliveryProvider === "resend" && job.firstAttemptAtMillis && at >= job.firstAttemptAtMillis + RETRY_WINDOW_MS) {
         tx.update(ref, { status: "needs_review", dispatchAfterMillis: null, leaseId: null, failureMessage: "The safe email retry window expired; delivery needs review." }); return null;
       }
       const summary = job.payload ? job.summary : snapshotSummary(job.playerId, job.source, job.logId, log, records.player, records.org, records.team, state, at);
-      const payload = job.payload || emailPayload(summary, job.eventType, id), leaseId = randomId();
-      tx.update(ref, { status: "sending", leaseId, summary, payload, dispatchAfterMillis: at + LEASE_MS, lastAttemptAtMillis: at,
+      const rawPayload = job.payload || emailPayload(summary, job.eventType, id), leaseId = randomId();
+      const route = deliveryProvider === "microsoft" && !job.microsoft ? Microsoft.freeze("workout", id, rawPayload, microsoftConfig, at,
+        { logPath: logRef(job.playerId, job.source, job.logId).path, fingerprint: savedFingerprint(log) }) : { deliveryProvider, payload: rawPayload };
+      const payload = route.payload;
+      tx.update(ref, { ...route, status: "sending", leaseId, summary, dispatchAfterMillis: at + LEASE_MS, lastAttemptAtMillis: at,
         deliveryUncertain: job.deliveryUncertain === true || job.status === "sending",
         firstAttemptAtMillis: job.firstAttemptAtMillis || at, attempts: (job.attempts || 0) + 1, failureMessage: null });
-      return { ...job, summary, payload, leaseId, firstAttemptAtMillis: job.firstAttemptAtMillis || at, attempts: (job.attempts || 0) + 1 };
+      return { ...job, ...route, summary, payload, leaseId, firstAttemptAtMillis: job.firstAttemptAtMillis || at, attempts: (job.attempts || 0) + 1 };
     });
     if (!claimed) return;
     let result, error;
-    try { result = await provider.send(claimed.payload, `posetek-workout/${id}`); } catch (caught) { error = caught; }
+    try { result = await provider.send(claimed.payload, `posetek-workout/${id}`, { ...claimed, kind: "workout", id }); } catch (caught) { error = caught; }
     await db.runTransaction(async tx => {
       const ref = outboxRef(id), latest = (await tx.get(ref)).data();
       if (!latest || latest.leaseId !== claimed.leaseId || latest.status !== "sending") return;
       const at = now();
-      if (result?.id) {
+      if (result?.id && claimed.deliveryProvider !== "microsoft") {
         tx.update(ref, { status: "accepted", providerId: result.id, acceptedAtMillis: at, dispatchAfterMillis: null, leaseId: null, failureMessage: null });
         if (claimed.eventType === "inactivity") tx.set(activityRef(claimed.executionId), { inactivityNotified: true }, { merge: true });
       } else {
         const delay = Math.max(Math.min(3600000, 60000 * 2 ** Math.min(claimed.attempts - 1, 6)), Number(error?.retryAfterMs) || 0);
-        const expired = at + delay >= claimed.firstAttemptAtMillis + RETRY_WINDOW_MS, needsReview = expired || error?.permanent && latest.deliveryUncertain;
+        const expired = claimed.deliveryProvider !== "microsoft" && at + delay >= claimed.firstAttemptAtMillis + RETRY_WINDOW_MS, needsReview = expired || error?.permanent && latest.deliveryUncertain;
         tx.update(ref, { status: needsReview ? "needs_review" : error?.permanent ? "failed" : "pending", leaseId: null,
           dispatchAfterMillis: error?.permanent || expired ? null : at + delay,
           deliveryUncertain: latest.deliveryUncertain === true || !error?.permanent,
-          failureMessage: needsReview ? "Email acceptance remains uncertain; delivery needs review." : error?.permanent ? "The email provider rejected this request; operator action is required." : "The email attempt was not confirmed. A safe retry is scheduled.",
-          failureCode: /^provider_[a-z0-9_]{1,50}$/.test(error?.code || "") ? error.code : "provider_uncertain" });
+        failureMessage: needsReview ? "Email acceptance remains uncertain; delivery needs review." : claimed.deliveryProvider === "microsoft" ? "Waiting for the Microsoft send claim or receipt; no second send is authorized." : error?.permanent ? "The email provider rejected this request; operator action is required." : "The email attempt was not confirmed. A safe retry is scheduled.",
+          failureCode: result?.pending ? null : /^provider_[a-z0-9_]{1,50}$/.test(error?.code || "") ? error.code : "provider_uncertain" });
       }
     });
   }
@@ -347,7 +354,7 @@ function createWorkoutNotifications({ db, HttpsError, provider, now = Date.now, 
     return { settings: { enabled: settings.enabled, sendEnabled: settings.enabled && settings.sendEnabled, recipient: RECIPIENT, quietMinutes: 30,
       pilot: settings.pilot, playerIncluded: playerIncluded(settings, data.playerId) },
       notifications: [terminal, quiet].filter(row => row.exists).map(row => {
-        const value = row.data(); return Object.fromEntries(["id", "eventType", "status", "createdAtMillis", "lastAttemptAtMillis", "acceptedAtMillis", "deliveredAtMillis", "failureMessage"].map(key => [key, value[key] ?? null]));
+        const value = row.data(); return Object.fromEntries(["id", "eventType", "status", "createdAtMillis", "lastAttemptAtMillis", "acceptedAtMillis", "deliveredAtMillis", "deliveryObservedAtMillis", "deliveryProvider", "failureMessage"].map(key => [key, value[key] ?? null]));
       }), activity: state ? { lastActivityAtMillis: state.lastActivityAtMillis, lastSeenAtMillis: state.lastSeenAtMillis || null,
         lastSignal: state.lastSignal, blockId: state.blockId || null, webObserved: state.webObserved === true,
         quietDueAtMillis: state.quietDueAtMillis || null, inactivityNotified: state.inactivityNotified === true } : null,
@@ -367,7 +374,7 @@ function createWorkoutNotifications({ db, HttpsError, provider, now = Date.now, 
       const ref = outboxRef(id), job = (await tx.get(ref)).data(), receiptRef = ref.collection("webhookEvents").doc(hash(eventId));
       const receipt = await tx.get(receiptRef);
       if (receipt.exists) return { duplicate: true };
-      if (!job?.firstAttemptAtMillis || !job.payload || (job.providerId && job.providerId !== providerId)
+      if (!job?.firstAttemptAtMillis || job.deliveryProvider === "microsoft" || !job.payload || (job.providerId && job.providerId !== providerId)
         || eventAt < job.firstAttemptAtMillis - 300000 || ![FROM, "workouts@alerts.posetek.net"].includes(event.data.from)
         || !Array.isArray(event.data.to) || event.data.to.length !== 1 || event.data.to[0] !== RECIPIENT) return { ignored: true };
       const digest = hash(event);
@@ -386,4 +393,4 @@ function createWorkoutNotifications({ db, HttpsError, provider, now = Date.now, 
   return { observe, recordWorkoutActivity, getWorkoutNotificationStatus, dispatch, sweep, queueQuiet, webhook };
 }
 
-module.exports = { createWorkoutNotifications, executionIdentity, emailPayload, settingsValue, snapshotSummary, ending, QUIET_MS, RETRY_WINDOW_MS, LEASE_MS };
+module.exports = { createWorkoutNotifications, executionIdentity, emailPayload, settingsValue, snapshotSummary, ending, savedFingerprint, QUIET_MS, RETRY_WINDOW_MS, LEASE_MS };

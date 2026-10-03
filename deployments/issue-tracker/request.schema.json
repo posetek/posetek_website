@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "batchId", "workbookKey", "expectedRevision", "generatedAt", "changes", "payloadSha256"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "enum": [1] },
+    "batchId": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "workbookKey": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "expectedRevision": { "type": "integer", "minimum": 0 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "payloadSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "changes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actions", "instances", "emails", "dailyRows"],
+      "properties": {
+        "actions": { "type": "array", "maxItems": 150, "items": { "$ref": "#/definitions/row" } },
+        "instances": { "type": "array", "maxItems": 150, "items": { "$ref": "#/definitions/row" } },
+        "emails": { "type": "array", "maxItems": 150, "items": { "$ref": "#/definitions/row" } },
+        "dailyRows": { "type": "array", "maxItems": 150, "items": { "$ref": "#/definitions/row" } }
+      }
+    }
+  },
+  "definitions": {
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "expectedMachineSha256", "values", "links"],
+      "properties": {
+        "key": { "type": "string", "minLength": 1, "maxLength": 1024 },
+        "expectedMachineSha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+        "values": { "type": "object", "additionalProperties": { "type": ["string", "number", "boolean"] } },
+        "links": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    }
+  }
+}
