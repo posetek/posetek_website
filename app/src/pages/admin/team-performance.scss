@@ -1,0 +1,61 @@
+.pt-admin .team-performance {
+  min-width:0;
+  > * { min-width:0; }
+  .team-auto { display:flex; gap:8px; align-items:center; font-size:12px; color:var(--text-muted); min-height:44px; }
+  .team-session-picker { margin:0 0 24px; justify-content:space-between; }
+  .team-session-picker .dp-field { flex:1 1 300px; max-width:600px; }
+  .team-session-title,.team-section-heading { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin:0 0 20px; }
+  .team-session-title h2 { font-size:25px; margin:0; }
+  .team-session-status { border:1px solid var(--surface-border); padding:8px 12px; border-radius:20px; font-size:12px; color:var(--accent); }
+  .team-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1px; background:var(--surface-border); border:1px solid var(--surface-border); border-radius:12px; overflow:hidden; margin-bottom:20px; }
+  .team-kpis > div { display:grid; gap:6px; padding:20px; background:var(--surface-1); }
+  .team-kpis small { font-size:12px; }
+  .team-kpis strong { font-size:29px; letter-spacing:-1px; }
+  .team-kpis strong span,.team-station-count strong span { font-size:18px; color:var(--text-muted); font-weight:400; }
+  .team-stations,.team-events { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-bottom:24px; }
+  .team-station { padding:20px; border-top:3px solid; min-width:0; }
+  .team-station h3 { margin:8px 0 16px; font-size:19px; }
+  .team-phone { display:grid; gap:5px; text-decoration:none; color:var(--text-primary); margin-bottom:12px; }
+  .team-phone code { color:var(--text-muted); font-size:11px; }
+  .team-phone:hover strong { color:var(--accent); }
+  .team-station-count { display:flex; gap:8px; align-items:baseline; margin-top:22px; }
+  .team-station-count strong { font-size:29px; }
+  .team-station-count > span { font-size:12px; color:var(--text-muted); }
+  progress { width:100%; height:5px; margin:12px 0; accent-color:var(--accent); }
+  .team-station-stats { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:8px 0 0; }
+  .team-station-stats dt { font-size:11px; color:var(--text-muted); }
+  .team-station-stats dd { font-size:14px; margin:4px 0 0; }
+  .team-section-heading h2,.team-operations h2 { font-size:20px; margin:5px 0; }
+  .team-tabs { display:flex; flex-wrap:wrap; gap:4px; border-bottom:1px solid var(--surface-border); padding-bottom:10px; margin-bottom:16px; }
+  .team-tabs button { background:none; color:var(--text-muted); font:inherit; font-size:13px; min-height:40px; border:1px solid transparent; padding:8px 14px; border-radius:8px; cursor:pointer; }
+  .team-tabs button[aria-pressed=true] { color:var(--text-primary); border-color:var(--surface-border); background:var(--surface-2); }
+  .team-chart { width:100%; min-width:0; }
+  .team-chart svg { width:100%; height:auto; display:block; }
+  .team-chart text { fill:var(--text-muted); font:12px system-ui,sans-serif; }
+  .team-chart .team-failure-mark { fill:var(--status-danger); font-size:27px; font-weight:600; }
+  .team-chart a:focus-visible circle { stroke:var(--text-primary); stroke-width:4px; }
+  .team-chart a:focus-visible text { text-decoration:underline; }
+  .team-grid { stroke:var(--surface-border); stroke-width:1; }
+  .team-legend { display:flex; flex-wrap:wrap; gap:10px 24px; margin:6px 0 12px; }
+  .team-legend span { display:flex; gap:7px; align-items:center; font-size:12px; color:var(--text-muted); }
+  .team-legend i { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .team-operations { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .dp-table small { display:block; font-size:11px; line-height:1.5; margin-top:4px; }
+  .team-rotation { width:100%; min-width:640px; }
+  .team-runs { min-width:1500px; font-size:12px; }
+  .team-runs th,.team-runs td { padding:12px; vertical-align:top; }
+  .team-runs th { width:210px; }
+  .team-runs code { display:block; font-size:10px; max-width:210px; margin-top:4px; }
+  .team-runs td:last-child { max-width:240px; }
+  .team-runs details p { overflow-wrap:anywhere; }
+  .team-selected { background:color-mix(in srgb,var(--accent) 12%,transparent); outline:1px solid var(--accent); scroll-margin-top:120px; }
+  .team-outcome { display:inline-block; border-radius:5px; padding:4px 7px; background:var(--surface-2); }
+  .outcome-valid { color:var(--accent); }
+  .outcome-failed,.outcome-partial { color:#ffad9e; }
+  .team-events > a { padding:20px; color:var(--text-primary); text-decoration:none; }
+  .team-events h2 { font-size:19px; }
+  .team-events a:hover { border-color:var(--accent); }
+  .team-coverage p { color:var(--text-muted); font-size:13px; line-height:1.6; }
+  @media(max-width:1000px) { .team-operations { grid-template-columns:1fr; } .team-stations { gap:10px; } .team-station { padding:14px; } }
+  @media(max-width:700px) { .team-stations,.team-events { grid-template-columns:1fr; } .team-kpis { grid-template-columns:1fr 1fr; } .team-kpis > div { padding:16px; } .dp-section { padding:14px; } .team-chart svg { min-width:620px; } .team-chart { overflow-x:auto; } .team-section-heading { align-items:stretch; } .dp-field { flex:1 1 140px; } .team-tabs button { padding:8px 10px; } }
+}

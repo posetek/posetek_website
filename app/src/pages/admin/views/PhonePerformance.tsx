@@ -48,7 +48,7 @@ export default function PhonePerformance({preview=false,compact=false}:{preview?
         {compact?<h2>Processing on your phones</h2>:<h1>{installId?device?.label||phoneModel(device?.machine||null):"Phone performance"}</h1>}
         <p>{compact?"Current-algorithm results, with each phone and drill kept separate.":"Measured processing, frame workload and memory from the diagnostic uploads your phones already send."}</p>
         {report&&<p className="dp-muted">Current release: {report.current.label} · Updated {time(report.generatedAt,report.period.timeZone)} · Organization/team selectors do not filter phones.</p>}
-      </div><div className="dp-actions"><button className="quiet-button" type="button" onClick={()=>{change({phoneCursor:null});setReload(x=>x+1);}}>Refresh</button>
+      </div><div className="dp-actions"><Link className="quiet-button" to={`/admin/device-performance/team-sessions${preview?"?preview=1":""}`}>Team testing sessions</Link><button className="quiet-button" type="button" onClick={()=>{change({phoneCursor:null});setReload(x=>x+1);}}>Refresh</button>
         {compact&&<Link className="quiet-button" to={link(null)}>View all phones</Link>}</div>
     </div>
     {preview&&<p className="admin-banner warn">Synthetic preview — these are invented measurements for design review.</p>}

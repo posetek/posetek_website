@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-03",
+  "status": "backend live; website draft verified; explicit callable invoker approval and authenticated browser acceptance pending",
+  "applicationSourceCommit": "dabd60c4f5f75468b79832d90fb2a73882aa0fca",
+  "website": {
+    "draftDeploymentId": "6ac1911a5b925767ec7362b8",
+    "draftUrl": "https://6ac1911a5b925767ec7362b8--posetek.netlify.app",
+    "productionDeploymentId": "6ac17bc21377cbeaea114800",
+    "promoted": false,
+    "providerInventoryFiles": 1596,
+    "artifactMismatches": 0,
+    "marketingPreserved": true,
+    "unauthenticatedAdminGatePassed": true,
+    "productionPreviewBypassDenied": true,
+    "feedbackHeadersPreserved": true
+  },
+  "backend": {
+    "unrelatedFunctionsUnchanged": 122,
+    "changed": [
+      "observeDeviceProcessingManifest",
+      "getDeviceProcessingV1"
+    ],
+    "functions": [
+      {
+        "name": "getDeviceProcessingV1",
+        "version": "4",
+        "status": "ACTIVE",
+        "sourceCommit": "dabd60c4f5f75468b79832d90fb2a73882aa0fca",
+        "verifiedSourceFiles": 16,
+        "sourceMismatches": [],
+        "https": {
+          "securityLevel": "SECURE_ALWAYS",
+          "url": "https://us-central1-kickai-69dd0.cloudfunctions.net/getDeviceProcessingV1"
+        },
+        "iamBindings": []
+      },
+      {
+        "name": "observeDeviceProcessingManifest",
+        "version": "2",
+        "status": "ACTIVE",
+        "sourceCommit": "5d4185bb64ecc79efdf07204a41ca644966b7f34",
+        "verifiedSourceFiles": 16,
+        "sourceMismatches": [],
+        "https": null,
+        "iamBindings": []
+      }
+    ]
+  },
+  "backfill": {
+    "from": "2026-09-30T07:00:00Z",
+    "until": "2026-10-04T07:00:00Z",
+    "manifestsImported": 238,
+    "runs": 235,
+    "knownInstallations": 8,
+    "rejected": 0,
+    "derivedSummaryVersion": 2,
+    "sourceDiagnosticsOrPlayerWrites": 0
+  },
+  "verification": {
+    "backendTests": 29,
+    "frontendAndNavigationTests": 18,
+    "typescript": "passed",
+    "productionPreservationBuild": "passed",
+    "cachedRealManifestsNormalized": 133,
+    "liveFirestoreEventsRead": 5,
+    "activeFourPlayerEventCoverageGaps": 0,
+    "browserWidths": [
+      1440,
+      1024,
+      390,
+      320
+    ],
+    "browserMetricSwitches": 6,
+    "browserErrors": 0,
+    "chartFocusPagination": "passed",
+    "failureToRunNavigation": "passed",
+    "authenticatedCallableBrowserAcceptance": "pending invoker permission"
+  },
+  "pendingPermission": {
+    "function": "getDeviceProcessingV1",
+    "member": "allUsers",
+    "role": "roles/cloudfunctions.invoker",
+    "reason": "Automatic approval review rejected the production invocation-boundary change; a specific user approval is required. Admin authentication remains enforced in the handler."
+  },
+  "promotion": "Promote this exact verified draft only after the approved permission change, denial checks and real admin browser acceptance. Preserve production marketing and feedback, reconcile the baseline, and record the final release. No push authorized."
+}

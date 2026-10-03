@@ -4,6 +4,18 @@ Reviewed on October 2–3, 2026. This guide summarizes the available repository 
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
+## Team testing session dashboard (2026-10-03)
+
+Device performance now links to an event-level three-station dashboard, with all
+players, shared metric charts, deduplicated throughput, failures, sync progress
+and a per-run table. It reads the existing TestFlight event/station identities.
+No native build is needed for this page. See [the contract and verification](docs/TEAM_SESSION_PERFORMANCE.md).
+The backend is deployed (callable v4, observer v2); 238 manifests were imported.
+The exact website draft is `6ac1911a5b925767ec7362b8`, source `dabd60c`, with all
+artifacts verified and production unchanged. See [the release receipt](deployment/TEAM_SESSION_PERFORMANCE_DRAFT.json).
+The existing callable IAM approval and authenticated hosted acceptance remain
+pending; this addition does not bypass or resolve that hold.
+
 ## Device performance integration (2026-10-03, acceptance pending)
 
 The admin home phone table, selected-phone drill table and detailed session/run
