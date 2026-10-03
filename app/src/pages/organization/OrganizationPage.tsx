@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { auth } from "../../lib/firebase";
+import { coachWorkspacePath } from "../../lib/coach-navigation";
 import { clubCall, getClubContext } from "../../lib/organization-data";
 import type { ClubContext } from "../../lib/organization-data";
 import type { StaffRole } from "../../lib/organization";
@@ -70,6 +71,10 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
     try {
       const result = await getClubContext(id);
       if (!isCurrent()) return null;
+      if (!admin && result.role === "coach") {
+        navigate(coachWorkspacePath("", { orgId: result.organization?.id || id, teamId: preferredTeamId }), { replace: true });
+        return result;
+      }
       setContext(result);
       setOrganizationId(result.organization?.id || "");
       setWebsiteUrl(result.organization?.websiteUrl || "");
@@ -84,7 +89,7 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
       clearClubData(true);
       throw failure;
     }
-  }, [clearClubData]);
+  }, [clearClubData, admin, navigate]);
   useEffect(() => {
     document.title = "Organization | PoseTek";
     mounted.current = true;

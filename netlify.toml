@@ -2,10 +2,11 @@
   command = "npm --prefix app ci && node scripts/build-production.mjs"
   publish = "production-dist"
 
-# Vite 8 and TypeScript 6 need a current Node; the site's default runtime was
+# Astro 7, Vite 8 and TypeScript 6 need a current Node; the site's default runtime was
 # older, which failed every build since the React port with "exit code 2".
 [build.environment]
   NODE_VERSION = "22"
+  ASTRO_TELEMETRY_DISABLED = "1"
   # Netlify's smart secrets detection fails the build on the Firebase web API key,
   # which is a public project identifier (access is enforced by Firestore/Storage
   # rules and App Check, not by this value). Every deploy since the React port
@@ -71,5 +72,10 @@
 
 [[headers]]
   for = "/marketing/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/_astro/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"

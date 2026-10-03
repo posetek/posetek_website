@@ -49,10 +49,10 @@ describe('confirmed resource choices', () => {
     expect(setupForProposal(intake, current).confirmed).toBe(true);
     expect(setupForProposal({ ...intake, equipment: ['mat'] }, current).confirmed).toBe(false);
   });
-  it('keeps category controls and no-equipment selection available before a request', () => {
+  it('keeps compact location presets and equipment exceptions available without checklists', () => {
     const html = renderToStaticMarkup(<TrainingSetup value={emptySetup()} onChange={() => {}} onConfirm={() => {}} />);
-    for (const label of ['Space &amp; people', 'Football', 'Strength', 'Movement', 'Timing &amp; cues', 'No equipment', 'Use this setup']) expect(html).toContain(label);
-    expect(html).toContain('role="tablist"'); expect(html).toContain('role="tabpanel"');
+    for (const label of ['At home', 'Gym', 'Field', 'Football', 'Goal', 'Adjust equipment', 'Use this setup']) expect(html).toContain(label);
+    expect(html).toContain('role="switch"'); expect(html).not.toContain('type="checkbox"');
     expect(html).not.toContain('Add a drill');
   });
 });

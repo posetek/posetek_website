@@ -1,0 +1,58 @@
+"use strict";
+const crypto = require("node:crypto");
+const FROM = "PoseTek Support <support@alerts.posetek.net>";
+const TO = "dylank@posetek.net";
+const hash = value => crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex");
+const clean = (value, max = 200) => typeof value === "string" ? value.replace(/[\x00-\x1f\x7f]/g, " ").trim().slice(0, max) : "";
+function redact(value, max = 2000) {
+  return clean(value, max).replace(/(?:Bearer\s+\S+|\b(?:re_|whsec_)[A-Za-z0-9_+/=-]{12,})/gi, "[credential]")
+    .replace(/([?&](?:token|key|code|password|secret|signature|access_token)=)[^\s&]*/gi, "$1[redacted]")
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, "[email]");
+}
+const ID = /^[A-Za-z0-9_-]{1,160}$/;
+const KINDS = ["crash", "error", "report", "interrupted"];
+const STATES = ["new", "investigating", "fixed", "verified", "dismissed"];
+function setting(doc, at) {
+  const pilot = doc?.testUids;
+  const valid = pilot === undefined || Array.isArray(pilot) && pilot.length > 0 && pilot.length <= 50 && pilot.every(v => typeof v === "string" && ID.test(v));
+  return { ...doc, enabled: doc?.enabled === true && valid && Number.isSafeInteger(doc.activatedAtMillis) && doc.activatedAtMillis > 0 && doc.activatedAtMillis <= at };
+}
+function screenshot(value) {
+  if (!value) return null;
+  if (typeof value !== "string" || value.length > 240000) throw new Error("Choose an image smaller than 175 KB.");
+  const match = value.match(/^data:image\/(png|jpeg);base64,([A-Za-z0-9+/]+={0,2})$/);
+  if (!match) throw new Error("Only PNG and JPEG screenshots are supported.");
+  const bytes = Buffer.from(match[2], "base64");
+  if (bytes.length > 175000 || (match[1] === "png" ? !bytes.subarray(0, 8).equals(Buffer.from("89504e470d0a1a0a", "hex")) : bytes[0] !== 255 || bytes[1] !== 216 || bytes[2] !== 255)) throw new Error("Invalid screenshot.");
+  return value;
+}
+function normalize(data, at, trusted = false) {
+  if (!data || typeof data !== "object" || !ID.test(data.eventId || "") || !ID.test(data.sessionId || "")) throw new Error("A stable event and session reference are required.");
+  const kind = trusted && KINDS.includes(data.kind) ? data.kind : data.kind === "report" ? "report" : "error";
+  const operation = redact(data.operation, 100).replace(/[^a-zA-Z0-9_.:/ -]/g, "") || "application";
+  const code = redact(data.code, 100).replace(/[^a-zA-Z0-9_.:/ -]/g, "") || "unknown";
+  const platform = ["web", "ios", "backend"].includes(data.platform) ? data.platform : "web";
+  const occurredAtMillis = Number.isSafeInteger(data.occurredAtMillis) && data.occurredAtMillis > 0 && data.occurredAtMillis <= at + 60000 ? data.occurredAtMillis : at;
+  const report = kind === "report" ? redact(data.description, 4000) : "";
+  if (kind === "report" && report.length < 5) throw new Error("Describe what went wrong in at least five characters.");
+  return { eventId: data.eventId, sessionId: data.sessionId, kind, operation, code, platform, occurredAtMillis,
+    build: redact(data.build, 80) || "unknown", device: redact(data.device, 180) || "unknown", description: report,
+    message: redact(data.message), route: clean(data.route, 200).split(/[?#]/)[0],
+    requestId: ID.test(data.requestId || "") ? data.requestId : null,
+    screenshot: kind === "report" ? screenshot(data.screenshot) : null,
+    severity: kind === "crash" ? "critical" : kind === "report" ? "reported" : "error" };
+}
+// Reporting periods start at 09:00 Pacific, including across DST changes.
+function periodKey(at) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", hourCycle: "h23" }).formatToParts(at).map(p => [p.type, p.value]));
+  const date = `${parts.year}-${parts.month}-${parts.day}`;
+  return Number(parts.hour) < 9 ? new Date(Date.parse(`${date}T12:00:00Z`) - 86400000).toISOString().slice(0, 10) : date;
+}
+function previousPeriod(at) { return new Date(Date.parse(`${periodKey(at)}T12:00:00Z`) - 86400000).toISOString().slice(0, 10); }
+const dateText = at => new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", dateStyle: "medium", timeStyle: "long" }).format(at);
+function payload(job, id) {
+  const lines = [job.title, ...job.lines, "Detailed reports and screenshots require PoseTek administrator sign-in.", `Open User issues: https://posetek.net/admin/user-issues${job.issueId ? `?issue=${job.issueId}` : ""}`];
+  return { from: FROM, to: [TO], subject: `[PoseTek ${job.type === "daily" ? "daily summary" : "user issue"}] ${clean(job.title, 130)}`,
+    text: lines.join("\n\n"), tags: [{ name: "posetek_issue_outbox", value: id }] };
+}
+module.exports = { FROM, TO, ID, STATES, hash, clean, redact, setting, normalize, screenshot, periodKey, previousPeriod, dateText, payload };

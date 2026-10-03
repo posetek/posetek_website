@@ -1,0 +1,324 @@
+{
+  "schemaVersion": 1,
+  "status": "production-verified",
+  "recordedAt": "2026-10-01T11:22:59.320Z",
+  "repository": "https://github.com/posetek/posetek_website",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/16",
+  "scope": "Guided player Training, reliable personal session composition, shared age handling, admin evidence persistence and five floor-equipment corrections.",
+  "frontend": {
+    "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+    "deployId": "6abe3e6fd97e6a691aa603fe",
+    "previousDeployId": "6abe312c5da9000e9f8b0532",
+    "sourceCommit": "96f85bb3db83de9599a58507b15acf71ce6dfbf8",
+    "productionUrl": "https://posetek.net",
+    "deployUrl": "https://6abe3e6fd97e6a691aa603fe--posetek.netlify.app",
+    "publishedAt": "2026-10-01T11:07:44.296Z",
+    "exactReviewedDraftPromoted": true,
+    "rebuildDuringPromotion": false,
+    "framework": "astro",
+    "initialPublication": {
+      "deployId": "6abe312c5da9000e9f8b0532",
+      "sourceCommit": "512cd489adb85770aeaa1275aa91558f5dad6128",
+      "publishedAt": "2026-10-01T10:28:57.880Z",
+      "artifactFiles": 1434,
+      "inventoryFiles": 1435,
+      "preservedFiles": 1432,
+      "applicationSha1": "bd06a510a8b609c8d1225d68700a5f58563affb6",
+      "ordinaryPreservationBuildPassed": true,
+      "followup": "Coach history read/send race discovered during acceptance; guarded follow-up required"
+    },
+    "reconciledPredecessor": {
+      "deployId": "6abd8f957e046e8059376091",
+      "sourceCommit": "e8de8d755ba3e3fe85eca3f22b8fddcb8898e9f3",
+      "alreadyLiveIssueAlertsPreserved": true
+    },
+    "documents": [
+      {
+        "path": "/application.html",
+        "sha": "7fb515da97706473884454263122131e9faf53f7",
+        "size": 15038
+      },
+      {
+        "path": "/index.html",
+        "sha": "12b1b8ff0a9f0e33e3471b15b7bbd0696e3e86f1",
+        "size": 37505
+      },
+      {
+        "path": "/coaches/index.html",
+        "sha": "167c6dd233a8bad39c09f49486d39595a7ea9cb6",
+        "size": 25969
+      }
+    ],
+    "artifactFiles": 1437,
+    "inventoryFiles": 1438,
+    "artifactMatchesProductionInventory": true,
+    "servedVerification": {
+      "rawExactFiles": 1385,
+      "knownProcessedHtmlFiles": 52,
+      "totalVerified": 1437,
+      "unresolved": 0,
+      "historicalHtmlMatchesImmutablePredecessor": true,
+      "homepageBookingHrefTransforms": 5,
+      "otherHomepageDomChanges": false
+    },
+    "baseline": {
+      "deploymentId": "6abe3e6fd97e6a691aa603fe",
+      "sourceCommit": "96f85bb3db83de9599a58507b15acf71ce6dfbf8",
+      "preservedFiles": 1435,
+      "preservedBytes": 137932231,
+      "ordinaryPreservationBuildPassed": true
+    },
+    "entryVerification": {
+      "candidatePassed": true,
+      "productionPassed": true,
+      "applicationRoutes": 25,
+      "marketingRoutes": 5,
+      "scriptStyleAssets": 1270,
+      "signInGates": 9,
+      "widths": [
+        1440,
+        820,
+        390
+      ],
+      "browserBack": true,
+      "horizontalOverflow": false,
+      "pageErrors": 0
+    }
+  },
+  "gateway": {
+    "repository": "https://github.com/posetek/posetek-backend",
+    "sourceCommit": "cb575df84000fc3ffe11d240fd6743472700a8b8",
+    "revision": "agent-gateway-sha-cb575df84000",
+    "imageDigest": "sha256:acfc782f1f896df3854f0a0e4d809c33befc62a931286d99ee97d0131dc551ad",
+    "cloudBuild": "1f256322-5298-4ce7-a75c-0de591db211f",
+    "trafficPercent": 100,
+    "publishedAt": "2026-10-01T10:09:33Z",
+    "publicHealthVersion": "sha-cb575df84000",
+    "publisher": "Services/agent-gateway/scripts/release.sh",
+    "sourceOnCanonicalMainAtRelease": true,
+    "historicalTagsEnvironmentAndSecretBindingsPreserved": true,
+    "tests": {
+      "passed": 2102,
+      "skipped": 2,
+      "durationSeconds": 589.21,
+      "separateFirestoreSdkEmulatorPassed": 5,
+      "focusedPassed": 158,
+      "independentMedicalPhraseChecksPassed": 24
+    },
+    "evidenceStorageNote": "Live admin acceptance used inline Firestore context. Separate real Firestore SDK emulator fixtures exercised nested-array, excessive-depth and size-triggered artifact persistence, readback and activation.",
+    "releaseRecord": "Services/agent-gateway/deployments/2026-10-01/sha-cb575df84000/README.md",
+    "recoveryRevision": "agent-gateway-sha-dac82d119dc7"
+  },
+  "rules": {
+    "repository": "https://github.com/posetek/posetek-mobile-app",
+    "publisher": "firebase/operations.py publish",
+    "source": "44e4464f039cd58909cff71c49db05fb0a1cf7ae",
+    "mergedMain": "4a7d13ab078d9313ddc31101609802d6690ea951",
+    "firestoreSha256": "fde7bc815866e6a171674646de7aed301c301fe576ac66ddf69ea712502e5e64",
+    "storageSha256": "1da8799ec5f785c1a43330342f895fef76774622b32bbf48853b45bc3e4bf3eb",
+    "firestoreRuleset": "a3587b76-a66f-40f0-9979-ffd029d583ee",
+    "storageRuleset": "716fe4ef-02ec-4b09-801d-b867b3adac12",
+    "tests": 1058,
+    "webAssertions": 418,
+    "deployedChecks": 55,
+    "storageSourceUnchanged": true,
+    "unrelatedUnreleasedNativeTestingRulesExcluded": true
+  },
+  "catalog": {
+    "versionBefore": "1.0.92",
+    "versionAfter": "1.0.93",
+    "total": 208,
+    "changed": 5,
+    "untouched": 203,
+    "heldDrafts": 80,
+    "drills": [
+      "STR-005",
+      "STR-006",
+      "STR-008",
+      "STR-501",
+      "STR-502"
+    ],
+    "planSha256": "4f12bd403da3e2d53418be3d02f1319b660dcdcb59be7b9e8da5dd0d6ee05890",
+    "manifestSha256": "8f6437539bd13096f29092dc9f7421e4ab9f8adab51ed1f3dc0af158389fa3bc",
+    "verifiedAt": "2026-10-01T09:18:55.575Z",
+    "finalVerifiedAt": "2026-10-01T11:21:33.068Z",
+    "all208RecordsReadBack": true,
+    "dosesMediaReviewsAndUnrelatedFieldsPreserved": true,
+    "mobileAcceptance": false
+  },
+  "assessmentPolicy": {
+    "enabledCapability": "assess_personal_workout",
+    "planSha256": "035c48e0274f77fdb57071d8831c1bd03f7183583d04809db0bf3e6d2226aabe",
+    "verifiedAt": "2026-10-01T10:10:05.681Z",
+    "onlyCapabilityAddition": true,
+    "otherConfigurationAndAllowancesPreserved": true
+  },
+  "verification": {
+    "websiteTests": {
+      "passed": 1396,
+      "files": 120,
+      "followupFocusedPassed": 6
+    },
+    "typeScriptPassed": true,
+    "websiteReleaseAndNavigationChecksPassed": 30,
+    "catalogChecksPassed": 23,
+    "assessmentPolicyChecksPassed": 3,
+    "livePlayerApi": {
+      "noActivePlanRequired": true,
+      "assessmentNoProviderUsageOrAllowanceWrites": true,
+      "foreignAssessmentAndPrivateConversationDenied": true,
+      "twoFocusComposition": true,
+      "requestedMinutes": 20,
+      "calculatedMinutes": 20,
+      "racingPublicationCreatedOneWorkout": true,
+      "realAiRevisionPreservedAllBlocksAndDoses": true,
+      "republicationRetainedWorkoutId": true,
+      "startAndOneSetPersisted": true,
+      "workoutEnded": false
+    },
+    "liveAdminApi": {
+      "schema": 3,
+      "weeks": 1,
+      "sessions": 2,
+      "calculatedMinutes": [
+        35,
+        30
+      ],
+      "sameAgeConfirmationAccepted": true,
+      "privateContextStorage": "inline",
+      "athleteContextReadDenied": true,
+      "activatedPrescriptionAndContextHashesMatched": true
+    },
+    "hostedCandidate": {
+      "widths": [
+        360,
+        390,
+        430,
+        1280
+      ],
+      "checks": 9,
+      "screenshots": 29,
+      "pageErrors": 0
+    },
+    "hostedProductionReadback": {
+      "widths": [
+        390,
+        430,
+        1280
+      ],
+      "checks": 11,
+      "screenshots": 23,
+      "pageErrors": 0
+    },
+    "hostedAdmin": {
+      "candidateAndProductionPassed": true,
+      "widths": [
+        390,
+        1280
+      ],
+      "additionalGenerationOrActivation": false
+    },
+    "coachHistory": {
+      "widths": [
+        390,
+        1280
+      ],
+      "checks": 2,
+      "screenshots": 4,
+      "serverReadHeldForTest": true,
+      "rapidSendBlocked": true,
+      "loadingVisible": true,
+      "coachPosts": 0,
+      "passedAt": "2026-10-01T11:06:59.463Z"
+    },
+    "productionCoach": {
+      "exactOriginalConversation": true,
+      "oneNewDraft": true,
+      "requestedMinutes": 20,
+      "calculatedMinutes": 20,
+      "sameDraftTraining": true,
+      "communityRecovery": true,
+      "checks": 2,
+      "screenshots": 5,
+      "pageErrors": 0,
+      "passedAt": "2026-10-01T11:09:12.101Z",
+      "preflightStatus": 204,
+      "replyStatus": 200,
+      "replySeconds": 12.2,
+      "draftPublished": false
+    },
+    "trainingCommunityRecovery": {
+      "completedSets": 1,
+      "elapsedTimerRetained": true,
+      "sessionPaused": true,
+      "candidateAndProductionPassed": true
+    },
+    "temporaryAccountsOnly": true,
+    "physicalDeviceOrNativeAppAcceptanceClaimed": false
+  },
+  "cleanup": {
+    "status": "independent-zero-verified",
+    "admin": {
+      "documents": 17,
+      "objects": 0,
+      "authAccounts": 2,
+      "completedAt": "2026-10-01T10:37:48.160Z",
+      "independentZeroAt": "2026-10-01T10:37:59.463Z"
+    },
+    "player": {
+      "notificationDocuments": 4,
+      "supplementalDocuments": 116,
+      "supplementalArtifactObjects": 3,
+      "canonicalDocuments": 2,
+      "canonicalProbeObjects": 3,
+      "authAccounts": 3,
+      "supplementalIndependentZeroAt": "2026-10-01T11:18:51.967Z"
+    },
+    "playerTotals": {
+      "documents": 122,
+      "objects": 6,
+      "authAccounts": 3
+    },
+    "credentials": {
+      "completedAt": "2026-10-01T11:22:30.199Z",
+      "sanitizedFiles": 1,
+      "removedCredentialFields": 4,
+      "independentZeroAt": "2026-10-01T11:22:59.320Z"
+    },
+    "finalReadback": {
+      "authAccounts": 0,
+      "canonicalFixtures": 0,
+      "supplementalDocuments": 0,
+      "supplementalObjects": 0,
+      "credentialFields": 0,
+      "exactSecretValues": 0,
+      "nativeSourceUnchanged": true
+    },
+    "noWorkoutEndOrVerificationNotificationSent": true,
+    "journalsScreenshotsAccountIdentitiesAndCredentialsOutsideGit": true
+  },
+  "preserved": {
+    "activePlansAndCoachAssignments": true,
+    "marketingBytes": true,
+    "sixTabNavigation": true,
+    "startedWorkoutSnapshots": true,
+    "socialSharingAndOwnershipBoundaries": true,
+    "aiAllowancesAndNativeDailyGenerationLimit": true,
+    "wholeBodyHeldDrafts": 80,
+    "nativeUiUnchanged": true,
+    "nativeReleaseGatesUnchanged": true,
+    "coachProxyOriginAllowlistUnchanged": true
+  },
+  "limitations": [
+    "Reviewed catalog coverage does not support every age, selected focus, equipment or duration combination. Assessment offers adjustments without silently replacing focus or granting held content.",
+    "Netlify preview Coach calls are rejected by the existing production-only proxy allowlist; full Coach acceptance was verified on Posetek.net.",
+    "Evidence artifact fallback was exercised with a real Firestore SDK emulator integration; the live temporary admin fixture stored its context inline.",
+    "Responsive browser acceptance does not constitute physical-device or native-app acceptance."
+  ],
+  "recovery": {
+    "websiteInitialCheckpoint": "6abe312c5da9000e9f8b0532",
+    "websitePreRelease": "6abd8f957e046e8059376091",
+    "gatewayRevision": "agent-gateway-sha-dac82d119dc7",
+    "note": "Use canonical guarded publishers and reviewed receipts. Restore service/source releases without rewinding athlete data; catalog rollback requires a fresh narrow CAS plan."
+  }
+}

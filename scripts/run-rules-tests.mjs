@@ -32,7 +32,10 @@ const firebasePrefix = firebaseCommand === process.execPath ? [firebase] : [];
 const suites = [
   { name: 'adminRules', project: 'demo-posetek-admin' },
   { name: 'insightsRules', project: 'demo-expanded-insights' },
+  { name: 'workoutNotifications', project: 'demo-workout-notifications' },
+  { name: 'userIssues', project: 'demo-user-issues' },
   { name: 'personalizedRules', project: 'demo-personalized-planner' },
+  { name: 'personalWorkoutSetup', project: 'demo-personal-workout-setup' },
   { name: 'socialRules', project: 'demo-posetek-feed', storage: true },
   { name: 'testingEventRules', project: 'demo-posetek-testing-events' },
   { name: 'trainingExpansion', project: 'demo-personalized-planner' },

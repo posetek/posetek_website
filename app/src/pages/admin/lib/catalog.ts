@@ -10,6 +10,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import firebase, { auth, db, storage, cloud } from "../../../lib/firebase";
+import { captureIssue } from "../../../lib/user-issues";
 import { normalizeCatalogDrill } from "../../../lib/contracts/drillV2";
 import type { CatalogDrill } from "../../../lib/contracts/drillV2";
 import { DOMAIN_CODES, MEDIA_SLOTS } from "../../../lib/contracts/types";
@@ -244,7 +245,7 @@ export function uploadDrillMedia(
     task.on(
       "state_changed",
       (snapshot: any) => onProgress(snapshot.totalBytes ? snapshot.bytesTransferred / snapshot.totalBytes : 0),
-      (error: any) => reject(error),
+      (error: any) => { if (error.code !== "storage/canceled") captureIssue(error, "catalog_media_upload", { ownerUid: uid }); reject(error); },
       () => resolve(),
     );
   }).then(async () => {

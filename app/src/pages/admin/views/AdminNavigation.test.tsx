@@ -5,11 +5,11 @@ import { compile } from "sass";
 import AdminHeader from "./AdminHeader";
 
 describe("admin navigation", () => {
-  it("uses eight regular admin tabs, ending with Device performance, and moves Community feed into the account menu", () => {
+  it("uses nine regular admin tabs including Device performance and User issues, and moves Community feed into the account menu", () => {
     const html = renderToStaticMarkup(<MemoryRouter><AdminHeader ready email="admin@example.test" onSignOut={() => {}} /></MemoryRouter>);
-    for (const path of ["accounts", "organizations", "programs", "analysis", "drills", "ai-incidents", "device-performance"]) expect(html).toContain(`href="/admin/${path}"`);
+    for (const path of ["accounts", "organizations", "programs", "analysis", "drills", "ai-incidents", "device-performance", "user-issues"]) expect(html).toContain(`href="/admin/${path}"`);
     expect(html).toContain('href="/admin"');
-    expect((html.match(/class="admin-nav-link/g) ?? []).length).toBe(8);
+    expect((html.match(/class="admin-nav-link/g) ?? []).length).toBe(9);
     expect(html).toContain("Device performance");
     expect(html.indexOf("AI incidents")).toBeLessThan(html.indexOf("Device performance"));
     expect(html).toContain('href="/feed"');

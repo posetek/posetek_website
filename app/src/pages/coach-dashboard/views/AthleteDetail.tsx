@@ -44,6 +44,7 @@ interface AthleteDetailProps {
   summary: AthleteSummary;
   job: PlanJobState | null;
   preview?: boolean;
+  embedded?: boolean;
   onBack: () => void;
   onCreatePlan: () => void;
   onPlanChanged: () => Promise<unknown>;
@@ -57,14 +58,14 @@ function fullName(athlete: any): string {
   return `${athlete?.firstName || ""} ${athlete?.lastName || ""}`.trim() || String(athlete?.name || "Athlete");
 }
 
-export default function AthleteDetail({ summary, job, preview, onBack, onCreatePlan, onPlanChanged, onPreviewEdit }: AthleteDetailProps) {
+export default function AthleteDetail({ summary, job, preview, embedded = false, onBack, onCreatePlan, onPlanChanged, onPreviewEdit }: AthleteDetailProps) {
   const [tab, setTab] = useState<"stats" | "program" | "history">("program");
   const plan = summary.plan;
 
   return (
     <>
       <section className="coachdash-heading detail">
-        <div className="detail-title">
+        {!embedded && <div className="detail-title">
           <button className="icon-button" type="button" aria-label="Back to dashboard" onClick={onBack}>
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
@@ -75,8 +76,8 @@ export default function AthleteDetail({ summary, job, preview, onBack, onCreateP
               {summary.totals.workoutsCompleted} completed workouts · {hoursLine(summary.totals.timerSeconds)} timer time · {planProgress(plan)}
             </p>
           </div>
-        </div>
-        <button type="button" className="primary-cta" disabled={preview} onClick={onCreatePlan}>Prescribe / review plan</button>
+        </div>}
+        {!embedded && <button type="button" className="primary-cta" disabled={preview} onClick={onCreatePlan}>Prescribe / review plan</button>}
         <div className="segmented-control coachdash-tabs" role="tablist" aria-label="Player progress">
           <button type="button" role="tab" aria-selected={tab === "program"} className={tab === "program" ? "active" : ""} onClick={() => setTab("program")}>
             Program

@@ -11,6 +11,9 @@ import type { PersonalSelection } from './personal-workout-conversations';
 import { confirmedSetup, setupFromIntake } from './training-access';
 
 const sampleCatalog = [
+  { drillId: 'SPD-SAMPLE', name: 'Quick feet practice', domain: 'speed', equipment: [] },
+  { drillId: 'STR-SAMPLE', name: 'Bodyweight control', domain: 'strength', equipment: [] },
+  { drillId: 'AGL-SAMPLE', name: 'Controlled direction changes', domain: 'agility', equipment: ['cones'] },
   { drillId: 'DRB-005', name: 'Cone maze', domain: 'dribbling', equipment: ['ball', 'cones'] },
   { drillId: 'PAS-001', name: 'Wall pass rhythm', domain: 'passing', equipment: ['ball', 'wall'] },
   { drillId: 'BMA-001', name: 'Close-control touches', domain: 'ballMastery', equipment: ['ball'] },
@@ -260,7 +263,7 @@ export function usePersonalWorkouts(playerId: string, preview: boolean, config: 
     if (params.conversationId && (!before || before.proposal.proposalId !== params.baseProposalId)) throw new Error('Reopen the latest sample workout before changing it.');
     const id = before?.conversation.conversationId || `sample-conversation-${crypto.randomUUID()}`;
     const revision = Number(before?.conversation.proposalRevision || 0) + 1;
-    const available = sampleCatalog.filter(d => eligiblePersonalDrill(d, params.intake));
+    const available = sampleCatalog.filter(d => eligiblePersonalDrill(d, params.intake) && (!params.intake.focusDomains?.length || params.intake.focusDomains.includes(d.domain)));
     if (!available.length) throw new Error('Select equipment for a sample workout, such as a ball.');
     const asked = String(params.requestText).toLowerCase();
     const included = available.filter(d => !(asked.includes('no wall') || asked.includes('remove') && asked.includes('wall')) || !d.equipment.includes('wall'));
@@ -303,6 +306,62 @@ export function usePersonalWorkouts(playerId: string, preview: boolean, config: 
     }
     // Keep the last confirmed workout visible throughout generation and failure.
     return generate(params);
+  };
+  const assess = async (params: Row): Promise<Row> => {
+    if (!preview) {
+      if (!personalCapabilityEnabled(config, 'assess_personal_workout') || !uid || auth.currentUser?.uid !== uid) throw new Error('Workout setup checks are unavailable. Refresh Training and try again.');
+      const assessmentKey = `${key}:assessment`, signature = JSON.stringify({ capability: 'assess_personal_workout', params });
+      let previous: PendingPersonalJob | null = null;
+      try { previous = restorePersonalJob(JSON.parse(localStorage.getItem(assessmentKey) || 'null'), uid, playerId); } catch { /* ignore an invalid receipt */ }
+      const record: PendingPersonalJob = previous?.signature === signature && !previous.terminalFailed ? previous : {
+        schemaVersion: 1, uid, playerId, capability: 'assess_personal_workout', signature, jobId: db.collection('llmJobs').doc().id,
+        params: { ...params, requestId: crypto.randomUUID() },
+      };
+      const ref = db.collection('llmJobs').doc(record.jobId), owner = generation.current;
+      const result = await new Promise<Row>((resolve, reject) => {
+        let settled = false, stop = () => {};
+        const settle = (complete: () => void) => {
+          if (settled) return; settled = true; clearTimeout(timeout); stop();
+          const index = subscriptions.current.indexOf(cancel); if (index >= 0) subscriptions.current.splice(index, 1);
+          complete();
+        };
+        const fail = (failure: any) => settle(() => reject(failure));
+        const cancel = () => fail(new Error('The selected player changed.'));
+        // Include the create acknowledgement in the limit. A queued Firestore
+        // write can finish later; its durable ID remains available for Retry.
+        const timeout = window.setTimeout(() => fail(new Error('Your setup check is taking longer than expected. Retry to recover the same check.')), 20000);
+        subscriptions.current.push(cancel);
+        void ensurePersonalSubmission(record, { persist: value => { try { localStorage.setItem(assessmentKey, JSON.stringify(value)); } catch { /* the job still has a stable identity this visit */ } },
+          exists: async () => { const snapshot = await ref.get({ source: 'server' }), job = snapshot.data(); if (snapshot.exists && (job?.requestedByUid !== uid || job?.playerId !== playerId || job?.capability !== record.capability || job?.params?.requestId !== record.params.requestId)) throw new Error('The setup check does not match your account.'); return snapshot.exists; },
+          create: async () => { await ref.set({ schemaVersion: 1, capability: record.capability, playerId, params: record.params, requestedByUid: uid,
+            clientVersion: 'web-guided-workouts-v1', status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp() }); } }).then(() => {
+          if (settled) return;
+          if (owner !== generation.current || auth.currentUser?.uid !== uid) { cancel(); return; }
+          const unsubscribe = ref.onSnapshot(snapshot => {
+            const job = snapshot.data();
+            if (settled || !job) return;
+            if (job.status === 'complete') settle(() => resolve(job.result || {}));
+            else if (job.status === 'failed') {
+              try { if (JSON.parse(localStorage.getItem(assessmentKey) || 'null')?.jobId === record.jobId) localStorage.setItem(assessmentKey, JSON.stringify({ ...record, terminalFailed: true })); } catch { /* optional recovery receipt */ }
+              fail(new Error(job.error?.detail || job.error?.message || 'Your setup could not be checked. Try again.'));
+            }
+          }, fail);
+          stop = unsubscribe; if (settled) stop();
+        }).catch(fail);
+      });
+      if (owner !== generation.current || auth.currentUser?.uid !== uid) throw new Error('The selected player changed. Return to Training.');
+      try { if (JSON.parse(localStorage.getItem(assessmentKey) || 'null')?.jobId === record.jobId) localStorage.removeItem(assessmentKey); } catch { /* optional recovery storage */ }
+      return result;
+    }
+    const focusAvailability = params.intake.focusDomains.map((domain: string) => {
+      const count = sampleCatalog.filter(d => d.domain === domain && eligiblePersonalDrill(d, { ...params.intake, age: params.intake.age || 15 })).length;
+      return { domain, eligibleDrillCount: count, status: count ? 'available' : 'unavailable', reasonCodes: count ? [] : ['no_eligible_drills'] };
+    });
+    const supportedMinutes = focusAvailability.every((f: Row) => f.status === 'available') ? Array.from({ length: 56 }, (_, i) => i + 5) : [];
+    return { schemaVersion: 1, resolvedAge: params.intake.age || null, ageSource: params.intake.age ? 'intake' : 'absent', scheduleRevision: current.current.scheduleRevision,
+      catalogVersion: 'sample', focusDomains: params.intake.focusDomains, focusAvailability, supportedMinutes,
+      recommendedMinutes: supportedMinutes.includes(params.timeAvailableMinutes) ? params.timeAvailableMinutes : supportedMinutes.length ? 20 : null,
+      limitations: supportedMinutes.length ? [] : [{ code: 'no_eligible_drills', message: 'This sample does not include that focus for your current equipment. Change your focus or setup.' }] };
   };
   const publish = async (): Promise<Row> => {
     const active = selected.current.proposal, owner = generation.current, version = selectionVersion.current;
@@ -386,7 +445,7 @@ export function usePersonalWorkouts(playerId: string, preview: boolean, config: 
   return { ownerUid: uid, enabled, workouts, logs, catalog, scheduleRevision, loaded, saving, error, status, pending, proposal, lastResult, clearProposal, save, start, adapter,
     conversations, conversationsLoaded, conversationId, conversation, messages, conversationLoading, selectionReady, openConversation, openProposal, newConversation, refine, publish,
     consumeResult: () => setLastResult(null),
-    generate,
+    generate, assess,
     recover: () => pending ? runPending(pending).catch(() => {}) : Promise.resolve(),
     setError,
   };

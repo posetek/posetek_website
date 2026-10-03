@@ -16,3 +16,27 @@ test('projection writes cannot recursively trigger another rebuild', () => {
   for (const collection of ['insightSummaries', 'insightSummaryDays', 'personalizedPlanDrafts', 'trainingPlans']) assert.equal(RECORD_COLLECTIONS.has(collection), false);
   for (const collection of ['reps', 'workoutLogs', 'personalWorkoutLogs', 'trainingSessions', 'insightMetadata']) assert.equal(RECORD_COLLECTIONS.has(collection), true);
 });
+
+test('both reporting callables use the verified caller wrapper and bounded service', async () => {
+  const fs = require('node:fs'), vm = require('node:vm');
+  const calls = [], builders = [];
+  const functions = { https: { HttpsError: Error }, runWith(options) {
+    builders.push(options);
+    return { https: { onCall: handler => handler },
+      firestore: { document: () => ({ onWrite: handler => handler }) },
+      storage: { bucket: () => ({ object: () => ({ onFinalize: handler => handler, onDelete: handler => handler }) }) } };
+  } };
+  const admin = { firestore: () => ({}), storage: () => ({ bucket: () => ({}) }) };
+  const factory = { getClubInsightsV2: (...args) => calls.push(['report', ...args]), getCoachPlayerComparison: (...args) => calls.push(['comparison', ...args]) };
+  const module = { exports: {} };
+  vm.runInNewContext(fs.readFileSync(require.resolve('./insights-entrypoints'), 'utf8'), { module, require: name =>
+    name === './insights-v2' ? { createInsightsV2: () => factory }
+      : name === './insight-usage' ? { createInsightUsage: () => ({}) } : require(name) });
+  const marker = { uid: 'verified-wrapper' };
+  const entrypoints = module.exports.createInsightsEntrypoints(functions, admin, context => { assert.equal(context.auth, true); return marker; });
+  const data = { scope: { kind: 'coachRoster' }, playerId: 'a' };
+  await entrypoints.getClubInsightsV2(data, { auth: true });
+  await entrypoints.getCoachPlayerComparison(data, { auth: true });
+  assert.deepEqual(calls, [['report', data, marker], ['comparison', data, marker]]);
+  assert.equal(builders.filter(options => options.timeoutSeconds === 540 && options.memory === '1GB' && options.maxInstances === 10).length, 2);
+});

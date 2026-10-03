@@ -21,6 +21,7 @@ import type { Position, TechnicalEligibility } from "../../../lib/contracts/type
 import { playerSignup, withoutSignupSecrets } from "./signup";
 import { getClubContext } from "../../../lib/organization-data";
 import { buildClubHierarchy, hasClubIdentity, staffName } from "./accountHierarchy";
+import { resolveProfileAge, type ProfileAge } from "../../../lib/profile-age";
 
 export interface OrganizationRow {
   id: string;
@@ -296,48 +297,15 @@ function coachRowFrom(doc: any): CoachRow {
 
 // MARK: - Age (profile inputs §2)
 
-export interface ResolvedAge {
-  age: number | null;
-  source: "birthDate" | "legacyDateOfBirth" | "playerDocAge" | "absent";
-  /** A dated integer age older than a year is stale and needs refreshing. */
-  stale: boolean;
-}
-
-function asDate(value: any): Date | null {
-  if (!value) return null;
-  if (typeof value?.toDate === "function") {
-    const date = value.toDate();
-    return date && !Number.isNaN(date.valueOf()) ? date : null;
-  }
-  const date = value instanceof Date ? value : new Date(value);
-  return Number.isNaN(date.valueOf()) ? null : date;
-}
+export type ResolvedAge = ProfileAge;
 
 /**
- * `birthDate` → a valid legacy `dateOfBirth` → the recorded integer `age` →
+ * Valid `birthDate` → valid legacy `dateOfBirth` → a current dated integer `age` →
  * absent. An integer age is a dated OBSERVATION: it is never incremented on the
  * anniversary of `ageRecordedAt`, which is not the athlete's birthday.
  */
 export function resolvePlayerAge(player: any, now: Date = new Date()): ResolvedAge {
-  for (const [field, source] of [["birthDate", "birthDate"], ["dateOfBirth", "legacyDateOfBirth"]] as const) {
-    const born = asDate(player?.[field]);
-    if (born && born.valueOf() <= now.valueOf()) {
-      // UTC calendar arithmetic — a birth date is a date, not an instant.
-      let age = now.getUTCFullYear() - born.getUTCFullYear();
-      const beforeBirthday =
-        now.getUTCMonth() < born.getUTCMonth()
-        || (now.getUTCMonth() === born.getUTCMonth() && now.getUTCDate() < born.getUTCDate());
-      if (beforeBirthday) age -= 1;
-      if (age >= 5 && age <= 80) return { age, source, stale: false };
-    }
-  }
-  const recorded = Number(player?.age);
-  if (Number.isInteger(recorded) && recorded >= 5 && recorded <= 80) {
-    const recordedAt = asDate(player?.ageRecordedAt);
-    const stale = recordedAt ? now.valueOf() - recordedAt.valueOf() > 365 * 86400000 : true;
-    return { age: recorded, source: "playerDocAge", stale };
-  }
-  return { age: null, source: "absent", stale: false };
+  return resolveProfileAge(player, now);
 }
 
 export function eligibilityFor(player: PlayerRow | null, coach: CoachRow | null): TechnicalEligibility {

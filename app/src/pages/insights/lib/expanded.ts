@@ -1,16 +1,16 @@
 import type { ExpandedRequest } from "./expandedQuery";
 import { shiftDate } from "./expandedQuery";
-export type InsightScope = { kind: "global" } | { kind: "organization"; organizationId: string } | { kind: "team"; organizationId: string; teamId: string };
+export type InsightScope = { kind: "coachRoster"; coachId?: string } | { kind: "global" } | { kind: "organization"; organizationId: string } | { kind: "team"; organizationId: string; teamId: string };
 export type CountGroup = { key: string; count: number };
 export type InsightAccess = "admin" | "manager" | "coach";
 export interface QualifiedProgress {
   drill: string; unit: string; lowerIsBetter: boolean; samples: number; players: number;
   weeks: { weekStart: string; best: number | null; samples: number; players: number }[];
 }
-export interface InsightChoices { global: boolean; organizations: { id: string; name: string; role: InsightAccess; teams: { id: string; name: string }[] }[] }
+export interface InsightChoices { coachRoster?: { label: string; coachId: string } | null; global: boolean; organizations: { id: string; name: string; role: InsightAccess; teams: { id: string; name: string }[] }[] }
 export interface ExpandedPlayer {
   id: string; firstName: string; lastName: string; organizationId: string; organizationName: string; teamId: string | null; teamName: string | null;
-  division: string; age: number | null; ageBand: string;
+  division: string; age: number | null; ageBand: string; registered?: boolean; signupInvitationReady?: boolean;
   testing: { status: string; exercisesComplete: number; exerciseKeys: string[]; recordedDocuments: number; distinctAttempts: number; qualifyingTests: number; dateUnknownAttempts?: number; hasDateUnknownAttempts?: boolean };
   workouts: { status: string; started: number; completed: number; timerMinutes: number; estimatedMinutes: number; allPrescribedSetsCompleted: number; unknownPrescription: number; outcomeEvents?: number; timerRecords?: number; estimatedRecords?: number };
   usage: { status: string; collected: boolean; webCollected: boolean; iosCollected: boolean; activeMinutes: number; webMinutes: number; iosMinutes: number; activeDays: number };
@@ -22,7 +22,8 @@ export interface ExpandedInsights {
   period: { startDate: string; endDate: string; timeZone: string; startMillis: number; endMillis: number };
   testingMode: "cumulative" | "period"; filters: Record<string, string>; generatedAtMillis: number;
   freshness: { complete: true; projectionVersion: number; oldestRebuiltAtMillis: number | null; newestRebuiltAtMillis: number | null; qualification: string; historicalOwnership: "current" };
-  roster: { total: number; included: number; excluded: number; filtered: number };
+  roster: { total: number; included: number; excluded: number; filtered: number; matched?: number };
+  nameSearch?: string;
   participation?: { testingPlayers: number; workoutPlayers: number; anyPlayers: number };
   demographics: { division: CountGroup[]; ageBand: CountGroup[] };
   scopeBreakdown: { organizations: { id: string; name: string; count: number }[]; teams: { id: string | null; organizationId: string; name: string; count: number }[] };
@@ -49,16 +50,21 @@ export function scopeFor(request: ExpandedRequest, role: InsightAccess, defaultO
   return request.teamId ? { kind: "team", organizationId, teamId: request.teamId } : { kind: "organization", organizationId };
 }
 export function sameScope(a: InsightScope, b: InsightScope) {
-  return a.kind === b.kind && (a.kind === "global" || b.kind !== "global" && a.organizationId === b.organizationId) && (a.kind !== "team" || b.kind === "team" && a.teamId === b.teamId);
+  return a.kind === b.kind && (a.kind === "global" || a.kind === "coachRoster" && b.kind === "coachRoster" && (!a.coachId || !b.coachId || a.coachId === b.coachId) || b.kind !== "global" && b.kind !== "coachRoster" && a.kind !== "coachRoster" && a.organizationId === b.organizationId) && (a.kind !== "team" || b.kind === "team" && a.teamId === b.teamId);
+}
+/** Never send response-only labels, access metadata or a caller-selectable coach ID. */
+export function scopePayload(scope: InsightScope): InsightScope {
+  if (scope.kind === "coachRoster" || scope.kind === "global") return { kind: scope.kind };
+  return scope.kind === "team" ? { kind: "team", organizationId: scope.organizationId, teamId: scope.teamId } : { kind: "organization", organizationId: scope.organizationId };
 }
 export function reportPayload(request: ExpandedRequest, scope: InsightScope, cursor?: string) {
   const filters = Object.fromEntries((["division", "ageBand", "testingStatus", "workoutStatus", "usageStatus", "usagePlatform", "usageFeature", "teamAssignment"] as const).filter(key => request[key]).map(key => [key, request[key]]));
-  return { scope, timeZone: request.timezone, startDate: request.startDate, endDate: request.endDate, testingMode: request.testingWindow, filters, pageSize: 25, ...(cursor ? { cursor } : {}) };
+  return { scope: scopePayload(scope), ...(request.rosterSearch ? { nameSearch: request.rosterSearch } : {}), timeZone: request.timezone, startDate: request.startDate, endDate: request.endDate, testingMode: request.testingWindow, filters, pageSize: 25, ...(cursor ? { cursor } : {}) };
 }
 export function assertReportScope(report: ExpandedInsights, scope: InsightScope, request: ExpandedRequest) {
   const expectedFilters = reportPayload(request, scope).filters;
   const filtersMatch = Object.keys(expectedFilters).length === Object.keys(report.filters || {}).length && Object.entries(expectedFilters).every(([key, value]) => report.filters[key] === value);
-  if (report.schemaVersion !== 2 || report.freshness?.complete !== true || !sameScope(report.scope, scope) || report.period.startDate !== request.startDate || report.period.endDate !== request.endDate || report.period.timeZone !== request.timezone || report.testingMode !== request.testingWindow || !filtersMatch) {
+  if (report.schemaVersion !== 2 || report.freshness?.complete !== true || !sameScope(report.scope, scope) || report.period.startDate !== request.startDate || report.period.endDate !== request.endDate || report.period.timeZone !== request.timezone || report.testingMode !== request.testingWindow || !filtersMatch || (report.nameSearch || "") !== request.rosterSearch) {
     throw Object.assign(new Error("The report no longer matches this selection."), { code: "failed-precondition" });
   }
 }

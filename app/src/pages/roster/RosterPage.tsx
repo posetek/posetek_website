@@ -48,7 +48,7 @@ const PREVIEW_PLAYERS: any[] = [
 
 type GridMode = { kind: "loading" } | { kind: "list" } | { kind: "error"; message: string };
 
-export default function RosterPage() {
+export default function RosterPage({ managementOnly = false, organizationId, teamId, onChanged }: { managementOnly?: boolean; organizationId?: string; teamId?: string; onChanged?: () => void } = {}) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -84,6 +84,8 @@ export default function RosterPage() {
   const lastNameRef = useRef<HTMLInputElement>(null);
   const codeRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState(emptyStaffPlayerProfile);
+  const loadEpoch = useRef(0);
+  const mounted = useRef(false);
 
   const setMessage = useCallback((text: string, success = false) => {
     setFormMessage({ text, success });
@@ -93,24 +95,34 @@ export default function RosterPage() {
     setGridMode({ kind: "loading" });
     const user = auth.currentUser;
     if (!user) return;
-    const context = await getClubContext();
-    if (context.role === "manager" || context.role === "admin") { navigate("/organization", { replace: true }); return; }
-    if (context.role === "coach" && context.organization) {
-      const chosen = selectedTeam(context.teams, requestedTeamId ?? new URLSearchParams(window.location.search).get("team"));
-      if (!chosen) { navigate("/organization", { replace: true }); return; }
+    const epoch = ++loadEpoch.current;
+    const current = () => mounted.current && loadEpoch.current === epoch && auth.currentUser?.uid === user.uid;
+    const context = await getClubContext(organizationId);
+    if (!current()) return;
+    if (!managementOnly && (context.role === "manager" || context.role === "admin")) { navigate("/organization", { replace: true }); return; }
+    if (["coach", "manager", "admin"].includes(context.role) && context.organization) {
+      const requested = requestedTeamId ?? teamId ?? new URLSearchParams(window.location.search).get("team");
+      if (requested && !context.teams.some(entry => entry.id === requested)) throw new Error("This team is no longer available. Refresh Team Insights.");
+      const chosen = selectedTeam(context.teams, requested);
+      if (!chosen) { if (!managementOnly) navigate("/organization", { replace: true }); else setGridMode({ kind: "error", message: "Select a team before adding a player." }); return; }
       clubRef.current = { context, teamId: chosen.id }; setClub(context); setClubTeamId(chosen.id);
-      coachDocRef.current = await findCoach(user.uid);
+      coachDocRef.current = managementOnly ? null : await findCoach(user.uid);
+      if (!current()) return;
       setOrgLabel(`${context.organization.name} · ${chosen.name}`);
-      setPlayers(sortByName(await loadClubPlayers(chosen))); setRendered(true); setGridMode({ kind: "list" }); return;
+      const loaded = managementOnly ? [] : sortByName(await loadClubPlayers(chosen));
+      if (!current()) return;
+      setPlayers(loaded); setRendered(true); setGridMode({ kind: "list" }); return;
     }
     clubRef.current = null; setClub(null);
     const coachDoc = await findCoach(user.uid);
+    if (!current()) return;
     // Assign before the throw (legacy order): a failed refresh must clear the
     // stale coach doc so add/create can't write against it afterwards.
     coachDocRef.current = coachDoc;
     if (!coachDoc) throw new Error("No coach profile is linked to this sign-in.");
     const coach = coachDoc.data() || {};
-    if (Object.hasOwn(coach, "organizationId")) throw new Error("Your club access is inactive or unavailable. Ask your organization manager to review it.");
+    if (Object.hasOwn(coach, "organizationId") || Object.hasOwn(coach, "organizationRole")) throw new Error("Your club access is inactive or unavailable. Ask your organization manager to review it.");
+    if (managementOnly) { setPlayers([]); setRendered(true); setGridMode({ kind: "list" }); return; }
     if ((coach.organization || coach.org)?.get) {
       try {
         const org = await (coach.organization || coach.org).get();
@@ -127,7 +139,7 @@ export default function RosterPage() {
     setPlayers(loaded);
     setRendered(true);
     setGridMode({ kind: "list" });
-  }, []);
+  }, [managementOnly, organizationId, teamId, navigate]);
 
   const showError = useCallback((error: any) => {
     console.error("[roster]", error);
@@ -135,16 +147,18 @@ export default function RosterPage() {
   }, []);
 
   useEffect(() => {
-    document.title = "Roster | PoseTek";
-    if (new URLSearchParams(window.location.search).get("preview") === "1") {
+    mounted.current = true;
+    if (!managementOnly) document.title = "Roster | PoseTek";
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get("preview") === "1") {
       setOrgLabel("Vacaville Training");
       setPlayers([...PREVIEW_PLAYERS]);
       setRendered(true);
       setGridMode({ kind: "list" });
-      return;
+      return () => { mounted.current = false; ++loadEpoch.current; };
     }
     const unsubscribe = auth.onAuthStateChanged(user => {
       if (!user) {
+        ++loadEpoch.current; setPlayers([]); coachDocRef.current = null; clubRef.current = null;
         if (signingOutRef.current) return;
         // Legacy sent no returnTo from here: a signed-out player who lands on
         // the roster should sign in and get the role-based destination
@@ -154,10 +168,10 @@ export default function RosterPage() {
       }
       loadRoster().catch(showError);
     });
-    return unsubscribe;
+    return () => { mounted.current = false; ++loadEpoch.current; unsubscribe(); };
     // Boot once, like the legacy script tag.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadRoster, managementOnly, navigate, showError]);
 
   async function handleSignOut() {
     signingOutRef.current = true;
@@ -191,7 +205,7 @@ export default function RosterPage() {
   async function createPlayer() {
     const user = auth.currentUser;
     const coachDoc = coachDocRef.current;
-    if (!user || !coachDoc || coachDoc.data().userUID !== user.uid) {
+    if (!user || (!clubRef.current && (!coachDoc || coachDoc.data().userUID !== user.uid))) {
       return setMessage("Please sign in again with your coach account.");
     }
     const firstName = firstNameRef.current?.value.trim() ?? "";
@@ -206,7 +220,9 @@ export default function RosterPage() {
         if (firstNameRef.current) firstNameRef.current.value = "";
         if (lastNameRef.current) lastNameRef.current.value = "";
         setProfile(emptyStaffPlayerProfile());
+        if (!mounted.current || auth.currentUser?.uid !== user.uid) return;
         dialogRef.current?.close(); await loadRoster(clubRef.current.teamId);
+        if (mounted.current && auth.currentUser?.uid === user.uid) onChanged?.();
       } catch (failure: any) { setMessage(failure.message || "The player could not be created."); }
       finally { setCreateBusy(false); }
       return;
@@ -257,6 +273,7 @@ export default function RosterPage() {
       setProfile(emptyStaffPlayerProfile());
       dialogRef.current?.close();
       await loadRoster();
+      if (mounted.current && auth.currentUser?.uid === user.uid) onChanged?.();
     } catch (error: any) {
       setMessage(
         pendingRef.current
@@ -283,9 +300,11 @@ export default function RosterPage() {
     setMessage("Adding player…", true);
     try {
       await cloud.httpsCallable("attachPlayerByCode")({ code });
+      if (!mounted.current || auth.currentUser?.uid !== user.uid) return;
       if (codeRef.current) codeRef.current.value = "";
       dialogRef.current?.close();
       await loadRoster();
+      if (mounted.current && auth.currentUser?.uid === user.uid) onChanged?.();
     } catch (error: any) {
       setMessage(error.message || "The player could not be added.");
     } finally {
@@ -348,8 +367,8 @@ export default function RosterPage() {
   }
 
   return (
-    <div className="pt-pose portal-body roster-body">
-      <header className="portal-header">
+    <div className={managementOnly ? "insights-roster-management" : "pt-pose portal-body roster-body"}>
+      {!managementOnly && <header className="portal-header">
         <Link className="quiet-button" to="/feed">Community feed</Link>
         <Link
           className="portal-brand"
@@ -373,9 +392,9 @@ export default function RosterPage() {
           <span className="material-symbols-outlined">logout</span>
           <span>Sign Out</span>
         </button>
-      </header>
+      </header>}
 
-      <main className="roster-shell">
+      {!managementOnly && <main className="roster-shell">
         <section className="roster-heading">
           <div>
             <p className="eyebrow" id="organizationName">{orgLabel}</p>
@@ -413,7 +432,8 @@ export default function RosterPage() {
         <button className="primary-cta roster-add" id="addPlayerButton" type="button" onClick={openDialog}>
           <span className="material-symbols-outlined">person_add</span>Add Player
         </button>
-      </main>
+      </main>}
+      {managementOnly && <><button className="quiet-button" type="button" disabled={gridMode.kind !== "list"} onClick={openDialog}>Add player</button>{gridMode.kind === "error" && <p role="alert">{gridMode.message}</p>}</>}
 
       <dialog className="portal-dialog" id="addPlayerDialog" ref={dialogRef}>
         <form method="dialog" className="dialog-card" id="dialogShell">
@@ -422,7 +442,7 @@ export default function RosterPage() {
               <p className="eyebrow">Roster</p>
               <h2>Add a player</h2>
             </div>
-            <button className="icon-button" value="cancel" aria-label="Close">
+            <button className="icon-button" type="button" onClick={() => dialogRef.current?.close()} aria-label="Close">
               <span className="material-symbols-outlined">close</span>
             </button>
           </header>
@@ -435,14 +455,14 @@ export default function RosterPage() {
             >
               New player
             </button>
-            <button
+            {!club && <button
               type="button"
               className={addTab === "existing" ? "active" : ""}
               data-add-tab="existing"
               onClick={() => switchTab("existing")}
             >
               Player code
-            </button>
+            </button>}
           </div>
           <section data-add-panel="new" hidden={addTab !== "new"}>
             <label>

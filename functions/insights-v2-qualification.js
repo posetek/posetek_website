@@ -8,9 +8,10 @@ const SPECS = Object.freeze({
 });
 function millis(value) {
   try {
-    const result = value?.toMillis ? value.toMillis() : value instanceof Date ? value.getTime()
+    const result = value?.toMillis ? value.toMillis() : value?.toDate ? value.toDate().getTime() : value instanceof Date ? value.getTime()
       : typeof value === "number" ? value : typeof value === "string" && value ? Date.parse(value)
-      : typeof value?._seconds === "number" ? value._seconds * 1000 : null;
+      : typeof value?._seconds === "number" ? value._seconds * 1000
+      : typeof value?.seconds === "number" ? value.seconds * 1000 : null;
     return Number.isFinite(result) && Math.abs(result) <= 8640000000000000 ? result : null;
   } catch { return null; }
 }
@@ -108,7 +109,7 @@ function testingStatus(events) {
 function demographics(profile, reporting, now) {
   const division = ["boys", "girls"].includes(reporting?.division) ? reporting.division : "unknown";
   let age = null;
-  for (const input of [profile.birthDate, profile.dateOfBirth, profile.dob]) {
+  for (const input of [profile.birthDate, profile.dateOfBirth, profile.dob, profile.birthdate, profile.birthday]) {
     if (typeof input === "string" && (!/^\d{4}-\d{2}-\d{2}(?:T.*)?$/.test(input)
       || !Number.isFinite(Date.parse(input)) || new Date(input).toISOString().slice(0, 10) !== input.slice(0, 10))) continue;
     const birth = millis(input);

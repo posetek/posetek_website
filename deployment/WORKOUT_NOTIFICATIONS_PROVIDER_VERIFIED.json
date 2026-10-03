@@ -1,0 +1,386 @@
+{
+  "schemaVersion": 1,
+  "status": "provider-verified-synthetic-pilot-incomplete",
+  "historicalCheckpoint": true,
+  "recordedAt": "2026-09-28T22:32:38.956Z",
+  "repository": "https://github.com/posetek/posetek_website",
+  "branch": "codex/workout-email-alerts",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/11",
+  "previousCheckpoints": [
+    "deployment/WORKOUT_NOTIFICATIONS_PREVIEW.json",
+    "deployment/WORKOUT_NOTIFICATIONS_PROVIDER_SETUP.json"
+  ],
+  "project": "kickai-69dd0",
+  "region": "us-central1",
+  "provider": {
+    "name": "Resend",
+    "recipient": "dylank@posetek.net",
+    "sender": "PoseTek Workouts <workouts@alerts.posetek.net>",
+    "sendingDomain": "alerts.posetek.net",
+    "sendingDomainId": "036787c4-c021-4e80-aa58-e65c0ea4fb90",
+    "domainStatus": "verified",
+    "domainVerifiedAt": "2026-09-28T22:20:00Z",
+    "domainVerifiedTimePrecision": "minute",
+    "domainEvidence": "Actual Resend dashboard readback by the release operator and public DNS receipt.",
+    "apiKey": {
+      "permission": "sending_access",
+      "domainRestriction": "alerts.posetek.net",
+      "scopeVerifiedInDashboard": true,
+      "valueOmitted": true
+    },
+    "tracking": {
+      "openTrackingEnabled": false,
+      "clickTrackingEnabled": false,
+      "observedAt": "2026-09-28T22:22:00Z",
+      "timePrecision": "minute",
+      "evidence": "Resend Configuration showed Enable tracking metrics, required a custom tracking domain, and showed Configure with no configured tracking subdomain."
+    },
+    "receiving": {
+      "enabled": false,
+      "observedAt": "2026-09-28T22:23:00Z",
+      "timePrecision": "minute",
+      "evidence": "Resend Records dashboard showed receiving off and all three generated sending records Verified."
+    },
+    "secrets": {
+      "RESEND_API_KEY": {
+        "version": "1",
+        "state": "ENABLED"
+      },
+      "RESEND_WEBHOOK_SECRET": {
+        "version": "1",
+        "state": "ENABLED"
+      }
+    },
+    "secretValuesOmitted": true,
+    "webhook": {
+      "id": "000f971a-e5b5-4df1-9a87-c0335554f403",
+      "enabled": true,
+      "url": "https://us-central1-kickai-69dd0.cloudfunctions.net/resendWorkoutNotificationWebhook",
+      "events": [
+        "email.sent",
+        "email.delivered",
+        "email.delivery_delayed",
+        "email.bounced",
+        "email.failed",
+        "email.suppressed"
+      ],
+      "configurationEvidence": "Actual Resend dashboard configuration confirmed by the release operator.",
+      "realSignedSentAndDeliveredReceiptsObserved": true
+    },
+    "mailboxAcceptanceComplete": false,
+    "inboxPlacementOrReadingNotClaimed": true
+  },
+  "dns": {
+    "authority": "Cloudflare",
+    "providerGeneratedRecordsVerifiedAt": "2026-09-28T22:18:17.565Z",
+    "providerGeneratedRecords": [
+      {
+        "type": "TXT",
+        "name": "resend._domainkey.alerts.posetek.net",
+        "purpose": "DKIM",
+        "publicValueSha256": "2e7f4735d8ac51d7a26efd4ea62447d5d4c76710c95ec4aff22b5c0818db7cd2",
+        "publicValueOmitted": true,
+        "verified": true
+      },
+      {
+        "type": "CNAME",
+        "name": "rsend.alerts.posetek.net",
+        "target": "rsend.forge.rmta.net",
+        "proxied": false,
+        "verified": true
+      },
+      {
+        "type": "CNAME",
+        "name": "send.alerts.posetek.net",
+        "target": "send.forge.rmta.net",
+        "proxied": false,
+        "verified": true
+      }
+    ],
+    "subdomainDmarc": {
+      "type": "TXT",
+      "name": "_dmarc.alerts.posetek.net",
+      "value": "v=DMARC1; p=none;",
+      "checkedAt": "2026-09-28T22:30:38.471Z",
+      "publicResolutionVerified": true,
+      "scope": "alerts subdomain only",
+      "reportingOrForwardingAddressesConfigured": false,
+      "providerAnalysis": "pending third quiet fixture email after addition"
+    },
+    "existingRootMxAndSpfPreserved": true,
+    "rootDmarcChanged": false,
+    "rootDmarcReadback": "ENOTFOUND",
+    "legacyMxSpfExampleLookupsAreNotSetupInstructions": true,
+    "publicDnsEvidenceSha256": "d03b26589459b29fdaa5c976d787f4a0c128aec580d0eac52067697feff18ff6",
+    "dmarcEvidenceSha256": "d1c99fb8d7999d965f06f4236b278cee76839c1b1f94b92ffd9fe5376280ac28"
+  },
+  "deployments": {
+    "intake": {
+      "codebase": "workout-notifications-intake",
+      "verifiedAt": "2026-09-28T21:31:32.629Z",
+      "functions": {
+        "observeWorkoutNotifications": {
+          "versionId": "1",
+          "sourceSha256": "32a6c626536dffdd8591b5d035511af5923d7b7f984562af485f98c6febb7344",
+          "status": "ACTIVE",
+          "definition": {
+            "timeout": "120s",
+            "availableMemoryMb": 256,
+            "maxInstances": 10,
+            "secrets": [],
+            "eventTrigger": {
+              "resource": "projects/kickai-69dd0/databases/(default)/documents/players/{playerId}/workoutLogs/{logId}",
+              "eventType": "providers/cloud.firestore/eventTypes/document.write",
+              "service": "firestore.googleapis.com",
+              "failurePolicy": {
+                "retry": {}
+              }
+            }
+          },
+          "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+          "runtimeConfig": {
+            "present": true,
+            "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+            "bytes": 112,
+            "schema": "firebase-project-and-bucket"
+          }
+        },
+        "observePersonalWorkoutNotifications": {
+          "versionId": "1",
+          "sourceSha256": "32a6c626536dffdd8591b5d035511af5923d7b7f984562af485f98c6febb7344",
+          "status": "ACTIVE",
+          "definition": {
+            "timeout": "120s",
+            "availableMemoryMb": 256,
+            "maxInstances": 10,
+            "secrets": [],
+            "eventTrigger": {
+              "resource": "projects/kickai-69dd0/databases/(default)/documents/players/{playerId}/personalWorkoutLogs/{logId}",
+              "eventType": "providers/cloud.firestore/eventTypes/document.write",
+              "service": "firestore.googleapis.com",
+              "failurePolicy": {
+                "retry": {}
+              }
+            }
+          },
+          "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+          "runtimeConfig": {
+            "present": true,
+            "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+            "bytes": 112,
+            "schema": "firebase-project-and-bucket"
+          }
+        },
+        "recordWorkoutActivity": {
+          "versionId": "1",
+          "sourceSha256": "32a6c626536dffdd8591b5d035511af5923d7b7f984562af485f98c6febb7344",
+          "status": "ACTIVE",
+          "definition": {
+            "timeout": "60s",
+            "availableMemoryMb": 256,
+            "maxInstances": 10,
+            "secrets": [],
+            "httpsTrigger": true,
+            "publicInvoker": true,
+            "ingressSettings": "ALLOW_ALL",
+            "callable": true
+          },
+          "iamSha256": "df2f78f8a685d25fa6b139f4c2b94dd35453ba71f7a7aaaa288ab58c686e68b2",
+          "runtimeConfig": {
+            "present": true,
+            "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+            "bytes": 112,
+            "schema": "firebase-project-and-bucket"
+          }
+        },
+        "getWorkoutNotificationStatus": {
+          "versionId": "1",
+          "sourceSha256": "32a6c626536dffdd8591b5d035511af5923d7b7f984562af485f98c6febb7344",
+          "status": "ACTIVE",
+          "definition": {
+            "timeout": "60s",
+            "availableMemoryMb": 256,
+            "maxInstances": 10,
+            "secrets": [],
+            "httpsTrigger": true,
+            "publicInvoker": true,
+            "ingressSettings": "ALLOW_ALL",
+            "callable": true
+          },
+          "iamSha256": "372cf25b1adb870071ff2c08dd4b04acf98a20eec2b126efa7bb29caa16bd215",
+          "runtimeConfig": {
+            "present": true,
+            "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+            "bytes": 112,
+            "schema": "firebase-project-and-bucket"
+          }
+        }
+      },
+      "sourceManifestSha256": "690df4e8d3f71ef775616599d74d8bb524f9885296ca960f667287d14668723a",
+      "sourceAndConfigurationAndIamVerified": true,
+      "unrelatedFunctionsPreserved": true
+    },
+    "delivery": {
+      "codebase": "workout-notifications-delivery",
+      "verifiedAt": "2026-09-28T22:00:18.111Z",
+      "functions": {
+        "dispatchWorkoutNotification": {
+          "versionId": "1",
+          "sourceSha256": "cd08fb5cfcd84bbc7c0bf5f72b16e50c64633e0f43b61e82beb9c6e67f553e80",
+          "status": "ACTIVE",
+          "definition": {
+            "timeout": "120s",
+            "availableMemoryMb": 256,
+            "maxInstances": 5,
+            "secrets": [
+              "RESEND_API_KEY"
+            ],
+            "eventTrigger": {
+              "resource": "projects/kickai-69dd0/databases/(default)/documents/workoutNotificationOutbox/{notificationId}",
+              "eventType": "providers/cloud.firestore/eventTypes/document.write",
+              "service": "firestore.googleapis.com",
+              "failurePolicy": {
+                "retry": {}
+              }
+            }
+          },
+          "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+          "runtimeConfig": {
+            "present": true,
+            "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+            "bytes": 112,
+            "schema": "firebase-project-and-bucket"
+          }
+        },
+        "sweepWorkoutNotifications": {
+          "versionId": "1",
+          "sourceSha256": "cd08fb5cfcd84bbc7c0bf5f72b16e50c64633e0f43b61e82beb9c6e67f553e80",
+          "status": "ACTIVE",
+          "definition": {
+            "timeout": "300s",
+            "availableMemoryMb": 256,
+            "maxInstances": 1,
+            "secrets": [
+              "RESEND_API_KEY"
+            ],
+            "eventTrigger": {
+              "resource": "projects/kickai-69dd0/topics/firebase-schedule-sweepWorkoutNotifications-us-central1",
+              "eventType": "google.pubsub.topic.publish",
+              "service": "pubsub.googleapis.com"
+            }
+          },
+          "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+          "runtimeConfig": {
+            "present": true,
+            "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+            "bytes": 112,
+            "schema": "firebase-project-and-bucket"
+          }
+        }
+      },
+      "sourceManifestSha256": "106927aa8db3955f673d63d6a5b0d888c42afff7e0b00a33b174185bfb8cefdf",
+      "sourceAndConfigurationAndIamVerified": true,
+      "unrelatedFunctionsPreserved": true
+    },
+    "webhook": {
+      "codebase": "workout-notifications-webhook",
+      "verifiedAt": "2026-09-28T22:19:21.804Z",
+      "functions": {
+        "resendWorkoutNotificationWebhook": {
+          "versionId": "1",
+          "sourceSha256": "0a552431b80bfe7e518c5722c49bc654aad0d4ce164b7474e59ef6839bd2d66a",
+          "status": "ACTIVE",
+          "definition": {
+            "timeout": "60s",
+            "availableMemoryMb": 256,
+            "maxInstances": 10,
+            "secrets": [
+              "RESEND_WEBHOOK_SECRET"
+            ],
+            "httpsTrigger": true,
+            "publicInvoker": true,
+            "ingressSettings": "ALLOW_ALL",
+            "callable": false
+          },
+          "iamSha256": "07f46fff5ffce36f5be85a0bed63c6deb4626ccbb3fa6c09e0be40268c82207e",
+          "runtimeConfig": {
+            "present": true,
+            "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+            "bytes": 112,
+            "schema": "firebase-project-and-bucket"
+          }
+        }
+      },
+      "sourceManifestSha256": "f01dd743f90a27243bfc69ba93475144a63e0cb811cc27cf9074c88af8cd3077",
+      "sourceAndConfigurationAndIamVerified": true,
+      "unrelatedFunctionsPreserved": true
+    }
+  },
+  "scheduler": {
+    "name": "projects/kickai-69dd0/locations/us-central1/jobs/firebase-schedule-sweepWorkoutNotifications-us-central1",
+    "state": "ENABLED",
+    "schedule": "every 5 minutes",
+    "timeZone": "America/Los_Angeles",
+    "topic": "projects/kickai-69dd0/topics/firebase-schedule-sweepWorkoutNotifications-us-central1",
+    "attributes": {
+      "scheduled": "true"
+    }
+  },
+  "website": {
+    "state": "reviewed-draft-unpublished",
+    "draftDeployId": "6abadd8abff0a78fde2fbe28",
+    "draftUrl": "https://6abadd8abff0a78fde2fbe28--posetek.netlify.app",
+    "frontendSourceCommit": "d814225368976c97e8184eabb8953779d139bc1c",
+    "publishedToProduction": false,
+    "productionUnchanged": "6ab8679ccbfca079f8997124",
+    "publicationAndAllPlayerAcceptanceNotCertifiedByThisCheckpoint": true
+  },
+  "syntheticPilot": {
+    "state": "incomplete-pending-quiet-resume",
+    "scope": "one synthetic allowlisted player only",
+    "sendsPilotOnly": true,
+    "allPlayersActivated": false,
+    "terminalMessagesDelivered": 2,
+    "actualSignedDeliveryReceiptsObserved": true,
+    "terminalEvidenceAt": "2026-09-28T22:31:20.916Z",
+    "sendingPausedAt": "2026-09-28T22:25:00.334Z",
+    "quietClaimsArmedAt": "2026-09-28T22:25:08.187Z",
+    "earliestArtificialAge": "2026-09-28T22:55:18.185Z",
+    "quietDeliveryVerified": false,
+    "resumeCancellationVerified": false,
+    "artificialTimingStepComplete": false,
+    "finalMailboxAcceptanceComplete": false,
+    "cleanupComplete": false,
+    "privateIdentifiersAndPayloadsOmitted": true,
+    "statusNote": "The 22:31:20 UTC status snapshot confirms paused sends; earlier journal entries record quiet claims. This is a historical checkpoint, not a later settings readback."
+  },
+  "validation": {
+    "allSevenScopedDeploymentsAudited": true,
+    "notificationPublisherTestsPassed": 14,
+    "sharedPublisherTestsPassed": 19,
+    "publicDnsResolution": true,
+    "sendingDomainVerifiedInProvider": true,
+    "keyScopeAndTrackingReadback": true,
+    "signedWebhookLiveReconciliation": true,
+    "pilotAcceptanceComplete": false
+  },
+  "preserved": {
+    "priorProviderSetupReceipt": true,
+    "priorPreviewReceipt": true,
+    "realAthleteWorkoutData": true,
+    "trainingCatalog": true,
+    "trainingPlans": true,
+    "canonicalRules": true,
+    "gateway": true,
+    "nativeSource": true,
+    "rootMailRouting": true
+  },
+  "remaining": [
+    "Finish guarded synthetic quiet eligibility and authenticated Resume cancellation; label any artificial timing.",
+    "Verify the third email with real signed delivery and independent provider readback, including the new subdomain DMARC analysis.",
+    "Complete mailbox and truthful content/timestamp acceptance; provider delivery alone is insufficient.",
+    "After three-message provider acceptance, promote the exact reviewed draft, reconcile the baseline and verify production protected links while fixtures still exist.",
+    "Park and clean up only run-owned fixtures, reconcile asynchronous records/Auth tombstone, and complete final cleanup audit.",
+    "After mailbox acceptance and cleanup pass, enable all players with a fresh cutoff and no pilot allowlist."
+  ]
+}

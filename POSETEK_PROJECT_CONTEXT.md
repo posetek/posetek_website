@@ -1,18 +1,151 @@
 # PoseTek website project context
 
-Reviewed on September 26, 2026. This guide summarizes the available repository and
+Reviewed on October 1, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
-## Device performance plan handoff (2026-09-29, not started)
+## Device performance integration (2026-10-03, in progress)
 
-Plan 07 of the mobile processing-performance series adds phone timing/upload
-measurements and an admin **Device performance** tab. Its website half is
-ingestion, projection and read functions, the `/admin/device-performance` routes,
-indexes and rules tests against the canonical mobile rules. Implementation was
-authorized on 2026-09-29 and has not started; nothing is deployed. Read
-[the handoff](docs/DEVICE_PERFORMANCE_PLAN_HANDOFF.md); the canonical plan is in
-`PoseTek-mobile-app/docs/plans/`. This does not change the recorded production release.
+The existing ingestion, reporting and admin device pages are implemented locally.
+The current task integrates them with the shared website and adds summaries from
+existing diagnostic manifests, current-algorithm comparisons, a home overview and
+per-session charts. Backend-derived summaries support current TestFlight builds;
+new native performance facts are optional enrichment. Deployment and end-to-end
+verification remain pending. See [the handoff](docs/DEVICE_PERFORMANCE_PLAN_HANDOFF.md).
+
+## Reliable personal workouts (2026-10-01, live)
+
+Guided player Training is live as deployment `6abeaf5702a9c9983c7a41b9`, source
+`8956871d0ece5bf7c43e9830df60ab072eb3bd64`, published October 1 at 12:18:33 PM PDT.
+Focus, location, time, conditional age and readiness replace the equipment
+checklist. Visible location defaults have compact exceptions; available times
+come from code-only assessment. Conversations, AI revisions, explicit publishing
+and tracked workouts remain connected. The reviewed catalog can still leave some
+age/setup combinations unavailable; offer adjustments without granting held drills.
+
+The shared gateway is `agent-gateway-sha-a63f1b0b7e5d`, built and tested from
+canonical backend main and promoted through its release script. Private admin
+evidence now falls back to immutable JSON artifacts for unsupported Firestore
+structures as well as excessive size. Admin and player age readers agree; an
+explicit confirmation can refresh the same observed age without inventing a DOB.
+Catalog `1.0.93` makes only STR-005, STR-006, STR-008, STR-501 and STR-502 mat
+optional. All 80 held drafts, media, doses, review states and native gates remain.
+
+The availability follow-up separates completed empty assessments from loading
+and retryable errors; a bounded check retains its accepted job identity for
+recovery. Completed testing and active plans are not prerequisites. Live
+synthetic acceptance created a 30-minute Speed/Agility draft without either.
+The reported age-21 gap comes from authored catalog bounds: 53 of 54 published
+personal-session drills end at age 19 or younger; STR-501 covers Strength at
+ages 9–25. Current bounds remain enforced. These limits do not establish clinical
+unsuitability; adult coverage needs a separate content/age-envelope update.
+The reconciled baseline protects 1,438 application/public files. All 1,440
+artifact files match production inventory; the 52 existing processed HTML files
+retain only their previously verified transformations. The ordinary preservation
+build passed against this new baseline.
+
+The release preserves already-live issue-alert source `e8de8d7` and predecessor
+deployment `6abd8f957e046e8059376091`, including approved Players/Coaches marketing
+bytes. Read [the handoff](docs/RELIABLE_PLAYER_WORKOUTS.md),
+[the availability receipt](deployment/WORKOUT_AVAILABILITY_PRODUCTION.json), and
+[the initial production receipt](deployment/RELIABLE_PLAYER_WORKOUTS_PRODUCTION.json)
+before another application, gateway, rules or catalog release. The existing Coach
+proxy allows production origins and rejects Netlify preview origins; exercise the
+actual Coach handoff on Posetek.net rather than widening that allowlist.
+
+## User issue alerts (2026-09-30)
+
+The user approved a separate crash/bug notification workflow to `dylank@posetek.net`,
+with a report form, private admin inbox, per-user incident emails, status changes
+and a 9 AM Pacific summary. Backend functions and synthetic delivery acceptance
+are implemented; website publication and activation are recorded in the release
+receipt when completed. Read [USER_ISSUE_ALERTS.md](docs/USER_ISSUE_ALERTS.md) and
+[the scoped release guide](deployments/user-issues/README.md). The native source
+candidate is separate and unverified on Mac/iPhone/TestFlight. Crashlytics export
+has not yet been verified; a synthetic adapter test is not device acceptance.
+
+## Coach percentile presentation (2026-09-29, live)
+
+Coach percentile presentation is live as deployment `6abb9f1e6c2c84772de67005`, source
+`684528b`, published September 29, 2026 at 4:25:34 AM PDT. The card pairs a compact
+radar with readable skill positions, measured-player counts and concise scale
+explanations. Phone layouts show skill positions first. Scoring and access are
+unchanged. All 1,342 artifact files match production inventory; the baseline
+protects 1,340 application/public files. See
+[the presentation release receipt](deployment/COACH_COMPARISON_POLISH_PRODUCTION.json)
+and [PR #14](https://github.com/posetek/posetek_website/pull/14).
+
+Verification passed 79 Insights tests, 30 release guards and 28 synthetic browser
+layout/state checks across four widths. Candidate and production artifact, route
+and signed-out entry checks passed. No production records or accounts were
+created. The ordinary preservation build matched the published artifact.
+
+## Unified coach workspace and Astro migration (2026-09-29)
+
+The user approved Team Insights as the single coach workspace, including
+organization and independent coaches. Overview owns the roster; Testing,
+Workouts, Active use, Community and one named player tab share its shell. Player
+comparisons use measured team/roster percentiles and recorded age, with explicit
+missing-data states. Existing plans, workout history, published personal workouts,
+signup actions and planner paths remain connected. Canonical staff permissions
+and social audiences remain authoritative.
+
+The user also selected the full-site Astro migration and supplied Astra frontend
+design guidance. Astro builds Players, Coaches and the application documents,
+retaining React interactions, Svelte demonstrations and the protected public
+assets. See [the implementation handoff](docs/UNIFIED_COACH_WORKSPACE.md) and
+[the API contract](docs/insights/COACH_WORKSPACE_CONTRACT.md). The scoped Insights
+release contains nine functions; no gateway, rules, native or catalog release is
+included. Website source `3e41c2a6c2bc8beba3b0829091a96d441ad0e15c` was published
+as `6abb9834af8b9c320f64df04` on September 29 at 3:55:40 AM PDT by promoting
+the exact reviewed draft. All 1,337 artifact files match the production inventory;
+the reconciled baseline protects 1,335 application/public files. The ordinary
+preservation build and 30 release guards passed. Hosted coach acceptance passed
+73 checks; production passed 12 coach, 16 athlete/manager/admin, and two compiled
+entry checks. See `deployment/UNIFIED_COACH_WORKSPACE_PRODUCTION.json` for backend,
+served-HTML processing, cleanup and recovery evidence.
+
+The previously deployed workout-alert source branch was merged before this work,
+preserving the September 28 live functionality that had not yet reached main.
+The following section records that predecessor production state.
+
+## Workout email alerts (2026-09-28, live)
+
+All-player workout alerts are enabled from September 28, 2026 at 4:06:30 PM PDT
+(`activatedAtMillis: 1790636790868`), with no historical backfill or pilot allowlist.
+Resend sends saved workout outcomes to `dylank@posetek.net` from
+`PoseTek Workouts <workouts@alerts.posetek.net>`. Website sessions also qualify for
+one inactivity notice after 30 minutes without meaningful activity, processed by
+a five-minute sweep. Native coverage uses existing saved endings; native-only
+inactivity is not inferred. Emails include recorded progress, time and a protected
+link to the exact workout history, where administrators can inspect delivery status.
+
+Website source `d814225368976c97e8184eabb8953779d139bc1c` was published as deployment
+`6abadd8abff0a78fde2fbe28` at 3:56:54 PM PDT by promoting the reviewed draft without
+rebuilding. All 1,239 artifact files match the candidate; the reconciled baseline
+protects 1,207 application/public files (125,432,039 bytes). The ordinary
+preservation build, 22 release checks, 30 production routes and all 1,049 JS/CSS
+assets passed. All 32 approved marketing files remain unchanged.
+
+All seven scoped Firebase functions and the scheduler are live and audited.
+The verified Resend domain uses one DKIM TXT, two DNS-only CNAMEs and a
+subdomain-only initial DMARC policy; root mail records remain unchanged. The
+sending-only key is domain restricted and both secrets use Secret Manager.
+Three synthetic emails received signed delivery receipts; the post-DMARC quiet
+message was also confirmed in Outlook Inbox. The first two messages have provider
+delivery evidence only. Natural quiet timing, resume cancellation, exact protected
+links and sign-in return passed. Synthetic cleanup and final quiescence checks
+passed before global activation. A bounded post-activation audit found exact
+settings, no synthetic roots and zero sampled new jobs or activity; this is not
+a claim of real-player usage or a complete historical scan.
+
+Read the [production receipt](deployment/WORKOUT_NOTIFICATIONS_PRODUCTION.json),
+[notification handoff](docs/WORKOUT_NOTIFICATIONS.md) and
+[scoped release guide](deployments/workout-notifications/README.md).
+The implementation preserves existing workout logs, canonical rules, gateway,
+native source, training catalog and the false whole-body mobile acceptance gate.
+Changes are shared in [PR #11](https://github.com/posetek/posetek_website/pull/11).
+The following sections record preceding releases.
 
 ## Email-free staff and administrator access (2026-09-26)
 
