@@ -1,0 +1,281 @@
+{
+  "schemaVersion": 1,
+  "project": "kickai-69dd0",
+  "region": "us-central1",
+  "date": "2026-10-03",
+  "purpose": "Optional app feedback after meaningful use",
+  "acceptance": {
+    "websiteLiveAndAutomatedAcceptance": true,
+    "playerComprehensionPilotComplete": false,
+    "nativeInvitationsReleased": false,
+    "remaining": [
+      "12-player comprehension and timing review across the three previously agreed age bands",
+      "Separate native invitation release"
+    ],
+    "realAdminAccountBrowserAcceptance": false
+  },
+  "website": {
+    "deploymentId": "6ac17bc21377cbeaea114800",
+    "previewDeploymentId": "6ac17bc21377cbeaea114800",
+    "previousDeploymentId": "6ac06e0d420f2b6b34129fb5",
+    "publishedAtUtc": "2026-10-03T22:12:14.725Z",
+    "verifiedAtUtc": "2026-10-03T22:12:19.099Z",
+    "applicationSourceCommit": "d82cf40",
+    "feedbackImplementationCommit": "8f177c7",
+    "preservedTeammateCommit": "41fa4fc",
+    "publicUrl": "https://posetek.net/feedback",
+    "adminPath": "/admin/feedback",
+    "fullProviderInventoryFiles": 1538,
+    "websiteArtifactFiles": 1537,
+    "protectedBaselineFiles": 1535,
+    "baselineAdopted": true,
+    "applicationSha1": "b9fe37549537848de13fcbe85cafd11a8097a445",
+    "feedbackSha1": "7e31700f6b0339e287b05399416c21ed99b8f8a9",
+    "addedAssets": 52,
+    "previousProviderFilesPreservedApartFromApplicationAndGeneratedConfig": 1483,
+    "marketingSourceAndServedBytesPreserved": true,
+    "documents": [
+      {
+        "path": "/application.html",
+        "sha": "b9fe37549537848de13fcbe85cafd11a8097a445",
+        "size": 15102
+      },
+      {
+        "path": "/coaches/index.html",
+        "sha": "167c6dd233a8bad39c09f49486d39595a7ea9cb6",
+        "size": 25969
+      },
+      {
+        "path": "/feedback.html",
+        "sha": "7e31700f6b0339e287b05399416c21ed99b8f8a9",
+        "size": 5515
+      },
+      {
+        "path": "/index.html",
+        "sha": "12b1b8ff0a9f0e33e3471b15b7bbd0696e3e86f1",
+        "size": 37505
+      }
+    ],
+    "actualFeedbackHeadersVerified": true,
+    "applicationRoutesVerified": 14,
+    "feedbackRoutesVerified": 3,
+    "marketingRoutesVerified": 5,
+    "hostedPreviewPromotedWithoutRebuild": true
+  },
+  "invitation": {
+    "trigger": "Completed workout save acknowledged, recorded prescribed work, player returned to visible Training",
+    "browserCooldownDays": 7,
+    "excluded": [
+      "pain stops",
+      "early endings",
+      "failed saves",
+      "preview mode",
+      "changed account or player",
+      "hidden document or invitation"
+    ],
+    "resultsLinkIndependentOfCooldown": true,
+    "optionalParticipation": true,
+    "fullPageNavigation": true,
+    "qrAndMessageSharing": "Manual through existing coach/parent channels"
+  },
+  "data": {
+    "formVersion": 1,
+    "sourceAllowlist": [
+      "workout",
+      "results",
+      "qr",
+      "message",
+      "direct"
+    ],
+    "accountIdentifiersReceived": false,
+    "authenticationHeadersFromPublicForm": false,
+    "publicFormSessionReplayOrAnalyticsScripts": false,
+    "randomSessionIdentifiers": "One ephemeral UUID per form opening; not linked to accounts",
+    "retryDeduplication": "Exact repeats acknowledged once; conflicting repeat payload HTTP409",
+    "counts": "Actual opens, starts and submissions; form-session counts, never unique players",
+    "collections": {
+      "appFeedbackResponsesV1": {
+        "expiresAfterDays": 90
+      },
+      "appFeedbackSessionsV1": {
+        "expiresAfterDays": 90
+      },
+      "appFeedbackRateLimitsV1": {
+        "expiresAfterMinutesFromWindowStart": 30
+      }
+    },
+    "ttlDeletionAsynchronous": true,
+    "adminQueryExcludesExpiredRecords": true,
+    "rateLimit": {
+      "newSessionsPerNetworkWindow": 60,
+      "windowMinutes": 15,
+      "networkCounter": "Secret-keyed digest; separate short-lived records; no raw address in feedback"
+    },
+    "legacyFeedbackAndPlayerRecordsPreserved": true
+  },
+  "functions": {
+    "codebase": "app-feedback",
+    "runtime": "nodejs22",
+    "verifiedAtUtc": "2026-10-03T21:48:19.270Z",
+    "sourceConfigurationIamAndTransportVerified": true,
+    "unrelatedFunctionsPreserved": true,
+    "endpoints": {
+      "receiveAppFeedback": {
+        "version": "1",
+        "sourceArchiveSha256": "4d5b07bcfe7d12e5b4bcbe25d0c4336bf0816c35d02aa03f637d7587983b7f25",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "30s",
+          "availableMemoryMb": 256,
+          "maxInstances": 10,
+          "secrets": [
+            "APP_FEEDBACK_RATE_KEY"
+          ],
+          "httpsTrigger": true,
+          "publicInvoker": true,
+          "ingressSettings": "ALLOW_ALL",
+          "callable": false
+        },
+        "iamSha256": "f33e3958b9ff5f4ef1a063d3ea9dbb2cba27ea19bff5620af56b9ef4777b3dc5"
+      },
+      "getAppFeedback": {
+        "version": "1",
+        "sourceArchiveSha256": "4d5b07bcfe7d12e5b4bcbe25d0c4336bf0816c35d02aa03f637d7587983b7f25",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "30s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "secrets": [],
+          "httpsTrigger": true,
+          "publicInvoker": true,
+          "ingressSettings": "ALLOW_ALL",
+          "callable": true
+        },
+        "iamSha256": "92ddb221b6ef03a3560ae3de13a5bb4f322cdb1582b7eaaa4fb68e53f56b1f43"
+      }
+    }
+  },
+  "firestore": {
+    "canonicalRulesOwner": "posetek/posetek-mobile-app/firebase",
+    "sourceCommit": "39d6d9b",
+    "sourcePullRequest": "https://github.com/posetek/posetek-mobile-app/pull/35",
+    "publicationStatus": "published_and_read_back",
+    "firestore": {
+      "rulesetName": "projects/kickai-69dd0/rulesets/98313b3d-047d-471f-afdd-641145692f0a",
+      "sha256": "64bf1a13c90c8e930d1bc7808a975e9a94170c7560c3aa172807f7e98eb68855"
+    },
+    "storage": {
+      "rulesetName": "projects/kickai-69dd0/rulesets/17f98163-14a5-4511-9cab-105efde45bee",
+      "sha256": "1da8799ec5f785c1a43330342f895fef76774622b32bbf48853b45bc3e4bf3eb"
+    },
+    "storageRuleBytesPreserved": true,
+    "explicitRecursiveClientDenials": true,
+    "permissiveFallbackAbsent": true,
+    "indexes": [
+      {
+        "fields": [
+          {
+            "fieldPath": "opened",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "ASCENDING"
+          }
+        ],
+        "state": "READY"
+      },
+      {
+        "fields": [
+          {
+            "fieldPath": "started",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "ASCENDING"
+          }
+        ],
+        "state": "READY"
+      },
+      {
+        "fields": [
+          {
+            "fieldPath": "submitted",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "ASCENDING"
+          }
+        ],
+        "state": "READY"
+      }
+    ],
+    "ttl": {
+      "appFeedbackResponsesV1": "ACTIVE",
+      "appFeedbackSessionsV1": "ACTIVE",
+      "appFeedbackRateLimitsV1": "ACTIVE"
+    }
+  },
+  "validation": {
+    "application": {
+      "files": 129,
+      "tests": 1469,
+      "passed": true
+    },
+    "backendTests": 11,
+    "releaseBaselineAndPreviewTests": 38,
+    "websiteRulesAssertions": 120,
+    "canonicalSdkRulesTests": 1130,
+    "canonicalPublisherTests": 34,
+    "hostedBrowser": {
+      "checks": 20,
+      "screenshots": 9,
+      "widths": [
+        320,
+        390,
+        820,
+        1440
+      ],
+      "liveWrites": 0,
+      "browserExceptions": 0,
+      "cspErrors": 0,
+      "publicRequestPrivacy": true,
+      "signedOutAdminGuard": true
+    },
+    "liveSyntheticHttps": {
+      "wrongOriginRejected": true,
+      "identityFieldsRejected": true,
+      "retryDeduplicated": true,
+      "changedRetryRejected": true,
+      "separateUnlinkedResponse": true,
+      "actualEventsRecorded": true,
+      "ninetyDayResponseExpiry": true,
+      "signedOutAdminRejected": true,
+      "syntheticRecordsRemoved": true
+    },
+    "postReleaseOrdinaryBuildPreservation": {
+      "passed": true,
+      "protectedFiles": 1535,
+      "localApplicationRoutes": 25,
+      "localMarketingRoutes": 5,
+      "localAssets": 1414,
+      "authenticatedWorkflowsExercisedByThisCheck": false
+    }
+  },
+  "preservation": {
+    "existingTrainingAndCohortDataChanged": false,
+    "existingTrainingAcceptanceGatesChanged": false,
+    "nativeApplicationChanged": false,
+    "legacyFeedbackChanged": false,
+    "approvedPlayersCoachesMarketingChanged": false
+  },
+  "recovery": {
+    "restorePreviousWebsiteDeployment": "6ac06e0d420f2b6b34129fb5",
+    "backend": "Retain endpoint for shared links or withdraw only the app-feedback codebase; do not relax client rules",
+    "handoff": "docs/APP_FEEDBACK.md",
+    "pilot": "docs/APP_FEEDBACK_PILOT.md"
+  }
+}

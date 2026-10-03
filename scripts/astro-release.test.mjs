@@ -59,6 +59,58 @@ test("Astro application cannot be server-rendered or lose the navigation bridge"
   });
 });
 
+test("feedback rejects an external font loader before changing release output", async () => fixture(async ({ root, put, files }) => {
+  const source = await readFile(join(root, "app/astro-dist/feedback.html"), "utf8");
+  await put("app/astro-dist/feedback.html", source + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter">');
+  await assert.rejects(composeAstroRelease(root), /Feedback must be an isolated client-only document/);
+  for (const [path, bytes] of files) assert.equal(await readFile(join(root, "production-dist" + path), "utf8"), bytes);
+  assert.deepEqual(await readdir(join(root, "production-dist/_astro")), ["existing.12345678.js"]);
+}));
+
+test("feedback rejects session replay and analytics loaders before replacing protected documents", async () => {
+  for (const url of ["https://www.clarity.ms/tag/example", "https://www.googletagmanager.com/gtm.js", "https://www.google-analytics.com/analytics.js"]) await fixture(async ({ root, put, files }) => {
+    const source = await readFile(join(root, "app/astro-dist/feedback.html"), "utf8");
+    await put("app/astro-dist/feedback.html", source + `<script src="${url}"></script>`);
+    await assert.rejects(composeAstroRelease(root), /Feedback must be an isolated client-only document/);
+    for (const [path, bytes] of files) assert.equal(await readFile(join(root, "production-dist" + path), "utf8"), bytes);
+  });
+});
+
+test("feedback cannot inherit the authenticated application's navigation bridge", async () => fixture(async ({ root, put, files }) => {
+  const source = await readFile(join(root, "app/astro-dist/feedback.html"), "utf8");
+  await put("app/astro-dist/feedback.html", source + '<script src="/marketing/home-navigation.js" defer></script>');
+  await assert.rejects(composeAstroRelease(root), /Feedback must be an isolated client-only document/);
+  for (const [path, bytes] of files) assert.equal(await readFile(join(root, "production-dist" + path), "utf8"), bytes);
+}));
+
+test("a future feedback release replaces its verified entry while retaining every unrelated protected file", async () => {
+  for (const drift of [false, true]) await fixture(async ({ root, put, files, baseline }) => {
+    const previous = "previous approved feedback document";
+    files.set("/feedback.html", previous);
+    baseline.files.push({ path: "/feedback.html", sha: sha1(previous), size: Buffer.byteLength(previous) });
+    await put("production-dist/feedback.html", previous);
+    await put("deployment/homepage-baseline.json", JSON.stringify(baseline));
+    const source = await readFile(join(root, "app/astro-dist/feedback.html"), "utf8");
+    const snapshot = await marketingFixture(root, put);
+    if (drift) {
+      await put("production-dist/_astro/existing.12345678.js", "unrelated runtime drift");
+      await assert.rejects(composeAstroRelease(root, snapshot), /Baseline not verified/);
+      assert.equal(await readFile(join(root, "production-dist/feedback.html"), "utf8"), previous);
+      assert.equal(await readFile(join(root, "production-dist/application.html"), "utf8"), files.get("/application.html"));
+      return;
+    }
+    const receipt = await composeAstroRelease(root, snapshot);
+    assert.equal(await readFile(join(root, "production-dist/feedback.html"), "utf8"), source);
+    assert.equal(receipt.documents.find(row => row.path === "/feedback.html").sha, sha1(source));
+    assert.equal(receipt.preservedFiles, files.size - 2);
+    for (const [path, bytes] of files) if (!["/application.html", "/feedback.html"].includes(path)) {
+      assert.equal(await readFile(join(root, "production-dist" + path), "utf8"), bytes);
+    }
+    assert.equal(await readFile(join(root, "production-dist/index.html"), "utf8"), snapshot.html[0]);
+    assert.equal(await readFile(join(root, "production-dist/coaches/index.html"), "utf8"), snapshot.html[1]);
+  });
+});
+
 test("case-folded Astro assets never overwrite pinned bytes", async () => {
   for (const same of [true, false]) await fixture(async ({ root, put, baseline }) => {
     await put("app/astro-dist/_astro/EXISTING.12345678.js", same ? "previous Astro chunk" : "changed");

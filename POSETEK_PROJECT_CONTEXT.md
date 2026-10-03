@@ -4,9 +4,44 @@ Reviewed on October 2–3, 2026. This guide summarizes the available repository 
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
-## Notification coverage correction (2026-10-02–03)
+## Optional app feedback (2026-10-03)
 
-The current authenticated application is Netlify deployment
+The current website is Netlify deployment `6ac17bc21377cbeaea114800`, published
+October 3, 2026 at 3:12:14 PM PDT, from application source commit `d82cf40`.
+It preserves the preceding issue-coverage release and approved Players/Coaches
+bytes. Full provider inventory verification passed for 1,538 files, including
+1,537 website artifacts and the provider's generated configuration record.
+The reconciled baseline protects 1,535 application/public files; the ordinary
+build preserved all of them, and local entry checks passed for 25 application
+routes, five marketing routes and 1,414 assets.
+Read [the feedback release receipt](deployment/APP_FEEDBACK_PRODUCTION.json) and
+[the feedback handoff](docs/APP_FEEDBACK.md) for exact hashes and validation.
+
+An optional invitation appears on return to Training after a successful completed
+workout save, at most once per seven days in the same browser. Pain stops, early
+endings, failed saves and previews are excluded. Results retain a feedback link.
+`/feedback` is a separate public document requiring no login or name, carrying
+only a broad source and random form-session ID to its isolated HTTPS endpoint.
+It loads no analytics/replay or authentication scripts. Verified PoseTek admins
+can read recent responses and form-session counts and download a QR code at
+`/admin/feedback`.
+
+The two scoped feedback functions, three count indexes and TTL policies are
+live and verified. The canonical mobile-owned rules explicitly deny all client
+access to the three new collections; no permissive fallback applies. Responses
+and diagnostic form-session events expire after 90 days; separate abuse counters
+expire after 30 minutes. Existing player records, legacy feedback, training gates
+and storage rule bytes were preserved. The canonical rules source is shared in
+[mobile PR 35](https://github.com/posetek/posetek-mobile-app/pull/35).
+
+The 12-player comprehension review across the three previously agreed age bands
+remains outstanding. Automated mobile layout checks do not establish player
+comprehension or the 30–60-second target. Seven days is a pilot cadence; native
+invitations still require a separate mobile release.
+
+## Historical notification coverage correction (2026-10-02–03)
+
+The preceding authenticated application was Netlify deployment
 `6ac06e0d420f2b6b34129fb5`, from frozen source digest
 `e7ad1aaa6b2b87b17b8c6885ea263e35170b86e95759e304bc3cdb8244876e88`.
 Full provider inventory and served-content checks passed for 1,485 files,

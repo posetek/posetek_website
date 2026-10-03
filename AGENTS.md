@@ -48,7 +48,37 @@ default to a sibling `../PoseTek-mobile-app` checkout, and `RULES_PATH` /
 `deployment/*.json`, including the composed `whole-body-firestore.rules`
 (deleted), are historical records of past publishes, not instructions.
 
-The current website release is `6abeaf5702a9c9983c7a41b9`, source `8956871`,
+## Optional app feedback
+
+Read [the feedback handoff](docs/APP_FEEDBACK.md) and
+[production evidence](deployment/APP_FEEDBACK_PRODUCTION.json) before changing
+feedback. `/feedback` is a public isolated document with no login, account data
+or replay scripts; `/admin/feedback` uses the existing verified, nonanonymous
+PoseTek-admin guard and private read-only callable. Public payloads carry no
+account/player/team/workout identifiers. The website owns `functions/app-feedback.js`
+and the isolated `deployments/app-feedback/` release scope. The canonical mobile
+repository owns and publishes the explicit client denials, with source tracked
+in [mobile PR #35](https://github.com/posetek/posetek-mobile-app/pull/35).
+
+Assigned and personal workouts invite only after an acknowledged completed save
+with recorded work. Pain stops, early endings, failed saves, changed accounts,
+hidden tabs and previews do not invite. A browser timestamp enforces a seven-day
+automatic-invitation cadence; results links and admin QR/message links remain
+optional and separate. Feedback never gates results or changes training records.
+The verified live website is `6ac17bc21377cbeaea114800`, published October 3, 2026
+at 3:12:14 PM PDT. The exact candidate passed 20 hosted browser checks and nine
+screenshots with zero feedback writes before promotion; production inventory and
+artifact verification passed. Use the production receipt and
+`deployment/homepage-baseline.json` for current publication and protected-file
+evidence. The preceding coverage release `6ac06e0d420f2b6b34129fb5` and its
+1,482-file baseline are historical checkpoints; its notification behavior is
+preserved. Scoped functions are deployed and
+source/IAM audited, TTL is active, indexes are ready and canonical rules are
+published. The 12-player comprehension pilot across the three previously agreed
+age bands remains outstanding. Native invitations require a separate mobile
+release; all existing native/content acceptance gates remain in force.
+
+The preceding guided-workout website release is `6abeaf5702a9c9983c7a41b9`, source `8956871`,
 published October 1, 2026 at 12:18:33 PM PDT. Guided Training uses code-only
 feasibility assessment, shared single-session composition and explicit age and
 readiness confirmation. Read `deployment/WORKOUT_AVAILABILITY_PRODUCTION.json`,
@@ -60,8 +90,8 @@ Catalog `1.0.93` changes only five mat requirements to allow floor training;
 all 80 held drafts, doses, media and review states remain preserved. The release
 includes already-live issue alerts from `e8de8d7` / `6abd8f957e046e8059376091`.
 The Coach proxy rejects Netlify preview origins; keep its production allowlist.
-The protected application baseline now has 1,438 files; the verified production
-artifact has 1,440 files plus Netlify's generated metadata record. Preserve the
+That release's protected application baseline had 1,438 files; its verified production
+artifact had 1,440 files plus Netlify's generated metadata record. Preserve the
 original approved Players/Coaches marketing bytes during another app release.
 Testing results and active plans are not personal-workout prerequisites. The
 age-21 Speed/Agility issue was authored catalog coverage, not missing tests.
@@ -216,6 +246,9 @@ including `/application.html` and its navigation bridge. Keep the live-applicati
 guard enforced and verify the baseline again before another release.
 
 Deliberate full-site application releases use `node scripts/build-astro-release.mjs`.
+`--preserve-marketing <manifest-path>` retains freshly verified Players/Coaches
+documents while updating the application and isolated feedback entries; their
+runtime assets must already be in the protected baseline.
 `build-application-release.mjs` delegates to that build by default; its historical
 `--marketing-snapshot` mode retains verified marketing bytes for compatible older
 releases. Follow the web handoff

@@ -3,9 +3,23 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
-The October 2–3 notification coverage correction is published as application
-deployment `6ac06e0d420f2b6b34129fb5`. Full provider and served-content verification
-checked all 1,485 files, preserving the current marketing, protected files and
+Optional app feedback uses public `/feedback` and verified PoseTek-admin review
+at `/admin/feedback`, including a locally generated QR code and copyable share
+links. Assigned and personal workouts invite only after an acknowledged completed
+save with recorded work, at most once every seven days in the same browser;
+results feedback remains optional and available separately. The verified live
+website is `6ac17bc21377cbeaea114800`, published October 3, 2026 at 3:12:14 PM PDT.
+The exact candidate passed 20 hosted browser checks across nine screenshots with
+zero feedback writes before promotion. See [the feedback handoff](docs/APP_FEEDBACK.md)
+and [production evidence](deployment/APP_FEEDBACK_PRODUCTION.json) for publication
+and integrity checks. The website owns the two scoped feedback
+functions; the canonical mobile repository owns and publishes their client-denial
+rules. The [12-player comprehension pilot](docs/APP_FEEDBACK_PILOT.md) remains outstanding, and native
+invitations require a separate mobile release.
+
+The preceding October 2–3 notification coverage correction was published as
+application deployment `6ac06e0d420f2b6b34129fb5`. Its provider and served-content
+verification checked all 1,485 files, preserving the then-current marketing, protected files and
 platform configuration. The website now assigns fresh request references to supported
 social attempts; compatible backend observations retain both sources, while
 conflicting actions or known targets remain distinct. Ten user-issue functions
@@ -13,8 +27,9 @@ at version 8, six tracker functions at version 5 and fourteen individually scope
 social endpoints passed exact source/configuration/IAM checks. Read
 [the current handoff](docs/NOTIFICATION_COVERAGE_CORRECTION.md) and
 [correction receipt](deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
-for release and current workbook evidence. Baseline adoption passed with 1,482
-protected application/public files. The historical
+for release and current workbook evidence. Baseline adoption at that checkpoint
+passed with 1,482 protected application/public files; that deployment/count is
+historical after the feedback release. The historical
 revision-121 results below do not establish the latest source coverage.
 
 Dylan alone receives alerts; Nolan and Taiyo retain shared workbook editing.
@@ -291,6 +306,8 @@ use committed source and do not require the reference capture.
 | Coaches page, fictional examples, and development journey | `app/src/pages/coaches/` |
 | Astro Coaches entry | `app/astro/pages/coaches/index.astro` |
 | Astro application entry and bootstrap | `app/astro/pages/application.astro`, `app/src/astro/ApplicationRoot.tsx` |
+| Isolated public feedback form and admin review | `app/astro/pages/feedback.astro`, `app/src/pages/feedback/`, `app/src/pages/admin/views/AppFeedback.tsx` |
+| Feedback backend scope and delivery contract | `functions/app-feedback.js`, `deployments/app-feedback/`, [docs/APP_FEEDBACK.md](docs/APP_FEEDBACK.md) |
 | Shared public audience navigation | `app/src/pages/home/MarketingHeader.tsx` |
 | Application routes and screens | `app/src/App.tsx`, `app/src/pages/` |
 | Backend functions | `functions/` |
@@ -308,6 +325,11 @@ The admin dashboard source now has a development-only synthetic preview at
 `/admin?preview=1`. See [the admin dashboard cleanup handoff](docs/admin/DASHBOARD_CLEANUP.md)
 for the shared admin/Insights design system, responsive screenshot command, and
 release boundary.
+
+With the Astro development server, `/feedback?preview=1` previews the isolated
+form without production requests. `/admin/feedback?preview=1` uses synthetic
+responses in development only. See [the feedback handoff](docs/APP_FEEDBACK.md)
+for the real read-only admin view, share links and outstanding player pilot.
 
 ## Validate homepage changes
 
@@ -344,19 +366,23 @@ not automatically included in this preservation-based homepage build.
 For the approved application update, use the separate guarded builder:
 
 ```powershell
-node scripts/build-application-release.mjs
+node scripts/build-application-release.mjs --preserve-marketing .netlify/approved-marketing/manifest.json
 ```
 
-It first verifies and assembles the full preserved site, then replaces only
-`production-dist/application.html` and adds the compiled application assets.
-The deployable directory remains `production-dist/`; unrelated static files and
-the homepage and Coaches page retain their verified bytes. It rejects drift and asset collisions
-and writes `.netlify/application-release-build.json`. Follow the
+The default builder delegates to `scripts/build-astro-release.mjs`. It first
+verifies and assembles the protected site, then composes the declared Astro
+documents and hashed assets. `--preserve-marketing` freshly verifies the approved
+Players and Coaches snapshot and retains its original HTML; only the application
+and isolated feedback entries change. Without that option, the declared marketing
+documents are rebuilt too. The deployable directory remains `production-dist/`;
+unrelated protected files retain their verified bytes. The build rejects drift
+and asset collisions and writes `.netlify/application-release-build.json`. Follow
+[the feedback release handoff](docs/APP_FEEDBACK.md#release-and-recovery) and the
 [application release and validation steps](docs/VACAVILLE_WEBSITE_UPDATE.md#deliberate-application-release),
 review the exact draft output, and reconcile the preservation baseline after a
 verified release. This command does not itself deploy the website or backend.
 
-The optional `--marketing-snapshot <manifest-path>` argument pins a complete,
+The historical Vite `--marketing-snapshot <manifest-path>` mode pins a complete,
 verified marketing snapshot instead of publishing newly compiled marketing bytes.
 The builder validates local hashes and current production before restoring it.
 The September 17 application release used this option to retain the approved

@@ -8,22 +8,36 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const require = createRequire(new URL("../app/package.json", import.meta.url));
-const { chromium } = require("playwright");
 const args = process.argv.slice(2);
 function argument(name, fallback) {
   const index = args.indexOf(name);
   return index < 0 ? fallback : args[index + 1];
 }
+let playwright;
+try { playwright = require("playwright"); }
+catch (error) {
+  const packageRoot = argument("--package-root", process.env.POSETEK_BROWSER_PACKAGE_ROOT);
+  if (!packageRoot) throw new Error("Playwright is unavailable. Restore app dependencies or provide --package-root with the bundled node_modules path returned by load_workspace_dependencies.", { cause: error });
+  playwright = require(resolve(packageRoot, "playwright"));
+}
+const { chromium } = playwright;
 const base = new URL(argument("--base", "http://127.0.0.1:4321"));
-assert(["127.0.0.1", "localhost", "[::1]"].includes(base.hostname), "Browser acceptance requires a local preview server.");
+const hosted = args.includes("--hosted");
+const local = ["127.0.0.1", "localhost", "[::1]"].includes(base.hostname);
+assert(!base.username && !base.password && !base.search && !base.hash && ["", "/"].includes(base.pathname), "Use an origin URL without credentials, path, query or fragment.");
+assert(local || hosted && base.protocol === "https:" && !base.port
+  && (base.hostname === "posetek.net" || /^[0-9a-f]{24}--posetek\.netlify\.app$/.test(base.hostname)),
+"Use a local preview server, or --hosted with https://posetek.net or an exact PoseTek 24-hex deploy URL.");
+assert(!hosted || args.includes("--public-only"), "Hosted review requires --public-only; admin sample preview is available only in development.");
 const output = resolve(root, argument("--output", ".netlify/app-feedback-browser"));
 const outputRelative = relative(resolve(root, ".netlify"), output);
 assert(outputRelative && !outputRelative.startsWith(`..${sep}`) && outputRelative !== "..", "Screenshots must stay in ignored .netlify output.");
 const endpoint = "https://us-central1-kickai-69dd0.cloudfunctions.net/receiveAppFeedback";
 const widths = [320, 390, 820, 1440];
-const report = { base: base.origin, synthetic: true, liveWrites: 0, screenshots: [], checks: [], publicRequests: [], publicErrors: [], adminErrors: [] };
+const report = { base: base.origin, hosted, synthetic: true, liveWrites: 0, screenshots: [], checks: [], publicRequests: [], publicErrors: [], publicCspErrors: [], adminErrors: [], adminCspErrors: [] };
 await mkdir(output, { recursive: true });
-const browser = await chromium.launch({ headless: true });
+const executablePath = argument("--browser-executable", undefined);
+const browser = await chromium.launch({ headless: true, ...(executablePath ? { executablePath } : {}) });
 const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block" });
 // Synthetic cookies demonstrate that credential-free cross-origin requests do
 // not inherit account cookies, even when the browser has some stored.
@@ -45,10 +59,11 @@ async function publicPage(source = "direct", { preview = false, failFirstSubmiss
   const page = await context.newPage();
   const state = { posts: [], externalAttempts: [], errors: [], failedSubmission: false };
   page.on("pageerror", error => { state.errors.push(error.message); report.publicErrors.push(error.message); });
+  page.on("console", message => { if (message.type() === "error" && /Content Security Policy|Content-Security-Policy|violates.*directive/i.test(message.text())) report.publicCspErrors.push(message.text()); });
   page.on("request", request => { report.publicRequests.push({ url: request.url(), method: request.method(), resource: request.resourceType() }); });
   await page.route("**/*", async route => {
     const request = route.request(), url = new URL(request.url());
-    if (url.origin === base.origin) { await route.continue(); return; }
+    if (url.origin === base.origin && ["GET", "HEAD"].includes(request.method())) { await route.continue(); return; }
     if (request.url() === endpoint) {
       const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type", "Content-Type": "application/json" };
       if (request.method() === "OPTIONS") { await route.fulfill({ status: 204, headers }); return; }
@@ -81,6 +96,7 @@ async function publicPage(source = "direct", { preview = false, failFirstSubmiss
 async function publicSafe(state) {
   assert.deepEqual(state.externalAttempts, [], "The isolated public form attempted external font, auth or tracking requests.");
   assert.deepEqual(state.errors, [], "Public form had browser exceptions.");
+  assert.deepEqual(report.publicCspErrors, [], "Public form had Content Security Policy failures.");
 }
 
 try {
@@ -100,10 +116,20 @@ try {
     assert(await feature.isChecked(), "Keyboard selection did not work.");
     await page.getByRole("button", { name: "Next", exact: true }).click();
     await page.getByText("How easy was it to do what you wanted?", { exact: true }).waitFor();
+    for (const width of widths) {
+      await page.setViewportSize({ width, height: 844 });
+      await noOverflow(page, `Public question 2 at ${width}px`);
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
     const ease = page.getByRole("radio", { name: "Very easy", exact: true });
     await ease.focus(); await page.keyboard.press("Space");
     await page.getByRole("button", { name: "Next", exact: true }).click();
     await page.getByText("Did anything get in your way?", { exact: true }).waitFor();
+    for (const width of widths) {
+      await page.setViewportSize({ width, height: 844 });
+      await noOverflow(page, `Public question 3 at ${width}px`);
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
     const obstruction = page.getByRole("radio", { name: "Couldn’t find something", exact: true });
     await obstruction.focus(); await page.keyboard.press("Space");
     await page.getByRole("button", { name: "Back", exact: true }).click();
@@ -175,7 +201,7 @@ try {
     const page = await context.newPage();
     page.on("pageerror", error => { report.adminErrors.push(error.message); });
     await page.route("**/*", async route => {
-      if (new URL(route.request().url()).origin === base.origin) await route.continue();
+      if (new URL(route.request().url()).origin === base.origin && ["GET", "HEAD"].includes(route.request().method())) await route.continue();
       else await route.abort("blockedbyclient");
     });
     await page.goto(new URL("/admin/feedback?preview=1", base).href, { waitUntil: "domcontentloaded" });
@@ -194,6 +220,47 @@ try {
     }
     assert.deepEqual(report.adminErrors, [], "Admin preview had browser exceptions.");
     pass("Admin synthetic review, local downloadable QR and broad-source share links");
+    await page.close();
+  }
+  if (hosted) {
+    const cleanRoutes = [];
+    for (const path of ["/feedback", "/feedback/"]) {
+      let url = new URL(path, base), response;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        response = await context.request.get(url.href, { maxRedirects: 0 });
+        if (response.status() < 300 || response.status() >= 400) break;
+        url = new URL(response.headers().location, url);
+        assert.equal(url.origin, base.origin, "A feedback clean alias redirected away from the reviewed preview.");
+      }
+      assert.equal(response.status(), 200, `${path} did not resolve successfully.`);
+      const html = await response.text();
+      assert(html.includes("posetek-feedback-entry") && !html.includes("posetek-astro-application-entry"), `${path} resolved to the authenticated application document.`);
+      const headers = response.headers();
+      cleanRoutes.push({ path, resolved: url.href, status: response.status(), contentSecurityPolicy: headers["content-security-policy"] || null, referrerPolicy: headers["referrer-policy"] || null });
+    }
+    report.cleanRoutes = cleanRoutes;
+    pass("Hosted /feedback and /feedback/ serve the isolated feedback document");
+    // A fresh isolated browser has no Firebase identity. Allow public font GETs
+    // to inspect the served admin shell, while blocking all service/API traffic.
+    const page = await context.newPage();
+    page.on("pageerror", error => { report.adminErrors.push(error.message); });
+    page.on("console", message => { if (message.type() === "error" && /Content Security Policy|Content-Security-Policy|violates.*directive/i.test(message.text())) report.adminCspErrors.push(message.text()); });
+    await page.route("**/*", async route => {
+      const request = route.request(), url = new URL(request.url());
+      if (url.origin === base.origin && ["GET", "HEAD"].includes(request.method()) || request.method() === "GET" && ["fonts.googleapis.com", "fonts.gstatic.com"].includes(url.hostname)) await route.continue();
+      else await route.abort("blockedbyclient");
+    });
+    await page.goto(new URL("/admin/feedback", base).href, { waitUntil: "domcontentloaded" });
+    await page.getByRole("heading", { name: "Sign in with your PoseTek account", exact: true }).waitFor();
+    assert.equal(await page.getByRole("heading", { name: "Share the feedback form", exact: true }).count(), 0);
+    assert.equal(await page.locator(".feedback-response").count(), 0);
+    const signIn = page.getByRole("link", { name: "Go to sign in", exact: true });
+    assert((await signIn.getAttribute("href")).includes("returnTo=%2Fadmin%2Ffeedback"));
+    await noOverflow(page, "Hosted signed-out admin at 390px");
+    await screenshot(page, "hosted-admin-signed-out-390");
+    assert.deepEqual(report.adminErrors, [], "Hosted signed-out admin had browser exceptions.");
+    assert.deepEqual(report.adminCspErrors, [], "Hosted signed-out admin had Content Security Policy failures.");
+    pass("Hosted admin feedback is guarded and reveals no responses while signed out");
     await page.close();
   }
   report.passed = true;

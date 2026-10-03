@@ -311,6 +311,48 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "appFeedbackSessionsV1",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "opened",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "appFeedbackSessionsV1",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "started",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "appFeedbackSessionsV1",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "submitted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
