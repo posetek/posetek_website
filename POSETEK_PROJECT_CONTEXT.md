@@ -1396,3 +1396,7 @@ code-complete source and explicit device/deployment gates. Automated validation 
 builds, 56 focused XTests and support/recovery empty-state UI pass. Deployed broker/IAM,
 retention concurrency, populated viewer/retry and physical-iPhone acceptance remain
 unverified. This work does not change the recorded production release or authorize cleanup.
+
+## Phone processing dashboard (2026-10-03)
+
+The admin phone overview and session analytics use backend-derived summaries from existing diagnostic manifests. See [docs/DEVICE_PROCESSING_DASHBOARD.md](docs/DEVICE_PROCESSING_DASHBOARD.md) for schema, comparison semantics and exact verification/release status. Current-algorithm baseline is explicitly pinned to native source e279f408 / 1.1 (31). No new TestFlight build is required for already-recorded fields.

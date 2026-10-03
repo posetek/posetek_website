@@ -37,6 +37,7 @@ const AnalysisWorkspace = lazy(() => import("./views/AnalysisWorkspace"));
 const PersonalizedPrograms = lazy(() => import("./views/PersonalizedPrograms"));
 const AiIncidents = lazy(() => import("./views/AiIncidents"));
 const AccountAccess = lazy(() => import("./views/AccountAccess"));
+const PhonePerformance = lazy(() => import("./views/PhonePerformance"));
 const DevicePerformance = lazy(() => import("./views/DevicePerformance"));
 const DevicePerformanceDetail = lazy(() => import("./views/DevicePerformanceDetail"));
 const UserIssues = lazy(() => import("./views/UserIssues"));
@@ -126,8 +127,10 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
           <Route path="programs" element={<PersonalizedPrograms />} />
           <Route path="analysis" element={<AnalysisWorkspace />} />
           <Route path="ai-incidents" element={<AiIncidents />} />
-          <Route path="device-performance" element={<DevicePerformance preview={preview} />} />
-          <Route path="device-performance/:installId" element={<DevicePerformanceDetail preview={preview} />} />
+          <Route path="device-performance" element={<PhonePerformance preview={preview} />} />
+          <Route path="device-performance/advanced" element={<DevicePerformance preview={preview} />} />
+          <Route path="device-performance/advanced/:installId" element={<DevicePerformanceDetail preview={preview} />} />
+          <Route path="device-performance/:installId" element={<PhonePerformance preview={preview} />} />
           <Route path="user-issues" element={<UserIssues preview={preview} />} />
           <Route path="programs/personalized" element={<PlannerRedirect />} />
           <Route

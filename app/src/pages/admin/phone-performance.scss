@@ -1,0 +1,58 @@
+.pt-admin .phone-performance {
+  margin-bottom: 28px;
+  .dp-filter-row { margin-bottom: 20px; }
+  .phone-card { margin-top: 16px; }
+  .phone-card-heading { display:flex; justify-content:space-between; gap:16px; align-items:start; margin-bottom:16px; }
+  .phone-card-heading h3 { margin:0; font-size:20px; }
+  .phone-card-heading a { color:var(--text-primary); text-decoration:none; }
+  .phone-card-heading a:hover { color:var(--accent); text-decoration:underline; }
+  .phone-no-current { padding:14px; border:1px dashed var(--surface-border); border-radius:8px; color:var(--text-muted); }
+  .dp-table small { display:block; font-weight:400; line-height:1.5; margin-top:4px; }
+  .dp-table th { max-width:300px; overflow-wrap:anywhere; }
+  .dp-table td { vertical-align:top; }
+  .phone-chart { margin-top:24px; }
+  .phone-chart svg { width:100%; height:auto; min-height:160px; overflow:visible; }
+  .phone-chart text { fill:var(--text-muted); font:12px system-ui,sans-serif; }
+  .phone-grid { stroke:var(--surface-border); stroke-width:1; }
+  .phone-dot { fill:var(--accent); }
+  .phone-dot-wall { fill:#82b9e0; }
+  .phone-dot-failed { fill:var(--status-danger); }
+  .phone-chart a:focus circle { stroke:var(--text-primary); stroke-width:3; }
+  .phone-run { border-top:1px solid var(--surface-border); padding:14px 0; scroll-margin-top:90px; }
+  .phone-run summary { display:flex; flex-wrap:wrap; gap:8px 20px; align-items:center; min-height:44px; }
+  .phone-run summary span:last-child { color:var(--text-muted); }
+  .phone-run dd { overflow-wrap:anywhere; }
+  .phone-run:target { outline:2px solid var(--accent); outline-offset:4px; }
+  .phone-compact .admin-heading h2 { font-size:24px; }
+  @media(max-width:640px) {
+    .phone-card-heading { flex-direction:column; gap:8px; }
+    .dp-field { flex:1 1 140px; }
+    .dp-table { min-width:660px; }
+    .phone-chart text { font-size:14px; }
+  }
+}
+
+.pt-admin .phone-performance {
+  .phone-overview-table { margin-top:20px; padding:0; }
+  .phone-overview-table table { min-width:1300px; font-size:12px; }
+  .phone-overview-table caption { padding:12px 16px; text-align:left; }
+  .phone-overview-table th, .phone-overview-table td { padding:12px 10px; }
+  .phone-identifier { max-width:210px; overflow-wrap:anywhere; font-family:ui-monospace,monospace; text-align:left; }
+  .phone-row-selected { background:color-mix(in srgb,var(--accent) 8%,transparent); }
+  .phone-row-selected th:first-child { border-left:3px solid var(--accent); }
+  .phone-drill-average { display:block; white-space:nowrap; margin-bottom:4px; }
+  .phone-selected { margin-top:20px; }
+  .phone-selected > .phone-card { border:0; box-shadow:none; padding:0; }
+  .phone-selected > .phone-card > .phone-card-heading { display:none; }
+  .phone-selected h3 { font-family:ui-monospace,monospace; overflow-wrap:anywhere; }
+}
+
+.pt-admin .phone-performance {
+  min-width:0;
+  .phone-drill-table table { min-width:1720px; font-size:12px; }
+  .phone-drill-table caption { padding:12px 0; text-align:left; }
+  .phone-drill-table th, .phone-drill-table td { padding:12px; }
+  .phone-drill-table td { min-width:115px; }
+  .phone-cohort-value + .phone-cohort-value { border-top:1px solid var(--surface-border); margin-top:12px; padding-top:12px; }
+  .phone-group-label { color:var(--accent); font-weight:600!important; }
+}

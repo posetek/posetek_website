@@ -6,6 +6,7 @@ const { playerSegment, storageFolderCandidates } = require("./athlete-storage-pa
 
 admin.initializeApp();
 const db = admin.firestore();
+Object.assign(exports, require("./device-processing").createDeviceProcessingEntrypoints(functions, admin, requireCaller));
 // Private workout delivery is additive and disabled until its settings are enabled.
 Object.assign(exports, require("./workout-notifications-entrypoints").createWorkoutNotificationEntrypoints(functions, admin, requireCaller));
 Object.assign(exports, require("./user-issue-entrypoints").createUserIssueEntrypoints(functions, admin));
