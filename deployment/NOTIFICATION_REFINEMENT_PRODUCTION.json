@@ -1,0 +1,365 @@
+{
+  "schemaVersion": 1,
+  "project": "kickai-69dd0",
+  "region": "us-central1",
+  "date": "2026-10-02",
+  "purpose": "Dylan-only notifications, exact-account outreach details and native tracker recovery",
+  "acceptance": {
+    "complete": true,
+    "verifiedAtUtc": "2026-10-02T23:43:49.448Z",
+    "remaining": [],
+    "scope": "Dylan-only delivery, exact-account outreach fields, native publication and fixed-cutoff source catch-up. Later arrivals continue through the cloud queue."
+  },
+  "recipients": {
+    "newIssueStatusDailyAndWorkout": [
+      "dylank@posetek.net"
+    ],
+    "googleCloudPolicyCount": 2,
+    "googleCloudRecipients": [
+      "dylank@posetek.net"
+    ],
+    "preserveHistoricalRecipientsReceiptsAndConsumedClaims": true,
+    "sharedWorkbookEditors": [
+      "dylank@posetek.net",
+      "nolanj@posetek.net",
+      "taiyow@posetek.net"
+    ],
+    "automaticOutreach": false,
+    "workbookAccessRecheckedAtUtc": "2026-10-02T23:24:22.597Z"
+  },
+  "resources": {
+    "emailFlow": "015cd141-794f-4592-a1e1-886fa2b2484f",
+    "emailFlowState": "On",
+    "sender": "alerts@posetek.net",
+    "writerFlow": "b011912f-bb15-453f-92ef-761d223095b4",
+    "writerFlowState": "On",
+    "mailArrivalFlow": "6956b87e-6556-4ab6-8709-ac866cf417b2",
+    "mailReadFlow": "950eee98-d71a-48b8-b0b3-5fa5f2bd3c31",
+    "mailReadProvider": "power_automate",
+    "graphMailboxVerified": false,
+    "workbookKey": "posetek-shared-issue-tracker-v1",
+    "workbookFolder": "PoseTek > Technology > Website > User Issue Tracker",
+    "workbookFilename": "PoseTek Issue Tracker.xlsx",
+    "nativeScriptSha256": "7cb0931b09cc8856efdf1f5042e088b2c4bc9d2282a203c943defd79ba4b5f28",
+    "nativeScriptAndWorkbookSchemaChanged": false,
+    "hourlyCodexAutomation": "PAUSED",
+    "cloudQueue": "RUNNING",
+    "licensedOwner": "dylank@posetek.net",
+    "additionalPurchase": false,
+    "queueRestoredAtUtc": "2026-10-02T23:36:59.268Z"
+  },
+  "deployments": {
+    "userIssues": {
+      "functions": 10,
+      "version": "5",
+      "state": "ACTIVE",
+      "actualSourceSha256": "6191a975632facf327699f6625cbf865784b32422a1bc52e2099121a9916b696",
+      "actualArchiveAndConfigurationVerified": true,
+      "cliExit": 0
+    },
+    "microsoftEmail": {
+      "functions": 3,
+      "version": "2",
+      "state": "ACTIVE",
+      "actualSourceSha256": "4344836c43ee59801d154b3676fa84e0469d7a2c1694ff381362e0ec4592a90f",
+      "actualArchiveAndConfigurationVerified": true,
+      "cliExit": 0
+    },
+    "issueTracker": {
+      "functions": 6,
+      "version": "2",
+      "state": "ACTIVE",
+      "actualSourceSha256": "5569bf6cdac4b90277eb6875c66fe426b26a6f99d2adc602d27443372098dffc",
+      "actualArchiveAndConfigurationVerified": true,
+      "cliExit": 2,
+      "cliLimitation": "Post-deployment invoker inspection failed for the task worker. Read-only supplemental verification confirmed only empty-policy version/etag metadata normalization, with no binding, principal, permission or other configuration change."
+    },
+    "preservation": {
+      "existingFunctionInventory": 120,
+      "regionalSchedulerInventory": 7,
+      "functionAccessAndUnrelatedFunctionsPreserved": true,
+      "trackerSecretVersionsPreserved": 9,
+      "rulesChanged": false,
+      "websiteOrNativeDeployment": false
+    }
+  },
+  "identity": {
+    "source": "Exact recorded reporter Auth UID; server Firebase Admin Auth lookup",
+    "backfilledOccurrences": 101,
+    "distinctAuthAccounts": 7,
+    "accountsWithVerifiedEmail": 3,
+    "accountsWithUnverifiedEmail": 4,
+    "occurrencesWithVerifiedEmail": 84,
+    "occurrencesWithUnverifiedEmail": 17,
+    "missingAuthDisplayNames": 7,
+    "uploaderOrReporterOnlyOccurrences": 64,
+    "otherCloudLoggingRecordsWithNoRecordedUid": 995,
+    "historicalNonContactFieldsUnchanged": true,
+    "failedLookupRetryMinutes": 15,
+    "currentContactRefreshHours": 24,
+    "currentContactLookupTimeoutSeconds": 5,
+    "reconciliationPageSize": 20,
+    "clientIdentityInputTrusted": false,
+    "targetAthleteSeparate": true,
+    "unknownOperatorRemainsUnknown": true,
+    "liveAuditNote": "Counts reflect the fixed pre-backfill review and are not total identified-user coverage. No missing Auth display name was invented.",
+    "nativePublication": {
+      "revision": 121,
+      "verifiedAtUtc": "2026-10-02T23:36:02.966Z",
+      "physicalRevision": 121,
+      "contactOccurrencesVerified": 101,
+      "exactRecordedAccounts": 7,
+      "emailVerifiedOccurrences": 84,
+      "emailUnverifiedOccurrences": 17,
+      "reporterUploaderOnlyOccurrences": 64,
+      "historicalRowsVerified": 77,
+      "newerSourceRowsVerified": 24,
+      "historicalIdsProseMachineFieldsAndLinksPreserved": 77,
+      "deliveredAmendedAlertsLinkedByVerifiedNativeMessageEvidence": 11,
+      "deliveredDiagnosticOutreachAcceptancePassed": true,
+      "staffDifferentAthleteAcceptancePassed": true,
+      "cloudBytesMatchPublicationProof": true,
+      "rootVerifiedSavedHumanRecords": 180,
+      "pendingQueueAtBoundSnapshot": 0,
+      "all101StableIdsProseMachineFieldsAndLinksUnchangedSinceR112": true,
+      "all101StableIdsProseMachineFieldsAndLinksUnchangedSinceR115": true,
+      "privateAcceptanceSha256": "9e5a74d5aeac2b48ef34157b99a3996cfd9130440a3e5d5a7321b280e3d8316f"
+    }
+  },
+  "recentMicrosoftRecovery": {
+    "fromInclusiveUtc": "2026-10-02T20:32:00.000Z",
+    "throughExclusiveUtc": "2026-10-02T21:16:12.577Z",
+    "reviewedWithFullPagination": true,
+    "transactionallyRecheckedUnconsumed": true,
+    "amended": 11,
+    "duplicate": 0,
+    "heldAtApply": 0,
+    "originalPayloadsPreserved": true,
+    "effectiveRecipientSnapshots": [
+      "dylank@posetek.net"
+    ],
+    "confirmedDelivered": 11,
+    "diagnosticUploaderMessages": 9,
+    "automaticUnknownOperatorMessages": 2,
+    "historicalResendReplayed": false,
+    "outlookAcceptance": {
+      "fromUtc": "2026-10-02T21:57:00Z",
+      "throughExclusiveUtc": "2026-10-02T22:20:00Z",
+      "fixedUpperBoundChosenBeforeQuery": true,
+      "fullDayQueryPages": 1,
+      "fullDayMessagesRead": 119,
+      "postCutoverMessages": 16,
+      "allVisibleToDylanOnly": true,
+      "noCcOrBcc": true
+    },
+    "historicalFormattingNote": "Two already-created unamended service jobs sent after restoration retained their old anonymous-actor body. They do not establish the new formatter; all recovered amendments use the separate identity fields.",
+    "nativeMatchingExcelRecordsVerified": 11,
+    "nativeMatchingRevision": 121,
+    "genuineDiagnosticOutreachAcceptance": true,
+    "genuineStaffDifferentAthleteAcceptance": true
+  },
+  "historicalPreservationAudit": {
+    "beforeUtc": "2026-10-02T21:16:01.700Z",
+    "afterUtc": "2026-10-02T23:38:01.372Z",
+    "fullOutboxPagination": true,
+    "originalFrozenPayloadsAndProviderFieldsPreserved": 1097,
+    "priorConsumedMicrosoftClaimsPreserved": 102,
+    "priorClaimFieldsPreserved": 918,
+    "priorMicrosoftReceiptMarkersPreserved": 204,
+    "oldResendJobsWithUnchangedAttemptsAndNoNewMicrosoftClaim": 984,
+    "priorOutboxReceiptMarkersRetained": 1296,
+    "priorRecipientStateKeysRetained": 517,
+    "receiptSubcollectionsIndependentlyEnumerated": false,
+    "currentOutboxDocumentsRead": 1108,
+    "privateAuditSha256": "bbaf4a62c5a873c041291e674108732b8a4b65b23717f19f9bbf7a7e668a6f0d"
+  },
+  "nativeRecovery": {
+    "cloudRevisionRecovered": 87,
+    "previousBlockedBackendRevision": 86,
+    "batchId": "3e88313e-a544-430b-83bb-da2f49d8ef17",
+    "frozenPayloadSha256": "62d2afcb8ba176feb259ead84a2f625bc63b8c15f98859b7d74e10465a23a00b",
+    "freshCloudWorkbookSha256": "0286bb5837a3747899d378d912573569db1e19dc5862f57041c9a5d267111e8a",
+    "counts": {
+      "actions": 180,
+      "instances": 1016,
+      "emails": 224,
+      "daily": 1
+    },
+    "exactCachedReceiptAcknowledged": true,
+    "flowPostsForRecovery": 0,
+    "workbookWritesForRecovery": 0,
+    "reseeded": false,
+    "regenerated": false,
+    "savedHumanRecordsChecked": 180,
+    "originalHumanRecordsChecked": 23,
+    "originalHistoricalLinksChecked": 882,
+    "firstResumedAppliedRevision": 88,
+    "firstResumedBatchAttempts": 2,
+    "asyncRetryReason": "tracker_async_retry_after_deadline",
+    "identicalBatchRetries": true,
+    "invalidTerminalReceiptChecksRemainStrict": true,
+    "firstConnectorTimeoutCause": "Unconfirmed",
+    "physicalFinalReadback": {
+      "revision": 121,
+      "checkedAtUtc": "2026-10-02T23:36:55.659Z",
+      "backendReadTimeUtc": "2026-10-02T23:34:18.201Z",
+      "workbookSha256": "1480df8a00b5baf5c1b4423d9c007c5e62a852fa7969be9eab145dbc0b808e8a",
+      "counts": {
+        "actions": 289,
+        "instances": 1104,
+        "emails": 402,
+        "dailyRows": 2
+      },
+      "rows": 1797,
+      "nativeReceiptsVerified": 121,
+      "sourceLinks": 2199,
+      "preservedHistoricalLinks": 882,
+      "savedHumanRecordsVerified": 180,
+      "savedHumanSha256": "e2994d0d1fa7fe49ec6e82dfb894ff7fb00489b95f7e0a37c5f99105fc8d6b31",
+      "allNativeMachineHashesVerified": true,
+      "formulasAndCachedResultsVerified": true,
+      "archivePreserved": true,
+      "lastBatchId": "946a3a40-cd44-4db4-b2a7-e390dc66f656",
+      "lastReceiptSha256": "d2f7977756f3295a3ec86ccdaa6d3e0369cb84fb87dd2c9232ad44a0b1461e3b",
+      "privateProofSha256": "432dabbedd8cec240e4bba12390e16e43a2384f7c7a018c4a7aad1efc090c6f0",
+      "cloudOrLocalMasterWrites": 0
+    }
+  },
+  "validation": {
+    "focusedBackendTests": {
+      "passed": 209,
+      "failed": 0,
+      "skipped": 0
+    },
+    "firestoreEmulator": {
+      "passed": 7,
+      "failed": 0
+    },
+    "nativeOfficeScript": {
+      "passed": 36,
+      "failed": 0,
+      "skipped": 0,
+      "includes": [
+        "Sorted source keys",
+        "Late owner edits",
+        "Formula and source-link preservation",
+        "Exact-batch lost-ack replay"
+      ]
+    },
+    "emptyIamMetadataNormalizationNegativeTests": {
+      "passed": 4,
+      "failed": 0
+    },
+    "covers": [
+      "Different staff actor and target athlete",
+      "Unknown, unverified and changed Auth accounts",
+      "Forged client identity",
+      "Retryable contact lookup failure",
+      "Frozen delivery and replay",
+      "Exact delayed email correlation",
+      "Stable IDs and sorting",
+      "Human note preservation",
+      "Identical lost-acknowledgement replay",
+      "Strict terminal receipt, conflict, revision, digest and URL rejection"
+    ],
+    "privateReceiptBackedPublicationRecovery": {
+      "passed": 14,
+      "failed": 0,
+      "bulkReadOrderAndAllReadsBeforeWritesVerified": true,
+      "maxWindowsPerTransaction": 20,
+      "maxPagesPerTransaction": 40,
+      "maxTicketsPerTransaction": 200,
+      "maxTotalDocuments": 500,
+      "realSdkRetriesSimulated": false,
+      "safeTestReceiptSha256": "7b8f2592c42fafbf7626e7090f93896abbdb977bc95c0bddeb6eb1518e997690"
+    }
+  },
+  "teamGuide": {
+    "publishedAndFreshCloudReadbackVerified": true,
+    "sha256": "4243d2df168b0374eb427604a474d7d62b78352ea0401b911649c5a1981689f1",
+    "onlyGuideAndWorkbookInSharedFolder": true,
+    "freshReadbackAtUtc": "2026-10-02T23:14:57.955Z"
+  },
+  "limitations": [
+    "Auth display names can be missing; unverified contact addresses remain labeled.",
+    "Diagnostic reporters do not prove the original affected operator.",
+    "Cloud service failures without a recorded Auth UID retain an unknown actor.",
+    "Cloud source capture and native publication have separate completeness/checkpoints.",
+    "Microsoft send acceptance and recipient-confirmed delivery remain separate."
+  ],
+  "sourcePublication": {
+    "fixedReadTimeUtc": "2026-10-02T23:34:18.201Z",
+    "outlook": {
+      "available": true,
+      "capturedThrough": "2026-10-02T23:28:04.127Z",
+      "publishedThrough": "2026-10-02T23:28:04.127Z",
+      "completedSequence": 159,
+      "publishedSequence": 159,
+      "lastCheckedAtUtc": "2026-10-02T23:30:11.220Z",
+      "lastCompleteAtUtc": "2026-10-02T23:30:11.220Z",
+      "lastPublicationVerifiedAtUtc": "2026-10-02T23:33:47.831Z",
+      "lastErrorCode": null,
+      "allCapturedWindowsPublished": true
+    },
+    "backend": {
+      "available": true,
+      "capturedThrough": "2026-10-02T23:28:04.120Z",
+      "publishedThrough": "2026-10-02T23:28:04.120Z",
+      "completedSequence": 159,
+      "publishedSequence": 159,
+      "lastCheckedAtUtc": "2026-10-02T23:30:15.520Z",
+      "lastCompleteAtUtc": "2026-10-02T23:30:15.520Z",
+      "lastPublicationVerifiedAtUtc": "2026-10-02T23:33:51.336Z",
+      "lastErrorCode": null,
+      "allCapturedWindowsPublished": true
+    },
+    "reconciledWindows": 141,
+    "transactions": 8,
+    "captureFieldsPreserved": true,
+    "metadataRecoveryMasterWrites": 0,
+    "metadataRecoveryFlowRequests": 0,
+    "metadataRecoveryEmailRequests": 0,
+    "reseeded": false,
+    "fixedQueueAudit": {
+      "readTimeUtc": "2026-10-02T23:32:01.540Z",
+      "pending": 0
+    },
+    "newArrivalsAfterFixedQueueAudit": {
+      "readTimeUtc": "2026-10-02T23:34:18.201Z",
+      "pending": 2
+    },
+    "independentDeliveryRecoveryScanComplete": false,
+    "independentDeliveryRecoveryNote": "A separate older-delivery scan was still active at the fixed snapshot. Its enumeration is not a current publication-completeness claim.",
+    "priorRecoveryAttemptsRetained": true,
+    "originalTransactionFailureCause": "Unconfirmed; grouping and bulk reads reduced request volume while retaining all guards.",
+    "privateRecoveryJournalSha256": "ad32b3f80006ff7d52c856edd8f50ca050296a041bb3f6cd426b65671ea64762"
+  },
+  "runtimeReadback": {
+    "checkedAtUtc": "2026-10-02T23:42:36.670Z",
+    "pointInTimeSnapshot": false,
+    "writerRevision": 122,
+    "blockedReason": null,
+    "activeBatchId": null,
+    "pendingQueue": 1,
+    "sendEnabled": true,
+    "outboxDocumentsRead": 1108,
+    "fullPagination": true,
+    "independentPhysicalCloudReadbackRevision": 121,
+    "outlook": {
+      "capturedThrough": "2026-10-02T23:38:03.351Z",
+      "publishedThrough": "2026-10-02T23:38:03.351Z",
+      "completedSequence": 161,
+      "publishedSequence": 161,
+      "lastCheckedAtUtc": "2026-10-02T23:40:09.043Z",
+      "lastErrorCode": null
+    },
+    "backend": {
+      "capturedThrough": "2026-10-02T23:38:03.340Z",
+      "publishedThrough": "2026-10-02T23:38:03.340Z",
+      "completedSequence": 161,
+      "publishedSequence": 161,
+      "lastCheckedAtUtc": "2026-10-02T23:40:10.420Z",
+      "lastErrorCode": null
+    }
+  }
+}

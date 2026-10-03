@@ -20,6 +20,9 @@ return createServer(async (req, res) => {
     if (pathname === '/' || pathname === '/index.html' || pathname === '/marketing/' || pathname === '/marketing/index.html') {
       root = marketingRoot;
       filePath = '/index.html';
+    } else if (/^\/feedback(?:\.html|\/)?$/.test(pathname)) {
+      root = marketingRoot;
+      filePath = '/feedback.html';
     } else if (pathname === '/coaches' || pathname === '/coaches/' || pathname === '/coaches/index.html') {
       root = marketingRoot;
       filePath = '/coaches/index.html';

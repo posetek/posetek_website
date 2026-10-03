@@ -41,6 +41,7 @@ const PhonePerformance = lazy(() => import("./views/PhonePerformance"));
 const DevicePerformance = lazy(() => import("./views/DevicePerformance"));
 const DevicePerformanceDetail = lazy(() => import("./views/DevicePerformanceDetail"));
 const UserIssues = lazy(() => import("./views/UserIssues"));
+const AppFeedback = lazy(() => import("./views/AppFeedback"));
 
 export default function AdminPage() {
   const location = useLocation();
@@ -132,6 +133,7 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
           <Route path="device-performance/advanced/:installId" element={<DevicePerformanceDetail preview={preview} />} />
           <Route path="device-performance/:installId" element={<PhonePerformance preview={preview} />} />
           <Route path="user-issues" element={<UserIssues preview={preview} />} />
+          <Route path="feedback" element={<AppFeedback preview={preview} />} />
           <Route path="programs/personalized" element={<PlannerRedirect />} />
           <Route
             path="accounts/player/:playerId/plan/:planId/workout/:workoutId"

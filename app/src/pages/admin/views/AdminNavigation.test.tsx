@@ -5,11 +5,11 @@ import { compile } from "sass";
 import AdminHeader from "./AdminHeader";
 
 describe("admin navigation", () => {
-  it("uses nine regular admin tabs including Device performance and User issues, and moves Community feed into the account menu", () => {
+  it("uses ten regular admin tabs including Device performance and User issues, and moves Community feed into the account menu", () => {
     const html = renderToStaticMarkup(<MemoryRouter><AdminHeader ready email="admin@example.test" onSignOut={() => {}} /></MemoryRouter>);
-    for (const path of ["accounts", "organizations", "programs", "analysis", "drills", "ai-incidents", "device-performance", "user-issues"]) expect(html).toContain(`href="/admin/${path}"`);
+    for (const path of ["accounts", "organizations", "programs", "analysis", "drills", "ai-incidents", "device-performance", "user-issues", "feedback"]) expect(html).toContain(`href="/admin/${path}"`);
     expect(html).toContain('href="/admin"');
-    expect((html.match(/class="admin-nav-link/g) ?? []).length).toBe(9);
+    expect((html.match(/class="admin-nav-link/g) ?? []).length).toBe(10);
     expect(html).toContain("Device performance");
     expect(html.indexOf("AI incidents")).toBeLessThan(html.indexOf("Device performance"));
     expect(html).toContain('href="/feed"');
@@ -62,7 +62,7 @@ describe("admin navigation", () => {
 });
 
 // A static check of the compiled cascade, not a browser measurement: between
-// 761 and 1250px the nine tabs must wrap rather than overflow a horizontal
+// 761 and 1250px the ten tabs must wrap rather than overflow a horizontal
 // scroller whose scrollbar is hidden (admin-dashboard.scss sets
 // scrollbar-width: none). The 1024px browser check is recorded as pending.
 describe("admin navigation layout rules", () => {
@@ -78,7 +78,7 @@ describe("admin navigation layout rules", () => {
     return "";
   };
 
-  it("wraps the nine tabs between 761 and 1250px instead of hiding one behind the scroller", () => {
+  it("wraps the ten tabs between 761 and 1250px instead of hiding one behind the scroller", () => {
     const dashboard = css("admin-dashboard.scss");
     const tablet = block(dashboard, "min-width: 761px)and (max-width: 1250px") || block(dashboard, "min-width:761px)and (max-width:1250px");
     expect(tablet).toMatch(/\.pt-admin \.admin-nav\{[^}]*flex-wrap:wrap/);
@@ -92,6 +92,6 @@ describe("admin navigation layout rules", () => {
   it("no longer hard-codes seven columns for the phone tab bar", () => {
     const surfaces = css("admin-surfaces.scss");
     expect(surfaces).not.toMatch(/repeat\(7,/);
-    expect(surfaces).toMatch(/repeat\(9,/);
+    expect(surfaces).toMatch(/repeat\(10,/);
   });
 });

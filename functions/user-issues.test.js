@@ -4,6 +4,7 @@ const { FakeFirestore, HttpsError } = require("./test-support/fake-firestore");
 const { createUserIssues, RETRY } = require("./user-issues");
 const { createIssueSources } = require("./user-issue-sources");
 const M = require("./user-issue-model");
+const { createResendProvider } = require("./workout-notifications-provider");
 const AT = Date.parse("2026-09-30T18:00:00Z"), ADMIN = { uid: "admin", email: "dylank@posetek.net", emailVerified: true };
 const input = (patch = {}) => ({ eventId: "event-a", sessionId: "session-a", kind: "error", platform: "web", operation: "save_workout", code: "unavailable", occurredAtMillis: AT, ...patch });
 function fixture() {
@@ -80,7 +81,7 @@ test("manual report evidence is private and excluded from mail; forged screensho
   const f = fixture(); const a = await f.service.submit(input({ kind: "report", description: "My private account detail: athlete@example.com" }), { uid: "athlete" });
   await f.service.dispatch(a.occurrenceId);
   assert.equal(JSON.stringify(f.sends[0]).includes("My private account"), false);
-  assert.deepEqual(f.sends[0].payload.to, [M.TO]); assert.equal(f.sends[0].payload.from, M.FROM);
+  assert.deepEqual(f.sends[0].payload.to, M.RECIPIENTS); assert.equal(f.sends[0].payload.from, M.FROM);
   await assert.rejects(f.service.submit(input({ kind: "report", description: "A screenshot", screenshot: "data:image/svg+xml;base64,PHN2Zz4=" }), { uid: "athlete" }), { code: "invalid-argument" });
   await assert.rejects(f.service.list({}, { uid: "athlete" }), { code: "permission-denied" });
   await assert.rejects(f.service.list({ evidenceId: a.occurrenceId }, null), { code: "permission-denied" });
@@ -100,11 +101,60 @@ test("ambiguous retries preserve exact payload and key; never retry after provid
 test("signed delivery callback can beat send acknowledgement and is idempotent", async () => {
   const f = fixture(), a = await f.service.submit(input(), { uid: "athlete" });
   const event = { type: "email.delivered", created_at: new Date(AT).toISOString(), data: { email_id: "email-1", from: M.FROM, to: [M.TO], tags: { posetek_issue_outbox: a.occurrenceId } } };
-  f.provider.send = async () => { await f.service.webhook({ id: "receipt", event }); return { id: "email-1" }; };
+  f.provider.send = async () => {
+    for (const to of M.RECIPIENTS) await f.service.webhook({ id: `receipt-${to}`, event: { ...event, data: { ...event.data, to: [to] } } });
+    return { id: "email-1" };
+  };
   await f.service.dispatch(a.occurrenceId); await f.service.webhook({ id: "receipt", event });
   assert.equal(f.db.snapshot(`userIssueOutbox/${a.occurrenceId}`).status, "delivered");
   await f.service.webhook({ id: "sent", event: { ...event, type: "email.sent", created_at: new Date(AT + 1).toISOString() } });
   assert.equal(f.db.snapshot(`userIssueOutbox/${a.occurrenceId}`).status, "delivered");
+});
+test("historical three-recipient sends keep separate delivery evidence after recipient removal", async () => {
+  const f = fixture(), a = await f.service.submit(input(), { uid: "athlete" });
+  const jobRef = f.db.doc(`userIssueOutbox/${a.occurrenceId}`);
+  await jobRef.update({ deliveryProvider: "resend", payload: { ...M.payload(f.db.snapshot(jobRef.path), a.occurrenceId),
+    to: [M.TO, "nolanj@posetek.net", "taiyow@posetek.net"] }, status: "accepted", firstAttemptAtMillis: AT,
+    attempts: 1, acceptedAtMillis: AT, providerId: "email-1", dueAtMillis: null });
+  const deliver = async (to, type, millis) => f.service.webhook({ id: `${to}-${type}-${millis}`, event: {
+    type, created_at: new Date(millis).toISOString(), data: { email_id: "email-1", from: M.FROM, to: [to], tags: { posetek_issue_outbox: a.occurrenceId } },
+  } });
+  await deliver(M.TO, "email.delivered", AT + 300);
+  assert.equal(f.db.snapshot(`userIssueOutbox/${a.occurrenceId}`).status, "accepted");
+  // A late-arriving event for another recipient must not be discarded by Dylan's later clock.
+  await deliver("nolanj@posetek.net", "email.bounced", AT + 100);
+  await deliver("taiyow@posetek.net", "email.delivered", AT + 200);
+  await deliver("nolanj@posetek.net", "email.sent", AT + 400);
+  const job = f.db.snapshot(`userIssueOutbox/${a.occurrenceId}`);
+  assert.equal(job.status, "bounced"); assert.equal(job.recipientDelivery[M.TO].status, "delivered");
+  assert.equal(job.recipientDelivery["nolanj@posetek.net"].status, "bounced");
+  assert.equal(job.recipientDelivery["taiyow@posetek.net"].status, "delivered");
+  assert.equal(f.sends.length, 0, "historical callbacks do not replay an old send");
+});
+test("old frozen Dylan-only sends retain payload/key and accept only their original recipient", async () => {
+  const f = fixture(), a = await f.service.submit(input(), { uid: "athlete" });
+  const frozen = { ...M.payload(f.db.snapshot(`userIssueOutbox/${a.occurrenceId}`), a.occurrenceId), to: [M.TO] };
+  await f.db.doc(`userIssueOutbox/${a.occurrenceId}`).update({ payload: frozen });
+  await f.service.dispatch(a.occurrenceId);
+  assert.deepEqual(f.sends[0], { payload: frozen, key: `posetek-user-issue/${a.occurrenceId}` });
+  const event = { type: "email.delivered", created_at: new Date(AT).toISOString(), data: { email_id: "email-1", from: M.FROM, to: ["nolanj@posetek.net"], tags: { posetek_issue_outbox: a.occurrenceId } } };
+  await f.service.webhook({ id: "not-original", event });
+  assert.equal(f.db.snapshot(`userIssueOutbox/${a.occurrenceId}`).status, "accepted");
+  event.data.to = [M.TO]; await f.service.webhook({ id: "original", event });
+  assert.equal(f.db.snapshot(`userIssueOutbox/${a.occurrenceId}`).status, "delivered");
+});
+test("issue provider allows only approved recipients and leaves workout provider Dylan-only", async () => {
+  let calls = 0;
+  const options = { apiKey: () => "fixture-only", fetchImpl: async () => { calls++; return { ok: true, json: async () => ({ id: "email-test" }) }; } };
+  const issue = createResendProvider({ ...options, from: M.FROM, recipients: M.RECIPIENTS });
+  const payload = M.payload({ title: "Sample", lines: [] }, "fixture");
+  await issue.send(payload, "new"); await issue.send({ ...payload, to: [M.TO] }, "legacy");
+  for (const bad of [{ to: [...M.RECIPIENTS, "other@example.com"] }, { to: [M.TO, M.TO] }, { cc: ["other@example.com"] }, { bcc: ["other@example.com"] }]) {
+    await assert.rejects(issue.send({ ...payload, ...bad }, "invalid"), { code: "recipient_invalid" });
+  }
+  const workout = createResendProvider(options);
+  await assert.rejects(workout.send({ ...payload, to: ["nolanj@posetek.net"], from: "PoseTek Workouts <workouts@alerts.posetek.net>" }, "workout"), { code: "recipient_invalid" });
+  assert.equal(calls, 2);
 });
 test("a wrong recipient delivery event cannot settle a queued message", async () => {
   const f = fixture(), a = await f.service.submit(input(), { uid: "athlete" }); await f.service.dispatch(a.occurrenceId);

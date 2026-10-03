@@ -15,9 +15,10 @@ import { useWorkoutWakeLock } from './use-workout-wake-lock';
 import { createWorkoutActivity, workoutActivityLog, workoutActivitySessionId, WORKOUT_ACTIVITY_HEARTBEAT_MS } from './workout-activity';
 import type { WorkoutActivityReporter, WorkoutActivityResponse } from './workout-activity';
 import './workout-experience.css';
+import { savedWorkoutAllowsFeedback } from './feedback-invitation';
 
-export default function PlayerWorkout({ workout, store, playerId, preview, onExit }: {
-  workout: Row; store: PlayerWorkoutStore; playerId: string; preview: boolean; onExit: () => void;
+export default function PlayerWorkout({ workout, store, playerId, preview, onExit, onCompleted }: {
+  workout: Row; store: PlayerWorkoutStore; playerId: string; preview: boolean; onExit: () => void; onCompleted?: () => void;
 }) {
   const log = store.logFor(workout.id);
   const [blocks] = useState<Row[]>(() => workout.blocks || []);
@@ -46,6 +47,8 @@ export default function PlayerWorkout({ workout, store, playerId, preview, onExi
   const [accountValid, setAccountValid] = useState(preview || auth.currentUser?.uid === owner.uid);
   const [summary, setSummary] = useState(false), [skip, setSkip] = useState(false), [chat, setChat] = useState(''), [pain, setPain] = useState(false);
   const painStopped = pain || !!log?.blocks?.some((r: Row) => r.skipReason === 'pain');
+  const completionState = useRef({ painStopped, playerId, preview });
+  completionState.current = { painStopped, playerId, preview };
   const wakeLock = useWorkoutWakeLock(accountValid && !anotherTab && !painStopped && !summary && !chat && !log?.endedAt && clock.runningSince !== null);
   const seconds = Math.floor(elapsed(clock, now));
   const usageElement = useRef<HTMLElement>(null);
@@ -169,14 +172,21 @@ export default function PlayerWorkout({ workout, store, playerId, preview, onExi
       const stopped = pauseClock(clockRef.current, Date.now()); setClock(stopped); persist(); activity.current?.pause();
       // A clock first opened midway through a native/other-device workout cannot
       // replace its full duration with the minutes observed on this browser.
-      await store.finish(workout.id, endReasonFor(blocks, log), initial.timerStartedHere ? Math.floor(elapsed(stopped, Date.now())) : undefined);
+      const endReason = endReasonFor(blocks, log);
+      const completedWork = blocks.some(b => log?.blocks?.some((r: Row) => r.blockId === b.blockId && Number(r.setsCompleted) > 0));
+      const invite = await savedWorkoutAllowsFeedback(
+        () => store.finish(workout.id, endReason, initial.timerStartedHere ? Math.floor(elapsed(stopped, Date.now())) : undefined),
+        () => ({ endReason, hasCompletedWork: completedWork, painStopped: completionState.current.painStopped,
+          preview: completionState.current.preview, currentAccount: auth.currentUser?.uid === owner.uid && completionState.current.playerId === owner.playerId,
+          currentTab: tabActive.current, visible: document.visibilityState === 'visible' && !!usageElement.current?.getClientRects().length }));
       ended.current = true;
       activity.current?.dispose();
       persist();
       onExit();
+      if (invite) onCompleted?.();
     } catch { /* do not dismiss before acknowledged save */ }
   };
-  if (log?.endedAt) return <section className="portal-card"><h2>Workout saved</h2><p>This workout has ended.</p><button className="primary-cta" onClick={onExit}>Back to training</button></section>;
+  if (log?.endedAt) return <section ref={usageElement} className="portal-card"><h2>Workout saved</h2><p>This workout has ended.</p><button className="primary-cta" onClick={onExit}>Back to training</button></section>;
   if (chat) return <section><button className="text-button" onClick={() => setChat('')}>Back to workout</button><h2>Ask about this drill</h2><CoachChat key={block.blockId} playerId={playerId} preview={preview} capability="coaching_chat" initialText={chat.slice(0, 1900)} /></section>;
   return <section ref={usageElement} className="player-guided" onClickCapture={event => {
     setClock(c => interactClock(c, Date.now()));

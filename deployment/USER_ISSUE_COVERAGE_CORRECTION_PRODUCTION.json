@@ -1,0 +1,514 @@
+{
+  "schemaVersion": 1,
+  "project": "kickai-69dd0",
+  "region": "us-central1",
+  "date": "2026-10-03",
+  "purpose": "Notification coverage, truthful issue classification and per-attempt correlation correction",
+  "acceptance": {
+    "complete": false,
+    "sourceReleaseAndWebsiteVerified": true,
+    "finalWorkbookAcceptance": "verified_fresh_cloud_current_human_and_semantic_proofs",
+    "remaining": [
+      "Graph identity connection and semantic acceptance",
+      "owning-Mac/iPhone/TestFlight genuine symbolicated crash acceptance",
+      "genuine message sent after the latest scoped release"
+    ]
+  },
+  "application": {
+    "deploymentId": "6ac06e0d420f2b6b34129fb5",
+    "previousDeploymentId": "6abeaf5702a9c9983c7a41b9",
+    "publishedAtUtc": "2026-10-03T03:35:45.846Z",
+    "verifiedAtUtc": "2026-10-03T03:37:01.432Z",
+    "frozenSourceDigest": "e7ad1aaa6b2b87b17b8c6885ea263e35170b86e95759e304bc3cdb8244876e88",
+    "candidateDigest": "149612d26f259b37fd5525d0f6b832e976f7179144445a707839bc9469d0bdce",
+    "fullProviderInventoryFiles": 1485,
+    "protectedBaselineFiles": 1482,
+    "baselineAdopted": true,
+    "exactMarketingSourceAndServedBehaviorPreserved": true,
+    "protectedHtmlComparedToImmutablePredecessor": true,
+    "platformConfigurationPreserved": true,
+    "applicationSha1": "214f0430534f140de99b0a7a328245a836bc681f",
+    "actualDraftDesktopPhoneAndInertSupportPassed": true,
+    "siteFunctionsOrConfigurationChanged": false,
+    "obsoleteDraftSourceOnePromoted": false
+  },
+  "deployments": {
+    "userIssues": {
+      "functions": {
+        "submitUserIssue": {
+          "version": "8",
+          "actualSourceSha256": "349ba4bff17360f1d1e26cea02deda14032ff467c7378ace7b806151f075a333"
+        },
+        "getUserIssues": {
+          "version": "8",
+          "actualSourceSha256": "349ba4bff17360f1d1e26cea02deda14032ff467c7378ace7b806151f075a333"
+        },
+        "updateUserIssue": {
+          "version": "8",
+          "actualSourceSha256": "349ba4bff17360f1d1e26cea02deda14032ff467c7378ace7b806151f075a333"
+        },
+        "observeIssueAi": {
+          "version": "8",
+          "actualSourceSha256": "349ba4bff17360f1d1e26cea02deda14032ff467c7378ace7b806151f075a333"
+        },
+        "observeIssueReport": {
+          "version": "8",
+          "actualSourceSha256": "349ba4bff17360f1d1e26cea02deda14032ff467c7378ace7b806151f075a333"
+        },
+        "observeIssueDiagnostic": {
+          "version": "8",
+          "actualSourceSha256": "349ba4bff17360f1d1e26cea02deda14032ff467c7378ace7b806151f075a333"
+        },
+        "observeIssueLog": {
+          "version": "8",
+          "actualSourceSha256": "349ba4bff17360f1d1e26cea02deda14032ff467c7378ace7b806151f075a333"
+        },
+        "dispatchUserIssue": {
+          "version": "8",
+          "actualSourceSha256": "349ba4bff17360f1d1e26cea02deda14032ff467c7378ace7b806151f075a333"
+        },
+        "sweepUserIssues": {
+          "version": "8",
+          "actualSourceSha256": "349ba4bff17360f1d1e26cea02deda14032ff467c7378ace7b806151f075a333"
+        },
+        "dailyUserIssues": {
+          "version": "8",
+          "actualSourceSha256": "349ba4bff17360f1d1e26cea02deda14032ff467c7378ace7b806151f075a333"
+        }
+      },
+      "verifiedAtUtc": "2026-10-03T04:54:35.303Z",
+      "runtime": "nodejs22",
+      "sourceConfigurationIamAndUnrelatedResourcesVerified": true
+    },
+    "issueTracker": {
+      "candidateLabel": "v5",
+      "functions": {
+        "observeUserIssueTracker": {
+          "version": "5",
+          "actualSourceSha256": "9a7ef7ec1b28b033a11c4726c83915486a4d1e15d97b1144467b8399d6308453"
+        },
+        "observeUserIssueTrackerOccurrence": {
+          "version": "5",
+          "actualSourceSha256": "9a7ef7ec1b28b033a11c4726c83915486a4d1e15d97b1144467b8399d6308453"
+        },
+        "drainUserIssueTracker": {
+          "version": "5",
+          "actualSourceSha256": "9a7ef7ec1b28b033a11c4726c83915486a4d1e15d97b1144467b8399d6308453"
+        },
+        "ingestUserIssueTrackerMail": {
+          "version": "5",
+          "actualSourceSha256": "9a7ef7ec1b28b033a11c4726c83915486a4d1e15d97b1144467b8399d6308453"
+        },
+        "recoverUserIssueTracker": {
+          "version": "5",
+          "actualSourceSha256": "9a7ef7ec1b28b033a11c4726c83915486a4d1e15d97b1144467b8399d6308453"
+        },
+        "captureUserIssueTrackerSources": {
+          "version": "5",
+          "actualSourceSha256": "9a7ef7ec1b28b033a11c4726c83915486a4d1e15d97b1144467b8399d6308453"
+        }
+      },
+      "verifiedAtUtc": "2026-10-03T06:21:31.146Z",
+      "runtime": "nodejs22",
+      "sourceConfigurationIamAndUnrelatedResourcesVerified": true,
+      "mailIdentityEnabled": false
+    },
+    "social": {
+      "functions": {
+        "getSocialAdminDirectory": {
+          "version": "3",
+          "actualSourceSha256": "36a9a964112134f9de05083b5a8cdd43dfbb025a0a3015f0bafe84c3a589c7e8"
+        },
+        "getSocialContext": {
+          "version": "6",
+          "actualSourceSha256": "36a9a964112134f9de05083b5a8cdd43dfbb025a0a3015f0bafe84c3a589c7e8"
+        },
+        "getSocialFeed": {
+          "version": "6",
+          "actualSourceSha256": "36a9a964112134f9de05083b5a8cdd43dfbb025a0a3015f0bafe84c3a589c7e8"
+        },
+        "getSocialActivity": {
+          "version": "5",
+          "actualSourceSha256": "36a9a964112134f9de05083b5a8cdd43dfbb025a0a3015f0bafe84c3a589c7e8"
+        },
+        "saveSocialPreferences": {
+          "version": "5",
+          "actualSourceSha256": "36a9a964112134f9de05083b5a8cdd43dfbb025a0a3015f0bafe84c3a589c7e8"
+        },
+        "setSocialVisibility": {
+          "version": "5",
+          "actualSourceSha256": "36a9a964112134f9de05083b5a8cdd43dfbb025a0a3015f0bafe84c3a589c7e8"
+        },
+        "getSocialPeople": {
+          "version": "5",
+          "actualSourceSha256": "36a9a964112134f9de05083b5a8cdd43dfbb025a0a3015f0bafe84c3a589c7e8"
+        },
+        "socialConnection": {
+          "version": "7",
+          "actualSourceSha256": "36a9a964112134f9de05083b5a8cdd43dfbb025a0a3015f0bafe84c3a589c7e8"
+        },
+        "setSocialKudos": {
+          "version": "5",
+          "actualSourceSha256": "36a9a964112134f9de05083b5a8cdd43dfbb025a0a3015f0bafe84c3a589c7e8"
+        },
+        "getSocialComments": {
+          "version": "5",
+          "actualSourceSha256": "36a9a964112134f9de05083b5a8cdd43dfbb025a0a3015f0bafe84c3a589c7e8"
+        },
+        "saveSocialComment": {
+          "version": "5",
+          "actualSourceSha256": "36a9a964112134f9de05083b5a8cdd43dfbb025a0a3015f0bafe84c3a589c7e8"
+        },
+        "reportSocialActivity": {
+          "version": "5",
+          "actualSourceSha256": "36a9a964112134f9de05083b5a8cdd43dfbb025a0a3015f0bafe84c3a589c7e8"
+        },
+        "moderateSocialActivity": {
+          "version": "5",
+          "actualSourceSha256": "36a9a964112134f9de05083b5a8cdd43dfbb025a0a3015f0bafe84c3a589c7e8"
+        },
+        "getSocialMedia": {
+          "version": "6",
+          "actualSourceSha256": "36a9a964112134f9de05083b5a8cdd43dfbb025a0a3015f0bafe84c3a589c7e8"
+        }
+      },
+      "verifiedAtUtc": "2026-10-03T03:27:57.816Z",
+      "candidateDigest": "699431848155bc7829d0dd30ad2921fbbc9f612c7ec3babbafd217b0a8f83a5e",
+      "runtime": "nodejs22",
+      "sourceConfigurationIamAndUnrelatedResourcesVerified": true,
+      "existingIndividualImplementationsAndHelperVariantsPreserved": true
+    }
+  },
+  "recipientsAndControls": {
+    "checkedAtUtc": "2026-10-03T05:14:06.641Z",
+    "newNotifications": "Dylan only",
+    "sender": "alerts@posetek.net",
+    "issueProvider": "microsoft",
+    "workoutProvider": "microsoft",
+    "issueSendEnabled": true,
+    "workoutSendEnabled": true,
+    "microsoftConnectionVerified": true,
+    "traceEnabled": true,
+    "googleCloudPolicyCount": 2,
+    "bothEnabledPoliciesDylanOnly": true,
+    "hourlyCodexAutomation": "PAUSED",
+    "automaticUserOutreach": false,
+    "historicalResendReplay": false,
+    "additionalPurchase": false,
+    "flowOnCurrentUiAcceptance": "all_four_visibly_On",
+    "NolanTaiyoWorkbookEditing": "Can edit observed in primary supplied Manage Access evidence",
+    "flowUiCheckedAtUtc": "2026-10-03T05:31:34.850554+00:00",
+    "emailTriggerConcurrencyThrottlingWarningObserved": true,
+    "concurrencySettingsChanged": false,
+    "flowBadgesProveRecipientDelivery": false,
+    "warningProvesActiveSendingFailure": false,
+    "sendOnceOrSerialDefinitionRevalidatedByOnImages": false,
+    "serialSendOnceAndDisabledSendRetryControls": "remain required; not established by an On screenshot",
+    "historicalVisibleBurstRuns": {
+      "dayPacific": "2026-10-02",
+      "startLocal": "18:24",
+      "endLocal": "18:33",
+      "visibleBadge": "Succeeded",
+      "newSendAfterLatestScopedReleaseProved": false
+    }
+  },
+  "finalizationIndex": {
+    "collectionGroup": "projectionDirty",
+    "field": "pending",
+    "queryScope": "COLLECTION_GROUP",
+    "order": "ASCENDING",
+    "state": "READY",
+    "verifiedAtUtc": "2026-10-03T01:05:44.944Z",
+    "existingIndexDefinitionsPreserved": true,
+    "actualCollectionGroupQuerySucceeded": true,
+    "retestCheckedAtUtc": "2026-10-03T01:18:44.595Z",
+    "boundedLogPaginationComplete": true,
+    "genuineScheduledSweepFinishedAtUtc": "2026-10-03T01:17:11.072595019Z",
+    "genuineScheduledSweepOutcome": "ok",
+    "durationMillis": 4702,
+    "allPendingProjectionsFinalizedClaimed": false
+  },
+  "historicalClassification": {
+    "sourceJournalComplete": true,
+    "completedChunks": 27,
+    "reviewedDistinctOccurrences": 1048,
+    "diagnosticSubtypeUnknown": 31,
+    "automatedServiceOperatorUnknown": 1017,
+    "nativeTickets": 1048,
+    "originalActorTargetSourceIdsAndPayloadsPreserved": true,
+    "newEmailsOrAlertReplay": false,
+    "freshWorkbookPublicationAccepted": true,
+    "publicationStatus": "native_receipt_and_fresh_cloud_verified"
+  },
+  "deliveryRecommendationReview": {
+    "action": "A01",
+    "sourceReviewComplete": true,
+    "nativeTicketQueued": true,
+    "reviewedLegacyResendNeedsReview": 489,
+    "reviewedLegacyUnassignedNeedsReview": 31,
+    "reviewCountsAreDatedNotCurrentUserCounts": true,
+    "originalProblemAndEmailHistoryPreserved": true,
+    "emailSourceCheckpointSeedAndHumanWrites": 0,
+    "freshWorkbookPublicationAccepted": true,
+    "currentDeliveryCompletenessClaimed": false,
+    "countsBasis": "dated frozen historical-provider review; not a current delivery census"
+  },
+  "nativeCrashExport": {
+    "configurationVisuallyVerified": true,
+    "configured": "On",
+    "selectedIosApps": 1,
+    "registeredIosApps": 1,
+    "bundle": "Nolan-Jetter.KickAI",
+    "includeSessions": true,
+    "configurationModifiedDuringFinalReadOnlyReview": false,
+    "genuineDeviceCrashAndSymbolicatedExportAccepted": false,
+    "nativeRelease": "held_owning_Mac_iPhone_TestFlight_acceptance",
+    "nativeCandidate": "0f0d876aa0686470e92829dc237af7a3c80b0344",
+    "nativeBranch": "worktree-user-issue-alerts",
+    "targetPlayerReferenceIsNotAuthReporterUid": true
+  },
+  "mailIdentity": {
+    "deployedTranslationRouteEnabled": false,
+    "newConnectionApproval": "pending_or_unconfirmed",
+    "readerImmutableIdHeaderRestoredAndUiSaved": true,
+    "allThreeCorrectedReaderInputsExactSavedExportVerified": true,
+    "approvedDesignerMetadataChanges": 17,
+    "runtimeDifferencePaths": [],
+    "readerOnAndTwoGenuineSucceededRunsObservedByPrimary": true,
+    "readerRunsObservedAtAmericaLosAngeles": [
+      "2026-10-02T20:55",
+      "2026-10-02T21:00"
+    ],
+    "allReaderTranslationFlowsFullyAccepted": false,
+    "ImmutableIdsProvenByNormalRunBadge": false,
+    "exactGraphTranslationRuntimeAcceptance": "pending_connection_and_semantic_evidence",
+    "historicalRowsAndUnconfirmedAliasesRetained": true,
+    "physicalMessageAliasProofClaimed": false,
+    "mailboxRbacClaimed": false
+  },
+  "sharedTeamGuide": {
+    "freshCloudReadbackVerified": true,
+    "verifiedAtUtc": "2026-10-03T04:06:44.6081852Z",
+    "bytes": 8588,
+    "sha256": "e75f30250e9cdbea1bb9784d6c7fd283febe7b28ba8d34b0f838a514bc33e98a",
+    "recoverableBackupRetained": true,
+    "sharedFolderOnlyWorkbookAndGuide": true,
+    "workbookWrites": 0
+  },
+  "retainedSourceCoverage": {
+    "readTimeUtc": "2026-10-03T03:19:53.217Z",
+    "eligibleRetainedFailureCaseDocuments": 69,
+    "exactCanonicalFailureCaseMatches": 69,
+    "provenRetainedSourceGaps": 0,
+    "retainedWrappedLogsAtAudit": 0,
+    "boundedWrappedLogPaginationComplete": true,
+    "historicalReconstructionRequiredByThisEvidence": false,
+    "unrecordedOrDeletedClientDeviceAttemptsCovered": false,
+    "laterGenuineWrappedRequestAcceptanceClaimed": false,
+    "coverageBasis": "dated retained-source census; not all experiences or current uninterrupted capture"
+  },
+  "finalWorkbookPublication": {
+    "status": "verified_fresh_cloud_and_current_semantics",
+    "revision": 187,
+    "counts": {
+      "actions": 338,
+      "instances": 1135,
+      "emails": 464,
+      "dailyRows": 2
+    },
+    "freshCloudWorkbookSha256": "d2ecf6237b7894d950f8dd9f1fb18d8cd8c468040532d55e26d9d9522eee45a5",
+    "savedHumanRecordsVerified": 334,
+    "formulasSourceIdsAndLinksVerified": true,
+    "allHistoricalClassificationAndA01TicketsPublished": true,
+    "genuineDeliveredIncidentAndExactMailJoinsVerified": true,
+    "genuineMessageSentAfterLatestScopedDeployment": null,
+    "separateSourceCaptureAndPublication": {
+      "checkedAtUtc": "2026-10-03T06:34:37.958Z",
+      "readWindowStartedAtUtc": "2026-10-03T06:34:36.399Z",
+      "pointInTimeSnapshot": false,
+      "outlook": {
+        "capturedThroughUtc": "2026-10-03T06:28:13.862Z",
+        "publishedThroughUtc": "2026-10-03T06:28:13.862Z",
+        "completedSequence": 242,
+        "publishedSequence": 242,
+        "allCapturedWindowsPublished": true,
+        "captureInProgress": false,
+        "lastCheckedAtMillis": 1791009016703,
+        "lastCompleteAtMillis": 1791009016703,
+        "lastPublicationVerifiedAtMillis": 1791009017542
+      },
+      "backend": {
+        "capturedThroughUtc": "2026-10-03T06:28:13.852Z",
+        "publishedThroughUtc": "2026-10-03T06:28:13.852Z",
+        "completedSequence": 243,
+        "publishedSequence": 243,
+        "allCapturedWindowsPublished": true,
+        "captureInProgress": false,
+        "lastCheckedAtMillis": 1791009016807,
+        "lastCompleteAtMillis": 1791009016807,
+        "lastPublicationVerifiedAtMillis": 1791009242894
+      }
+    },
+    "queueRestorationAndOutstandingDeliveryScan": {
+      "queueRunningRestored": true,
+      "restoredAtUtc": "2026-10-03T06:34:23.390Z",
+      "allQueueConfigurationPreserved": true,
+      "currentDeliveryCompletenessClaimed": false
+    },
+    "sharedGuideCloudReadback": {
+      "verifiedAtUtc": "2026-10-03T04:06:44.6081852Z",
+      "sha256": "e75f30250e9cdbea1bb9784d6c7fd283febe7b28ba8d34b0f838a514bc33e98a",
+      "bytes": 8588
+    },
+    "checkpointRecoveryMutations": {
+      "transactions": 1,
+      "existingWindowAndPublicationMetadataWrites": 12,
+      "windowsPublished": 11,
+      "captureFieldsPreserved": true,
+      "workbookEmailQueueSeedAndSourceEvidenceWrites": 0
+    },
+    "physicalCloudCheckedAtUtc": "2026-10-03T06:32:24.785Z",
+    "physicalSnapshotReadTimeUtc": "2026-10-03T06:30:41.433Z",
+    "datedSavedHumanRecordsVerified": 180,
+    "genuinePriorMessage": {
+      "DylanRecipientDeliveryVerified": true,
+      "linkedOriginalEmailRows": 2,
+      "outreachEmailVerified": false,
+      "contactObservedAtUtc": "2026-10-02T23:05:06.215Z",
+      "lookupCheckedAtUtc": "2026-10-02T23:05:06.339Z",
+      "sameMailboxItemAliasesProved": false
+    }
+  },
+  "semantics": {
+    "countsAreNotUniquePeople": true,
+    "genericDiagnosticsDoNotProveCrashOrInterruptedWorkout": true,
+    "serviceFailuresDoNotImplyKnownAffectedOperator": true,
+    "exactAuthContactSeparateFromTargetAthlete": true,
+    "unverifiedAndFailedCurrentContactExplicit": true,
+    "freshDiagnosticUuidPerSupportedClientInvocation": true,
+    "sdkRetriesKeepInvocationReference": true,
+    "corroborationRequiresCompatibleKnownOperationAndAuthorizedTarget": true,
+    "sourceObservationsAndConflictsRetained": true,
+    "durableSourceIdsAreImmutableReplayIdentity": true,
+    "durationLivesInCloudLoggingNotNewWorkbookColumn": true,
+    "nativeWorkbookSchemaChanged": false,
+    "resolvedFromAlertSilence": false
+  },
+  "validation": {
+    "clientTypeScriptPassed": true,
+    "applicationTestFiles": 122,
+    "applicationTests": 1419,
+    "privateNetlifyOperatorOfflineTests": 12,
+    "privateSocialOperatorOfflineTests": 15,
+    "sourceTestsDoNotReplaceDeliveryOrPublicationEvidence": true,
+    "focusedBackendTrackerTestFiles": 12,
+    "focusedBackendTrackerTests": 141,
+    "newEndToEndNullCallerCases": 8
+  },
+  "limits": [
+    "No promise captures every user experience, handled error, pre-load failure or native crash.",
+    "Configuration On does not prove genuine crash export, symbolication or recipient delivery.",
+    "A delivered previously observed alert can be rechecked without proving a new send after the latest scoped deployment.",
+    "No unique-message count or alias collapse without exact Exchange identity proof.",
+    "Source and queue completion are not physical workbook publication."
+  ],
+  "privateProofSha256": {
+    "userIssuesActualSourceConfigurationIam": "fcc478fed0797b69e1ad9fdcab4073ad10a30ac6e74672498814ef78f5843141",
+    "trackerActualSourceConfigurationIam": "4aa3aa8bddc4570bcd54d2cc94780e22fd292be050866ee1954a3570879fffbe",
+    "socialActualSourceConfigurationIam": "0900bc37dbc21da90179946a0325a3339afe8a9b1f5c1b1f0862aacc751e6584",
+    "applicationProductionInventoryAndServedContent": "2990d056c40d5dc07ec5f279a012e527ab7c4e1854bea11fc223298ad9a15e86",
+    "applicationActualDraftBrowserAcceptance": "58dd7e9e1ff00cc19284d4cf960601c72575aa9679728a4e8b0576f5c89849a6",
+    "adoptedProtectedBaseline": "621bbe99a31ce0f07e57a0f9973879d86c9299901d15435f0610d9436ce22713",
+    "collectionGroupIndexReady": "fcbc15b8911f3cc57c8204e0cef0efe8277b2be647d7da1b626e0341c87153f3",
+    "actualQueryAndGenuineScheduledSweep": "15413db5a476396288db8589e1e242a6d8f440d3f35a7b6ebe41160b7b0afe62",
+    "historicalClassificationCompletedSourceJournal": "acc8f7aaab15a78d0ef23675a092dbb5fbe74dedb6dd46b3c5141622526fade4",
+    "historicalClassificationFrozenSelection": "675867fc2a7dde8694a176abef366e07dde6c0c379e0438a7268ae57acc7f4d6",
+    "classificationManualRecoveryComplete": "2a956d6459c74a4e04785203055ff61475ef7954ff605e05ba26f59aebb5c5db",
+    "deliveryRecommendationApprovedQueueReceipt": "399e0df61b8206af29c8562334a79b034c677e81cb49d6654f3755023fa16194",
+    "retainedSourceCoverageReadOnly": "f90703489dca84a52318ba5bce058ae2a9b2a7788483faf94711bb0937df3110",
+    "nativeCrashlyticsCurrentOnImage": "d55cdb24f1c1c09ffae9686d6984d05c8bbbe0714c04fc9efe64b342e427ef85",
+    "nativeCrashlyticsSelectedIosImage": "a1f188748704c91545c6b361b693bf0135adf424c7935a4cc4136c29fcc8a24e",
+    "nativeCrashRoutingAndBoundedLogs": "87331af17257a307f7e6ec4a476f13432f7eec860cf8edf935d859b4e518e942",
+    "clientTypeScriptAndFullTests": "22a914c4f88aee87c720df28d5f4d5bb7b01477ee93acdcd5d0995f5155d2f4a",
+    "netlifyOperatorOfflineValidation": "1534ec2a3543bf361ca6727c52f59489f857181c48dcac15374f2c19f87b0ab4",
+    "socialOperatorOfflineValidation": "d12714e0ac6f4f3169e13d78acf81fa976f62b2379fd45abd15e376e4f69983f",
+    "savedReaderExactReviewedRuntimeExport": "b0a5a87dec281cb788cc252c8ef229e6093531582a59f200a62494b0256a6ab7",
+    "savedReaderGenuineNormalRunsImage": "f31b815373da2c671e5fe4478e8d13c1efe4877983d65f1187827e2966a86c3d",
+    "sharedGuideExactFreshCloudReadback": "c8a9a99671af88e331fc38afeec49c7458bcb5ac9ec0e875652e132ceef26fae",
+    "userIssuesPredecessorVersion7": "4ed2a53afe48b047b2549d95a23d391a70864802c3338cbf8b228f20fd231a43",
+    "userIssuesActualRuntimeInventory": "71d51b6607d4c594d6983fc2e6285dc6ef1709453e958ebc4463df8d0c2eda84",
+    "originalReceiptDraftPhysicalBytes": "12a6425e91f1c1588677cce6df0beda87b95c0a57a7a6671234b60b8c2ad20ee",
+    "originalReceiptMapPhysicalBytes": "7afc83efe100e024c30bdbee3c17d0b6212f4100faaf134002011581c00c7ce0",
+    "nullCallerSourceContractAndTests": "559a90713193c45070d7792455856daac58602907b5cb12671dd0f1410151e75",
+    "datedDocumentationBeforeNullCallerFollowup": "b8ffbcd379addd945a7b58698fc4d9b0f6ff001bd3b6f8a90a018cbde8cf0250",
+    "trackerPredecessorVersion4": "791714b4f7db164c35c49d3af0251ff2971ae3dc4f6100cd2a57348230136df9",
+    "trackerActualRuntimeInventory": "fb5272add70b1d96ceb7caa04d3f62521689d3d4b22a81768f6a9ecb57fd0dee",
+    "localDocumentationVerification": "dbedae7cf485d55b82e9363d019db855d3c7857d0338e2b9e1db2e15b0c36185",
+    "finalDestinations": "102595a24e5c04dfe297505dc66dbc92843ebebd5de743474c59c1e169605d4d",
+    "finalFlowUi": "c640c58aca945adc3239063b885ec17316724ab1a478aa4f2c1975ca5dc409f0",
+    "finalFlowUiIndependent": "8ad263eac90f708eed4bc32bb3f72de76ce50b02378f0c4ff001f53622cadd75",
+    "finalSharedAccess": "6424425650adc901740dd8dcb1b4ccc75794946e8e008a894062ee9aa0636b06",
+    "finalGuide": "c8a9a99671af88e331fc38afeec49c7458bcb5ac9ec0e875652e132ceef26fae",
+    "finalCloud": "dfb711ac5536a6dc1d34c73949dd1d57cb270f69f471cad25962f34b031d4300",
+    "finalHuman": "e5eeb7afc97a51fc04efb654b421a82f604f952c6448d0965f0e95d4282a0522",
+    "finalGenuineSource": "707f703f09c1771af7e7a8730bbdd97e12b8fc977a088453d20a3b60460c1d0e",
+    "finalCheckpointRecovery": "3e7aafecba2b7823d3926c3700dce929447fd04420e667b8846954db9432f0f1",
+    "finalRuntime": "3b79ed0b96f5a0ce0b415ee8086c7a128ca182a2adc8e596bc561e0a80c60e60",
+    "finalRuntimeRaw": "65e09ec0612e771e6da216ee0f7685cb7ceb3d95715c64b59f770058c2626129",
+    "finalRestoration": "ec3547c326680e9f27f68636bdb78bdd862fda05d806a07a91947c39ef1e4248",
+    "finalSemantic": "358fc36d5d72d0f7eedd6865d1dc5f0b09a5063a14ffde3175165096f2451db1",
+    "finalMergeManifestPhysicalBytes": "213e9a16c391c4b0fbe2790434fbc582036ebc9be6fe05da7586d374655ce557",
+    "releaseBoundCandidatePhysicalBytes": "046747ddb8a58e3d011632da4fd10f3422fde3e40731264924d0deac3d92f235",
+    "predecessorVersion4TrackerPreservedControlPlane": "6f62d92d3812610a8e247ecfcefb37da7f768ca3c994f47058f0f949e5da2959",
+    "datedRecipientProviderAndFallbackDestinationsBeforeFinal003": "dd3f3fbccd6a96da2a5ddb0429818694c95ef84dabbd37082216a216202a913c",
+    "datedBoundedRuntimeProgressBeforeFinalAcceptance": "3da1c365b4468bc76dec4c3038b98a81bb59f6fec12400392de252e459cac24f",
+    "currentVersion5TrackerPreservedControlPlane": "67d18cbcdfadd2c2076646b0da8f085c5eedfa71c50f7645e20360f3dd60d546",
+    "currentVersion5StrictFinalPreservationReconciliation": "14be8cd4b03ff6fc2d7178ab8b23dec066a10794c027e479d9aa5ef0363ff441",
+    "currentRecipientProviderAndFallbackDestinations": "102595a24e5c04dfe297505dc66dbc92843ebebd5de743474c59c1e169605d4d"
+  },
+  "receiptPreparedAtUtc": "2026-10-03T06:40:52.707Z",
+  "callableRequestClassification": {
+    "knownGeneration1Operations": 14,
+    "validReporterUidMaxCharacters": 128,
+    "requestAndTargetIdMaxCharacters": 160,
+    "boundedServerOwnedMarker": true,
+    "clientMarkerStripped": true,
+    "failedRequestWithNoAcceptedCaller": "unknown_actor",
+    "title": "Action failed",
+    "genericHistoricalServiceRecordsUnchanged": true,
+    "historicalReclassificationWithoutExactOriginalStructuredLog": false
+  },
+  "currentRuntimeVerification": {
+    "checkedAtUtc": "2026-10-03T06:34:37.958Z",
+    "readWindowStartedAtUtc": "2026-10-03T06:34:36.399Z",
+    "pointInTimeSnapshot": false,
+    "allCollectionPagesRead": true,
+    "writerUnchangedDuringRead": true,
+    "revision": 187,
+    "pendingQueue": 0,
+    "writerActive": false,
+    "writerBlocked": false,
+    "sourceCaptureAndPublicationReportedSeparately": true,
+    "lastCompletedDeliveryCreationCensus": {
+      "createdBeforeUtc": "2026-10-03T04:25:15.055Z",
+      "finishedAtUtc": "2026-10-03T05:41:05.530Z",
+      "documentsExamined": 1138,
+      "eligibleDocuments": 1137,
+      "queuedDocuments": 0,
+      "deliveryStatuses": {
+        "needs_review": 489,
+        "delivered": 617,
+        "failed": 31
+      },
+      "pointInTimeSnapshot": false,
+      "sourceCompleteThroughAdvanced": false,
+      "currentEndToEndDeliveryCoverageClaimed": false
+    }
+  },
+  "applicationIssueResolutionClaims": {
+    "reportedFeedDeadlineCauseConfirmed": false,
+    "allApplicationProblemsResolved": false,
+    "allUserExperiencesOrCrashesCaptured": false,
+    "validatedScope": "reporting and evidence preservation repairs; device and application-cause acceptance separate"
+  }
+}

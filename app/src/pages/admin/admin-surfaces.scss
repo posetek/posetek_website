@@ -195,7 +195,7 @@
     .admin-technique-link > span:last-child:not(.material-symbols-outlined) { display: none; }
     .admin-nav {
       position: fixed; inset: auto 0 0; z-index: 30; margin: 0;
-      display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 4px;
+      display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px;
       height: calc(var(--admin-tab-height) + env(safe-area-inset-bottom));
       padding: 8px max(8px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
       background: var(--admin-bar); border-top: 1px solid var(--admin-line);

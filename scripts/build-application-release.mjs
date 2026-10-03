@@ -177,14 +177,14 @@ export async function composeApplicationRelease(root, { marketingDeploymentId } 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const root = fileURLToPath(new URL("../", import.meta.url));
   const args = process.argv.slice(2);
-  if (args.length && (args.length !== 2 || args[0] !== "--marketing-snapshot" || !args[1] || args[1].startsWith("--"))) throw new Error("Usage: node scripts/build-application-release.mjs [--marketing-snapshot <manifest-path>]");
+  if (args.length && (args.length !== 2 || !["--marketing-snapshot", "--preserve-marketing"].includes(args[0]) || !args[1] || args[1].startsWith("--"))) throw new Error("Usage: node scripts/build-application-release.mjs [--preserve-marketing <Astro-manifest-path> | --marketing-snapshot <historical-Vite-manifest-path>]");
   function run(file, args = [], cwd = root) {
     const result = spawnSync(process.execPath, [file, ...args], { cwd, stdio: "inherit", windowsHide: true });
     if (result.error) throw result.error;
     if (result.status !== 0) throw new Error("Build failed: " + file);
   }
-  if (!args.length) {
-    run(join(root, "scripts/build-astro-release.mjs"));
+  if (!args.length || args[0] === "--preserve-marketing") {
+    run(join(root, "scripts/build-astro-release.mjs"), args);
   } else {
     run(join(root, "scripts/build-production.mjs"));
     const marketing = await restoreMarketingSnapshot(root, resolve(args[1]));

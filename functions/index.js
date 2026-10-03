@@ -7,6 +7,14 @@ const { playerSegment, storageFolderCandidates } = require("./athlete-storage-pa
 admin.initializeApp();
 const db = admin.firestore();
 Object.assign(exports, require("./device-processing").createDeviceProcessingEntrypoints(functions, admin, requireCaller));
+
+// Public feedback uses plain HTTPS, with no caller/auth/account association.
+exports.receiveAppFeedback = functions.runWith({ secrets: ["APP_FEEDBACK_RATE_KEY"], timeoutSeconds: 30, maxInstances: 10 }).https.onRequest(
+  require("./app-feedback").createAppFeedbackHttp({ db, Timestamp: admin.firestore.Timestamp, rateKey: () => process.env.APP_FEEDBACK_RATE_KEY })
+);
+exports.getAppFeedback = functions.runWith({ timeoutSeconds: 30, maxInstances: 5 }).https.onCall((data, context) =>
+  require("./app-feedback").createAppFeedbackAdmin({ db, Timestamp: admin.firestore.Timestamp, HttpsError: functions.https.HttpsError })(data || {}, requireCaller(context))
+);
 // Private workout delivery is additive and disabled until its settings are enabled.
 Object.assign(exports, require("./workout-notifications-entrypoints").createWorkoutNotificationEntrypoints(functions, admin, requireCaller));
 Object.assign(exports, require("./user-issue-entrypoints").createUserIssueEntrypoints(functions, admin));
@@ -45,13 +53,15 @@ exports.createCoachPlayer = functions.https.onCall((data, context) => playerInvi
 exports.ensurePlayerInvitationOnWrite = functions.runWith({ failurePolicy: true }).firestore.document("players/{playerId}").onWrite((_, context) => playerInvitations.ensure(context.params.playerId));
 
 const { createSocial } = require("./social");
+const { observeSocialCallable } = require("./social-callable-observation");
 const social = createSocial({ db, bucket: admin.storage().bucket("kickai-69dd0.firebasestorage.app"), HttpsError: functions.https.HttpsError });
 for (const [endpoint, handler] of Object.entries({
   getSocialAdminDirectory: "adminDirectory", getSocialContext: "getContext", getSocialFeed: "getFeed", getSocialActivity: "getDetail",
   saveSocialPreferences: "savePreferences", setSocialVisibility: "setVisibility", getSocialPeople: "people",
   socialConnection: "connect", setSocialKudos: "kudos", getSocialComments: "comments", saveSocialComment: "comment",
   reportSocialActivity: "report", moderateSocialActivity: "moderation", getSocialMedia: "media",
-})) exports[endpoint] = functions.runWith({ timeoutSeconds: 120 }).https.onCall((data, context) => social[handler](data || {}, requireCaller(context)));
+})) exports[endpoint] = functions.runWith({ timeoutSeconds: 120 }).https.onCall(observeSocialCallable({ endpoint,
+  handler: (data, caller) => social[handler](data, caller), requireCaller, logger: functions.logger, HttpsError: functions.https.HttpsError }));
 // Re-read authoritative inputs in a transaction: duplicate and out-of-order
 // mobile/web writes cannot publish an older projection over a newer result.
 exports.projectSocialReps = functions.runWith({ timeoutSeconds: 120, failurePolicy: true }).firestore.document("players/{playerId}/reps/{repId}").onWrite((change, context) => {

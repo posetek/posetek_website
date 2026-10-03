@@ -6,6 +6,7 @@ const crypto = require("node:crypto");
 const { FakeFirestore, HttpsError } = require("./test-support/fake-firestore");
 const { createWorkoutNotifications, executionIdentity, QUIET_MS, RETRY_WINDOW_MS, LEASE_MS } = require("./workout-notifications");
 const { createResendProvider, verifyResendWebhook, RECIPIENT, FROM } = require("./workout-notifications-provider");
+const { createMicrosoftEmail } = require("./microsoft-email");
 const NOW = Date.parse("2026-09-28T18:00:00Z");
 const UUID = "11111111-1111-4111-8111-111111111111", OTHER_UUID = "22222222-2222-4222-8222-222222222222";
 const AUTH = { uid: "athlete", email: "athlete@example.com", emailVerified: true };
@@ -65,6 +66,35 @@ function fixture(extra = {}) {
   }
   return { db, provider, sends, service, path, identity, jobPath, statePath, observe, close, activity, time: () => time, advance: ms => { time += ms; }, setTime: value => { time = value; } };
 }
+
+test("Microsoft workout routing holds when disabled and claims only unchanged recorded source", async () => {
+  const f = fixture({ "microsoftEmailSettings/current": { enabled: false, connectionVerified: true, activatedAtMillis: NOW - 1, senderMailbox: "alerts@posetek.net" } });
+  await f.db.doc("workoutNotificationSettings/current").update({ emailProvider: "microsoft" });
+  await f.close();
+  const id = f.db.snapshot(f.jobPath()).id;
+  await f.service.dispatch(id); assert.equal(f.sends.length, 0);
+  await f.db.doc("microsoftEmailSettings/current").update({ enabled: true });
+  f.provider.send = async (payload, key, job) => { f.sends.push({ payload, key, job }); return { pending: true }; };
+  await f.service.dispatch(id);
+  assert.equal(f.sends[0].job.deliveryProvider, "microsoft"); assert.deepEqual(f.sends[0].payload.to, [RECIPIENT]);
+  assert.equal(f.db.snapshot(f.jobPath()).status, "pending");
+  // Direct save reached Firestore but its normal observer has not run yet.
+  await f.db.doc(f.path("workoutLogs")).update({ activeSeconds: 200 });
+  const ms = createMicrosoftEmail({ db: f.db, now: f.time });
+  assert.equal((await ms.claim({ schemaVersion: 1, kind: "workout", jobId: id, runId: "run-workout" })).allowSend, false);
+  assert.equal(f.db.snapshot(f.jobPath()).status, "cancelled");
+});
+
+test("a consumed Microsoft workout claim cannot be resent by expired dispatcher leases", async () => {
+  const f = fixture({ "microsoftEmailSettings/current": { enabled: true, connectionVerified: true, activatedAtMillis: NOW - 1, senderMailbox: "alerts@posetek.net" } });
+  await f.db.doc("workoutNotificationSettings/current").update({ emailProvider: "microsoft" }); await f.close();
+  const id = f.db.snapshot(f.jobPath()).id, ms = createMicrosoftEmail({ db: f.db, now: f.time });
+  let c;
+  f.provider.send = async (_payload, _key, job) => { f.sends.push(job); c = await ms.claim({ schemaVersion: 1, kind: "workout", jobId: id, runId: "run-workout" }); throw new Error("wake response lost"); };
+  await f.service.dispatch(id); assert.equal(c.allowSend, true);
+  f.advance(24 * 3600000); await f.service.dispatch(id); assert.equal(f.sends.length, 1);
+  assert.equal(f.db.snapshot(f.jobPath()).dispatchAfterMillis, null);
+});
 
 test("settings absent, invalid activation, sending disabled and pilot selection fail closed", async () => {
   for (const settings of [undefined, { enabled: true }, { enabled: true, activatedAtMillis: NOW + 1000 }, { enabled: true, activatedAtMillis: NOW - 1, testPlayerIds: [] }]) {
