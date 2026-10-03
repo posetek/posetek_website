@@ -6,6 +6,7 @@ const { createHash } = require("node:crypto");
 const { isClubAdmin } = require("./club-access");
 const { midnight, localDate, shiftDate } = require("./insights-v2");
 const { completeQuery } = require("./insights-v2-projection");
+const { createTeamProcessingReports } = require("./team-processing");
 
 const ROOT = "devicePerformanceDiagnostics";
 const INVENTORY = "devicePerformanceInventory";
@@ -37,6 +38,11 @@ function normalizeManifest(manifest, index, { path, generation, receivedAt = Dat
       || index.playerDocumentID !== id.athleteDocumentID || index.drillType !== manifest.drill
       || !DRILLS.includes(manifest.drill) || (index.scope && index.scope !== "attempt")) throw new Error("Diagnostic identity mismatch");
   if (manifest.origin === "evaluation" || manifest.evaluationRunId) throw new Error("Evaluation diagnostics excluded");
+  for (const [field, indexField] of [["testingEventID","testingEventId"],["stationID","stationId"],["logicalRepId","repId"]]) {
+    if ((id[field] || null) !== (index[indexField] || null)) throw new Error("Testing event identity mismatch");
+  }
+  const team = { testingEventId: text(id.testingEventID), stationId: text(id.stationID, 32),
+    logicalRepId: text(id.logicalRepId), playerDocumentID: text(id.athleteDocumentID), stationRunId: text(id.stationRunID) };
   const capture = manifest.capture || {}, platform = capture.platform || {}, media = capture.measuredMedia || {};
   const installId = uuid(id.originInstallId) || uuid(id.recordingDeviceID);
   const capturedAt = date(id.createdAt);
@@ -58,7 +64,7 @@ function normalizeManifest(manifest, index, { path, generation, receivedAt = Dat
       ms: number(s.elapsedMs), frames: number(s.framesDecoded), calls: number(s.modelCalls),
     })).filter(s => s.id);
     const outcome = run.outcome?.prepared?.status === "valid" ? "valid" : run.outcome?.prepared ? "partial"
-      : run.outcome?.failed ? "failed" : run.outcome?.cancelled ? "cancelled" : "interruptedUnknown";
+      : run.outcome?.failed ? "failed" : run.outcome?.cancelled ? "cancelled" : run.interruptedAt != null ? "interruptedUnknown" : "running";
     const startedAt = date(run.startedAt), terminalAt = date(run.terminalAt);
     const processingMs = number(p.processingMs);
     const wallMs = number(p.wallMs) ?? (startedAt !== null && terminalAt !== null && terminalAt >= startedAt ? terminalAt - startedAt : null);
@@ -72,7 +78,7 @@ function normalizeManifest(manifest, index, { path, generation, receivedAt = Dat
     const appliedFPS = number(capture.captureProfile?.appliedFPS) ?? number(capture.requestedFPS);
     const width = number(media.uprightDimensions?.[0]), height = number(media.uprightDimensions?.[1]);
     return {
-      runId, attemptId: id.attemptId, retryOf: uuid(run.identity.retryOfRunId), installId: executor,
+      ...team, terminalAt, runId, attemptId: id.attemptId, retryOf: uuid(run.identity.retryOfRunId), installId: executor,
       originInstallId: installId, drill: manifest.drill, sessionId, sessionNumber: number(capture.sessionNumber),
       repNumber: number(capture.repNumber) ?? number(p.repIndex), capturedAt, startedAt, dateReliable,
       outcome, mode: text(run.identity.mode, 32), algorithmId, sourceRevision, policyHash, sampling, configuration,
@@ -91,11 +97,11 @@ function normalizeManifest(manifest, index, { path, generation, receivedAt = Dat
       stages, provenance: "diagnosticManifest",
     };
   });
-  return { schemaVersion: 1, attemptId: id.attemptId, originInstallId: installId,
+  return { ...team, schemaVersion: 1, attemptId: id.attemptId, originInstallId: installId,
     reporterUid: index.reportedByUid, playerDocumentID: index.playerDocumentID,
     capturedAt, dateReliable, sessionId, drill: manifest.drill, runs,
     source: { path, generation: String(generation), sequence: number(manifest.sequence), manifestUpdatedAt: date(manifest.updatedAt) },
-    receivedAt, summaryVersion: 1 };
+    receivedAt, summaryVersion: 2 };
 }
 
 function createDiagnosticPerformance({ db, bucket, FieldValue, now = Date.now }) {
@@ -119,7 +125,10 @@ function createDiagnosticPerformance({ db, bucket, FieldValue, now = Date.now })
     const ref = db.collection(ROOT).doc(attemptId);
     return db.runTransaction(async tx => {
       const previous = await tx.get(ref);
-      if (previous.exists && BigInt(previous.data().source.generation) >= BigInt(object.generation)) return { status: "unchanged", attemptId };
+      if (previous.exists) {
+        const prior = previous.data(), difference = BigInt(prior.source.generation) - BigInt(object.generation);
+        if (difference > 0n || (difference === 0n && (prior.summaryVersion || 1) >= summary.summaryVersion)) return { status: "unchanged", attemptId };
+      }
       const installs = [...new Set([summary.originInstallId, ...summary.runs.map(r => r.installId)].filter(Boolean))];
       const inventory = await Promise.all(installs.map(id => tx.get(db.collection(INVENTORY).doc(id))));
       tx.set(ref, { ...summary, firstReceivedAt: previous.exists ? previous.data().firstReceivedAt : now(), updatedAtServer: FieldValue.serverTimestamp() });
@@ -260,9 +269,10 @@ function createDeviceProcessingEntrypoints(functions,admin,requireCaller) {
   const db=admin.firestore(), bucket=admin.storage().bucket(BUCKET);
   const importer=createDiagnosticPerformance({db,bucket,FieldValue:admin.firestore.FieldValue});
   const reports=createDeviceProcessingReports({db,HttpsError:functions.https.HttpsError});
+  const teams=createTeamProcessingReports({db,HttpsError:functions.https.HttpsError});
   return {
     observeDeviceProcessingManifest: functions.runWith({memory:"512MB",timeoutSeconds:120,maxInstances:5,failurePolicy:true}).storage.bucket(BUCKET).object().onFinalize(object=>importer.importObject(object)),
-    getDeviceProcessingV1: functions.runWith({memory:"512MB",timeoutSeconds:120,maxInstances:10}).https.onCall((data,context)=>reports.report(data||{},requireCaller(context))),
+    getDeviceProcessingV1: functions.runWith({memory:"512MB",timeoutSeconds:120,maxInstances:10}).https.onCall((data,context)=>(data?.view === "teamSessions" ? teams : reports).report(data||{},requireCaller(context))),
   };
 }
 module.exports={ROOT,INVENTORY,BUCKET,DRILLS,LIMITS,CURRENT,normalizeManifest,createDiagnosticPerformance,createDeviceProcessingReports,createDeviceProcessingEntrypoints,distribution,summarize,currentRun};

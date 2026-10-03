@@ -97,3 +97,20 @@ test("unknown execution identities are coverage gaps, not one combined fictional
  const result=await createDeviceProcessingReports({db,HttpsError,now:()=>at+1000000}).report({startDate:"2026-10-02",endDate:"2026-10-02",algorithm:"all"},admin);
  assert.equal(result.phones.length,0);assert.equal(result.coverage.unknownDevice,2);
 });
+
+test("team identities and completion time are preserved and cross-station mismatches rejected",()=>{
+ const f=fixture();Object.assign(f.manifest.identity,{testingEventID:"event",stationID:"station-1",logicalRepId:"rep-1"});Object.assign(f.index,{testingEventId:"event",stationId:"station-1",repId:"rep-1"});
+ const summary=normalizeManifest(f.manifest,f.index,{path:f.path,generation:"1",receivedAt:at+20000});assert.equal(summary.summaryVersion,2);assert.equal(summary.runs[0].stationId,"station-1");assert.equal(summary.runs[0].terminalAt,at+11001);
+ f.index.stationId="station-2";assert.throws(()=>normalizeManifest(f.manifest,f.index,{path:f.path,generation:"1"}));
+});
+test("an unfinished run is not a confirmed interruption",()=>{
+ const f=fixture(),r=Object.values(f.manifest.runs)[0];delete r.outcome;delete r.terminalAt;
+ assert.equal(normalizeManifest(f.manifest,f.index,{path:f.path,generation:"1"}).runs[0].outcome,"running");
+ r.interruptedAt=at+12000;assert.equal(normalizeManifest(f.manifest,f.index,{path:f.path,generation:"1"}).runs[0].outcome,"interruptedUnknown");
+});
+test("same-generation summary upgrade is allowed once; older generation is still refused",async()=>{
+ const f=fixture(),bytes=Buffer.from(JSON.stringify(f.manifest)),old=summary();old.summaryVersion=1;old.source.generation="100";
+ const db=new FakeFirestore({[`processingAttempts/${f.index.attemptId}`]:f.index,[`${ROOT}/${f.index.attemptId}`]:old});
+ const importer=createDiagnosticPerformance({db,bucket:{file:()=>({download:async()=>[bytes]})},FieldValue,now:()=>at+20000});const object={name:f.path,bucket:BUCKET,generation:"100",size:bytes.length};
+ assert.equal((await importer.importObject({...object,generation:"99"})).status,"unchanged");assert.equal((await importer.importObject(object)).status,"imported");assert.equal(db.snapshot(`${ROOT}/${f.index.attemptId}`).summaryVersion,2);assert.equal((await importer.importObject(object)).status,"unchanged");
+});

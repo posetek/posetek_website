@@ -109,3 +109,10 @@ callable reachability is approved and verified. User data is never a public prev
 fallback. Local source is committed and merged to main; no remote push
 is authorized or performed. The public production website remains the feedback
 release until the pending acceptance steps pass.
+
+## Team sessions (2026-10-03)
+
+The event-level dashboard is linked from Device performance. It uses the same
+callable and normalizer (derived summary version 2), with exact team-event,
+station, player and logical-rep joins. See [team session performance](TEAM_SESSION_PERFORMANCE.md)
+for metrics, throughput semantics, limits and verification.
