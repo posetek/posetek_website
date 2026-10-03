@@ -1,0 +1,98 @@
+/* Reference lock: PoseTek portal canvas, Inter stack, lime primary actions and
+   rounded green surfaces. Refero craft: labeled controls, 44px+ touch targets,
+   focus-visible, optional writing and clear recovery states. No remote imports. */
+.pt-feedback {
+  --feedback-bg: #04130e;
+  --feedback-card: #102d25;
+  --feedback-line: rgba(255, 255, 255, .16);
+  --feedback-text: #f7fbf9;
+  --feedback-muted: #b7cec4;
+  --feedback-lime: #b7f34a;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--feedback-bg);
+  color: var(--feedback-text);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+
+  &, *, *::before, *::after { box-sizing: border-box; }
+  h1, h2, p { margin: 0; }
+  button, input, textarea { font: inherit; }
+  button, a, label { touch-action: manipulation; -webkit-tap-highlight-color: rgba(183, 243, 74, .18); }
+  button, a { cursor: pointer; }
+  button:disabled, fieldset:disabled label { cursor: default; }
+  button:disabled { opacity: .65; }
+  a { color: inherit; }
+  button:focus-visible, a:focus-visible, textarea:focus-visible, legend:focus-visible, h2:focus-visible, .feedback-error:focus-visible {
+    outline: 3px solid var(--feedback-lime); outline-offset: 4px;
+  }
+
+  .feedback-header {
+    min-height: 76px; padding: 14px max(20px, env(safe-area-inset-left));
+    border-bottom: 1px solid var(--feedback-line); display: flex; gap: 16px;
+    align-items: center; justify-content: space-between; max-width: 1100px; margin: auto;
+  }
+  .feedback-brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; font-size: 14px; font-weight: 900; letter-spacing: .12em; }
+  .feedback-brand-mark { width: 34px; height: 34px; display: grid; place-items: center; background: var(--feedback-lime); color: var(--feedback-bg); border-radius: 10px; font-size: 20px; letter-spacing: 0; }
+  .feedback-exit { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; color: var(--feedback-muted); font-size: 13px; text-underline-offset: 4px; }
+  .feedback-shell { max-width: 620px; margin: auto; padding: 42px 20px max(30px, env(safe-area-inset-bottom)); }
+  .feedback-intro { margin-bottom: 25px; }
+  .feedback-eyebrow { color: var(--feedback-lime); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; margin-bottom: 10px; }
+  h1 { font-size: clamp(30px, 6.6vw, 39px); font-weight: 800; letter-spacing: -.045em; line-height: 1.15; text-wrap: balance; }
+  .feedback-lead { font-size: 16px; margin-top: 13px; color: var(--feedback-text); text-wrap: pretty; }
+  .feedback-privacy-note { color: var(--feedback-muted); font-size: 13px; margin-top: 14px; line-height: 1.65; }
+  .feedback-card { background: var(--feedback-card); border: 1px solid var(--feedback-line); border-radius: 22px; padding: 26px; }
+  .feedback-step { color: var(--feedback-lime); font-size: 12px; font-weight: 700; margin-bottom: 12px; }
+  fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+  legend { font-size: 23px; font-weight: 750; line-height: 1.3; padding: 0; letter-spacing: -.02em; width: 100%; text-wrap: balance; }
+  .feedback-question-hint { color: var(--feedback-muted); font-size: 13px; margin: 10px 0 18px; }
+  .feedback-choices { display: grid; gap: 9px; }
+  .feedback-choice {
+    display: flex; gap: 12px; align-items: center; min-height: 54px; position: relative;
+    border: 1px solid var(--feedback-line); border-radius: 13px; background: rgba(0, 0, 0, .1);
+    padding: 12px 14px; cursor: pointer; font-weight: 550; font-size: 15px;
+    transition: background-color .15s ease, border-color .15s ease;
+    &:has(input:checked) { border-color: var(--feedback-lime); background: rgba(183, 243, 74, .1); }
+    &:has(input:focus-visible) { outline: 3px solid var(--feedback-lime); outline-offset: 3px; }
+    input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    &:has(input:checked) .feedback-choice-dot { background: var(--feedback-lime); border-color: var(--feedback-lime); box-shadow: inset 0 0 0 4px var(--feedback-card); }
+  }
+  .feedback-choice-dot { width: 20px; height: 20px; border: 1.5px solid #93aca1; border-radius: 50%; flex: 0 0 auto; }
+  .feedback-actions { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px; margin-top: 24px; }
+  .feedback-primary { min-height: 52px; padding: 12px 18px; background: var(--feedback-lime); color: #092115; border: 0; border-radius: 13px; font-size: 15px; font-weight: 800; display: flex; justify-content: space-between; align-items: center; gap: 12px; text-decoration: none; }
+  .feedback-primary span { font-size: 22px; font-weight: 500; line-height: 1; }
+  .feedback-text-button { min-height: 44px; padding: 10px 0; background: transparent; border: 0; font-size: 13px; font-weight: 600; color: var(--feedback-muted); display: inline-flex; gap: 7px; align-items: center; }
+  .feedback-back-row { min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 8px; font-size: 11px; color: var(--feedback-muted); }
+  .feedback-back-row > span { margin-left: auto; }
+  .feedback-unused-note { color: var(--feedback-muted); font-size: 13px; margin-top: 16px; }
+  .feedback-comment textarea { width: 100%; resize: vertical; min-height: 138px; border: 1px solid var(--feedback-line); border-radius: 13px; padding: 14px; color: var(--feedback-text); background: rgba(0, 0, 0, .18); font-size: 16px; line-height: 1.5; }
+  .feedback-comment textarea::placeholder { color: #96afa3; opacity: 1; }
+  .feedback-comment-caption { display: flex; align-items: start; justify-content: space-between; gap: 16px; color: var(--feedback-muted); font-size: 11px; margin-top: 9px; }
+  .feedback-comment-caption span { white-space: nowrap; }
+  .feedback-error { background: rgba(255, 122, 122, .1); color: #ffb8b8; border: 1px solid rgba(255, 122, 122, .4); border-radius: 12px; padding: 12px; font-size: 13px; margin-top: 18px; }
+  .feedback-footer { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-top: 20px; color: var(--feedback-muted); font-size: 11px; }
+  .feedback-footer a { min-height: 44px; display: flex; align-items: center; text-underline-offset: 4px; }
+  .feedback-preview { color: var(--feedback-lime); background: rgba(183, 243, 74, .1); border: 1px solid rgba(183, 243, 74, .35); padding: 11px 14px; border-radius: 12px; font-size: 13px; margin-bottom: 20px; }
+  .feedback-complete { padding-block: 32px; }
+  .feedback-complete-mark { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: rgba(183, 243, 74, .13); color: var(--feedback-lime); font-size: 27px; margin-bottom: 18px; }
+  .feedback-complete h2 { font-size: 26px; line-height: 1.3; letter-spacing: -.025em; text-wrap: balance; }
+  .feedback-complete p { font-size: 14px; color: var(--feedback-muted); margin: 12px 0 24px; }
+  .feedback-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+  @media (hover: hover) {
+    .feedback-choice:hover { border-color: #96ba9d; background: rgba(255, 255, 255, .04); }
+    .feedback-primary:hover { background: #c4fa64; }
+    .feedback-text-button:hover, .feedback-exit:hover { color: var(--feedback-text); }
+  }
+  @media (max-width: 420px) {
+    .feedback-header { padding-inline: 16px; gap: 12px; min-height: 68px; }
+    .feedback-brand { gap: 8px; font-size: 12px; }
+    .feedback-exit { font-size: 11px; gap: 5px; }
+    .feedback-shell { padding-top: 28px; padding-inline: 16px; }
+    .feedback-card { padding: 21px 18px; }
+    legend { font-size: 21px; }
+    .feedback-actions { gap: 12px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .feedback-choice { transition: none; } }
+}

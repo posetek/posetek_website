@@ -19,6 +19,7 @@ async function fixture(run) {
   await put("deployment/homepage-baseline.json", JSON.stringify(baseline));
   const page = marker => `<!doctype html>${marker}<div id="root"><astro-island component-url="/_astro/new.87654321.js" client="only"></astro-island></div><script src="/marketing/home-navigation.js"></script>`;
   for (const [path, marker] of [["index.html", "<!-- posetek-marketing-entry -->"], ["coaches/index.html", "<!-- posetek-coaches-entry -->"], ["application.html", "<!-- posetek-astro-application-entry -->"]]) await put("app/astro-dist/" + path, page(marker));
+  await put("app/astro-dist/feedback.html", page("<!-- posetek-feedback-entry -->").replace('<script src="/marketing/home-navigation.js"></script>', ''));
   await put("app/astro-dist/_astro/new.87654321.js", "new Astro chunk");
   try { await run({ root, put, files, baseline }); }
   finally {
@@ -27,10 +28,10 @@ async function fixture(run) {
   }
 }
 
-test("full-site Astro release changes exactly three documents and preserves historical assets", async () => fixture(async ({ root, files }) => {
+test("full-site Astro release changes only declared documents and preserves historical assets", async () => fixture(async ({ root, files }) => {
   const receipt = await composeAstroRelease(root);
   assert.equal(receipt.framework, "astro"); assert.equal(receipt.preservedFiles, 4);
-  assert.deepEqual(receipt.documents.map(file => file.path).sort(), ["/application.html", "/coaches/index.html", "/index.html"]);
+  assert.deepEqual(receipt.documents.map(file => file.path).sort(), ["/application.html", "/coaches/index.html", "/feedback.html", "/index.html"]);
   assert.deepEqual(receipt.added.map(file => file.path), ["/_astro/new.87654321.js"]);
   for (const [path, bytes] of files) if (path !== "/application.html") assert.equal(await readFile(join(root, "production-dist" + path), "utf8"), bytes);
   assert.match(await readFile(join(root, "production-dist/application.html"), "utf8"), /client="only"/);

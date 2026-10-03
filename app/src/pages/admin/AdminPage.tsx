@@ -38,6 +38,7 @@ const PersonalizedPrograms = lazy(() => import("./views/PersonalizedPrograms"));
 const AiIncidents = lazy(() => import("./views/AiIncidents"));
 const AccountAccess = lazy(() => import("./views/AccountAccess"));
 const UserIssues = lazy(() => import("./views/UserIssues"));
+const AppFeedback = lazy(() => import("./views/AppFeedback"));
 
 export default function AdminPage() {
   const location = useLocation();
@@ -125,6 +126,7 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
           <Route path="analysis" element={<AnalysisWorkspace />} />
           <Route path="ai-incidents" element={<AiIncidents />} />
           <Route path="user-issues" element={<UserIssues preview={preview} />} />
+          <Route path="feedback" element={<AppFeedback preview={preview} />} />
           <Route path="programs/personalized" element={<PlannerRedirect />} />
           <Route
             path="accounts/player/:playerId/plan/:planId/workout/:workoutId"

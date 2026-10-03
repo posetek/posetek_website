@@ -6,6 +6,13 @@ const { playerSegment, storageFolderCandidates } = require("./athlete-storage-pa
 
 admin.initializeApp();
 const db = admin.firestore();
+// Public feedback uses plain HTTPS, with no caller/auth/account association.
+exports.receiveAppFeedback = functions.runWith({ secrets: ["APP_FEEDBACK_RATE_KEY"], timeoutSeconds: 30, maxInstances: 10 }).https.onRequest(
+  require("./app-feedback").createAppFeedbackHttp({ db, Timestamp: admin.firestore.Timestamp, rateKey: () => process.env.APP_FEEDBACK_RATE_KEY })
+);
+exports.getAppFeedback = functions.runWith({ timeoutSeconds: 30, maxInstances: 5 }).https.onCall((data, context) =>
+  require("./app-feedback").createAppFeedbackAdmin({ db, Timestamp: admin.firestore.Timestamp, HttpsError: functions.https.HttpsError })(data || {}, requireCaller(context))
+);
 // Private workout delivery is additive and disabled until its settings are enabled.
 Object.assign(exports, require("./workout-notifications-entrypoints").createWorkoutNotificationEntrypoints(functions, admin, requireCaller));
 Object.assign(exports, require("./user-issue-entrypoints").createUserIssueEntrypoints(functions, admin));
