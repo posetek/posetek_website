@@ -1,8 +1,11 @@
 # Team testing performance
 
-Status (2026-10-03): code complete and locally verified. Backend source update,
-summary migration and hosted acceptance are tracked in the release handoff below.
-The existing callable invoker approval remains pending; this page does not bypass it.
+Status (2026-10-03): backend deployed and source-verified; 238 manifests imported
+into summary version 2. The website draft `6ac1911a5b925767ec7362b8` is built and
+verified, with 1,596 provider inventory records and zero artifact mismatches.
+Production is unchanged. The existing callable invoker approval and authenticated
+browser acceptance remain pending; this page does not bypass them. Exact evidence
+and the remaining release step: [release receipt](../deployment/TEAM_SESSION_PERFORMANCE_DRAFT.json).
 
 ## Admin workflow
 
@@ -85,6 +88,17 @@ operational report; the selected testing event defines the roster.
   metric switches, drill filtering, chart-to-table pagination, failure-to-row
   navigation and 1440/1024/390/320 widths passed; no page errors/outer overflow.
   Desktop/mobile screenshots visually reviewed.
+
+Deployed callable version 4 and observer version 2 passed exact 16-file source
+verification each; all 122 other functions are unchanged. Observer source is
+`5d4185b`, callable and website source `dabd60c`; their normalizer bytes are identical.
+The observer does not execute the later report-only reliability guard. The import
+accepted all 238 manifests (235 runs, eight known installations), modifying only
+derived summaries/inventory. Post-migration reads found no diagnostic coverage gaps
+in the active four-player event; the older four-player rotation has 64 reported
+runs and retains unavailable memory/processing-only timing from its older builds.
+Hosted unauthenticated and preview-bypass gates passed, as did feedback header
+checks. No genuine authenticated callable/browser acceptance has been claimed.
 
 Production web acceptance and promotion remain pending the existing explicit
 invoker approval. Do not claim the DEV synthetic preview is the live event view.

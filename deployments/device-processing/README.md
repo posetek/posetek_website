@@ -24,8 +24,12 @@ observer uses `--trigger-event=google.storage.object.finalize`,
 existing service account `kickai-69dd0@appspot.gserviceaccount.com` and audit all
 unrelated function versions afterward. Do not deploy the root functions directory.
 
-Current rollout: both functions deployed; historical import and observer pilot
-passed. **Callable invoker approval is pending**: automatic approval review
+Current rollout: callable version 4 and observer version 2 are deployed and
+source-verified, with team-session reporting added. 238 manifests were imported
+into derived summary version 2; all unrelated function versions are unchanged.
+The prior observer pilot also passed. See the
+[team-session release receipt](../../deployment/TEAM_SESSION_PERFORMANCE_DRAFT.json)
+for the latest exact draft; the preceding device-only draft is superseded. **Callable invoker approval is pending**: automatic approval review
 rejected adding `allUsers` / `roles/cloudfunctions.invoker` to the single callable.
 Do not retry that IAM change without the user's explicit answer to the pending
 question. No proxy, alternate endpoint or wrapper is an approved substitute.
