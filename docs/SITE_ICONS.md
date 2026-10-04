@@ -52,5 +52,11 @@ rendering, then promote that exact draft. Reconcile
 the ordinary preservation build again. `mergeWebsiteIcons` refuses changed
 pinned icon bytes; the application guard remains enforced.
 
+The current icon-release builder supports the initial four-file addition and
+head metadata changes. Replacing an already-pinned icon file requires a reviewed
+extension that explicitly records and verifies its old/new bytes. Ordinary
+builds intentionally reject that replacement; do not edit baseline hashes ahead
+of publication or bypass its checks.
+
 No functions, rules, gateway, native release or training records are involved.
 The production receipt belongs in `deployment/SITE_ICONS_PRODUCTION.json`.

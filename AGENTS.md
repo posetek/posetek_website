@@ -48,6 +48,17 @@ default to a sibling `../PoseTek-mobile-app` checkout, and `RULES_PATH` /
 `deployment/*.json`, including the composed `whole-body-firestore.rules`
 (deleted), are historical records of past publishes, not instructions.
 
+## Website P icons
+
+The current website is `6ac1abf790c8c0037928b52a`, published October 3, 2026 at
+6:31:53 PM PDT. Read [the icon handoff](docs/SITE_ICONS.md) and
+[production evidence](deployment/SITE_ICONS_PRODUCTION.json). The approved P
+appears in browser and search icon metadata. Only HTML-head icon links and four
+declared icon assets changed; page bodies, runtime assets, feedback isolation and
+all application contracts are preserved. The baseline protects 1,539 files.
+Keep stable icon URLs and the byte-preserving ordinary build guard. Google
+controls search recrawling; the website release does not verify search display.
+
 ## Optional app feedback
 
 Read [the feedback handoff](docs/APP_FEEDBACK.md) and
@@ -65,7 +76,7 @@ with recorded work. Pain stops, early endings, failed saves, changed accounts,
 hidden tabs and previews do not invite. A browser timestamp enforces a seven-day
 automatic-invitation cadence; results links and admin QR/message links remain
 optional and separate. Feedback never gates results or changes training records.
-The verified live website is `6ac17bc21377cbeaea114800`, published October 3, 2026
+The verified feedback application release is `6ac17bc21377cbeaea114800`, published October 3, 2026
 at 3:12:14 PM PDT. The exact candidate passed 20 hosted browser checks and nine
 screenshots with zero feedback writes before promotion; production inventory and
 artifact verification passed. Use the production receipt and

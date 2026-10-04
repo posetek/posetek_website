@@ -28,7 +28,8 @@ export function updateIconLinks(html) {
 }
 
 // Ordinary builds may add the declared icons, or retain their exact pinned
-// bytes. A changed icon still requires the deliberate icon release workflow.
+// bytes. Replacing already-pinned icon bytes requires a separately reviewed
+// extension to the explicit scoped release; never bypass the ordinary guard.
 export async function mergeWebsiteIcons(source, output, protectedFiles = []) {
   const pinned = new Map(protectedFiles.map(file => [file.path.toLowerCase(), file]));
   const records = [];

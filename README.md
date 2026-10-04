@@ -3,6 +3,13 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
+Browser tabs and search favicon metadata now use the approved lime PoseTek P.
+The current website is `6ac1abf790c8c0037928b52a`, published October 3, 2026 at
+6:31:53 PM PDT. The icon-only release preserves page bodies and runtime assets;
+the baseline protects 1,539 files. See [the icon handoff](docs/SITE_ICONS.md) and
+[production receipt](deployment/SITE_ICONS_PRODUCTION.json). Google controls
+when the refreshed icon appears in search results.
+
 For the current coach/admin interface and the next engineering direction, read
 [Kai's dashboard handoff](docs/KAI_DASHBOARD_HANDOFF.md). It covers navigation,
 functionality, metric definitions and verification cases, followed by Dylan's
@@ -13,7 +20,7 @@ at `/admin/feedback`, including a locally generated QR code and copyable share
 links. Assigned and personal workouts invite only after an acknowledged completed
 save with recorded work, at most once every seven days in the same browser;
 results feedback remains optional and available separately. The verified live
-website is `6ac17bc21377cbeaea114800`, published October 3, 2026 at 3:12:14 PM PDT.
+feedback application release is `6ac17bc21377cbeaea114800`, published October 3, 2026 at 3:12:14 PM PDT.
 The exact candidate passed 20 hosted browser checks across nine screenshots with
 zero feedback writes before promotion. See [the feedback handoff](docs/APP_FEEDBACK.md)
 and [production evidence](deployment/APP_FEEDBACK_PRODUCTION.json) for publication

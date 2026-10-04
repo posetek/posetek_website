@@ -11,9 +11,19 @@ The source now uses the previously approved outlined lime P badge, recovered
 from the official icon asset branch, with SVG, 96px PNG, multi-size ICO and
 180px Apple touch variants. Shared Astro and compatibility heads point to stable
 same-origin icon URLs. The full wordmark remains available for page content.
-See [the icon handoff](docs/SITE_ICONS.md) for provenance, Google recrawl limits
-and the guarded metadata-only release workflow. Production publication is
-recorded separately in `deployment/SITE_ICONS_PRODUCTION.json` once verified.
+The current website is `6ac1abf790c8c0037928b52a`, published October 3, 2026 at
+6:31:53 PM PDT from source `c2ba02b`. Its 1,541 website artifacts match the
+1,542-record provider inventory. Only icon links in 83 HTML heads changed;
+1,454 existing files retain their exact bytes, and four icon files were added.
+All page bodies, runtime assets, application behavior and feedback security
+headers are preserved. Hosted and production browser checks decoded all four
+formats across five entry routes; served-content checks passed for 22 routes.
+The reconciled preservation baseline protects 1,539 files, and the ordinary
+TypeScript/Astro build preserved all of them after publication. See
+[the production receipt](deployment/SITE_ICONS_PRODUCTION.json) and
+[the icon handoff](docs/SITE_ICONS.md) for provenance, Google recrawl limits
+and the guarded metadata-only release workflow. Google Search display has not
+been verified; Google controls recrawling and favicon selection.
 
 ## Coach and admin engineering handoff for Kai (2026-10-03)
 
@@ -36,7 +46,7 @@ production records, permissions or deployment.
 
 ## Optional app feedback (2026-10-03)
 
-The current website is Netlify deployment `6ac17bc21377cbeaea114800`, published
+The feedback application release was Netlify deployment `6ac17bc21377cbeaea114800`, published
 October 3, 2026 at 3:12:14 PM PDT, from application source commit `d82cf40`.
 It preserves the preceding issue-coverage release and approved Players/Coaches
 bytes. Full provider inventory verification passed for 1,538 files, including
