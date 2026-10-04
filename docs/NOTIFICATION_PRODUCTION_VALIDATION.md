@@ -293,3 +293,20 @@ Simultaneous lookup and scheduling failures retain both errors. The focused and
 related mail, identity and bridge suites pass 53 tests. This source checkpoint
 alone does not establish deployment, refreshed cloud publication or successful
 Dylan-only issue delivery; those require their separate production receipts.
+
+## Bounded mail reconciliation progress (October 4)
+
+Normal source capture exposed an incomplete historical mail-reconciliation page.
+Independent Outlook and backend capture continued, while the mail recovery cursor
+remained unchanged. An existing Microsoft ID-verification run reported a closed
+caller connection and HTTP 504; this is compatible with the sixty-second mail
+budget, but does not establish the exact cause of that capture execution.
+
+The next source candidate saves only a fully completed row prefix after the exact
+mail-budget error. A transaction checks the recovery document's existence, complete
+saved contents and update time. Failed or uncertain rows remain retryable; partial
+progress advances no source-completeness or publication checkpoint. An uncertain
+enqueue acknowledgement still wakes the ordinary writer. Capture diagnostics use
+fixed branch labels and allowlisted reason codes, with no raw errors or identities.
+All 68 focused tests passed. Deployment and normal recovery progress still require
+their own evidence; this candidate does not release issue sending.

@@ -141,3 +141,101 @@ test("a wake-only failure remains visible and cannot claim publication", async (
   assert.equal(wakes, 1); assert.equal(f.db.snapshot(f.path).pending, true);
   assert.equal(f.db.snapshot("issueTrackerState/mailJoinRecovery").publicationConfirmed, false);
 });
+
+async function addLaterRow(f) {
+  let id = "later-0";
+  for (let n = 1; queuePath(id) <= f.path; n++) id = `later-${n}`;
+  await f.capture.capture(raw(id));
+  const path = queuePath(id), initial = f.db.snapshot(path);
+  await f.db.doc(path).update({ pending: false, appliedVersion: initial.version, appliedHash: initial.desiredHash });
+  return { id, path, before: f.db.snapshot(path) };
+}
+
+test("budget failure saves only a completed prefix and next run retries the failed row", async () => {
+  const f = await fixture(), later = await addLaterRow(f), statePath = "issueTrackerState/mailJoinRecovery";
+  const prior = { cursor: null, lastCheckedAtMillis: AT - 1000 }; await f.db.doc(statePath).set(prior);
+  const notes = f.db.snapshot("issueTrackerRows/manual-saved"), history = f.db.snapshot("userIssueOutbox/historical-receipt");
+  let clock = AT; const reads = [];
+  f.graph.message = async id => { reads.push(id); if (id === later.id) clock += 60000; return raw(id, true); };
+  const capture = createMailCapture({ db: f.db, bridge: f.bridge, graph: f.graph, now: () => clock });
+  await assert.rejects(capture.reconcile(), { code: "tracker_mail_alias_budget_exceeded" });
+  const progress = f.db.snapshot(statePath);
+  assert.equal(progress.cursor, f.path.split("/").at(-1)); assert.equal(progress.examined, 1);
+  assert.equal(progress.enumerationComplete, false); assert.equal(progress.sourceCompleteThroughAdvanced, false); assert.equal(progress.publicationConfirmed, false);
+  assert.equal(progress.linked, 0); assert.equal(progress.aliasesReconciled, 0); assert.equal(f.schedules.length, 1);
+  assert.deepEqual(f.db.snapshot(later.path), later.before); assert.equal(f.db.snapshot(f.path).pending, true);
+  assert.equal(f.db.snapshot("issueTrackerState/capture-outlook"), undefined); assert.equal(f.db.snapshot("issueTrackerState/capture-backend"), undefined);
+  assert.deepEqual(f.db.snapshot("issueTrackerRows/manual-saved"), notes); assert.deepEqual(f.db.snapshot("userIssueOutbox/historical-receipt"), history);
+  reads.length = 0; f.graph.message = async id => { reads.push(id); return raw(id, true); };
+  await capture.reconcile(); assert.deepEqual(reads, [later.id]); assert.equal(f.db.snapshot(later.path).pending, true);
+  assert.equal(f.db.snapshot(statePath).cursor, null); assert.equal(f.db.snapshot(statePath).enumerationComplete, true); assert.equal(f.schedules.length, 2);
+});
+
+test("first-row budget failure retains the original recovery state and does not wake", async () => {
+  const f = await fixture(), prior = { cursor: null, lastCheckedAtMillis: AT - 1000 }, statePath = "issueTrackerState/mailJoinRecovery";
+  await f.db.doc(statePath).set(prior); let clock = AT;
+  f.graph.message = async id => { clock += 60000; return raw(id, true); };
+  const capture = createMailCapture({ db: f.db, bridge: f.bridge, graph: f.graph, now: () => clock });
+  await assert.rejects(capture.reconcile(), { code: "tracker_mail_alias_budget_exceeded" });
+  assert.deepEqual(f.db.snapshot(statePath), prior); assert.deepEqual(f.db.snapshot(f.path), { ...f.initial, pending: false, appliedVersion: f.initial.version, appliedHash: f.initial.desiredHash });
+  assert.equal(f.schedules.length, 0);
+});
+
+test("completed existing join is a safe prefix without inventing another join or wake", async () => {
+  const f = await fixture(), later = await addLaterRow(f), statePath = "issueTrackerState/mailJoinRecovery";
+  await f.db.doc(f.path).update({ "message.exactJoin": { type: "occurrenceId", value: "a".repeat(64), evidence: "Retained test evidence" } });
+  let clock = AT; f.graph.message = async id => { assert.equal(id, later.id); clock += 60000; return raw(id, true); };
+  const capture = createMailCapture({ db: f.db, bridge: f.bridge, graph: f.graph, now: () => clock });
+  await assert.rejects(capture.reconcile(), { code: "tracker_mail_alias_budget_exceeded" });
+  assert.equal(f.db.snapshot(statePath).cursor, f.path.split("/").at(-1)); assert.equal(f.db.snapshot(statePath).examined, 1);
+  assert.equal(f.db.snapshot(statePath).linked, 0); assert.equal(f.schedules.length, 0); assert.deepEqual(f.db.snapshot(later.path), later.before);
+});
+
+test("budget-prefix CAS refuses a concurrent recovery update and retains both errors", async () => {
+  const f = await fixture(), later = await addLaterRow(f), statePath = "issueTrackerState/mailJoinRecovery", concurrent = { cursor: "mail-concurrent", lastCheckedAtMillis: AT + 1 };
+  await f.db.doc(statePath).set({ cursor: null, lastCheckedAtMillis: AT - 1 }); let clock = AT;
+  f.graph.message = async id => { if (id === later.id) { await f.db.doc(statePath).set(concurrent); clock += 60000; } return raw(id, true); };
+  const capture = createMailCapture({ db: f.db, bridge: f.bridge, graph: f.graph, now: () => clock });
+  await assert.rejects(capture.reconcile(), error => error instanceof AggregateError && error.code === "tracker_mail_reconciliation_progress_failed"
+    && error.cause.code === "tracker_mail_alias_budget_exceeded" && error.errors[1].code === "tracker_mail_reconciliation_cursor_changed");
+  assert.deepEqual(f.db.snapshot(statePath), concurrent); assert.equal(f.db.snapshot(f.path).pending, true); assert.equal(f.schedules.length, 1);
+});
+
+test("recovery update-time CAS refuses identical-body ABA before prefix publication", async () => {
+  const f = await fixture(), later = await addLaterRow(f), statePath = "issueTrackerState/mailJoinRecovery", prior = { cursor: null, lastCheckedAtMillis: AT - 1 };
+  await f.db.doc(statePath).set(prior); let version = 1, clock = AT;
+  const stamp = value => ({ value, isEqual: other => other?.value === value });
+  const doc = f.db.doc.bind(f.db); f.db.doc = path => { const ref = doc(path); if (path === statePath) { const get = ref.get.bind(ref); ref.get = async () => { const result = await get(); result.updateTime = stamp(version); return result; }; } return ref; };
+  const transaction = f.db.runTransaction.bind(f.db); f.db.runTransaction = handler => transaction(async tx => { const get = tx.get.bind(tx); tx.get = async ref => { const result = await get(ref); if (ref.path === statePath) result.updateTime = stamp(version); return result; }; return handler(tx); });
+  f.graph.message = async id => { if (id === later.id) { version++; clock += 60000; } return raw(id, true); };
+  const capture = createMailCapture({ db: f.db, bridge: f.bridge, graph: f.graph, now: () => clock });
+  await assert.rejects(capture.reconcile(), error => error.code === "tracker_mail_reconciliation_progress_failed" && error.errors[1].code === "tracker_mail_reconciliation_cursor_changed");
+  assert.deepEqual(f.db.snapshot(statePath), prior); assert.equal(f.schedules.length, 1);
+});
+
+test("success path also refuses to regress a newer recovery cursor", async () => {
+  const f = await fixture(), statePath = "issueTrackerState/mailJoinRecovery", concurrent = { cursor: "mail-newer", lastCheckedAtMillis: AT + 1 };
+  await f.db.doc(statePath).set({ cursor: null });
+  f.graph.message = async id => { await f.db.doc(statePath).set(concurrent); return raw(id, true); };
+  await assert.rejects(f.capture.reconcile(), { code: "tracker_mail_reconciliation_cursor_changed" });
+  assert.deepEqual(f.db.snapshot(statePath), concurrent); assert.equal(f.db.snapshot(f.path).pending, true); assert.equal(f.schedules.length, 1);
+});
+
+test("committed enqueue with lost acknowledgement wakes once but does not checkpoint its failed row", async () => {
+  const f = await fixture(), statePath = "issueTrackerState/mailJoinRecovery", prior = { cursor: null }, lost = Object.assign(new Error("Acknowledgement lost"), { code: "tracker_mail_alias_budget_exceeded" });
+  await f.db.doc(statePath).set(prior); f.setMail(raw(undefined, true));
+  const enqueue = f.bridge.enqueueMessage; f.bridge.enqueueMessage = async (...args) => { await enqueue(...args); throw lost; };
+  await assert.rejects(f.capture.reconcile(), error => error === lost);
+  const queued = f.db.snapshot(f.path); assert.equal(queued.pending, true); assert.deepEqual(f.db.snapshot(statePath), prior); assert.equal(f.schedules.length, 1);
+  f.bridge.enqueueMessage = enqueue; await f.capture.reconcile(); assert.deepEqual(f.db.snapshot(f.path), queued); assert.equal(f.schedules.length, 1);
+});
+
+test("prefix persistence failure is visible without discarding the original budget error or wake", async () => {
+  const f = await fixture(), later = await addLaterRow(f), statePath = "issueTrackerState/mailJoinRecovery", progressError = new Error("Storage write unavailable");
+  let clock = AT; f.graph.message = async id => { if (id === later.id) clock += 60000; return raw(id, true); };
+  const write = f.db.write.bind(f.db); f.db.write = (path, ...args) => { if (path === statePath) throw progressError; return write(path, ...args); };
+  const capture = createMailCapture({ db: f.db, bridge: f.bridge, graph: f.graph, now: () => clock });
+  await assert.rejects(capture.reconcile(), error => error instanceof AggregateError && error.code === "tracker_mail_reconciliation_progress_failed"
+    && error.cause.code === "tracker_mail_alias_budget_exceeded" && error.errors[1] === progressError);
+  assert.equal(f.db.snapshot(statePath), undefined); assert.equal(f.db.snapshot(f.path).pending, true); assert.equal(f.schedules.length, 1);
+});

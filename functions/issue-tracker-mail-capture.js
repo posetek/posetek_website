@@ -257,6 +257,7 @@ function createMailCapture({ db, bridge, graph, archive = createEvidenceArchive(
       const current = await work.read(async () => (await db.doc("issueTrackerSettings/current").get()).data());
       if (current?.enabled !== true || mailReadBinding(current) !== mailReadBinding(work.settings)) fail("tracker_capture_configuration_changed");
     }
+    work.queueAttempted = true;
     const result = await bridge.enqueueMessage(message, { schedule });
     return { ...decision, ticket: result.ticket, queued: result.queued, evidenceRef: proof.id };
   }
@@ -290,38 +291,61 @@ function createMailCapture({ db, bridge, graph, archive = createEvidenceArchive(
       // This independent repair advances no source or publication checkpoint.
       const settings = (await db.doc("issueTrackerSettings/current").get()).data();
       if (settings?.enabled !== true || settings.sourceRecoveryEnabled !== true) return { skipped: "not_configured" };
-      const ref = db.doc("issueTrackerState/mailJoinRecovery"), state = (await ref.get()).data() || {};
+      const ref = db.doc("issueTrackerState/mailJoinRecovery"), initial = await ref.get(), state = initial.data() || {};
       let query = db.collection("issueTrackerQueue").where("source", "==", "outlook").orderBy("__name__").limit(40);
       if (state.cursor) query = query.startAfter(state.cursor);
       const page = await query.get(); let linked = 0, aliasesReconciled = 0, recipientRefreshQueued = false;
-      const work = context(); let reconciliationError;
+      const work = context(); let reconciliationError, completed = { examined: 0, cursor: state.cursor || null, linked: 0, aliasesReconciled: 0 };
+      const saveProgress = async enumerationComplete => db.runTransaction(async tx => {
+        const current = await tx.get(ref);
+        const sameVersion = initial.updateTime === undefined && current.updateTime === undefined
+          || initial.updateTime && current.updateTime && initial.updateTime.isEqual(current.updateTime);
+        if (!sameVersion || current.exists !== initial.exists || digest(current.data() || {}) !== digest(state)) fail("tracker_mail_reconciliation_cursor_changed");
+        tx.set(ref, { schemaVersion: 1, cursor: enumerationComplete ? null : completed.cursor, lastCheckedAtMillis: now(), examined: completed.examined,
+          linked: completed.linked, aliasesReconciled: completed.aliasesReconciled, enumerationComplete,
+          sourceCompleteThroughAdvanced: false, publicationConfirmed: false });
+      });
       try { for (const doc of page.docs) {
         work.check();
         let message = doc.data().message;
-        if (!message) continue;
-        if (await historicalAliases(message, work)) aliasesReconciled++;
-        if (message.exactJoin) continue;
-        // Legacy snapshots predate recipient extraction: re-fetch exact item.
-        // Failure leaves the cursor unchanged so this page is retried.
-        if (!message.receivedRecipients?.length && message.from?.toLowerCase() === "alerts@posetek.net") {
-          const id = message.immutableId || message.originalId;
-          const mail = typeof graph.canonicalMessage === "function" ? await canonical(id, work) : await work.read(() => graph.message(id, { signal: work.signal }));
-          const recipientRefresh = await captureInternal(mail, { aliases: message.aliases || [], schedule: false }, work);
-          // Recipient evidence can change without a verified backend join or
-          // alias repair. Wake for that durable queue update as well.
-          recipientRefreshQueued ||= recipientRefresh.queued === true;
-          message = (await doc.ref.get()).data().message;
+        if (message) {
+          if (await historicalAliases(message, work)) aliasesReconciled++;
+          if (!message.exactJoin) {
+            // Legacy snapshots predate recipient extraction: re-fetch exact item.
+            // Only a fully completed prefix can move past earlier successful items.
+            // The failed item, including an uncertain enqueue, remains retryable.
+            if (!message.receivedRecipients?.length && message.from?.toLowerCase() === "alerts@posetek.net") {
+              const id = message.immutableId || message.originalId;
+              const mail = typeof graph.canonicalMessage === "function" ? await canonical(id, work) : await work.read(() => graph.message(id, { signal: work.signal }));
+              const recipientRefresh = await captureInternal(mail, { aliases: message.aliases || [], schedule: false }, work);
+              // Recipient evidence can change without a verified backend join or
+              // alias repair. Wake for that durable queue update as well.
+              recipientRefreshQueued ||= recipientRefresh.queued === true;
+              message = (await doc.ref.get()).data().message;
+            }
+            const join = await findJoin(message);
+            if (join) { work.queueAttempted = true; await bridge.enqueueMessage({ ...message, exactJoin: join }, { schedule: false }); linked++; }
+          }
         }
-        const join = await findJoin(message);
-        if (join) { await bridge.enqueueMessage({ ...message, exactJoin: join }, { schedule: false }); linked++; }
+        work.check();
+        completed = { examined: completed.examined + 1, cursor: doc.id, linked, aliasesReconciled };
       }
       work.check();
-      await ref.set({ schemaVersion: 1, cursor: page.size < 40 ? null : page.docs.at(-1).id, lastCheckedAtMillis: now(), examined: page.size,
-        linked, aliasesReconciled, enumerationComplete: page.size < 40, sourceCompleteThroughAdvanced: false, publicationConfirmed: false });
-      } catch (error) { reconciliationError = error; throw error; }
+      await saveProgress(page.size < 40);
+      } catch (error) {
+        reconciliationError = error;
+        if (error?.code === "tracker_mail_alias_budget_exceeded" && completed.examined > 0) {
+          try { await saveProgress(false); }
+          catch (progressError) {
+            reconciliationError = new AggregateError([error, progressError], "tracker_mail_reconciliation_progress_failed", { cause: error });
+            reconciliationError.code = "tracker_mail_reconciliation_progress_failed";
+          }
+        }
+        throw reconciliationError;
+      }
       finally {
         work.close();
-        if (linked || aliasesReconciled || recipientRefreshQueued) {
+        if (linked || aliasesReconciled || recipientRefreshQueued || reconciliationError && work.queueAttempted) {
           try { await bridge.wake(); }
           catch (wakeError) {
             if (!reconciliationError) throw wakeError;
