@@ -16,8 +16,9 @@ email delivery or publication of queued records.
 The [preceding progress receipt](../deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
 and dated production receipts remain historical evidence. The
 [partial validation receipt](../deployment/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json)
-records the new source/storage/policy checkpoint; physical publication, complete
-backlog treatment and delivery require their own later evidence.
+records the source/storage/policy checkpoint, completed held email-job audit and
+first accepted storage-v2 workbook batch. Complete publication catch-up, identity
+acceptance and genuine delivery remain separate gates.
 This handoff is not a website release. Newer primary-site changes and native
 application releases have their own source and acceptance gates.
 
@@ -30,23 +31,57 @@ pending tracker tickets** and all **690 saved human records**, keyed by stable
 Action ID. Status, Owner, Due and Fix notes are protected throughout recovery.
 These are records and queue tickets, not counts of unique users or proven crashes.
 
-Issue sending remains disabled and the native queue remains paused. Storage and
-the notification policy are active, while mailbox identity cutover is not yet
-accepted. The first audited backlog page examined **25 jobs**, deferred **10** and
-preserved **15**; the remaining backlog audit is incomplete. This is email-job
-treatment, not tracker publication or proof of a send. The physical shared master remains
-revision **266**, with no post-storage-activation native batch or cloud publication
-accepted yet. The archived
-backlog and separate capture/publication checkpoints must survive the hold;
-independent source capture remains enabled. Workout notification settings were
-preserved and workout delivery is not paused by the issue-email hold. The shared
-master remains **PoseTek → Technology → Website → User Issue Tracker → PoseTek
-Issue Tracker.xlsx**, with Nolan and Taiyo retaining editing access.
+The held email-job audit completed **130 pages**, examining **3,226 jobs**:
+**1,152 deferred** for backlog review and **2,074 preserved**. Its exact source
+cutoff remains **2026-10-04 07:10:32.256247 UTC**; the completed checkpoint was
+saved at **08:50:03.285210 UTC**. No email or workbook write was performed by this
+audit. Original payloads, consumed claims, delivery evidence and historical Resend
+jobs remain intact. These counts are jobs, not unique users or resolved issues.
 
-The independent Google Cloud fallback was read at **2026-10-04 04:49 UTC** and
+Fresh cloud readback at **09:17:13.707 UTC** (2:17 AM PDT) verified the first
+post-cutover native batch at **revision 267**: **691 actions, 1,319 instances,
+804 original email rows and 3 daily/status rows**. All 267 native receipts,
+machine hashes and formulas passed the preserved original verifier. Separate
+readback at **09:19:42.528 UTC** confirmed all **690 saved human records** from
+revision 266 survived by stable Action ID. Full storage-v2 companion verification
+preserved the raw snapshot and used no source-state splicing.
+
+This first batch establishes physical publication of its accepted changes, not
+complete catch-up. The **09:14:27.509 UTC** backend snapshot still had **3,598
+pending tracker tickets**. Outlook capture was complete through **09:09:03.035 UTC**,
+but publication through **00:34:05.451 UTC**; backend capture was through
+**09:09:03.134 UTC**, but publication through **00:34:05.351 UTC**. Both sources
+reported unpublished captured windows, and outstanding-delivery recovery remained
+in progress. Later arrivals need their own checkpoints.
+
+The same revision-267 cloud bytes were freshly verified at **09:42:35.564 UTC**;
+all **690 saved human records** passed again at **09:43:47.033 UTC**. The native
+queue resumed **RUNNING** at **09:57:43.847 UTC**, with readback verified at
+**09:58:01.150 UTC**. Exactly one empty resume request was made; the original pause
+journal, routing, rate limits and retry configuration remain intact. This resumes
+normal publication without authorizing issue emails or changing workout settings.
+
+The **10:00:56.037 UTC** backend read observed revision **268** and an active native
+writer. Outlook capture reached **09:54:04.096 UTC** and backend capture reached
+**09:54:04.031 UTC**; publication still reached only **00:34:05.451 UTC** and
+**00:34:05.351 UTC**, respectively. This is backend progress, not fresh physical
+acceptance of revision 268 or complete publication. The existing outstanding-delivery
+scan remains active. Issue sending stays disabled; mailbox identity cutover,
+current-contact corrections and genuine Dylan-only delivery remain unaccepted.
+
+Independent capture continues. Workout delivery is not paused by the issue-email
+hold. The master remains **PoseTek → Technology → Website → User Issue Tracker →
+PoseTek Issue Tracker.xlsx**. Nolan and Taiyo's editing access was independently
+confirmed at **08:00 UTC**; no permissions were changed.
+
+The independent Google Cloud fallback was read at **2026-10-04 08:38:52.808 UTC** and
 its two policies were On with Dylan as their sole destination. That is a dated
 configuration check, not proof that every fallback notice was delivered. Its
 delivery limits and evidence are checked separately from application email cadence.
+A separate Outlook review fully paginated **08:35 UTC inclusive to 09:38:30 UTC
+exclusive**, across all subjects and read states, and found no messages in that
+interval. That interval does not prove later delivery, cover older mail or resolve
+an incident.
 
 ## Approved notification and record behavior
 
@@ -56,20 +91,23 @@ outreach manually. Nolan and Taiyo use the shared tracker to investigate and fix
 issues; removing them from alert recipients does not remove workbook access.
 
 The active issue policy authorizes an immediate notice for the first issue and for
-a meaningful change: a new recorded reporting account or target athlete, increased
-severity, or recurrence after a Fixed/Verified state. Status changes remain visible;
+a meaningful change: a new recorded reporting account or target athlete supported by
+recorded identity evidence, increased severity, or recurrence after a Fixed/Verified
+state. Status changes remain visible;
 a Verified recovery notice requires the saved fix and retest evidence. Routine
 repeats go into the daily summary rather than generating an email for every repeat.
 The summary uses the preceding **9 AM to 9 AM America/Los_Angeles** receipt-time
 window and separates recorded user attempts, service failures, diagnostics and
 confirmed crash evidence. Issue sending remains held pending backlog and
-publication acceptance; selecting a send permission does not prove delivery.
+publication and identity acceptance; selecting a send permission does not prove delivery.
 
-Every captured occurrence remains eligible for a distinct issue-workbook instance, including
-routine repeats whose email is deferred. Backend capture also runs independently
-of email delivery. The current hold means queued updates are not yet publication
-proof. Ordinary successful workout completion emails are deliberately outside the
-issue-only workbook; workout failures and related processing errors belong in it.
+Every captured source occurrence remains documented in its appropriate workbook
+evidence: backend incidents as instances and incoming notices as individual email
+rows. Routine repeats are retained when their immediate email is deferred. Backend
+capture also runs independently of email delivery. Resumed publication and queued
+updates do not prove complete catch-up. Ordinary successful workout completion
+emails are outside the issue-only workbook; workout failures and related
+processing errors belong in it.
 
 A replay of the same durable source ID is a duplicate observation. A new failed
 attempt or a new source occurrence remains a separate instance even when its
@@ -80,8 +118,9 @@ project/incident evidence. Outlook aliases require authoritative same-item proof
 matching subjects, timestamps or Internet-Message-ID alone cannot merge records.
 
 Previously frozen payloads, consumed send claims, original recipients and partial
-delivery receipts stay intact. The pre-cutover unsent backlog requires audited
-deferral/review; it must not become a burst of delayed messages. Historical Resend
+delivery receipts stay intact. The pre-cutover unsent backlog has completed its
+audited deferral/preservation pass; retained review work must not become a burst
+of delayed messages. Historical Resend
 jobs are retained for review and are not replayed, reassigned or purchased extra
 quota by this work.
 
@@ -99,12 +138,35 @@ who experienced or operated the failing device. Generic diagnostics and unclean
 sessions do not establish a crash, memory exhaustion or interrupted workout.
 Unknown cause and missing device/build/action context remain explicit.
 
+Exact-source review confirmed **39 automated-service message/incident joins**
+without identifying an affected operator. **34 older contact annotations** still
+need correction and native publication. **Six historical target labels** remain
+unconfirmed rather than being presented as verified athlete identities. The
+current-contact review and mailbox identity cutover are incomplete; row counts
+or retained historical contact text do not establish current outreach acceptance.
+
+## Manual Excel status and recurrence
+
+New backend occurrences under an existing Action retain separate instances and
+machine recurrence evidence. Status, Owner, Due and Fix notes remain attached to
+the Action ID; automation never reopens or resolves those manual fields. The
+native writer refuses a new instance under a currently Resolved action when its
+required machine recurrence evidence is missing.
+
+Excel's manual Resolved status is separate from the admin issue's Fixed/Verified
+state. An Excel-only change does not authorize an immediate recurrence email.
+Proven recurrence after the recorded admin Fixed/Verified transition does; other
+routine repeats can appear in the workbook and daily summary. Google notices
+retain individual email rows grouped by exact project/incident. Mail-only repeats
+do not create backend instances or their recurrence marker, and a service recovery
+notice does not resolve the manual task or prove the user's problem is fixed.
+
 ## Deployed source, active storage/policy and remaining acceptance gates
 
 | Implementation | Verified behavior and preserved contract | Still required |
 | --- | --- | --- |
-| Notification cadence | User-issue and Microsoft source cohorts verified; policy activated with exact readback; first backlog page verified at 25 examined/10 deferred/15 preserved | Complete audited backlog treatment, approved sending resumption, then genuine delivery and published record evidence |
-| Tracker storage version 2 | Six tracker source endpoints at version 7 verified; storage gate activated and read back at 07:04:50.217 UTC; archives original join maps once and stores later changes in bounded per-key shards with exact metadata, row and transition hashes | Actual post-cutover native-writer acceptance and fresh physical cloud readback through the preserved receipt chain |
+| Notification cadence | Source cohorts and policy readback verified; all 130 held backlog pages audited at 3,226 examined/1,152 deferred/2,074 preserved | Approved sending resumption, then genuine Dylan-only delivery and matching published identity evidence |
+| Tracker storage version 2 | Six source endpoints and storage flag verified; first actual post-cutover batch physically accepted at revision 267, preserving all 690 saved human records and the native receipt chain; native queue restoration independently verified | Complete retained-update publication and fresh physical readback with separate source checkpoints |
 | Insights rebuild repair | Twelve source endpoints verified with each archived dependency closure preserved; ignores irrelevant bookkeeping writes, retains source-event replay identity and coalesces current work under a per-player lease | Genuine rebuild convergence and error review; busy or unfinished work remains retryable and source deployment does not resolve an incident |
 | Outlook identity conversion | Read-only typed Graph conversion and exact content/item proofs; historical aliases and rows are retained | Current source/connection acceptance, guarded settings cutover, and successful native publication |
 
@@ -144,7 +206,9 @@ label; a coach name in that label is not a dedicated assigned-coach lookup.
 
 During cutover and recovery, preserve all source IDs, pending versions, original
 receipts and team notes; confirm genuine delivery to Dylan only, then verify fresh
-cloud workbook bytes and complete source/publication checkpoints. Resume the
-approved cloud pipeline only after its source and preservation gates pass. Raw
-mail, contacts, credentials, ledgers, previews and recovery archives stay private
+cloud workbook bytes and complete source/publication checkpoints. Keep issue
+sending held until its guarded identity and publication checks pass. Sending
+acceptance then requires genuine delivery and its matching published record; the
+accepted native queue can continue processing retained updates. Raw mail, contacts,
+credentials, ledgers, previews and recovery archives stay private
 and outside Git and the shared tracker folder.

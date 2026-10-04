@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "purpose": "PoseTek notification production validation; partial operational checkpoint",
-  "receiptPreparedAt": "2026-10-04T07:38:30Z",
-  "status": "source-storage-policy-verified; backlog-and-runtime-acceptance-incomplete",
+  "receiptPreparedAt": "2026-10-04T10:09:02Z",
+  "status": "source-storage-policy-and-first-native-publication-verified; backlog-audit-complete; native-queue-restored; final-runtime-acceptance-incomplete",
   "automationComplete": false,
   "operation": {
     "provider": "Power Automate with the existing Google Cloud backend",
@@ -270,7 +270,12 @@
     "permissionWrites": 0,
     "actualReadbackVerified": true,
     "all690SavedHumanFieldsPreserved": true,
-    "postActivationNativeBatchAccepted": false
+    "postActivationNativeBatchAccepted": true,
+    "postActivationNativeRevision": 267,
+    "postActivationCloudReadbackCheckedAt": "2026-10-04T09:17:13.707Z",
+    "all690HumanReadbackCheckedAt": "2026-10-04T09:19:42.528Z",
+    "originalFullNativeVerificationExecuted": true,
+    "sourceStateSplicing": false
   },
   "notificationPolicy": {
     "state": "active; readback reconciled",
@@ -290,28 +295,33 @@
     "routineRepeatHandling": "retained occurrence and daily summary; no immediate repeat notice",
     "summaryReceiptWindow": "9 AM to 9 AM America/Los_Angeles",
     "guardsPreserveFrozenEnvelopesConsumedClaimsAndReceipts": true,
-    "fullBacklogPreservationAuditComplete": false,
+    "fullBacklogPreservationAuditComplete": true,
     "genuinePostCutoverDylanOnlyDeliveryVerified": false
   },
   "backlogAudit": {
-    "status": "partial; first page verified",
+    "status": "complete; exact held source cutoff fully enumerated",
     "fixedReceiptUpperBound": "2026-10-04T07:10:32.256247Z",
-    "verifiedPages": 1,
-    "examined": 25,
-    "deferred": 10,
-    "preserved": 15,
-    "complete": false,
-    "remainingBacklogNotCountedByThisPage": true,
+    "verifiedPages": 130,
+    "examined": 3226,
+    "deferred": 1152,
+    "preserved": 2074,
+    "complete": true,
+    "remainingBacklogNotCountedByThisPage": false,
     "historicalResendReplayPerformed": false,
-    "noImmediateDeliveryClaimed": true
+    "noImmediateDeliveryClaimed": true,
+    "actualCompletedCheckpointSavedAt": "2026-10-04T08:50:03.285210Z",
+    "countsAreJobsNotUniqueUsers": true,
+    "emailWritesByAudit": 0,
+    "workbookWritesByAudit": 0,
+    "trackerPublicationAdvancedByThisAudit": false
   },
   "sharedTracker": {
     "path": "PoseTek > Technology > Website > User Issue Tracker > PoseTek Issue Tracker.xlsx",
-    "physicalAcceptedRevision": 266,
+    "physicalAcceptedRevision": 267,
     "counts": {
-      "actions": 690,
-      "instances": 1280,
-      "originalEmailRows": 764,
+      "actions": 691,
+      "instances": 1319,
+      "originalEmailRows": 804,
       "dailyStatusRows": 3
     },
     "archiveFixedReadTime": "2026-10-04T04:14:30.165Z",
@@ -324,11 +334,85 @@
       "Fix notes"
     ],
     "humanPreservationKey": "stable Action ID",
-    "nativeQueueStateAtThisCheckpoint": "PAUSED",
-    "postStorageCutoverPhysicalReadbackAccepted": false,
+    "nativeQueueStateAtThisCheckpoint": "RUNNING",
+    "postStorageCutoverPhysicalReadbackAccepted": true,
     "fullyRefreshedWorkbookClaimed": false,
     "captureAndPublicationHaveSeparateCheckpoints": true,
-    "capturedOrQueuedDoesNotMeanPublished": true
+    "capturedOrQueuedDoesNotMeanPublished": true,
+    "physicalCloudReadbackCheckedAt": "2026-10-04T09:17:13.707Z",
+    "savedHumanReadbackCheckedAt": "2026-10-04T09:19:42.528Z",
+    "pendingTrackerTicketsAtPostCutoverSnapshot": 3598,
+    "postCutoverBackendReadTime": "2026-10-04T09:14:27.509Z",
+    "queueStateEvidenceTime": "2026-10-04T09:58:01.150Z",
+    "queueRestorationAfterThisSnapshot": {
+      "verified": true,
+      "resumedAt": "2026-10-04T09:57:43.847Z",
+      "readbackVerifiedAt": "2026-10-04T09:58:01.150Z",
+      "actualQueueState": "RUNNING",
+      "emptyResumePostAttempts": 1,
+      "originalPauseJournalBytesPreserved": true,
+      "routingRateLimitsAndRetryConfigurationPreserved": true,
+      "settingsWrites": 0,
+      "directEmailWrites": 0,
+      "directWorkbookWrites": 0,
+      "completePublicationClaimed": false
+    },
+    "all690SavedHumanRecordsVerified": true,
+    "allNativeReceiptsVerified": 267,
+    "formulaAndMachineHashVerificationPassed": true,
+    "sourceCoverageAtPostCutoverSnapshot": {
+      "outlook": {
+        "available": true,
+        "capturedThrough": "2026-10-04T09:09:03.035Z",
+        "publishedThrough": "2026-10-04T00:34:05.451Z",
+        "completedSequence": 540,
+        "publishedSequence": 459,
+        "allCapturedWindowsPublished": false
+      },
+      "backend": {
+        "available": true,
+        "capturedThrough": "2026-10-04T09:09:03.134Z",
+        "publishedThrough": "2026-10-04T00:34:05.351Z",
+        "completedSequence": 531,
+        "publishedSequence": 460,
+        "allCapturedWindowsPublished": false
+      }
+    },
+    "outstandingDeliveryScanCompleteClaimed": false,
+    "freshRevision267Recheck": {
+      "physicalCloudReadbackCheckedAt": "2026-10-04T09:42:35.564Z",
+      "savedHumanReadbackCheckedAt": "2026-10-04T09:43:47.033Z",
+      "samePreviouslyAcceptedCloudBytes": true,
+      "all690SavedHumanRecordsVerified": true
+    },
+    "laterBackendProgress": {
+      "checkedAt": "2026-10-04T10:00:56.037Z",
+      "backendAcknowledgedRevision": 268,
+      "nativeWriterActive": true,
+      "freshPhysicalReadbackOfThisRevisionAccepted": false,
+      "allRetainedUpdatesPublished": false,
+      "outstandingDeliveryScanActive": true,
+      "sourceCoverage": {
+        "outlook": {
+          "capturedThrough": "2026-10-04T09:54:04.096Z",
+          "publishedThrough": "2026-10-04T00:34:05.451Z",
+          "completedSequence": 549,
+          "publishedSequence": 459,
+          "allCapturedWindowsPublished": false
+        },
+        "backend": {
+          "capturedThrough": "2026-10-04T09:54:04.031Z",
+          "publishedThrough": "2026-10-04T00:34:05.351Z",
+          "completedSequence": 540,
+          "publishedSequence": 460,
+          "allCapturedWindowsPublished": false
+        }
+      }
+    },
+    "sharedEditingAccessCheckedAt": "2026-10-04T08:01:50.503Z",
+    "nolanAndTaiyoEditingAccessVerified": true,
+    "permissionWrites": 0,
+    "sharedEditingAccessObservedAt": "2026-10-04T08:00:07.702487Z"
   },
   "identityAndCoverage": {
     "reporterContactFromExactRecordedAuthUid": true,
@@ -341,13 +425,26 @@
     "mailboxIdentitySettingsActivatedAtThisCheckpoint": false,
     "currentTypedGraphAcceptanceRequiredBeforeActivation": true,
     "genuineSymbolicatedNativeCrashAcceptanceVerified": false,
-    "nativeMacIPhoneTestFlightAcceptancePending": true
+    "nativeMacIPhoneTestFlightAcceptancePending": true,
+    "separateIdentityReview": {
+      "olderContactAnnotationsPending": 34,
+      "affectedOperatorIdentityClaimedFromTheseCounts": false,
+      "postCutoverIdentityAcceptanceRecordedHere": false,
+      "automatedServiceMailJoinsVerified": 39,
+      "joinedServiceOperatorsRemainUnknown": true,
+      "historicalTargetLabelsUnconfirmed": 6,
+      "completeIdentityAcceptance": false
+    },
+    "excelManualResolvedTriggersImmediateRecurrenceEmail": false,
+    "adminFixedVerifiedRecurrenceRequiresRecordedTransitionEvidence": true,
+    "mailOnlyMonitoringNoticeCreatesBackendInstance": false
   },
   "googleCloudFallback": {
-    "configurationCheckedAt": "2026-10-04T04:49:00Z",
+    "configurationCheckedAt": "2026-10-04T08:38:52.808Z",
     "activePolicyCount": 2,
     "soleDestination": "dylank@posetek.net",
-    "fallbackDeliveryProvedByConfiguration": false
+    "fallbackDeliveryProvedByConfiguration": false,
+    "bothPoliciesOn": true
   },
   "offlineValidation": {
     "trackerStorageTestsPassed": 209,
@@ -362,28 +459,66 @@
     "freshOnTimestampValidatorTestsPassed": 9,
     "freshOnTimestampProbeTestsPassed": 21,
     "originalTypedSemanticFixturesIncludedInProbeTests": 13,
-    "offlineTestsDoNotEstablishGenuineDeliveryOrPublication": true
+    "offlineTestsDoNotEstablishGenuineDeliveryOrPublication": true,
+    "archivedIdPolicySuccessorTestsPassed": 12,
+    "cap16ReadSuccessorTestsPassed": 41,
+    "independentCap16ReadSuccessorTestsPassed": 41,
+    "closedReadDependencySuccessorTestsPassed": 34,
+    "independentClosedReadDependencySuccessorTestsPassed": 34,
+    "focusedRecurrenceContractTestsPassed": 7,
+    "batchedNativeQueueValidationTestsPassed": 23,
+    "independentBatchedNativeQueueValidationTestsPassed": 23
   },
   "evidenceSha256": {
     "aggregateSourceReadback": "be1611154cde589dec37fd9befda60b799762040c2ceaba0dd646d4dda1eb322",
     "storageActivation": "e4b48a56961a7eccd40e4b155346b85af0d49a7c4729bfa3d36d0d9c85128902",
     "policyActivationReadback": "461b810508014a7debe48c13ce47ba0fbfae66fa03eef8656d8013d2ac152110",
-    "firstBacklogPage": "ca7b0821eeca602152c497fef3bd2cffa0a457a51ffae042efde9ffad49cc5df"
+    "firstBacklogPage": "ca7b0821eeca602152c497fef3bd2cffa0a457a51ffae042efde9ffad49cc5df",
+    "completedPolicyInputs": "33171cbe4a465ba708b48bb1ef81864a4408d0916ab230f641f0b34e8f990c4f",
+    "completedPolicyResult": "398f507bee610473b2d1069cec633e4d4dd9175277ac9235e5fac027498a7f19",
+    "completedPolicyCheckpoint": "af768eb0ca8be130c30004267a78cacf3ce201848137e8a22112aceba0c5974d",
+    "firstV2NativeCloudReadback": "af238426b0545c6de9047029c8b8ec3ca27cffa7fd3a3247cad261a14df86a7c",
+    "firstV2FullCloudCompanion": "f51fbe5010896b09938f11e85e496a42f162d031f1c7c1b564ba8644a1474f7e",
+    "firstV2All690HumanReadback": "6e283390f8aa6b24c27d1ff8df154b712d717f91cfdb080b28787e87ca994a54",
+    "firstV2FullHumanCompanion": "eae1c1fb7e0b61fc0c68d27320a99104afede085cca414427ab54dcac04fd0bc",
+    "nativeQueueRestoration": "3c04ddac4256c70937773a4c51f6a9f3e820dc5a7e717c45268504a02c54421e",
+    "freshRevision267CloudRecheck": "6977852239aab55b1364299a5215db479e534295df33f39221d9a13cf66f0399",
+    "freshRevision267CloudCompanion": "25c7865ce9beac80d8cb7b0a421c9d789cc6c780dfc8152d1230d41641b60f55",
+    "freshRevision267HumanRecheck": "c3cab234941122746136eb7829c4d77c64069aee833dcd9a01f75339168ff810",
+    "freshRevision267HumanCompanion": "ab4269723abb384b79f943a5c7f31ba8875d8e255199bf0da9eeb90710d565f7",
+    "laterBackendCoverageRead": "0c43e6f62bdfac673dcf4b2a0a309bdb4198402d50bec283a5a0c94b72be898c",
+    "currentGoogleMonitoringDestinations": "c7315bf45b320ea3d40e7d653cd64f7c43f3e330163a74b3c9abecbae613156d",
+    "currentSharedEditingAccess": "c961865c722b77bd18c81ffabb7de8932894d04be3d1a484da41a02bea8e2f60",
+    "independentOutlookReview": "9ddb7d8c84b1094b93fc678728589d66592bd8b4844cd059476276910e7e162c",
+    "nativeMailAuthorityReview": "b995dc428cacf81f31b02da98560739b12330d1e6b7aa29af7e3917e3d33c5d0",
+    "nativeMailExactJoinReview": "a07c2f2658d730222430f4ad5ae81aa682f7e946ddca9f488948953a97322391",
+    "batchedNativeQueueToolingValidation": "2f8bbd1c0520bc54097c4baa31b4c5c3a19c1911c6615d47584a90d8f94094da",
+    "independentBatchedNativeQueueToolingAcceptance": "ebf070ebd6f991c6c3f5cf744e7c2638be3f53c3e6b567520d74d3f7ed8238f7"
   },
   "remainingAcceptanceGates": [
-    "Complete the fixed-cutoff unsent-job audit without consuming historical send permissions",
-    "Verify an ordinary post-storage-cutover native batch and fresh shared-cloud workbook bytes",
-    "Drain retained tracker updates and reconcile separate Outlook/backend capture and publication checkpoints",
-    "Obtain fresh typed Graph, source, native and saved-human-field evidence before the additive identity cutover",
-    "Complete the existing outstanding recovery scan without resetting its cursor",
-    "Resume issue sending only after the final guarded acceptance and confirm a genuine Dylan-only alert with its published record",
-    "Keep separate native device/crash and uninstrumented coach-workflow limits"
+    "Drain retained tracker updates and confirm separate Outlook/backend publication checkpoints with fresh cloud workbook bytes",
+    "Correct/review older contact annotations and publish them while preserving confirmed automated-service joins with unknown operators",
+    "Obtain current typed Graph/source/native/human evidence for the guarded mailbox identity cutover",
+    "Complete the existing outstanding recovery scan without resetting its cursor; do not imply point-in-time source coverage",
+    "Resume issue sending only after final guarded acceptance, then confirm a genuine Dylan-only alert and its accurately identified published record",
+    "Keep native device/crash and uninstrumented coach-workflow limits explicit"
   ],
   "preservationLimits": [
     "No historical Resend replay, automatic user outreach or additional purchase",
     "Original source IDs, email rows, frozen envelopes, consumed claims and partial delivery receipts remain evidence",
     "No resolution solely because alerts stop",
     "No claim about all later arrivals or independent scan completeness",
-    "No private files, credentials, contact identities, message bodies or raw incident records included"
-  ]
+    "No private files, credentials, contact identities, message bodies or raw incident records included",
+    "Manual Excel status, backend admin issue state, monitoring recovery and recipient delivery remain separate facts"
+  ],
+  "independentOutlookReview": {
+    "lowerInclusive": "2026-10-04T08:35:00Z",
+    "upperExclusive": "2026-10-04T09:38:30Z",
+    "checkedAt": "2026-10-04T09:38:30Z",
+    "readStatus": "all",
+    "subjectFilter": "none",
+    "fullPaginationComplete": true,
+    "messageCount": 0,
+    "noLaterDeliveryOrHistoricalCoverageClaimed": true
+  }
 }

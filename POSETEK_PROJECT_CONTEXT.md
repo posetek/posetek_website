@@ -6,51 +6,68 @@ business document is included.
 
 ## Automation branch and production validation (2026-10-03–04)
 
-This checkout is the `codex/user-issue-alerts` automation branch. Its website
-release notes are dated records of that branch's source and verification.
-Newer primary-site work is separate; reconcile the primary checkout and its
-current release receipt before any website build or deployment. This automation
-repair does not publish website or native application bytes, change training
-content or rules, or replace teammates' newer source.
+This checkout is the `codex/user-issue-alerts` automation branch. Newer primary-site
+work is separate; reconcile the primary checkout and current release receipt
+before any website build or deployment. This repair does not publish website or
+native application bytes, change training content or rules, or replace teammates'
+newer source. Historical receipts below remain dated records of their releases.
 
 All 31 approved source endpoints passed exact deployed-source, configuration and
 IAM checks: twelve Insights, six tracker at version 7, ten user-issue and three
-Microsoft-email endpoints. The aggregate check preserved unrelated functions and
-verified the complete release chain. Tracker storage version 2 was activated and
-read back at `2026-10-04T07:04:50.217Z`. Issue sending remains disabled and the
-native queue is paused. The first-plus-daily policy was committed at
-`2026-10-04T07:10:32.256247Z` and its readback reconciled without a second commit.
-The first audited backlog page examined 25 jobs, deferred 10 and preserved 15;
-the remaining audit is incomplete. Complete backlog treatment, identity
-activation, sending resumption, genuine rebuild convergence, email delivery and physical
-publication of the captured backlog remain separate acceptance gates. The current
-validation gates and preserved baseline are in
-[the production validation handoff](docs/NOTIFICATION_PRODUCTION_VALIDATION.md).
-The [partial validation receipt](deployment/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json)
-records this checkpoint. Final operational results are recorded only after their
-separate acceptance.
+Microsoft-email endpoints. Unrelated functions and the full release chain were
+preserved. Storage version 2 was activated at `2026-10-04T07:04:50.217Z`. The
+first-plus-daily policy was committed at `2026-10-04T07:10:32.256247Z` and reconciled
+without a second commit. Its held email-job audit completed 130 pages at that
+original cutoff: 3,226 examined, 1,152 deferred and 2,074 preserved, with no email
+or workbook writes by the audit. Original envelopes, consumed claims, receipts
+and historical Resend jobs remain intact. Issue sending is still disabled.
 
-The active issue policy is first notice, meaningful changes and a
-daily summary of routine repeats. Every captured occurrence is retained for
-publication as a workbook instance even when its immediate email is deferred.
-Dylan is the only recipient of new application alerts and workout emails; Nolan and Taiyo retain shared
-tracker editing access. Exact-UID reporter contact remains separate from the
-target athlete, and unknown service/device operators stay unknown. Successful
-workout completion emails are separate from the issue-only tracker. No historical
-Resend replay or automatic user outreach is included.
+The revision-266 archive protects all 690 saved human records and 3,585 pending
+tracker tickets at `2026-10-04T04:14:30.165Z`. First post-cutover physical cloud
+acceptance at `2026-10-04T09:17:13.707Z` verified revision 267: 691 actions,
+1,319 instances, 804 original email rows and three daily/status rows. All 267
+native receipts, machine hashes and formulas passed. All 690 saved human records
+survived by stable Action ID; fresh readback confirmed the same cloud bytes at
+`09:42:35.564Z` and saved human fields at `09:43:47.033Z`.
 
-The fixed validation baseline is shared-master revision 266: 690 actions, 1,280
-instances, 764 email rows and three daily/status rows, with 3,585 pending tickets
-archived at `2026-10-04T04:14:30.165Z`. All 690 saved human records are protected by
-stable Action ID. Capture and publication retain separate checkpoints during the
-hold; the physical master remains revision 266 with no accepted post-storage-cutover
-native batch. Queued records or the active storage flag alone do not prove cloud
-publication. Cloud intake, recovery,
-email and native workbook publication do not require this chat, Codex, an hourly
-Codex procedure or Dylan's computer. The separate workout delivery is unpaused.
-Native crash/device release and uninstrumented coach workflows retain their
-acceptance limits. A coach name in a workout's team label is not an assigned-coach
-lookup.
+The native queue resumed RUNNING at `2026-10-04T09:57:43.847Z`, with readback at
+`09:58:01.150Z`, through exactly one empty resume request. The original pause
+journal, routing, rate limits and retry configuration remain unchanged. The
+`10:00:56.037Z` backend read observed revision 268 and an active native writer;
+that is not fresh physical acceptance of revision 268 or complete catch-up.
+Outlook/backend capture reached approximately `09:54Z`, while their respective
+published checkpoints remained `00:34:05.451Z` and `00:34:05.351Z`. Capture and
+publication stay separate, and the existing outstanding-delivery scan remains
+active. Final catch-up, mailbox identity cutover, current-contact corrections,
+issue-send resumption, genuine delivery and genuine Insights convergence remain
+separate acceptance gates. Read the [validation handoff](docs/NOTIFICATION_PRODUCTION_VALIDATION.md)
+and [partial receipt](deployment/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json).
+
+Dylan is the sole recipient of new application and workout emails. Both Google
+Cloud fallback policies were On with Dylan alone at `08:38:52.808Z`; Nolan and
+Taiyo's shared tracker editing access was confirmed at `08:00Z`. A fully paginated
+Outlook review of all subjects/read states from `08:35Z` inclusive to `09:38:30Z`
+exclusive found no messages; it does not establish delivery outside that interval.
+Exact-UID reporter/contact is separate from target athlete and attempted action.
+The 39 verified automated-service mail joins keep unknown operators unknown;
+34 older contact annotations require correction, and six historical target labels
+remain unconfirmed. Diagnostic/device records do not prove a crash.
+
+Every captured occurrence is retained, with first/meaningful-change notices and
+a daily summary of routine repeats once sending is accepted. Manual Excel
+Status/Owner/Due/Fix notes stay attached to stable Action IDs and are never
+automatically reopened or resolved. Excel-only Resolved does not authorize an
+immediate recurrence email; admin Fixed/Verified recurrence requires recorded
+transition evidence. Mail-only Google repeats retain individual email rows without
+inventing backend instances or resolving human tasks. Ordinary successful workout
+emails remain separate from the issue-only tracker. The canonical master is
+**PoseTek → Technology → Website → User Issue Tracker → PoseTek Issue Tracker.xlsx**.
+Cloud intake, recovery, email and native publication do not depend on this chat,
+Codex, an hourly Codex procedure or Dylan's computer. Workout settings are
+unchanged and workout delivery is unpaused. No historical Resend replay or
+automated user outreach is included. Native device/crash acceptance and
+uninstrumented coach-workflow limits remain explicit; a coach name in a workout
+team label is not a dedicated assigned-coach lookup.
 
 ## Historical notification coverage correction (2026-10-02–03)
 
