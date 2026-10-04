@@ -283,3 +283,13 @@ acceptance then requires genuine delivery and its matching published record; the
 accepted native queue can continue processing retained updates. Raw mail, contacts,
 credentials, ledgers, previews and recovery archives stay private
 and outside Git and the shared tracker folder.
+# Mail reconciliation scheduling repair (October 4)
+
+The follow-up source repair schedules the ordinary native writer when a retained
+mail refetch queues a durable update, even without a newly verified incident join
+or alias repair. It also schedules earlier durable work if a later lookup fails;
+the failed lookup stays retryable and does not advance its reconciliation cursor.
+Simultaneous lookup and scheduling failures retain both errors. The focused and
+related mail, identity and bridge suites pass 53 tests. This source checkpoint
+alone does not establish deployment, refreshed cloud publication or successful
+Dylan-only issue delivery; those require their separate production receipts.
