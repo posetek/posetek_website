@@ -5,7 +5,7 @@
 const { createHash } = require("node:crypto");
 const { isClubAdmin } = require("./club-access");
 const { midnight, localDate, shiftDate } = require("./insights-v2");
-const { completeQuery } = require("./insights-v2-projection");
+const { completeQuery, mapBounded } = require("./insights-v2-projection");
 const { createTeamProcessingReports } = require("./team-processing");
 
 const ROOT = "devicePerformanceDiagnostics";
@@ -163,16 +163,19 @@ function summarize(runs) {
   const groups = new Map();
   for (const run of runs) { const key=cohortKey(run); if (!groups.has(key)) groups.set(key,[]); groups.get(key).push(run); }
   return [...groups].map(([key, rows]) => {
-    const r=rows[0], valid=rows.filter(x=>x.outcome === "valid" && x.mode === "liveCapture");
+    const r=rows[0], finished=rows.filter(x=>["valid","partial"].includes(x.outcome) && x.mode === "liveCapture");
     return { key, drill:r.drill, algorithmId:r.algorithmId, sourceRevision:r.sourceRevision, sampling:r.sampling,
       configuration:r.configuration, timingKind:r.timingKind, capture:r.capture, current:currentRun(r),
       builds:[...new Set(rows.map(x=>x.build).filter(Boolean))], count:rows.length,
       successful:rows.filter(x=>x.outcome === "valid").length, failed:rows.filter(x=>x.outcome === "failed").length,
       partial:rows.filter(x=>x.outcome === "partial").length, other:rows.filter(x=>!["valid","failed","partial"].includes(x.outcome)).length,
-      duration:distribution(valid.map(x=>x.durationMs)), wall:distribution(valid.map(x=>x.wallMs)), clip:distribution(valid.map(x=>x.capture.durationSeconds)),
-      stages:[...new Set(valid.flatMap(x=>x.stages.map(s=>s.id)))].map(id=>({id,kind:valid.flatMap(x=>x.stages).find(s=>s.id===id).kind,
-        duration:distribution(valid.map(x=>sumMeasured(x.stages.filter(s=>s.id===id).map(s=>s.ms))))})),
-      frames:distribution(valid.map(x=>x.framesDecoded)), calls:distribution(valid.map(x=>x.modelCalls)),
+      successfulDuration:distribution(rows.filter(x=>x.outcome==="valid"&&x.mode==="liveCapture").map(x=>x.durationMs)),
+      partialDuration:distribution(rows.filter(x=>x.outcome==="partial"&&x.mode==="liveCapture").map(x=>x.durationMs)),
+      failedDuration:distribution(rows.filter(x=>x.outcome==="failed"&&x.mode==="liveCapture").map(x=>x.durationMs)),
+      duration:distribution(finished.map(x=>x.durationMs)), wall:distribution(finished.map(x=>x.wallMs)), clip:distribution(finished.map(x=>x.capture.durationSeconds)),
+      stages:[...new Set(finished.flatMap(x=>x.stages.map(s=>s.id)))].map(id=>({id,kind:finished.flatMap(x=>x.stages).find(s=>s.id===id).kind,
+        duration:distribution(finished.map(x=>sumMeasured(x.stages.filter(s=>s.id===id).map(s=>s.ms))))})),
+      frames:distribution(finished.map(x=>x.framesDecoded)), calls:distribution(finished.map(x=>x.modelCalls)),
       sampledPeakBytes:maxMeasured(rows.map(x=>x.sampledPeakBytes)), memorySamples:rows.filter(x=>x.sampledPeakBytes!==null).length,
       thermalStates:[...new Set(rows.flatMap(x=>[x.thermalStart,x.thermalEnd]).filter(Boolean))], lowPowerRuns:rows.filter(x=>x.lowPower === true).length,
     };
@@ -196,31 +199,51 @@ function createDeviceProcessingReports({ db, HttpsError, now = Date.now }) {
       cursor=page.docs.at(-1);
     }
   }
+  async function readIndexes(start,end) {
+    const out=[];let cursor=null;
+    while(true){
+      let q=db.collection("processingAttempts").where("occurredAt",">=",new Date(start)).where("occurredAt","<",new Date(end)).orderBy("occurredAt").orderBy("__name__").limit(250);
+      if(cursor)q=q.startAfter(cursor.data().occurredAt,cursor.id);
+      const page=await q.get();out.push(...page.docs);
+      if(out.length>LIMITS.attempts)throw new HttpsError("resource-exhausted","Shorten the date range. No partial diagnostic coverage was returned.");
+      if(page.docs.length<250)return out;
+      cursor=page.docs.at(-1);
+    }
+  }
   async function report(input, auth) {
     if (!isClubAdmin(auth)) throw new HttpsError("permission-denied","PoseTek administrator access is required.");
     const zone = input.timeZone || "America/Los_Angeles";
     try { new Intl.DateTimeFormat("en",{timeZone:zone}); } catch { invalid("Unknown time zone."); }
-    const endDate = input.endDate || localDate(now(),zone), startDate = input.startDate || shiftDate(endDate,-6);
+    const endDate = input.endDate || localDate(now(),zone), startDate = input.startDate || shiftDate(endDate,-89);
     if (![startDate,endDate].every(x=>typeof x === "string" && /^\d{4}-\d{2}-\d{2}$/.test(x) && Number.isFinite(Date.parse(x)) && new Date(x).toISOString().slice(0,10)===x)) invalid("Use YYYY-MM-DD dates.");
     let start,end;
     try { start=midnight(startDate,zone); end=midnight(shiftDate(endDate,1),zone); } catch { invalid("Invalid calendar date."); }
     if (!Number.isFinite(start) || !Number.isFinite(end) || end<=start || end-start>91*86400000) invalid("Choose up to 90 days.");
+    const unknownOnly=input.unattributed===true;
+    if(input.unattributed!=null&&typeof input.unattributed!=="boolean")invalid("Invalid unattributed selection.");
     const install=input.installId == null ? null : uuid(input.installId);
+    if(unknownOnly&&input.installId!=null)invalid("Choose a phone or unattributed runs.");
     if (input.installId != null && !install) invalid("Invalid phone identity.");
-    const drill=input.drill || "all", algorithm=input.algorithm || "current", configuration=input.configuration || "all";
+    const drill=input.drill || "all", algorithm=input.algorithm || "all", configuration=input.configuration || "all";
     if (drill!=="all" && !DRILLS.includes(drill)) invalid("Unknown drill.");
     if (!["current","all"].includes(algorithm) && !/^[a-f0-9]{24}$/.test(algorithm)) invalid("Unknown algorithm.");
     if (!["all","Release","Debug"].includes(configuration)) invalid("Unknown build configuration.");
     const sessionId=input.sessionId || null;
     if (sessionId && !/^[a-f0-9]{32}$/.test(sessionId)) invalid("Invalid session.");
-    const [docs, inventory] = await Promise.all([
+    const [docs, inventory, indexes] = await Promise.all([
       readPeriod(start,end),
       completeQuery(db.collection(INVENTORY),LIMITS.devices,HttpsError),
+      readIndexes(start,end),
     ]);
     const summaries=docs.map(d=>d.data()).filter(d=>d.schemaVersion === 1);
     const allRuns=summaries.flatMap(d=>d.runs);
+    const summaryIds=new Set(docs.map(d=>d.id));
+    // Check absent IDs directly: capture timestamps can differ from index timestamps.
+    const absent=await mapBounded(indexes.filter(d=>!summaryIds.has(d.id)),6,async d=>(await db.collection(ROOT).doc(d.id).get()).exists?null:d);
+    const unavailableAttempts=absent.filter(Boolean).map(d=>{const a=d.data();return {attemptId:d.id,at:typeof a.occurredAt?.toMillis==="function"?a.occurredAt.toMillis():null,
+      drill:text(a.drillType),recordingDeviceId:uuid(a.recordingDeviceId),testingEventId:text(a.testingEventId),stationId:text(a.stationId),state:text(a.lifecycle)};}).sort((a,b)=>(b.at||0)-(a.at||0));
     if (allRuns.length>LIMITS.runs) throw new HttpsError("resource-exhausted","Narrow the date range. No partial statistics were returned.");
-    const base=allRuns.filter(r=>(!install || r.installId === install) && (drill === "all" || r.drill === drill)
+    const base=allRuns.filter(r=>(unknownOnly ? !r.installId : !install || r.installId === install) && (drill === "all" || r.drill === drill)
       && (configuration === "all" || r.configuration === configuration));
     const filtered=base.filter(r=>algorithm === "all" || (algorithm === "current" ? currentRun(r) : r.algorithmId === algorithm));
     const sessions=[...new Set(base.map(r=>r.sessionId).filter(Boolean))].map(id=>{
@@ -230,7 +253,7 @@ function createDeviceProcessingReports({ db, HttpsError, now = Date.now }) {
     const inventoryRows=inventory.map(d=>d.data());
     const known=new Map(inventoryRows.map(d=>[d.installId,d]));
     for(const r of allRuns) if(r.installId && !known.has(r.installId)) known.set(r.installId,{installId:r.installId,machine:r.machine,label:null,lastCapturedAt:r.capturedAt,lastReceivedAt:null});
-    const phones=[...known.values()].filter(p=>!install||p.installId===install).map(p=>({
+    const phones=[...known.values()].filter(p=>!unknownOnly&&(!install||p.installId===install)).map(p=>({
       installId:p.installId,label:p.label||null,machine:p.machine||null,osVersion:p.osVersion||null,
       lastCapturedAt:p.lastCapturedAt||null,lastReceivedAt:p.lastReceivedAt||null,
       recordedRuns:base.filter(r=>r.installId===p.installId).length,
@@ -238,7 +261,7 @@ function createDeviceProcessingReports({ db, HttpsError, now = Date.now }) {
       totals:{framesDecoded:sumMeasured(chosen.filter(r=>r.installId===p.installId).map(r=>r.framesDecoded)),modelCalls:sumMeasured(chosen.filter(r=>r.installId===p.installId).map(r=>r.modelCalls))},
     })).sort((a,b)=>(b.lastCapturedAt||0)-(a.lastCapturedAt||0));
     const revision=hash(summaries.map(d=>[d.attemptId,d.source.generation]).sort());
-    const queryHash=hash([startDate,endDate,zone,install,drill,algorithm,configuration,sessionId,revision]);
+    const queryHash=hash([startDate,endDate,zone,install,unknownOnly,drill,algorithm,configuration,sessionId,revision]);
     let offset=0;
     if(input.cursor) { if(typeof input.cursor!=="string" || input.cursor.length>2048) invalid("Invalid cursor."); try { const c=JSON.parse(Buffer.from(input.cursor,"base64url").toString());if(c.key!==queryHash||!Number.isSafeInteger(c.offset)||c.offset<0)throw Error();offset=c.offset; }catch{throw new HttpsError("failed-precondition","The report changed. Refresh to start again.");} }
     const pageSize=100;
@@ -247,17 +270,18 @@ function createDeviceProcessingReports({ db, HttpsError, now = Date.now }) {
       const index=chosen.findIndex(r=>r.runId===input.focusRunId);
       if(index>=0)offset=Math.floor(index/pageSize)*pageSize;
     }
-    const rows=install ? chosen.slice(offset,offset+pageSize) : [];
-    const chartRows=install ? chosen.filter(r=>r.dateReliable) : [];
+    const rows=install || unknownOnly ? chosen.slice(offset,offset+pageSize) : [];
+    const chartRows=install || unknownOnly ? chosen.filter(r=>r.dateReliable) : [];
     if(chartRows.length>LIMITS.chart) throw new HttpsError("resource-exhausted","Choose a single session or a shorter range to show every run in the chart.");
     const response={schemaVersion:1,generatedAt:now(),period:{startDate,endDate,timeZone:zone},current:CURRENT,
-      filters:{installId:install,drill,algorithm,configuration,sessionId},revision,
-      coverage:{attempts:summaries.length,runs:allRuns.length,unknownDevice:allRuns.filter(r=>!r.installId).length,
-        timingMissing:chosen.filter(r=>r.durationMs===null).length,memoryMissing:chosen.filter(r=>r.sampledPeakBytes===null).length},
+      filters:{installId:install,drill,algorithm,configuration,sessionId,unattributed:unknownOnly?"true":null},revision,
+      unavailableAttempts,
+      coverage:{attempts:summaries.length,indexedAttempts:indexes.length,missingSummaries:unavailableAttempts.length,runs:allRuns.length,unknownDevice:allRuns.filter(r=>!r.installId).length,
+        filteredOut:base.length-chosen.length,timingMissing:chosen.filter(r=>r.durationMs===null).length,memoryMissing:chosen.filter(r=>r.sampledPeakBytes===null).length},
       algorithms:[...new Map(base.map(r=>[r.algorithmId,{id:r.algorithmId,sourceRevision:r.sourceRevision,sampling:r.sampling,drill:r.drill,current:currentRun(r)}])).values()],
       phones,sessions,rows,totalRows:chosen.length,
       chart:chartRows.map(({stages,...r})=>r),
-      nextCursor:install && offset+pageSize<chosen.length ? Buffer.from(JSON.stringify({key:queryHash,offset:offset+pageSize})).toString("base64url"):null,
+      nextCursor:(install || unknownOnly) && offset+pageSize<chosen.length ? Buffer.from(JSON.stringify({key:queryHash,offset:offset+pageSize})).toString("base64url"):null,
     };
     if(Buffer.byteLength(JSON.stringify(response))>LIMITS.responseBytes)throw new HttpsError("resource-exhausted","Choose a drill, phone or shorter range. No partial statistics were returned.");
     return response;

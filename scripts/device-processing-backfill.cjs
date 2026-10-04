@@ -8,6 +8,8 @@ const requireFunctions=createRequire(path.resolve(__dirname,'../functions/packag
 const {Firestore,FieldValue,FieldPath}=requireFunctions('@google-cloud/firestore');
 const {OAuth2Client}=requireFunctions('google-auth-library');
 const {normalizeManifest,createDiagnosticPerformance,createDeviceProcessingReports,BUCKET,ROOT,INVENTORY,LIMITS}=require('../functions/device-processing');
+const {completeQuery,mapBounded}=require('../functions/insights-v2-projection');
+class ImportError extends Error {constructor(code,message){super(message);this.code=code;}}
 const PROJECT='kickai-69dd0';
 const sourceHash=()=>createHash('sha256').update(fs.readFileSync(path.resolve(__dirname,'../functions/device-processing.js'))).digest('hex');
 function connect(){
@@ -42,17 +44,21 @@ async function main(){
  const {db,bucket,metadata}=connect();
  try{
   if(!apply){
-   const start=get('--from'),end=get('--until');if(!args.includes('--from')||!args.includes('--until')||!Number.isFinite(Date.parse(start))||!Number.isFinite(Date.parse(end))||Date.parse(end)<=Date.parse(start)||Date.parse(end)-Date.parse(start)>7*86400000)throw Error('Provide an explicit --from and --until range of at most 7 days');
-   const indexes=await collect(db,start,end),objects=[],rejected=[];let runs=0;const installs=new Set();
-   for(const index of indexes){if(!index.manifestPath){rejected.push({attemptId:index.id,reason:'noManifest'});continue;}try{
+   const allIndexed=args.includes('--all-indexed'),onlyMissing=args.includes('--only-missing');
+   const start=allIndexed?null:get('--from'),end=allIndexed?null:get('--until');if(!allIndexed&&(!args.includes('--from')||!args.includes('--until')||!Number.isFinite(Date.parse(start))||!Number.isFinite(Date.parse(end))||Date.parse(end)<=Date.parse(start)||Date.parse(end)-Date.parse(start)>7*86400000))throw Error('Provide an explicit --from and --until range of at most 7 days, or --all-indexed');
+   let indexes=allIndexed?(await completeQuery(db.collection('processingAttempts'),5000,ImportError)).map(d=>({id:d.id,...d.data()})):await collect(db,start,end);
+   const indexedTotal=indexes.length;
+   if(onlyMissing){const summaries=new Set((await completeQuery(db.collection(ROOT).select('summaryVersion'),5000,ImportError)).map(d=>d.id));indexes=indexes.filter(x=>!summaries.has(x.id));}
+   const objects=[],rejected=[];let runs=0;const installs=new Set();
+   await mapBounded(indexes,6,async index=>{if(!index.manifestPath){rejected.push({attemptId:index.id,reason:'noManifest'});return;}try{
     const object=await metadata(index.manifestPath);if(Number(object.size)>LIMITS.manifestBytes)throw Error('Manifest too large');
     const [bytes]=await bucket.file(object.name,{generation:object.generation}).download();
     const digest=createHash('sha256').update(bytes).digest('hex');if(object.metadata?.sha256&&object.metadata.sha256!==digest)throw Error('Digest mismatch');
     const summary=normalizeManifest(JSON.parse(bytes),index,{path:object.name,generation:object.generation});
     objects.push({name:object.name,bucket:BUCKET,generation:object.generation,size:object.size,metadata:{sha256:digest},attemptId:index.id,runs:summary.runs.length});
     runs+=summary.runs.length;for(const r of summary.runs)if(r.installId)installs.add(r.installId);
-   }catch(e){rejected.push({attemptId:index.id,reason:e.code||e.message});}}
-   const plan={schemaVersion:1,mode:'readOnlyPlan',project:PROJECT,sourceHash:sourceHash(),createdAt:new Date().toISOString(),start,end,collections:[ROOT,INVENTORY],candidates:indexes.length,objects,rejected,runs,installIds:[...installs]};writePrivate(output,plan);console.log(JSON.stringify({mode:plan.mode,candidates:plan.candidates,ready:objects.length,rejected:rejected.length,runs,phones:installs.size,output}));
+   }catch(e){rejected.push({attemptId:index.id,reason:e.code||e.message});}});
+   const plan={schemaVersion:1,mode:'readOnlyPlan',project:PROJECT,sourceHash:sourceHash(),createdAt:new Date().toISOString(),start,end,allIndexed,onlyMissing,indexedTotal,collections:[ROOT,INVENTORY],candidates:indexes.length,objects,rejected,runs,installIds:[...installs]};writePrivate(output,plan);console.log(JSON.stringify({mode:plan.mode,candidates:plan.candidates,ready:objects.length,rejected:rejected.length,runs,phones:installs.size,output}));
   }else{
    if(!args.includes('--plan'))throw Error('Apply requires a reviewed --plan file');const plan=JSON.parse(fs.readFileSync(get('--plan'),'utf8'));
    if(plan.mode!=='readOnlyPlan'||plan.project!==PROJECT||plan.sourceHash!==sourceHash()||plan.objects.length>5000)throw Error('Plan/project/source mismatch; prepare a fresh plan');

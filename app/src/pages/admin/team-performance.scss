@@ -59,3 +59,17 @@
   @media(max-width:1000px) { .team-operations { grid-template-columns:1fr; } .team-stations { gap:10px; } .team-station { padding:14px; } }
   @media(max-width:700px) { .team-stations,.team-events { grid-template-columns:1fr; } .team-kpis { grid-template-columns:1fr 1fr; } .team-kpis > div { padding:16px; } .dp-section { padding:14px; } .team-chart svg { min-width:620px; } .team-chart { overflow-x:auto; } .team-section-heading { align-items:stretch; } .dp-field { flex:1 1 140px; } .team-tabs button { padding:8px 10px; } }
 }
+
+.pt-admin .team-performance {
+  .team-player-average { display:grid; gap:5px; margin:20px 0; padding:16px 0; border-block:1px solid var(--surface-border); }
+  .team-player-average > span { font-size:12px; color:var(--text-muted); }
+  .team-player-average strong { font-size:27px; letter-spacing:-.7px; }
+  .team-player-average small,.team-drill-averages small { display:block; font-size:11px; line-height:1.5; color:var(--text-muted); }
+  .team-drill-averages { width:100%; border-collapse:collapse; font-size:12px; }
+  .team-drill-averages caption { text-align:left; font-size:13px; font-weight:600; padding-bottom:12px; }
+  .team-drill-averages th,.team-drill-averages td { text-align:left; vertical-align:top; padding:9px 5px; border-bottom:1px solid var(--surface-border); }
+  .team-drill-averages thead { color:var(--text-muted); font-size:10px; }
+  .team-drill-averages td { text-align:right; }
+  .team-drill-averages td > div + div { margin-top:10px; }
+  .team-phone code { overflow-wrap:anywhere; }
+}

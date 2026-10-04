@@ -1,9 +1,9 @@
 # Phone processing dashboard
 
-Status: code complete; backend import/observer and website draft verified. Callable IAM approval and authenticated release acceptance pending (2026-10-03).
+Status (2026-10-03): live callable reachability approved and enabled; authenticated requests succeed. Local dashboard completeness and station-timing follow-up verified with deployed callable v5. See the [verification receipt](../deployment/DEVICE_PROCESSING_COMPLETENESS.json). Older website drafts are superseded.
 
 The admin overview starts with one condensed table: installation UUID, phone type,
-per-drill successful average time, largest sampled memory footprint, total frame
+per-drill completed-processing average time, largest sampled memory footprint, total frame
 reads/model calls and outcomes. Selecting an installation opens a table below with
 one row per drill. Detailed analytics opens that phone's session selector,
 chronological run/memory charts and expandable stage measurements. The phone table
@@ -43,19 +43,23 @@ admins. Only the callable exposes summaries. No rules deployment is needed.
 
 Request: `startDate`, `endDate` (local YYYY-MM-DD, maximum 90 days), `timeZone`,
 optional installation UUID, drill, algorithm (`current`, `all`, or explicit hash),
-configuration, session hash, opaque cursor, or focused run UUID.
+configuration, session hash, opaque cursor, or focused run UUID. Defaults are the
+last 90 days and all recorded algorithms. Explicit algorithm filters show an
+exclusion notice. Unattributed runs are available with `unattributed:true` instead
+of an installation UUID; each run is inspectable, without a combined phone average.
 Response schema 1 contains period/current-baseline metadata, coverage, all known
 phones, comparable drill cohorts, session choices, at most 100 run-detail rows and
 at most 2,000 chronological chart points. Complete-query bounds fail visibly rather
 than silently returning partial averages. Cursors bind filters and data revision.
 Selecting a chart point retrieves its detail page even beyond the first 100 rows.
 
-Successful live runs determine duration/frame/call averages. Partial, failed,
-cancelled and interrupted runs remain visible and counted. Drill, source/policy,
+Completed live processing (valid and partial measurement outcomes) determines
+duration/frame/call averages. Failed durations and valid-only durations are
+separate distributions; cancelled/interrupted runs remain visible and counted. Drill, source/policy,
 Debug/Release, frame format and timing definition form separate cohorts. The
 selected phone has one drill row; distinct cohorts are separately labeled within
 its cells. Missing measurements are null/unavailable, never zero. P90 is shown
-only with at least 20 measured successes. Stages retain nested-versus-main timing:
+only with at least 20 completed measurements. Stages retain nested-versus-main timing:
 nested model creation overlaps extraction and must not be added a second time.
 
 `Processing` is the explicit processor duration. `Total run` is the separately
@@ -74,7 +78,8 @@ when they have no measurements for the current algorithm.
 ## Import and verification
 
 `scripts/device-processing-backfill.cjs` defaults to a read-only plan over at most
-seven days. It validates every exact object generation against its current index.
+seven days, or all bounded indexed attempts with `--all-indexed`. Add
+`--only-missing` to inspect summary gaps. It validates every exact object generation against its current index.
 The apply command requires that reviewed plan and the identical adapter source
 hash; writes only the two summary roots. Gcloud credentials stay in memory.
 
@@ -83,32 +88,25 @@ node scripts/device-processing-backfill.cjs --from 2026-10-01T07:00:00Z --until 
 node scripts/device-processing-backfill.cjs --apply --plan /private/tmp/processing-plan.json --output /private/tmp/processing-import.json
 ```
 
-Verified locally: 15 backend tests, 132 performance/frontend tests plus 28 merged feedback/navigation tests,
-TypeScript, canonical-rule emulator (60 client-denial assertions), and Chromium
-at 1440/1024/390/320 widths. Phone selection, detail navigation and chart-to-run
-opening passed; no page errors or document-width overflow. Private source-data
-checks normalized 133 cached manifests without errors. The fresh October 1–3
-import plan contains 65 authoritative manifests, 64 runs, five installation IDs.
+All 315 available manifests reconcile with their exact summary generations and
+310 runs. All six recent phones are visible by default, alongside older installation
+identities. All known-phone charts/detail pages and the 41 unattributed runs were
+reconciled by run ID. The report also joins period indexes and explicitly lists
+97 historical attempts without diagnostic summaries; their manifests are absent
+from current and retained-deleted Storage objects. No measurements are fabricated.
 
-Backend functions are deployed and 65 reviewed manifests were imported. Readback
-reconciles all eight current-source iPhone observations. Callable public-invoker
-permission awaits explicit user approval after automatic review rejected that
-IAM change. The new-upload observer passed an end-to-end synthetic-object check and cleanup.
-Draft `6ac18baf9e70ce60e8b4baac` has all 1,592 artifact files verified against
-its provider inventory; marketing bytes match production. Hosted admin guards
-and preserved feedback headers passed with zero browser errors. Pending: deployed
-callable/auth, authenticated browser acceptance and promotion of this exact draft.
-See [release receipt](../deployment/DEVICE_PROCESSING_DRAFT.json). Unknown executing installations
-are counted in coverage and never pooled into a fictional phone average.
-The 8 new iPhone observations verify reported data only, not a controlled hardware
-benchmark or a physical-device regression suite.
+The user explicitly approved `allUsers` / `roles/cloudfunctions.invoker` for the
+single reporting callable after the earlier automatic rejection. This transport
+setting is active; the handler still requires verified nonanonymous PoseTek admin
+authentication. Genuine authenticated requests returned HTTP 200, while unsigned
+requests receive Firebase JSON 401 with the proper CORS response.
 
-The local design preview remains running at `http://127.0.0.1:4175/admin?preview=1`
-with clearly labeled synthetic data. Remove `preview=1` to use real data after
-callable reachability is approved and verified. User data is never a public preview
-fallback. Local source is committed and merged to main; no remote push
-is authorized or performed. The public production website remains the feedback
-release until the pending acceptance steps pass.
+The local dashboard at `http://127.0.0.1:4175/admin/device-performance` reads live
+Firebase and refreshes every 30 seconds while visible. No preview query is needed.
+Synthetic design previews remain DEV-only, never a fallback. No new TestFlight
+build is required. Source changes are committed through the feature-branch merge
+workflow; no remote push is authorized. This follow-up does not promote an older
+Netlify draft over the concurrently updated production website.
 
 ## Team sessions (2026-10-03)
 

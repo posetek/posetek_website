@@ -4,29 +4,30 @@ Reviewed on October 2–3, 2026. This guide summarizes the available repository 
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
-## Team testing session dashboard (2026-10-03)
+## Complete phone and station performance (2026-10-03)
 
-Device performance now links to an event-level three-station dashboard, with all
-players, shared metric charts, deduplicated throughput, failures, sync progress
-and a per-run table. It reads the existing TestFlight event/station identities.
-No native build is needed for this page. See [the contract and verification](docs/TEAM_SESSION_PERFORMANCE.md).
-The backend is deployed (callable v4, observer v2); 238 manifests were imported.
-The exact website draft is `6ac1911a5b925767ec7362b8`, source `dabd60c`, with all
-artifacts verified and production unchanged. See [the release receipt](deployment/TEAM_SESSION_PERFORMANCE_DRAFT.json).
-The existing callable IAM approval and authenticated hosted acceptance remain
-pending; this addition does not bypass or resolve that hold.
+The user-approved live callable connection is enabled, with genuine authenticated
+HTTP 200 requests verified. Local `/admin/device-performance` shows all recorded
+algorithms over 90 days by default, every known installation, inspectable
+unattributed runs, and explicit missing diagnostic indexes. Reconciliation found
+315 current manifests/summary generations, 310 runs, six recent phones plus three
+historical installation identities, and 97 indexes whose manifests are unavailable.
 
-## Device performance integration (2026-10-03, acceptance pending)
+Team session cards add average time per player (first capture to final accepted
+processing result, including pauses), median/range and coverage, plus per-drill
+completed-processing averages including partial measurement results. Source and
+timing cohorts remain separate. Protocol throughput counts accepted partials;
+measurement quality and syncing remain separate. The current four-player event
+has all 81 processing runs and 80 accepted/synced reps available. See
+[phone contract](docs/DEVICE_PROCESSING_DASHBOARD.md) and
+[team contract](docs/TEAM_SESSION_PERFORMANCE.md).
 
-The admin home phone table, selected-phone drill table and detailed session/run
-charts are implemented and verified locally. Existing TestFlight diagnostics now
-feed a deployed backend observer; 65 historical manifests were imported and the
-observer pilot passed with cleanup. A reviewed website draft is ready at
-`6ac18baf9e70ce60e8b4baac`; production is unchanged. Automatic approval review
-requires explicit user approval for the callable's public invoker reachability.
-Authenticated API/browser acceptance and draft promotion remain pending. See
-[the dashboard contract](docs/DEVICE_PROCESSING_DASHBOARD.md) and
-[the exact receipt](deployment/DEVICE_PROCESSING_DRAFT.json).
+The earlier website draft `6ac1911a5b925767ec7362b8` is superseded. Production has
+changed concurrently; this follow-up updates local UI and the scoped reporting
+backend without promoting an obsolete website artifact. Historical rollout
+receipts remain historical; the [completeness receipt](deployment/DEVICE_PROCESSING_COMPLETENESS.json)
+records callable v5 source verification, genuine authenticated HTTP 200 requests,
+37 backend tests, 81 frontend tests, build and actual-data browser checks.
 
 ## Optional app feedback (2026-10-03)
 

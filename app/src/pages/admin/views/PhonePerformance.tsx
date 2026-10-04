@@ -16,14 +16,16 @@ export default function PhonePerformance({preview=false,compact=false}:{preview?
   const [selectedPhone,setSelectedPhone]=useState<string|null>(null);
   const [state,setState]=useState<{key:string;report:ProcessingReport|null;error:string|null}>({key:"",report:null,error:null});
   const params=useMemo(()=>new URLSearchParams(location.search),[location.search]);
-  const request=useMemo(()=>({installId:compact?null:installId||null,startDate:params.get("phoneStart")||day(new Date(Date.now()-6*86400000)),
+  const unattributed=installId==="unattributed";
+  const request=useMemo(()=>({unattributed,installId:compact||unattributed?null:installId||null,startDate:params.get("phoneStart")||day(new Date(Date.now()-89*86400000)),
     endDate:params.get("phoneEnd")||day(new Date()),timeZone:"America/Los_Angeles",drill:params.get("phoneDrill")||"all",
-    algorithm:params.get("phoneAlgorithm")||"current",configuration:params.get("phoneConfiguration")||"all",
-    sessionId:compact?null:params.get("phoneSession"),cursor:compact?null:params.get("phoneCursor"),focusRunId:compact?null:params.get("phoneRun")}),[params,installId,compact]);
-  const key=JSON.stringify([request,preview,reload]);
+    algorithm:params.get("phoneAlgorithm")||"all",configuration:params.get("phoneConfiguration")||"all",
+    sessionId:compact?null:params.get("phoneSession"),cursor:compact?null:params.get("phoneCursor"),focusRunId:compact?null:params.get("phoneRun")}),[params,installId,compact,unattributed]);
+  const key=JSON.stringify([request,preview]);
   useEffect(()=>{let active=true;loadProcessingReport(request,preview).then(report=>{if(active)setState({key,report,error:null});}).catch(error=>{
     if(active)setState({key,report:null,error:error instanceof Error?error.message:"Could not load phone performance."});
-  });return()=>{active=false;};},[key,request,preview]);
+  });return()=>{active=false;};},[key,request,preview,reload]);
+  useEffect(()=>{const timer=setInterval(()=>{if(document.visibilityState==="visible")setReload(n=>n+1);},30000);return()=>clearInterval(timer);},[]);
   const report=state.key===key?state.report:null,error=state.key===key?state.error:null;
   const change=(patch:Record<string,string|null>)=>{
     const next=new URLSearchParams(location.search);next.delete("phoneCursor");next.delete("phoneRun");
@@ -45,9 +47,9 @@ export default function PhonePerformance({preview=false,compact=false}:{preview?
     <div className="admin-heading dp-heading">
       <div><p className="eyebrow">Device performance · All devices</p>
         {!compact&&installId&&<Link to={link(null)}>← All phones</Link>}
-        {compact?<h2>Processing on your phones</h2>:<h1>{installId?device?.label||phoneModel(device?.machine||null):"Phone performance"}</h1>}
-        <p>{compact?"Current-algorithm results, with each phone and drill kept separate.":"Measured processing, frame workload and memory from the diagnostic uploads your phones already send."}</p>
-        {report&&<p className="dp-muted">Current release: {report.current.label} · Updated {time(report.generatedAt,report.period.timeZone)} · Organization/team selectors do not filter phones.</p>}
+        {compact?<h2>Processing on your phones</h2>:<h1>{unattributed?"Unattributed processing runs":installId?device?.label||phoneModel(device?.machine||null):"Phone performance"}</h1>}
+        <p>{compact?"All recorded algorithms, with each phone and drill kept separate.":"Measured processing, frame workload and memory from the diagnostic uploads your phones already send."}</p>
+        {report&&<p className="dp-muted">Current release: {report.current.label} · Updated {time(report.generatedAt,report.period.timeZone)} · Refreshes every 30 seconds · Organization/team selectors do not filter phones.</p>}
       </div><div className="dp-actions"><Link className="quiet-button" to={`/admin/device-performance/team-sessions${preview?"?preview=1":""}`}>Team testing sessions</Link><button className="quiet-button" type="button" onClick={()=>{change({phoneCursor:null});setReload(x=>x+1);}}>Refresh</button>
         {compact&&<Link className="quiet-button" to={link(null)}>View all phones</Link>}</div>
     </div>
@@ -62,7 +64,8 @@ export default function PhonePerformance({preview=false,compact=false}:{preview?
     </div>
     {error?<div className="dp-state" role="alert"><h3>Could not load phone measurements</h3><p>{error}</p><button className="quiet-button" onClick={()=>{change({phoneCursor:null});setReload(x=>x+1);}}>Retry</button></div>
       :!report?<div className="dp-state" role="status">Loading phone measurements…</div>:<>
-        {!shown.length?<div className="dp-state"><h3>No reporting phones found</h3><p>{search?"No phone matches your search.":"No diagnostic summaries have arrived yet. This is not a count of zero processing runs."}</p></div>:
+        {request.algorithm!=="all"&&<p className="admin-banner warn">An algorithm filter is active{report.coverage.filteredOut==null?"":` · ${report.coverage.filteredOut} runs excluded`}. <button className="dp-text-button" onClick={()=>change({phoneAlgorithm:"all"})}>Show all recorded algorithms</button></p>}
+        {unattributed?<section className="admin-card dp-section"><h2>Runs without an executing phone identifier</h2><p>These measurements remain available, but cannot reliably be assigned to a physical phone.</p><p>Inspect their individual timings and stages below. No combined phone average is calculated for these runs.</p></section>:!shown.length?<div className="dp-state"><h3>No reporting phones found</h3><p>{search?"No phone matches your search.":"No diagnostic summaries have arrived yet. This is not a count of zero processing runs."}</p></div>:
           !installId?<>
             <PhoneOverviewTable phones={shown} selectedId={expandedPhone?.installId||null} onSelect={setSelectedPhone}/>
             {expandedPhone&&<section className="admin-card dp-section phone-selected">
@@ -86,15 +89,16 @@ export default function PhonePerformance({preview=false,compact=false}:{preview?
             {(request.cursor||request.focusRunId)&&<button className="quiet-button" onClick={()=>change({phoneCursor:null})}>First page</button>}
           </section>
         </>}
-        <p className="dp-muted">{report.coverage.attempts} diagnostic attempts in this period · {report.coverage.unknownDevice} runs without a known executing phone. An app reinstall may create a new phone identity.</p>
-        {!compact&&<details className="admin-card dp-section"><summary>What these measurements mean</summary><p>Means and percentiles use successful live runs only. Drill, source algorithm, app configuration, capture format and timing definition are kept separate. Fewer than 20 measurements are marked limited data.</p><p>“Processing” is the phone’s measured processor duration. Older “Total run” measurements include run/journal overhead and use reported start/end times. They are never pooled together. Missing measurements are unavailable, not zero.</p><p>Memory is the largest sampled app footprint, not CPU/GPU utilization or a continuously measured maximum. Frame reads include repeat passes; model calls show actual inference workload. Neither equals unique video frames.</p><p>Current means the explicitly selected release source and sampling policy, not the largest build number or latest upload. Old builds remain visible in “All recorded algorithms”.</p></details>}
+        <p className="dp-muted">{report.coverage.attempts} diagnostic summaries{report.coverage.indexedAttempts==null?"":` / ${report.coverage.indexedAttempts} indexed attempts`} in this period · <Link to={link("unattributed",true)}>{report.coverage.unknownDevice} runs without a known executing phone →</Link>. An app reinstall may create a new phone identity.</p>
+        {!compact&&!installId&&!!report.unavailableAttempts?.length&&<details className="admin-card dp-section"><summary>{report.unavailableAttempts.length} indexed attempts without diagnostic measurements</summary><p>Firebase has these attempt records, but no usable diagnostic summary. A missing upload or unavailable manifest cannot supply processing time, memory or heat; these are not zero-duration runs.</p><div className="dp-table-wrap"><table className="dp-table"><thead><tr><th>Capture time</th><th>Drill</th><th>Recording device identifier</th><th>Testing session</th><th>State</th></tr></thead><tbody>{report.unavailableAttempts.map(a=><tr key={a.attemptId}><td>{time(a.at,report.period.timeZone)}</td><td>{PROCESSING_DRILLS[a.drill as keyof typeof PROCESSING_DRILLS]||a.drill||"Unknown"}</td><td>{a.recordingDeviceId||"Not reported"}</td><td>{a.testingEventId?<Link to={`/admin/device-performance/team-sessions/${a.testingEventId}`}>{a.testingEventId}</Link>:"Not recorded"}</td><td>{a.state||"Unknown"}</td></tr>)}</tbody></table></div></details>}
+        {!compact&&<details className="admin-card dp-section"><summary>What these measurements mean</summary><p>Means and percentiles use completed live processing, including partial measurement results. Failed-run timing is shown separately. Drill, source algorithm, app configuration, capture format and timing definition are kept separate. Fewer than 20 measurements are marked limited data.</p><p>“Processing” is the phone’s measured processor duration. Older “Total run” measurements include run/journal overhead and use reported start/end times. They are never pooled together. Missing measurements are unavailable, not zero.</p><p>Memory is the largest sampled app footprint, not CPU/GPU utilization or a continuously measured maximum. Frame reads include repeat passes; model calls show actual inference workload. Neither equals unique video frames.</p><p>Current means the explicitly selected release source and sampling policy, not the largest build number or latest upload. Old builds remain visible in “All recorded algorithms”.</p></details>}
       </>}
   </section>;
 }
 
 export function PhoneOverviewTable({phones,selectedId,onSelect}:{phones:ProcessingPhone[];selectedId:string|null;onSelect:(id:string|null)=>void}) {
   return <div className="admin-card dp-table-wrap phone-overview-table"><table className="dp-table">
-    <caption>Average successful processing time by drill. Select a phone to see its drill analytics below.</caption>
+    <caption>Average completed processing time by drill (valid and partial results). Select a phone to see its drill analytics below.</caption>
     <thead><tr><th>Phone identifier</th><th>Phone type</th>{Object.entries(PROCESSING_DRILLS).filter(([id])=>id!=="freeRecord").map(([id,label])=><th key={id}>{label}<small>Average</small></th>)}<th>Peak memory</th><th>Frame reads / calls</th><th>Outcomes</th></tr></thead>
     <tbody>{phones.map(p=>{
       const peaks=p.cohorts.map(c=>c.sampledPeakBytes).filter((v):v is number=>v!==null);
@@ -118,29 +122,29 @@ export function PhoneCard({phone,detail,href,allHref,zone}:{phone:ProcessingPhon
     <DrillAnalyticsTable phone={phone}/>
   </article>;
 }
-export function DrillAnalyticsTable({phone}:{phone:ProcessingPhone}) {
-  const drills=Object.entries(PROCESSING_DRILLS).filter(([id])=>id!=="freeRecord"||phone.cohorts.some(c=>c.drill===id));
+export function DrillAnalyticsTable({phone,cohorts=phone?.cohorts||[]}:{phone?:ProcessingPhone;cohorts?:ProcessingCohort[]}) {
+  const drills=Object.entries(PROCESSING_DRILLS).filter(([id])=>id!=="freeRecord"||cohorts.some(c=>c.drill===id));
   return <div className="dp-table-wrap phone-drill-table"><table className="dp-table">
-    <caption>One row per drill. Successful live runs determine averages; separate algorithm groups stay separately labeled.</caption>
-    <thead><tr><th>Drill</th><th>Average time</th><th>Median / p90</th><th>Longest success</th><th>Total run</th><th>Peak memory</th><th>Frame reads / calls</th><th>Clip / format</th><th>Average stage times</th><th>Heat / power</th><th>Outcomes</th><th>Algorithm / build</th></tr></thead>
+    <caption>One row per drill. Completed live runs (valid and partial) determine averages; separate algorithm groups stay separately labeled.</caption>
+    <thead><tr><th>Drill</th><th>Average time</th><th>Median / p90</th><th>Longest completed</th><th>Total run</th><th>Peak memory</th><th>Frame reads / calls</th><th>Clip / format</th><th>Average stage times</th><th>Heat / power</th><th>Outcomes</th><th>Algorithm / build</th></tr></thead>
     <tbody>{drills.map(([id,label])=>{
-      const cohorts=phone.cohorts.filter(c=>c.drill===id);
-      const cells=(render:(c:ProcessingCohort)=>ReactNode)=>cohorts.map((c,i)=><div className="phone-cohort-value" key={c.key}>{cohorts.length>1&&<small className="phone-group-label">Group {i+1}</small>}{render(c)}</div>);
-      return <tr key={id}><th scope="row">{label}</th>{!cohorts.length?<td colSpan={11} className="dp-muted">No matching measurements</td>:<>
-        <td>{cells(c=><>{seconds(c.duration.mean)}<small>{c.duration.count} successes · {timingLabel(c.timingKind)}</small></>)}</td>
+      const groups=cohorts.filter(c=>c.drill===id);
+      const cells=(render:(c:ProcessingCohort)=>ReactNode)=>groups.map((c,i)=><div className="phone-cohort-value" key={c.key}>{groups.length>1&&<small className="phone-group-label">Group {i+1}</small>}{render(c)}</div>);
+      return <tr key={id}><th scope="row">{label}</th>{!groups.length?<td colSpan={11} className="dp-muted">No matching measurements</td>:<>
+        <td>{cells(c=><>{seconds(c.duration.mean)}<small>{c.duration.count} completed · {timingLabel(c.timingKind)}</small></>)}</td>
         <td>{cells(c=><>{seconds(c.duration.median)}<small>p90: {c.duration.count<20?"Limited data":seconds(c.duration.p90)}</small></>)}</td>
         <td>{cells(c=>seconds(c.duration.max))}</td>
         <td>{cells(c=><>{seconds(c.wall?.mean??null)}<small>Average incl. run overhead</small></>)}</td>
         <td>{cells(c=><>{memory(c.sampledPeakBytes)}<small>{c.memorySamples} sampled runs</small></>)}</td>
-        <td>{cells(c=><>{integer(c.frames.mean)} / {integer(c.calls.mean)}<small>Average per measured success</small></>)}</td>
+        <td>{cells(c=><>{integer(c.frames.mean)} / {integer(c.calls.mean)}<small>Average per completed run</small></>)}</td>
         <td>{cells(c=><>{c.clip?.mean==null?"Unavailable":`${c.clip.mean.toFixed(2)} s`}<small>{c.capture.width??"?"} × {c.capture.height??"?"} · {c.capture.fps??"?"} fps</small></>)}</td>
         <td>{cells(c=>c.stages?.length?c.stages.map(stage=><small key={stage.id}>{stage.kind==="nestedOperation"?"↳ ":""}{stage.id}: {seconds(stage.duration.mean)}</small>):"Unavailable")}</td>
         <td>{cells(c=><>{c.thermalStates.join(", ")||"Not reported"}<small>{c.lowPowerRuns} reported Low Power runs</small></>)}</td>
-        <td>{cells(c=><>{c.successful} successful<small>{c.failed} failed · {c.partial} partial · {c.other} other</small></>)}</td>
+        <td>{cells(c=><>{c.successful} successful<small>{c.failed} failed · {c.partial} partial · {c.other} other</small>{!!c.failedDuration?.count&&<small>Failed avg: {seconds(c.failedDuration.mean)}</small>}{!!c.partial&&!!c.successfulDuration?.count&&<small>Valid-only avg: {seconds(c.successfulDuration.mean)}</small>}</>)}</td>
         <td>{cells(c=><>{c.configuration||"Unknown configuration"} · build {c.builds.join(", ")||"unknown"}<small>{c.sourceRevision?.slice(0,7)||"Unknown source"}</small><small>{c.sampling||"Sampling not reported"}</small></>)}</td>
       </>}</tr>;
     })}</tbody>
-  </table><p className="dp-muted">Nested stage times (↳) overlap their parent. Memory includes unsuccessful runs; workload averages use measured successes. Missing data stays unavailable.</p></div>;
+  </table><p className="dp-muted">Nested stage times (↳) overlap their parent. Memory includes unsuccessful runs; workload averages include completed partial results. Missing data stays unavailable.</p></div>;
 }
 export function RunChart({runs,kind,zone,onSelect}:{runs:RunMeasurement[];kind:"time"|"memory";zone:string;onSelect?:(id:string)=>void}) {
   const points=runs.filter(r=>(kind==="time"?r.durationMs:r.sampledPeakBytes)!==null);

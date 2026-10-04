@@ -26,9 +26,9 @@ test("same numerical build with a different source is a different cohort",()=>{
  const old=normalizeManifest(f.manifest,f.index,{path:f.path,generation:"2",receivedAt:at+20000}).runs[0];
  assert.equal(currentRun(old),false);assert.notEqual(r.algorithmId,old.algorithmId);assert.equal(summarize([r,old]).length,2);
 });
-test("unsuccessful runs remain counted but cannot make success averages faster",()=>{
+test("completed partial runs contribute compute time; failed timing remains separate",()=>{
  const r=summary().runs[0];const c=summarize([r,{...r,runId:uid(333),durationMs:100,outcome:"failed"},{...r,runId:uid(334),durationMs:200,outcome:"partial"}])[0];
- assert.equal(c.duration.mean,10000);assert.equal(c.duration.count,1);assert.equal(c.failed,1);assert.equal(c.partial,1);assert.equal(c.count,3);
+ assert.equal(c.duration.mean,5100);assert.equal(c.duration.count,2);assert.equal(c.successfulDuration.mean,10000);assert.equal(c.partialDuration.mean,200);assert.equal(c.failedDuration.mean,100);assert.equal(c.failed,1);assert.equal(c.partial,1);assert.equal(c.count,3);
 });
 test("sessions do not collide across athletes; model does not imply device identity",()=>{
  const a=summary(),f=fixture(2);f.index.playerDocumentID=f.manifest.identity.athleteDocumentID="another-player";delete f.manifest.identity.originInstallId;delete Object.values(f.manifest.runs)[0].identity.executorInstallId;
@@ -69,7 +69,7 @@ test("complete totals are independent of 100-run pages and stale cursors are ref
 test("current filter keeps historical phones visible without claiming current samples",async()=>{
  const s=summary();s.runs[0].sourceRevision="old";
  const db=new FakeFirestore({[`${ROOT}/${s.attemptId}`]:s,[`${INVENTORY}/${uid(9000)}`]:{installId:uid(9000),machine:"iPhone18,3",lastCapturedAt:at}});
- const report=await createDeviceProcessingReports({db,HttpsError,now:()=>at+1000000}).report({startDate:"2026-10-02",endDate:"2026-10-02"},admin);
+ const report=await createDeviceProcessingReports({db,HttpsError,now:()=>at+1000000}).report({startDate:"2026-10-02",endDate:"2026-10-02",algorithm:"current"},admin);
  assert.equal(report.phones.length,1);assert.equal(report.phones[0].cohorts.length,0);assert.equal(report.phones[0].recordedRuns,1);
 });
 
@@ -113,4 +113,21 @@ test("same-generation summary upgrade is allowed once; older generation is still
  const db=new FakeFirestore({[`processingAttempts/${f.index.attemptId}`]:f.index,[`${ROOT}/${f.index.attemptId}`]:old});
  const importer=createDiagnosticPerformance({db,bucket:{file:()=>({download:async()=>[bytes]})},FieldValue,now:()=>at+20000});const object={name:f.path,bucket:BUCKET,generation:"100",size:bytes.length};
  assert.equal((await importer.importObject({...object,generation:"99"})).status,"unchanged");assert.equal((await importer.importObject(object)).status,"imported");assert.equal(db.snapshot(`${ROOT}/${f.index.attemptId}`).summaryVersion,2);assert.equal((await importer.importObject(object)).status,"unchanged");
+});
+
+test("default report includes historical software and unattributed runs have inspectable detail",async()=>{
+ const a=summary(1),b=summary(2);a.runs[0].sourceRevision="historical";b.runs[0].installId=null;
+ const reports=createDeviceProcessingReports({db:new FakeFirestore({[`${ROOT}/${a.attemptId}`]:a,[`${ROOT}/${b.attemptId}`]:b}),HttpsError,now:()=>at+1000000});
+ const all=await reports.report({},admin);assert.equal(all.filters.algorithm,"all");assert.equal(all.totalRows,2);assert.equal(all.phones[0].cohorts[0].count,1);
+ const unknown=await reports.report({unattributed:true},admin);assert.equal(unknown.phones.length,0);assert.equal(unknown.totalRows,1);assert.equal(unknown.rows[0].installId,null);assert.equal(unknown.chart.length,1);assert.equal(unknown.coverage.unknownDevice,1);
+ await assert.rejects(reports.report({unattributed:true,installId:uid(9000)},admin),e=>e.code==="invalid-argument");
+});
+test("missing diagnostic indexes are visible without fabricating measurements or phones",async()=>{
+ const f=fixture(),s=summary();const {Timestamp}=require("./test-support/device-performance/fake-firestore");
+ const index={...f.index,occurredAt:Timestamp.fromMillis(at),recordingDeviceId:uid(777),testingEventId:"event",lifecycle:"committed"};
+ const db=new FakeFirestore({[`processingAttempts/${f.index.attemptId}`]:index});
+ const api=createDeviceProcessingReports({db,HttpsError,now:()=>at+1000000});
+ const missing=await api.report({},admin);assert.equal(missing.coverage.indexedAttempts,1);assert.equal(missing.coverage.missingSummaries,1);assert.equal(missing.totalRows,0);assert.equal(missing.phones.length,0);assert.equal(missing.unavailableAttempts[0].recordingDeviceId,uid(777));
+ // A summary outside this capture range is existing evidence, not a missing manifest.
+ s.capturedAt=at-100*86400000;await db.doc(`${ROOT}/${s.attemptId}`).set(s);assert.equal((await api.report({},admin)).coverage.missingSummaries,0);
 });

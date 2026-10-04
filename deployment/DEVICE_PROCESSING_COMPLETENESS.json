@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-04T02:41:54.673231+00:00",
+  "sourceCommit": "f996b83f8e862440d2184c3c8da7e40934790dd6",
+  "status": "live API and local dashboard verified",
+  "backend": {
+    "checkedAt": "2026-10-04T02:39:45.946368+00:00",
+    "changed": [
+      "getDeviceProcessingV1"
+    ],
+    "unrelatedFunctionsUnchanged": 124,
+    "callable": {
+      "version": "5",
+      "status": "ACTIVE",
+      "updateTime": "2026-10-04T02:37:53.871Z",
+      "sourceCommit": "f996b83f8e862440d2184c3c8da7e40934790dd6",
+      "verifiedSourceFiles": 16,
+      "sourceMismatches": [],
+      "https": {
+        "securityLevel": "SECURE_ALWAYS",
+        "url": "https://us-central1-kickai-69dd0.cloudfunctions.net/getDeviceProcessingV1"
+      },
+      "iamBindings": [
+        {
+          "members": [
+            "allUsers"
+          ],
+          "role": "roles/cloudfunctions.invoker"
+        }
+      ]
+    },
+    "observer": {
+      "version": "2",
+      "unchanged": true,
+      "normalizerUnchanged": true
+    }
+  },
+  "connection": {
+    "authorization": "User explicitly approved live results connection after earlier automatic-review rejection. Existing approval persists.",
+    "authenticated200": [
+      {
+        "executionId": "un44s1qijcri",
+        "at": "2026-10-04T02:39:48.735869706Z"
+      },
+      {
+        "executionId": "c269mwdiysgg",
+        "at": "2026-10-04T02:39:46.578585221Z"
+      },
+      {
+        "executionId": "7cofcvpzhzj6",
+        "at": "2026-10-04T02:39:44.754937236Z"
+      },
+      {
+        "executionId": "7cofj7d46kof",
+        "at": "2026-10-04T02:39:42.948200781Z"
+      },
+      {
+        "executionId": "7cofzro7waru",
+        "at": "2026-10-04T02:39:32.460824465Z"
+      },
+      {
+        "executionId": "7cofsjs2675p",
+        "at": "2026-10-04T02:39:00.474115284Z"
+      },
+      {
+        "executionId": "7cofs3t7mmtp",
+        "at": "2026-10-04T02:38:28.362060070Z"
+      }
+    ],
+    "unauthenticatedStatus": 401,
+    "corsOrigin": "http://127.0.0.1:4175",
+    "adminGuard": "Verified nonanonymous @posetek.net Firebase account required; unchanged."
+  },
+  "data": {
+    "summaryDocuments": 315,
+    "currentManifests": 315,
+    "allGenerationsMatch": true,
+    "indexedAttempts": 412,
+    "missingManifests": 97,
+    "reportedRuns": 310,
+    "unattributedRuns": 41
+  },
+  "recentPhones": 6,
+  "installationIdentities": 9,
+  "missingDiagnostics": "97 older attempt indexes have no current or retained-deleted Storage manifest. Listed as unavailable; no fabricated measurements or production records changed.",
+  "team": {
+    "attempts": 83,
+    "runs": 81,
+    "validResults": 52,
+    "partialResults": 29,
+    "acceptedProtocolReps": 80,
+    "syncedReps": 80,
+    "stationRunCounts": [
+      12,
+      29,
+      40
+    ],
+    "stationProtocolCounts": [
+      12,
+      28,
+      40
+    ],
+    "playersWithCompleteStationTiming": [
+      4,
+      4,
+      4
+    ],
+    "meanPlayerMs": [
+      70103.310546875,
+      1432079.5294799805,
+      552210.9371948242
+    ],
+    "medianPlayerMs": [
+      69866.48352050781,
+      259823.47204589844,
+      385562.3360595703
+    ],
+    "timingBasis": "First observed capture attempt through earliest prepared completion of every accepted rep. Includes pauses; excludes unrecorded pre-capture setup and queue waiting.",
+    "drillMeans": "Valid and partial completed live processing; failed durations separate. Distinct algorithm/configuration/format/timing cohorts remain separate."
+  },
+  "validation": {
+    "backendTests": {
+      "passed": 37,
+      "command": "node --test functions/device-processing.test.js functions/team-processing.test.js"
+    },
+    "frontendTests": {
+      "passed": 81,
+      "command": "npm --prefix app test -- src/pages/admin/views/PhonePerformance.test.tsx src/pages/admin/views/TeamSessionPerformance.test.tsx src/pages/admin/lib/devicePerformance.test.ts"
+    },
+    "typescript": "tsc -b app/tsconfig.json passed",
+    "build": "npm --prefix app run build passed; existing dynamic-import/Svelte configuration notices only",
+    "browser": {
+      "checkedAt": "2026-10-04T02:36:03.399Z",
+      "surface": "Isolated DEV fixture using Firebase report snapshots; not an authenticated browser request",
+      "phones": 9,
+      "unattributed": 41,
+      "recentPhoneRuns": 40,
+      "teamPoints": 81,
+      "stationCards": 3,
+      "drillRows": 6,
+      "means": [
+        "1.2 min",
+        "23.9 min",
+        "9.2 min"
+      ],
+      "pagination": true,
+      "widths": [
+        {
+          "width": 1440,
+          "document": 1440
+        },
+        {
+          "width": 1024,
+          "document": 1024
+        },
+        {
+          "width": 390,
+          "document": 390
+        },
+        {
+          "width": 320,
+          "document": 320
+        }
+      ],
+      "errors": []
+    },
+    "syntheticInteractionChecks": "Metric switches, drill filter, point-to-row pagination and failure navigation passed; 1440/1024/390/320 widths without outer overflow.",
+    "visualReview": "Actual Firebase snapshot station-card screenshot reviewed; exact averages, sample sizes and partial result counts visible."
+  },
+  "localUrl": "http://127.0.0.1:4175/admin/device-performance",
+  "teamUrl": "http://127.0.0.1:4175/admin/device-performance/team-sessions/g7Hn6OdFPFT9IixbjjDL",
+  "websitePublication": {
+    "performed": false,
+    "reason": "User is reviewing localhost; older Netlify draft is superseded and production changed concurrently. No obsolete draft promoted."
+  },
+  "unchanged": [
+    "Original manifests, player reps, event progress and assignments",
+    "Observer v2 and normalizer summary version 2",
+    "Mobile/TestFlight builds",
+    "Firestore/Storage rules and indexes"
+  ],
+  "remotePush": false
+}

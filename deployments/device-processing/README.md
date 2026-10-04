@@ -24,24 +24,18 @@ observer uses `--trigger-event=google.storage.object.finalize`,
 existing service account `kickai-69dd0@appspot.gserviceaccount.com` and audit all
 unrelated function versions afterward. Do not deploy the root functions directory.
 
-Current rollout: callable version 4 and observer version 2 are deployed and
-source-verified, with team-session reporting added. 238 manifests were imported
-into derived summary version 2; all unrelated function versions are unchanged.
-The prior observer pilot also passed. See the
-[team-session release receipt](../../deployment/TEAM_SESSION_PERFORMANCE_DRAFT.json)
-for the latest exact draft; the preceding device-only draft is superseded. **Callable invoker approval is pending**: automatic approval review
-rejected adding `allUsers` / `roles/cloudfunctions.invoker` to the single callable.
-Do not retry that IAM change without the user's explicit answer to the pending
-question. No proxy, alternate endpoint or wrapper is an approved substitute.
-The browser SDK requires this reachability setting, while the handler still
-protects all report data. The function currently has no public invoker binding.
+The user explicitly approved callable public reachability on October 3 after the
+initial automatic rejection. `allUsers` / `roles/cloudfunctions.invoker` is now
+present only on `getDeviceProcessingV1`; Firebase handler authorization remains
+mandatory. Genuine admin requests returned 200; unsigned requests receive JSON
+401 with CORS. Do not reopen the resolved approval question.
 
-After approval and normal execution review: add that binding only on
-`getDeviceProcessingV1`; verify unauthenticated, unverified and nonadmin denial
-and genuine admin success; test the dashboard against the real callable. Promote
-the already-reviewed Netlify draft only after those checks, without rebuilding.
-Reconcile its production inventory and update the deployment receipt. Preserve
-Players/Coaches marketing and the feedback document/behavior.
+The completeness follow-up changes reporting only; the observer normalizer remains
+summary version 2. Deploy only `getDeviceProcessingV1` from the prepared immutable
+source bundle, preserve its invoker binding and HTTPS-only setting, then verify
+source bytes and all unrelated function versions. Callable v5 is source-verified from `f996b83` (16 exact files); observer v2 and all
+124 other functions are unchanged. See the [verification receipt](../../deployment/DEVICE_PROCESSING_COMPLETENESS.json). Do not promote the superseded website
+draft: production changed concurrently and must be reconciled before any hosted release.
 
 See [dashboard contract](../../docs/DEVICE_PROCESSING_DASHBOARD.md) for the exact
 import script, schema, bounds and metrics. A second import of the same generations
