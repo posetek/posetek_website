@@ -130,92 +130,121 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
     }
     const pending = await db.collection(PATHS.queue).where("pending", "==", true).limit(MAX_BATCH).get();
     if (pending.empty) return null;
-    const seed = await seedStore.load((await seedRef.get()).data());
-    if (M.GROUPS.some(group => !Number.isSafeInteger(seed.counts?.[group]) || seed.counts[group] < 0)) M.fail("tracker_missing_seed_counts");
-    const outbox = [], occurrences = [], issues = [], messages = [], seenIssues = new Set(), seenJobs = new Set();
-    async function hydrateJob(id, requireIncident = false) {
-      if (!SAFE_ID.test(id || "")) M.fail("tracker_invalid_join");
-      if (seenJobs.has(id)) {
-        if (requireIncident && outbox.find(job => job.id === id)?.type !== "incident") M.fail("tracker_invalid_join");
-        return;
-      }
-      const job = (await db.doc(`userIssueOutbox/${id}`).get()).data();
-      if (!job) M.fail("tracker_source_unavailable");
-      if (requireIncident && job.type !== "incident") M.fail("tracker_invalid_join");
-      outbox.push({ ...job, id }); seenJobs.add(id);
-      if (job.type === "incident") {
-        await seedStore.hydrate(seed, "instances", id);
-        const occurrence = (await db.doc(`userIssueOccurrences/${id}`).get()).data();
-        if (!occurrence) M.fail("tracker_occurrence_unavailable");
-        occurrences.push({ ...occurrence, id });
-      } else if (job.type === "daily" || job.type === "status") await seedStore.hydrate(seed, "dailyRows", id);
-      if (job.issueId && !seenIssues.has(job.issueId)) {
-        const issue = (await db.doc(`userIssues/${job.issueId}`).get()).data();
-        if (!issue) M.fail("tracker_issue_unavailable");
-        issues.push({ ...issue, id: job.issueId }); seenIssues.add(job.issueId);
-      }
+    const baseSeed = await seedStore.load((await seedRef.get()).data());
+    if (M.GROUPS.some(group => !Number.isSafeInteger(baseSeed.counts?.[group]) || baseSeed.counts[group] < 0)) M.fail("tracker_missing_seed_counts");
+    // Firestore's pending query is ordered by document ID. Preserve that same
+    // bounded prefix even if an adapter returns the selected snapshots unsorted.
+    const selectedDocs = [...pending.docs].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+    const pristineSeed = M.canonical(baseSeed), documentReads = new Map(), providerReads = new Map();
+    const batchId = randomId(), preparedAtMillis = now();
+    function readDocument(path) {
+      if (!documentReads.has(path)) documentReads.set(path, db.doc(path).get());
+      return documentReads.get(path);
     }
-    async function hydrateOccurrence(id) {
-      if (seenJobs.has(id)) return;
-      const job = (await db.doc(`userIssueOutbox/${id}`).get()).data();
-      if (job) return hydrateJob(id, true);
-      const occurrence = (await db.doc(`userIssueOccurrences/${id}`).get()).data();
-      if (!occurrence) M.fail("tracker_occurrence_unavailable");
-      await seedStore.hydrate(seed, "instances", id);
-      occurrences.push({ ...occurrence, id }); seenJobs.add(id);
-      if (occurrence.issueId && !seenIssues.has(occurrence.issueId)) {
-        const issue = (await db.doc(`userIssues/${occurrence.issueId}`).get()).data();
-        if (issue) { issues.push({ ...issue, id: occurrence.issueId }); seenIssues.add(occurrence.issueId); }
-      }
+    function readProvider(id) {
+      if (!providerReads.has(id)) providerReads.set(id, db.collection("userIssueOutbox").where("providerId", "==", id).limit(2).get());
+      return providerReads.get(id);
     }
-    for (const row of pending.docs) {
-      const queued = row.data();
-      if (queued.source === "outlook") { messages.push(queued.message); continue; }
-      if (queued.source === "occurrence") { await hydrateOccurrence(queued.sourceId); continue; }
-      if (queued.source !== "outbox") M.fail("tracker_unknown_source");
-      await hydrateJob(queued.sourceId);
-    }
-    for (const message of messages) {
-      const originalId = message.originalId || message.id;
-      const aliases = [...new Set([originalId, message.immutableId, ...(message.aliases || [])].filter(Boolean))];
-      const canonicalIds = new Set([originalId, ...aliases.map(alias => seed.emailAliases?.[M.digest([message.mailbox.toLowerCase(), alias])]).filter(Boolean)]);
-      if (message.aliasReconciliation) for (const id of message.aliasReconciliation.retainedIds) canonicalIds.add(id);
-      for (const alias of aliases) {
-        const groupKey = seed.emailCanonicalAliases?.[M.digest([message.mailbox.toLowerCase(), alias])];
-        const group = groupKey && seed.emailCanonicalItems?.[groupKey];
-        if (group) for (const id of group.retainedIds) canonicalIds.add(id);
-      }
-      for (const id of canonicalIds) {
-        await seedStore.hydrate(seed, "emails", id);
-        const eventRef = seed.rows?.emails?.[id]?.eventRef;
-        if (eventRef) await hydrateJob(eventRef, true);
-      }
-      // Only internal, separately verified correlations may carry exactJoin.
-      // The public mail adapter rejects this field; no subject/time inference.
-      const join = message.exactJoin;
-      if (join?.type === "occurrenceId") await hydrateJob(join.value, true);
-      else if (join?.type === "outboxId") await hydrateJob(seed.outboxOccurrences?.[join.value] || join.value, true);
-      else if (join?.type === "providerId") {
-        let id = seed.providerOccurrences?.[join.value];
-        if (!id) {
-          const found = await db.collection("userIssueOutbox").where("providerId", "==", join.value).limit(2).get();
-          if (found.size !== 1 || found.docs[0].data().type !== "incident") M.fail("tracker_ambiguous_join");
-          id = found.docs[0].id;
+    const candidateSeedStore = createSeedStore({ doc: path => ({ get: () => readDocument(path) }) });
+    async function candidate(selected) {
+      // A rejected larger candidate must not carry row hydration, aliases,
+      // counters or allocations into a smaller one. Reuse immutable reads only.
+      const seed = JSON.parse(pristineSeed);
+      const outbox = [], occurrences = [], issues = [], messages = [], seenIssues = new Set(), seenJobs = new Set();
+      async function hydrateJob(id, requireIncident = false) {
+        if (!SAFE_ID.test(id || "")) M.fail("tracker_invalid_join");
+        if (seenJobs.has(id)) {
+          if (requireIncident && outbox.find(job => job.id === id)?.type !== "incident") M.fail("tracker_invalid_join");
+          return;
         }
-        await hydrateJob(id, true);
+        const job = (await readDocument(`userIssueOutbox/${id}`)).data();
+        if (!job) M.fail("tracker_source_unavailable");
+        if (requireIncident && job.type !== "incident") M.fail("tracker_invalid_join");
+        outbox.push({ ...job, id }); seenJobs.add(id);
+        if (job.type === "incident") {
+          await candidateSeedStore.hydrate(seed, "instances", id);
+          const occurrence = (await readDocument(`userIssueOccurrences/${id}`)).data();
+          if (!occurrence) M.fail("tracker_occurrence_unavailable");
+          occurrences.push({ ...occurrence, id });
+        } else if (job.type === "daily" || job.type === "status") await candidateSeedStore.hydrate(seed, "dailyRows", id);
+        if (job.issueId && !seenIssues.has(job.issueId)) {
+          const issue = (await readDocument(`userIssues/${job.issueId}`)).data();
+          if (!issue) M.fail("tracker_issue_unavailable");
+          issues.push({ ...issue, id: job.issueId }); seenIssues.add(job.issueId);
+        }
+      }
+      async function hydrateOccurrence(id) {
+        if (seenJobs.has(id)) return;
+        const job = (await readDocument(`userIssueOutbox/${id}`)).data();
+        if (job) return hydrateJob(id, true);
+        const occurrence = (await readDocument(`userIssueOccurrences/${id}`)).data();
+        if (!occurrence) M.fail("tracker_occurrence_unavailable");
+        await candidateSeedStore.hydrate(seed, "instances", id);
+        occurrences.push({ ...occurrence, id }); seenJobs.add(id);
+        if (occurrence.issueId && !seenIssues.has(occurrence.issueId)) {
+          const issue = (await readDocument(`userIssues/${occurrence.issueId}`)).data();
+          if (issue) { issues.push({ ...issue, id: occurrence.issueId }); seenIssues.add(occurrence.issueId); }
+        }
+      }
+      for (const row of selected) {
+        const queued = row.data();
+        if (queued.source === "outlook") { messages.push(queued.message); continue; }
+        if (queued.source === "occurrence") { await hydrateOccurrence(queued.sourceId); continue; }
+        if (queued.source !== "outbox") M.fail("tracker_unknown_source");
+        await hydrateJob(queued.sourceId);
+      }
+      for (const message of messages) {
+        const originalId = message.originalId || message.id;
+        const aliases = [...new Set([originalId, message.immutableId, ...(message.aliases || [])].filter(Boolean))];
+        const canonicalIds = new Set([originalId, ...aliases.map(alias => seed.emailAliases?.[M.digest([message.mailbox.toLowerCase(), alias])]).filter(Boolean)]);
+        if (message.aliasReconciliation) for (const id of message.aliasReconciliation.retainedIds) canonicalIds.add(id);
+        for (const alias of aliases) {
+          const groupKey = seed.emailCanonicalAliases?.[M.digest([message.mailbox.toLowerCase(), alias])];
+          const group = groupKey && seed.emailCanonicalItems?.[groupKey];
+          if (group) for (const id of group.retainedIds) canonicalIds.add(id);
+        }
+        for (const id of canonicalIds) {
+          await candidateSeedStore.hydrate(seed, "emails", id);
+          const eventRef = seed.rows?.emails?.[id]?.eventRef;
+          if (eventRef) await hydrateJob(eventRef, true);
+        }
+        // Only internal, separately verified correlations may carry exactJoin.
+        // The public mail adapter rejects this field; no subject/time inference.
+        const join = message.exactJoin;
+        if (join?.type === "occurrenceId") await hydrateJob(join.value, true);
+        else if (join?.type === "outboxId") await hydrateJob(seed.outboxOccurrences?.[join.value] || join.value, true);
+        else if (join?.type === "providerId") {
+          let id = seed.providerOccurrences?.[join.value];
+          if (!id) {
+            const found = await readProvider(join.value);
+            if (found.size !== 1 || found.docs[0].data().type !== "incident") M.fail("tracker_ambiguous_join");
+            id = found.docs[0].id;
+          }
+          await hydrateJob(id, true);
+        }
+      }
+      const { changes, nextSeed } = await normalize({ outbox, occurrences, issues, messages, seed });
+      if (!nextSeed) M.fail("tracker_missing_next_seed");
+      const expectedCounts = Object.fromEntries(M.GROUPS.map(group => [group, seed.counts[group] + changes[group].filter(row => row.expectedMachineSha256 === null).length]));
+      nextSeed.counts = expectedCounts;
+      const { metadata, changedRows } = splitSeed(nextSeed, seed);
+      if (size(metadata) > MAX_DOCUMENT_BYTES || changedRows.length > 150 || changedRows.some(row => size(row) > MAX_DOCUMENT_BYTES)) M.fail("tracker_seed_capacity");
+      const payload = M.sealBatch({ batchId, workbookKey: claimed.workbookKey, expectedRevision: claimed.revision, generatedAt: new Date(preparedAtMillis).toISOString(), changes });
+      const batch = { payload, nextSeedMetadata: metadata, seedRowIds: changedRows.map(row => row.id), selected: selected.map(row => ({ id: row.id, version: row.data().version, desiredHash: row.data().desiredHash })),
+        state: "prepared", preparedAtMillis, attempts: 0 };
+      if (size(batch) > MAX_DOCUMENT_BYTES || size(batch) + changedRows.reduce((total, row) => total + size(row), 0) > 6000000) M.fail("tracker_batch_capacity");
+      return { batch, changedRows };
+    }
+    let batch, changedRows;
+    // At most six pure candidates for the existing 40-ticket bound. Only size
+    // guards permit shrinking; missing evidence, identity conflicts and any
+    // other normalization failure retain the whole pending queue for review.
+    for (let count = selectedDocs.length; ; count = Math.max(1, Math.floor(count / 2))) {
+      try { ({ batch, changedRows } = await candidate(selectedDocs.slice(0, count))); break; }
+      catch (error) {
+        if (count === 1 || !["tracker_seed_capacity", "tracker_batch_capacity"].includes(error?.code)) throw error;
       }
     }
-    const { changes, nextSeed } = await normalize({ outbox, occurrences, issues, messages, seed });
-    if (!nextSeed) M.fail("tracker_missing_next_seed");
-    const expectedCounts = Object.fromEntries(M.GROUPS.map(group => [group, seed.counts[group] + changes[group].filter(row => row.expectedMachineSha256 === null).length]));
-    nextSeed.counts = expectedCounts;
-    const { metadata, changedRows } = splitSeed(nextSeed, seed);
-    if (size(metadata) > MAX_DOCUMENT_BYTES || changedRows.length > 150 || changedRows.some(row => size(row) > MAX_DOCUMENT_BYTES)) M.fail("tracker_seed_capacity");
-    const batchId = randomId();
-    const payload = M.sealBatch({ batchId, workbookKey: claimed.workbookKey, expectedRevision: claimed.revision, generatedAt: new Date(now()).toISOString(), changes });
-    const batch = { payload, nextSeedMetadata: metadata, seedRowIds: changedRows.map(row => row.id), selected: pending.docs.map(row => ({ id: row.id, version: row.data().version, desiredHash: row.data().desiredHash })),
-      state: "prepared", preparedAtMillis: now(), attempts: 0 };
-    if (size(batch) > MAX_DOCUMENT_BYTES || size(batch) + changedRows.reduce((total, row) => total + size(row), 0) > 6000000) M.fail("tracker_batch_capacity");
     await db.runTransaction(async tx => {
       const state = (await tx.get(writerRef)).data();
       if (state?.leaseId !== claimed.leaseId || state.activeBatchId || state.revision !== claimed.revision) M.fail("tracker_lease_lost");

@@ -42,11 +42,15 @@ delegated mailbox reader passed dated pagination and ID replay checks using the
 then-current connector responses. Those observations did not prove authoritative
 Graph ID types or that historical ID forms identify the same physical mailbox
 item. They do not establish Exchange application mailbox RBAC or authorize a
-broader mailbox route. The old hourly Codex updater is **paused by Dylan's request** and
-must remain paused. Capture progress and confirmed workbook publication are
-separate: a pending queue or failed acknowledgement must not be described as a
-fully refreshed workbook. The new mailbox-ID translation connection is not yet
-accepted. The reader's ImmutableId header and corrected inputs were saved through
+broader mailbox route. Event intake and automatic cloud catch-up operate
+independently of this chat, Codex and Dylan's computer. Capture progress and
+confirmed workbook publication are separate: a pending queue or failed
+acknowledgement must not be described as a fully refreshed workbook. The new
+mailbox-ID translation connection has passed separate read-only semantic
+acceptance. Its version-six source is verified, while additive identity settings
+and retained-alias publication are still pending; see the
+[current checkpoint](../../deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json).
+The reader's ImmutableId header and corrected inputs were saved through
 code view; the actual export passed exact runtime-definition review and the flow
 is On. This does not establish canonical ID conversion or alias equivalence.
 Retain unconfirmed aliases and every historical row. Read the

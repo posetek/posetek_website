@@ -20,9 +20,16 @@ revision-121 results below do not establish the latest source coverage.
 Dylan alone receives alerts; Nolan and Taiyo retain shared workbook editing.
 Native Crashlytics export is configured On for the registered iOS app, but the
 owning-Mac/iPhone/TestFlight genuine crash acceptance gate remains held. Approval
-of the new Microsoft mailbox identity-conversion connection remains unconfirmed.
-The hourly Codex updater stays paused. No automatic outreach or historical Resend
-replay is included.
+of the new Microsoft mailbox identity-conversion connection passed its separate
+read-only acceptance; the version-six tracker source is verified, while the
+identity settings cutover and retained-alias publication remain pending. The
+[current verification checkpoint](deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
+records revision 266 and the capacity repair awaiting deployment and physical
+cloud workbook verification. It does not claim a fully refreshed tracker.
+Power Automate event intake and automatic cloud recovery operate independently
+of this chat. Codex and Dylan's computer are not required for ongoing capture,
+email delivery or shared-workbook updates. No automatic outreach or historical
+Resend replay is included.
 
 Guided personal workouts were published as deployment `6abeaf5702a9c9983c7a41b9`, source
 `8956871`, published October 1, 2026 at 12:18:33 PM PDT. Players choose focus,
@@ -61,8 +68,8 @@ keeps actor and target athlete separate and preserves stable IDs, evidence and t
 team's triage notes.
 
 The Power Automate shared tracker is event driven, with an accepted Dylan-only
-delegated mailbox reader and independent cloud source catch-up. The old hourly
-Codex automation remains **paused**. Fresh cloud evidence matched revision 87 to
+delegated mailbox reader and independent cloud source catch-up. Fresh cloud
+evidence matched revision 87 to
 the exact frozen batch, allowing its existing receipt to be acknowledged without
 an Excel rewrite; the first ordinary retry returned revision 88. All eleven
 approved recent amendments delivered to Dylan alone with their original payloads

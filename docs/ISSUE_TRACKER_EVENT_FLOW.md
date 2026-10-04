@@ -1,22 +1,29 @@
 # Event-driven issue tracker activation
 
-Current contract: **event-driven shared master; Dylan-only notifications**. See
-[the coverage correction](NOTIFICATION_COVERAGE_CORRECTION.md) and
-[its production receipt](../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
-for the latest publication revision, separate source cutoffs and scoped release
-checks. User-issue version 8 and tracker version 5 preserve the existing workbook
+Current contract: **event-driven shared master; Dylan-only notifications**. The
+[latest verification checkpoint](../deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
+records the verified version-six tracker source and unfinished settings and
+publication gates. The [coverage correction](NOTIFICATION_COVERAGE_CORRECTION.md)
+and [its production receipt](../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
+retain the preceding release and source cutoffs. User-issue version 8 and tracker version 6 preserve the existing workbook
 schema and human fields. Compatible request observations retain both sources;
 conflicting known operations or authorized targets remain distinct. Generic
 diagnostics and automated service failures do not identify an operator by
 themselves. Counts of actions, instances and original email rows are not counts of
-unique users. Historical mailbox aliases stay intact while the new Microsoft
-identity-conversion approval remains unconfirmed.
+unique users. The dedicated Microsoft identity-conversion flow passed read-only
+semantic acceptance; historical aliases stay intact until the separately guarded
+settings cutover and native publication pass. Revision 266 has queued updates
+blocked by the batch document size cap. A tested adaptive candidate is prepared;
+deployment and fresh physical cloud readback remain pending.
 
 New issue,
 status, daily-summary and workout emails target only `dylank@posetek.net`; both
 PoseTek Google Cloud notification policies were separately verified with Dylan
 alone. Nolan and Taiyo keep editing access to the existing shared workbook.
-The hourly Codex automation remains **PAUSED**.
+Power Automate arrivals and backend events drive the cloud pipeline; automatic
+cloud recovery catches missed or delayed work. Ongoing capture, delivery and
+shared-workbook updates run independently of this chat, Codex and Dylan's
+computer. The native cloud writer is the sole publisher of the existing master.
 
 ## Historical October 2 refinement and revision-121 acceptance
 
@@ -362,7 +369,8 @@ Earlier browser upload attempts rejected file selection; Dylan subsequently
 uploaded the packages manually, and the sender and cloud-mail intake were
 installed. New production alerts select Microsoft; historical Resend evidence is
 retained. Current email-flow restoration requires fresh evidence in the refinement
-receipt. The hourly workbook publisher stays paused by user request.
+receipt. Ongoing intake and recovery run automatically in the cloud,
+independently of this chat and the desktop computer.
 Keep caller credentials and the bounded mailbox-ingress secret in Secret Manager,
 and keep Power Automate action inputs/outputs secure. No credential belongs in
 the workbook, flow screenshots, repository or this document.
@@ -374,7 +382,7 @@ The master is already native and seeded. Current recovery must reconcile the
 existing revision and exact frozen batch; never repeat bootstrap or overwrite it
 with an old local candidate.
 
-1. Obtain a fresh cloud workbook and reconcile any new hourly candidate. The
+1. Obtain a fresh cloud workbook and reconcile any existing candidate. The
    earlier b49ac4d/5e209015 discrepancy was resolved: the confirmed master now
    contains 23 actions, 598 instances and 128 emails, SHA-256
    `c9bf937b4cd1507d9f376bc861d0cb3779443b6a522e190ac48fb79c68f69d19`, with
@@ -419,8 +427,8 @@ with an old local candidate.
    ledger/read coverage available for gap recovery, but do not resume the old
    whole-file writer against a bootstrapped workbook without reviewed rollback.
 6. Confirm actual workbook receipts for both intake paths and meaningful delivery
-   updates before declaring the replacement live. Keep the user-requested hourly
-   pause in place; retain an explicit source-recovery procedure and do not restart
+   updates before declaring the replacement live. Retain the cloud
+   source-recovery procedure and do not restart
    the old scheduler automatically.
 
 Excel does not provide a cross-cell transaction or an exclusive coauthor lock.

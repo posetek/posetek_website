@@ -29,11 +29,18 @@ not unique-user counts, and generic diagnostic uploads do not prove a crash or
 interrupted workout.
 
 Dylan remains the sole alert recipient; Nolan and Taiyo retain editing access to
-the shared tracker. The hourly Codex updater stays paused. Crashlytics Cloud
+the shared tracker. Power Automate event intake and automatic cloud recovery
+update it independently of this chat; Codex and Dylan's computer are not required
+for ongoing capture, email delivery or workbook updates. Crashlytics Cloud
 Logging export is On for the one registered iOS app, but genuine symbolicated
 device export and owning-Mac/iPhone/TestFlight acceptance remain held. The new
-Microsoft mailbox identity-conversion connection approval is unconfirmed; retain
-all historical email rows and unconfirmed aliases. No automatic outreach,
+Microsoft mailbox identity-conversion flow passed read-only semantic acceptance,
+and all six tracker endpoints passed exact version-six source/configuration/IAM
+checks. The additive identity settings transaction remains pending. Revision
+266's next batch exceeds the existing document limit; a reviewed adaptive writer
+candidate awaits deployment and fresh physical cloud verification. Read
+[the current verification checkpoint](deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
+and preserve every historical email row and unconfirmed alias. No automatic outreach,
 historical Resend replay, native release or training-rule change is included.
 Read [the correction handoff](docs/NOTIFICATION_COVERAGE_CORRECTION.md) for current
 contracts and limits; final workbook/source cutoffs come from its production
@@ -98,7 +105,7 @@ independent outstanding-delivery scan. Use the
 [refinement receipt](deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json) for those
 operational outcomes and exact coverage, and
 [the refinement handoff](docs/NOTIFICATION_OUTREACH_REFINEMENT.md) for the contract.
-The hourly Codex updater remains **PAUSED**; native cloud batches are the sole
+The Codex updater has been removed; native cloud batches are the sole
 writer for the shared master. Preserve the historical receipts below as records
 of their earlier verification times.
 
@@ -246,9 +253,9 @@ verified revision eight at `2026-10-02T10:53:58.855Z`, as recorded above. Never 
 the old whole-file renderer or reinitialize this native master. New source coverage
 must come from verified native batch and publication receipts.
 
-At Dylan's explicit request, `update-posetek-issue-tracker` remains **PAUSED**.
-Do not restart the old hourly procedure or scheduler; earlier instructions to keep
-it active are superseded. The production email route uses Microsoft for new
+At Dylan's explicit request, the old Codex tracker procedure was removed.
+Power Automate and the existing backend provide ongoing cloud operation;
+earlier instructions to run a desktop updater are superseded. The production email route uses Microsoft for new
 alerts, and the replacement tracker is active with independent revision-eight
 publication verified. Catch-up continues from each source's verified publication
 cutoff; complete publication is not claimed. Never run both workbook writers

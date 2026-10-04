@@ -1,5 +1,12 @@
 # Notification coverage correction — October 2–3, 2026
 
+This document records the preceding correction release. The later
+[cloud automation checkpoint](../deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
+confirms version-six tracker source and read-only identity-flow acceptance,
+while identifying the remaining capacity repair, settings cutover and physical
+workbook publication gates. The former Codex updater has been removed; ongoing
+operation belongs to Power Automate and the existing cloud backend.
+
 The website now assigns a fresh diagnostic reference to each supported social
 request. Backend correlation retains compatible client/server observations and
 separates reused references with conflicting operations or known targets. The
@@ -24,9 +31,10 @@ source-001 draft was not promoted; its private evidence is retained.
 Dylan remains the sole recipient of new issue, status, daily, workout and both
 independent PoseTek Google Cloud notices. Nolan and Taiyo retain editing access to
 the shared master at **PoseTek > Technology > Website > User Issue Tracker >
-PoseTek Issue Tracker.xlsx**. Dylan handles outreach manually. The hourly Codex
-updater remains **PAUSED**. No additional purchase, automatic user outreach or
-historical Resend replay is part of this correction.
+PoseTek Issue Tracker.xlsx**. Dylan handles outreach manually. Power Automate
+event intake and automatic cloud catch-up update the tracker independently of
+this chat, Codex and Dylan's computer. No additional purchase, automatic user
+outreach or historical Resend replay is part of this correction.
 
 ## Recorded attempts and identity
 
@@ -75,10 +83,39 @@ operational evidence until their exact flow relationship is confirmed.
 Message-to-incident joins require verified backend Internet-Message-ID, exact
 sender and subject, the effective recipient envelope and matching occurrence
 evidence. Historical mailbox aliases and original rows remain preserved. The
-new Microsoft identity-conversion connection approval is still pending or
-unconfirmed at this handoff. Similar subjects or free text cannot establish
-message identity; do not collapse unconfirmed aliases or claim unique-message
-totals. The correction receipt records any later verified approval separately.
+dated correction receipt retains its earlier unconfirmed Microsoft
+identity-conversion state. The new native Graph flow has since passed read-only
+semantic acceptance. This verifies the tested connection and conversions at
+their recorded checkpoint; the follow-up source deployment, additive identity
+settings and shared-workbook publication require separate receipts. Similar
+subjects or free text cannot establish message identity; do not collapse
+unconfirmed aliases or claim unique-message totals. See
+[the identity handoff](OUTLOOK_IDENTITY_RECONCILIATION.md) for the cutover gates.
+
+The scoped mailbox-identity candidate uses two different supported Exchange ID
+types, exact conversion responses and immutable roundtrip closure. A format
+prefix, requested header, echoed GET ID or Internet-Message-ID alone is not an
+identity proof. Required failures stop the entire page before its capture cursor
+advances. Backend activation and final cloud acceptance require their separate
+production receipts; saved native-flow acceptance alone does not activate capture.
+
+When enabled, server-owned capture repairs a seeded alias conflict only after
+bounded candidate discovery and exact item-ID/full-content verification. Original
+email and action rows, IDs, source links and human notes remain. The existing
+historical pass examines at most 40 tickets, with 20 candidates plus a truncation
+sentinel, at most 40 unique canonical reads, three concurrent reads and a shared
+60-second budget. It reuses archived pending or published group proofs and advances
+no capture/publication checkpoint itself. Recovery can take multiple passes;
+queueing a repair is not verified Excel publication. An already frozen group
+cannot silently gain another seeded member. Unavailable identity evidence or such
+a conflict requires review rather than inferred merging or deletion.
+
+Run the focused regression at
+`node --test functions/issue-tracker-mail-alias-capture.test.js`, together with the
+Graph reader, identity, mail-read proxy, source-capture, bridge, normalization and
+transport suites. Tests cover arrival and collection conflicts, three/four-member
+groups, distinct physical copies with the same Internet-Message-ID, proof races,
+full-content changes, bounded retries and retained source checkpoints.
 
 Generic diagnostics and unclean exits are not confirmed crashes, memory exhaustion
 or interrupted workouts. Classification follows the actual artifact subtype and
@@ -112,8 +149,10 @@ release evidence.
 
 ## Scoped releases and remaining gates
 
-Exact deployed source, configuration, IAM and unrelated-resource checks passed
-for ten user-issue functions at version 8 and six tracker functions at version 5.
+The preceding coverage correction passed exact deployed source, configuration,
+IAM and unrelated-resource checks for ten user-issue functions at version 8 and
+six tracker functions at version 5. The new mailbox-identity source release and
+activation have their own gates; the versions below do not prove that cutover.
 The fourteen social endpoints retain their individual prior runtime settings and
 exact helper implementations beneath the new observation wrapper. Their verified
 versions are:
@@ -140,6 +179,19 @@ The social package candidate digest is
 Existing Microsoft send-once and Dylan-only recipient safeguards remain in place.
 Do not infer a new runtime or permission change from an application build.
 
+The mailbox follow-up preserves the existing master and every saved action's
+Status, Owner, Due and Fix notes. Its source release is restricted to the six
+tracker endpoints, with one pinned secret added to the two mailbox endpoints.
+The identity settings transaction changes only the approved identity fields and
+Outlook binding. Existing capture/publication checkpoints, source windows,
+frozen payloads, native row IDs, sender controls and consumed send claims remain.
+Source capture continues during a temporary writer-queue hold. Publication lag
+can be repaired only from complete source-window and native-ticket receipts plus
+a fresh physical cloud proof. It cannot be cleared from a successful flow badge
+or by resetting a cursor. A fresh snapshot, current publication, physical cloud
+readback and saved-human-field proof are required again before activation; an
+intervening scheduled capture makes the exact-state comparison refuse the change.
+
 The finalization query requires a `COLLECTION_GROUP` ascending index on
 `projectionDirty.pending`. Exact live readiness, the actual query and genuine
 scheduled finalization acceptance belong in the correction receipt. Repairing
@@ -157,6 +209,15 @@ from the legacy Crashlytics target-player `user.id`. Verify dSYMs, an identified
 test-device crash without a debugger, relaunch, symbolicated export, exact backend
 occurrence, Dylan-only delivery and matching published Excel evidence before
 claiming native acceptance. No native/training gate, plan or rule is cleared here.
+
+Coach and manager permissions are unchanged. Those website pages benefit from
+the shared callable instrumentation where used, but handled direct Firestore
+reads can display team or athlete loading errors without creating an automatic
+incident. The fourteen social request wrappers are not evidence of complete
+coach-workflow coverage. Genuine coach cases must retain the authenticated
+staff account separately from the target athlete and verify the attempted action,
+current outreach contact, Dylan-only delivery and matching published workbook
+record. Existing permission and cancellation rules still apply.
 
 Client checks passed full TypeScript and 122 application test files / 1,419 tests.
 The focused backend and tracker suite passed **141 tests**, including eight new
@@ -179,9 +240,10 @@ checkpoints in [the refinement handoff](NOTIFICATION_OUTREACH_REFINEMENT.md).
 They do not establish current coverage. Never replace or reseed the native master.
 
 Cloud connections and the licensed Power Automate owner must remain available;
-Dylan's computer need not remain on for the cloud pipeline. Capture, publication,
-send acceptance and recipient delivery are separate states. Pre-load failures,
-blocked requests, uninstrumented handled errors, missing/delayed/dropped native
+the cloud pipeline needs no running Codex chat or desktop computer. Capture,
+publication, send acceptance and recipient delivery are separate states.
+Pre-load failures, blocked requests, uninstrumented handled errors,
+missing/delayed/dropped native
 exports, storage clearing, full queues and later arrivals outside a verified
 interval can escape capture. No all-users, all-experiences, all-crashes or read-mail
 guarantee is appropriate.

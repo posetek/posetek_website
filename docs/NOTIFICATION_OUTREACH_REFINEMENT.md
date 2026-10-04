@@ -51,7 +51,7 @@ The native writer adds a labeled current-contact annotation to the existing
 player ID remain separate columns. Historical wording, source links, row IDs and
 Action IDs stay unchanged. The writer preserves saved Status, Owner, Due and Fix
 notes by Action ID even after sorting. Never replace the master with a downloaded
-copy, run the paused hourly renderer, reseed or initialize native sync again.
+copy, run the retired whole-file renderer, reseed or initialize native sync again.
 
 Outlook joins require a unique backend Internet-Message-ID confirmed by Exchange,
 exact sender, full subject, frozen effective recipient set, and the same-ID backend
@@ -120,17 +120,17 @@ fixed October 2 cutoff at 4:28 PM PDT: Outlook through
 queue resumed **RUNNING**, verified at 23:36 UTC with unchanged configuration.
 This confirms source catch-up through those checkpoints. Later arrivals and the
 independent outstanding-delivery scan require their own completeness evidence.
-The hourly Codex automation remains **PAUSED**. Consult the production receipt
+The former Codex tracker automation has since been removed. Consult the production receipt
 for exact coverage rather than inferring it from row counts or delivery.
 
 ## Operation and limits
 
 The original sender, Outlook/Excel connections, tenant service-principal restriction,
-claim-once safeguards, native script and workbook schema are preserved. The old
-hourly Codex automation stays paused. Event intake and five-minute full-source
-catch-up continue in the cloud, with fixed UTC upper bounds, pagination and a
-30-minute overlap; fifteen-minute recovery handles outstanding work. Source
-capture, writer publication, send acceptance and recipient delivery are different
+claim-once safeguards, native script and workbook schema are preserved. Event
+intake and five-minute full-source catch-up continue automatically in the cloud,
+independently of this chat, Codex and Dylan's computer, with fixed UTC upper bounds,
+pagination and a 30-minute overlap; fifteen-minute recovery handles outstanding
+work. Source capture, writer publication, send acceptance and recipient delivery are different
 states. Do not claim complete coverage or delivery from a flow badge or silent
 alerts. A resolved action requires verified remedy/retest evidence; recurrence is
 retained and flagged.

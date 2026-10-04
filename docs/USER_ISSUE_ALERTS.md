@@ -27,8 +27,9 @@ notifications to their underlying incident and retains proposed fixes. Team edit
 to Status, Owner, Due and Fix notes must be preserved on refresh. A repeated alert
 is evidence of recurrence, not automatically another distinct affected user.
 
-The old hourly Codex updater remains paused. Cloud connections and Dylan's
-licensed Power Automate account must remain available; his computer can be off.
+Power Automate event intake and automatic cloud recovery operate independently
+of this chat and Codex. Cloud connections and Dylan's licensed Power Automate
+account must remain available; his computer can be off.
 The native writer preserves human fields by stable Action ID and rejects changed
 machine rows or revisions. Save edits and allow them to reach the cloud. A lock or
 conflict defers publication. Capture and publication have separate checkpoints;

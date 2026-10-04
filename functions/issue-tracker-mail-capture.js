@@ -5,6 +5,12 @@ const { createEvidenceArchive } = require("./issue-tracker-evidence");
 const { mailReadBinding } = require("./issue-tracker-mail-read-proxy");
 const Microsoft = require("./microsoft-email-model");
 const Identity = require("./issue-tracker-mail-identity");
+const { mailIdentityBinding } = require("./issue-tracker-mail-identity-proxy");
+const { rowDocumentId } = require("./issue-tracker-bridge-seed");
+const ALIAS_BUDGET_MS = 60000, ALIAS_CONCURRENCY = 3, MAX_ALIAS_CANDIDATES = 20, MAX_ALIAS_LOOKUPS = 40;
+const CONTENT_FIELDS = ["internetMessageId", "receivedDateTime", "sentDateTime", "subject", "from", "sender", "body", "bodyPreview", "internetMessageHeaders", "toRecipients", "ccRecipients", "bccRecipients"];
+const contentSnapshot = mail => Object.fromEntries(CONTENT_FIELDS.map(key => [key, mail[key] ?? null]));
+const sameContent = (a, b) => digest(contentSnapshot(a)) === digest(contentSnapshot(b));
 
 function receivedRecipients(mail) {
   if (Array.isArray(mail.toRecipients)) {
@@ -48,6 +54,135 @@ function relevance(mail) {
 }
 
 function createMailCapture({ db, bridge, graph, archive = createEvidenceArchive(db), now = Date.now }) {
+  function context() {
+    const started = now(), controller = new AbortController(), cache = new Map();
+    const timer = setTimeout(() => controller.abort(), ALIAS_BUDGET_MS); timer.unref?.();
+    const check = () => { if (controller.signal.aborted || now() - started >= ALIAS_BUDGET_MS) fail("tracker_mail_alias_budget_exceeded"); };
+    return { signal: controller.signal, cache, groups: new Map(), queries: new Map(), lookups: 0, check, close: () => clearTimeout(timer), async read(fn) {
+      check(); let abort;
+      const interrupted = new Promise((_, reject) => { abort = () => reject(Object.assign(new Error("tracker_mail_alias_budget_exceeded"), { code: "tracker_mail_alias_budget_exceeded" })); controller.signal.addEventListener("abort", abort, { once: true }); });
+      try { const result = await Promise.race([Promise.resolve().then(fn), interrupted]); check(); return result; }
+      finally { controller.signal.removeEventListener("abort", abort); }
+    } };
+  }
+  async function aliasSettings(work) {
+    work.settings ||= await work.read(async () => (await db.doc("issueTrackerSettings/current").get()).data()) || {};
+    return work.settings;
+  }
+  async function aliasSeed(work) {
+    work.seed ||= await work.read(async () => (await db.doc("issueTrackerState/seed").get()).data()) || {};
+    if (work.seed.mailbox && work.seed.mailbox !== MAILBOX) fail("tracker_wrong_mailbox");
+    return work.seed;
+  }
+  async function seededRows(ids, work) {
+    const seed = await aliasSeed(work), matches = [...new Set(ids.map(id => seed.emailAliases?.[digest([MAILBOX, id])]).filter(Boolean))];
+    if (matches.length > MAX_ALIAS_CANDIDATES) fail("tracker_mail_alias_candidates_exceeded");
+    const rows = [];
+    for (const id of matches) {
+      const row = await work.read(async () => (await db.doc(`issueTrackerRows/${rowDocumentId("emails", id)}`).get()).data());
+      if (!row || row.group !== "emails" || row.key !== id || !row.value?.rowId) fail("tracker_invalid_seed_row");
+      rows.push({ id, row: row.value });
+    }
+    return rows.sort((a, b) => Number(a.row.rowId.replace(/^EM-/, "")) - Number(b.row.rowId.replace(/^EM-/, "")) || a.id.localeCompare(b.id));
+  }
+  async function canonical(id, work) {
+    if (!work.cache.has(id)) {
+      if (typeof graph.canonicalMessage !== "function") fail("tracker_mail_identity_unverified");
+      if (++work.lookups > MAX_ALIAS_LOOKUPS) fail("tracker_mail_alias_lookups_exceeded");
+      work.cache.set(id, work.read(() => graph.canonicalMessage(id, { signal: work.signal })));
+    }
+    return work.cache.get(id);
+  }
+  async function savedRepair(mail, work) {
+    const seed = await aliasSeed(work), group = seed.emailCanonicalItems?.[digest([MAILBOX, mail.id])];
+    if (group) return { schemaVersion: 1, ...group };
+    const queued = await work.read(async () => (await db.doc(`issueTrackerQueue/mail-${digest([MAILBOX, mail.id])}`).get()).data());
+    return queued?.message?.aliasReconciliation || null;
+  }
+  async function verifiedRepair(repair, mail, work) {
+    const message = { immutableId: mail.id, originalId: mail.id, itemIdentity: mail.itemIdentity, aliases: repair?.retainedIds || [] };
+    if (!Identity.validReconciliation(repair, message)) fail("tracker_alias_group_unverified");
+    const evidence = await work.read(async () => (await db.doc(`issueTrackerEvidence/${repair.evidenceRef}`).get()).data());
+    if (evidence?.complete !== true || evidence.source !== "outlook_alias_verification" || evidence.sourceId !== `${MAILBOX}/${mail.id}` || evidence.sha256 !== repair.proofSha256) fail("tracker_alias_group_unverified");
+    return repair;
+  }
+  async function candidates(internetMessageId, work) {
+    if (!internetMessageId || internetMessageId.length > 1000) return [];
+    if (!work.queries.has(internetMessageId)) {
+      const page = await work.read(() => db.collection("issueTrackerQueue").where("message.internetMessageId", "==", internetMessageId).limit(MAX_ALIAS_CANDIDATES + 1).get());
+      // Internet-ID discovers candidates only; every retained member is later
+      // proven through its exact item-ID mapping and full immutable content.
+      if (page.size > MAX_ALIAS_CANDIDATES) fail("tracker_mail_alias_candidates_exceeded");
+      const ids = page.docs.map(doc => doc.data()).filter(value => value.source === "outlook" && value.message?.mailbox === MAILBOX)
+        .flatMap(value => [value.message.originalId || value.message.id, value.message.immutableId, ...(value.message.aliases || [])]).filter(Boolean);
+      work.queries.set(internetMessageId, [...new Set(ids)]);
+    }
+    return work.queries.get(internetMessageId);
+  }
+  async function automaticRepair(mail, work, candidateIds = []) {
+    if (!Identity.validItemIdentity(mail.itemIdentity, mail.id)) return null;
+    const settings = await aliasSettings(work);
+    if (settings.enabled !== true || !mailIdentityBinding(settings)) return null;
+    const known = [mail.itemIdentity.sourceId, mail.id], prior = await savedRepair(mail, work);
+    let rows = await seededRows([...known, ...candidateIds, ...(prior?.retainedIds || [])], work);
+    if (prior) {
+      await verifiedRepair(prior, mail, work);
+      for (const item of rows.filter(item => !prior.retainedIds.includes(item.id))) {
+        if (known.some(id => (work.seed.emailAliases || {})[digest([MAILBOX, id])] === item.id)) fail("tracker_alias_group_changed");
+        const current = await canonical(item.id, work);
+        if (!Identity.validItemIdentity(current.itemIdentity, current.id) || current.itemIdentity.sourceId !== item.id) fail("tracker_mail_identity_unverified");
+        if (current.id === mail.id) fail("tracker_alias_group_changed");
+      }
+      return { repair: prior, primary: rows.find(item => item.id === prior.primaryId), published: Boolean(work.seed.emailCanonicalItems?.[digest([MAILBOX, mail.id])]) };
+    }
+    if (rows.length < 2) return null;
+    // Before freezing a group, enumerate bounded historical candidates even
+    // on a collection/arrival conflict. Freezing just two members while a third
+    // seeded ID already represents this item would make later repair conflict.
+    if (!candidateIds.length) rows = await seededRows([...known, ...await candidates(mail.internetMessageId, work)], work);
+    if (work.groups.has(mail.id)) return work.groups.get(mail.id);
+    const selected = [], originalItems = []; let next = 0, stopped;
+    await Promise.all(Array.from({ length: Math.min(ALIAS_CONCURRENCY, rows.length) }, async () => {
+      while (!stopped && next < rows.length) {
+        const item = rows[next++];
+        try {
+          const current = await canonical(item.id, work);
+          if (!Identity.validItemIdentity(current.itemIdentity, current.id) || current.itemIdentity.sourceId !== item.id) fail("tracker_mail_identity_unverified");
+          if (current.id !== mail.id) {
+            if (known.some(id => (work.seed.emailAliases || {})[digest([MAILBOX, id])] === item.id)) fail("tracker_alias_group_changed");
+            continue; // Same Internet-ID can belong to a distinct physical copy.
+          }
+          if (!sameContent(mail, current)) fail("tracker_alias_group_changed");
+          selected.push({ requestedId: item.id, itemIdentity: current.itemIdentity, mail: { id: current.id, ...contentSnapshot(current) } });
+          originalItems.push({ id: item.id, mail: current.sourceMessage || current });
+        } catch (error) { stopped ||= error; }
+      }
+    }));
+    if (stopped) throw stopped;
+    if (selected.length < 2) { work.groups.set(mail.id, null); return null; }
+    selected.sort((a, b) => a.requestedId.localeCompare(b.requestedId));
+    const proof = Identity.aliasGroupProof(selected), ids = new Set(proof.ids), primary = rows.find(item => ids.has(item.id));
+    // Full original GET snapshots remain private. The group digest uses exact
+    // immutable content, excluding mutable read/folder/link metadata so retries
+    // cannot replace a writer-frozen group solely because someone read an email.
+    for (const item of originalItems) { work.check(); await archive("outlook", `${MAILBOX}/${item.id}`, item.mail); work.check(); }
+    const archived = await archive("outlook_alias_verification", `${MAILBOX}/${proof.canonicalId}`, proof); work.check();
+    const result = { primary, repair: { schemaVersion: 1, canonicalId: proof.canonicalId, primaryId: primary.id, retainedIds: proof.ids, evidenceRef: archived.id, proofSha256: archived.sha256 } };
+    work.groups.set(mail.id, result); return result;
+  }
+  async function refreshRepair(automatic, mail, work) {
+    // A concurrent writer can publish an earlier queued proof while Graph
+    // reads are in flight. Reuse that exact immutable anchor, never enqueue a
+    // competing digest against a newly frozen group.
+    const seed = await work.read(async () => (await db.doc("issueTrackerState/seed").get()).data());
+    const queued = await work.read(async () => (await db.doc(`issueTrackerQueue/mail-${digest([MAILBOX, mail.id])}`).get()).data());
+    const group = seed?.emailCanonicalItems?.[digest([MAILBOX, mail.id])];
+    const anchor = group ? { schemaVersion: 1, ...group } : queued?.message?.aliasReconciliation;
+    if (!anchor) return;
+    await verifiedRepair(anchor, mail, work);
+    if (anchor.canonicalId !== automatic.repair.canonicalId || anchor.primaryId !== automatic.repair.primaryId || digest([...anchor.retainedIds].sort()) !== digest([...automatic.repair.retainedIds].sort())) fail("tracker_alias_group_changed");
+    automatic.repair = anchor;
+  }
   async function findJoin(message) {
     if (!message.internetMessageId || message.internetMessageId.length > 1000 || !message.receivedRecipients?.length || message.from?.toLowerCase() !== "alerts@posetek.net") return null;
     const matches = await db.collection("userIssueOutbox").where("microsoft.internetMessageId", "==", message.internetMessageId).limit(2).get();
@@ -56,12 +191,15 @@ function createMailCapture({ db, bridge, graph, archive = createEvidenceArchive(
     const event = (await db.doc(`userIssueOccurrences/${doc.id}`).get()).data();
     return trustedMailJoin(message, job, event ? { ...event, id: doc.id } : null);
   }
-  async function capture(mail, { aliases = [], schedule = false, aliasReconciliation } = {}) {
+  async function captureInternal(mail, { aliases = [], schedule = false, aliasReconciliation, candidateIds = [] } = {}, work) {
+    work.check();
     if (!mail || typeof mail.id !== "string" || !Number.isFinite(Date.parse(mail.receivedDateTime))) fail("tracker_graph_invalid_message");
     const original = mail.sourceMessage || mail;
     if (typeof graph.canonicalize === "function") mail = await graph.canonicalize(mail);
     const decision = relevance(mail);
     if (!decision.relevant) return { ...decision, ticket: null };
+    const automatic = aliasReconciliation ? null : await automaticRepair(mail, work, candidateIds);
+    if (automatic) { aliasReconciliation = automatic.repair; aliases = [...new Set([...aliases, ...aliasReconciliation.retainedIds])]; }
     const proof = await archive("outlook", `${MAILBOX}/${mail.itemIdentity?.sourceId || mail.id}`, original);
     const body = mail.body.content;
     const excerpt = body.length <= 20000 ? body : body.slice(0, 20000) + "\n[Display excerpt; full message body retained in Outlook and private evidence archive.]";
@@ -93,11 +231,53 @@ function createMailCapture({ db, bridge, graph, archive = createEvidenceArchive(
     };
     const join = await findJoin(message);
     if (join) message.exactJoin = join;
+    if (automatic?.primary) {
+      let old;
+      for (const id of automatic.repair.retainedIds) {
+        const retained = await work.read(async () => (await db.doc(`issueTrackerQueue/mail-${digest([MAILBOX, id])}`).get()).data());
+        if (retained?.message?.exactJoin && (!join || digest(retained.message.exactJoin) !== digest(join))) fail("tracker_mail_join_changed");
+        if (id === automatic.primary.id) old = retained;
+      }
+      // Retain historical labels and original source link; neither is new proof
+      // of an actor, a backend attempt or a canonical item.
+      for (const key of ["category", "functionName", "operation", "affected"]) if (old?.message?.[key] !== undefined) message[key] = old.message[key];
+      if (automatic.primary.row.links?.["Outlook source"]) message.webLink = automatic.primary.row.links["Outlook source"];
+      await refreshRepair(automatic, mail, work);
+      message.aliasReconciliation = automatic.repair;
+    }
+    work.check();
+    if (work.settings && mailIdentityBinding(work.settings)) {
+      const current = await work.read(async () => (await db.doc("issueTrackerSettings/current").get()).data());
+      if (current?.enabled !== true || mailReadBinding(current) !== mailReadBinding(work.settings)) fail("tracker_capture_configuration_changed");
+    }
     const result = await bridge.enqueueMessage(message, { schedule });
-    return { ...decision, ticket: result.ticket, evidenceRef: proof.id };
+    return { ...decision, ticket: result.ticket, queued: result.queued, evidenceRef: proof.id };
+  }
+  async function capture(mail, options) {
+    const work = context();
+    try { return await captureInternal(mail, options, work); } finally { work.close(); }
+  }
+  async function historicalAliases(message, work) {
+    const settings = await aliasSettings(work);
+    if (!mailIdentityBinding(settings) || !message?.internetMessageId || message.internetMessageId.length > 1000) return false;
+    const candidateIds = await candidates(message.internetMessageId, work), rows = await seededRows(candidateIds, work);
+    if (rows.length < 2) return false;
+    const seed = await aliasSeed(work), registered = [...new Set(rows.map(item => seed.emailCanonicalAliases?.[digest([MAILBOX, item.id])]).filter(Boolean))];
+    if (registered.length === 1 && rows.every(item => seed.emailCanonicalItems?.[registered[0]]?.retainedIds.includes(item.id))) return false;
+    const current = await canonical(message.immutableId || message.originalId || message.id, work);
+    const repair = await automaticRepair(current, work, candidateIds);
+    if (!repair || repair.published) return false;
+    const result = await captureInternal(current, { candidateIds }, work);
+    return result.queued !== false;
   }
   return {
     capture,
+    async capturePage(records) {
+      if (!Array.isArray(records) || records.length > 50) fail("tracker_capture_invalid_page");
+      const work = context(), results = [];
+      try { for (const record of records) results.push(await captureInternal(record, {}, work)); return results; }
+      finally { work.close(); }
+    },
     async reconcile() {
       // Late traces can appear outside the normal mailbox receipt overlap.
       // This independent repair advances no source or publication checkpoint.
@@ -106,24 +286,31 @@ function createMailCapture({ db, bridge, graph, archive = createEvidenceArchive(
       const ref = db.doc("issueTrackerState/mailJoinRecovery"), state = (await ref.get()).data() || {};
       let query = db.collection("issueTrackerQueue").where("source", "==", "outlook").orderBy("__name__").limit(40);
       if (state.cursor) query = query.startAfter(state.cursor);
-      const page = await query.get(); let linked = 0;
-      for (const doc of page.docs) {
+      const page = await query.get(); let linked = 0, aliasesReconciled = 0;
+      const work = context();
+      try { for (const doc of page.docs) {
+        work.check();
         let message = doc.data().message;
-        if (!message || message.exactJoin) continue;
+        if (!message) continue;
+        if (await historicalAliases(message, work)) aliasesReconciled++;
+        if (message.exactJoin) continue;
         // Legacy snapshots predate recipient extraction: re-fetch exact item.
         // Failure leaves the cursor unchanged so this page is retried.
         if (!message.receivedRecipients?.length && message.from?.toLowerCase() === "alerts@posetek.net") {
-          const mail = await graph.message(message.immutableId || message.originalId);
-          await capture(mail, { aliases: message.aliases || [], schedule: false });
+          const id = message.immutableId || message.originalId;
+          const mail = typeof graph.canonicalMessage === "function" ? await canonical(id, work) : await work.read(() => graph.message(id, { signal: work.signal }));
+          await captureInternal(mail, { aliases: message.aliases || [], schedule: false }, work);
           message = (await doc.ref.get()).data().message;
         }
         const join = await findJoin(message);
         if (join) { await bridge.enqueueMessage({ ...message, exactJoin: join }, { schedule: false }); linked++; }
       }
+      work.check();
       await ref.set({ schemaVersion: 1, cursor: page.size < 40 ? null : page.docs.at(-1).id, lastCheckedAtMillis: now(), examined: page.size,
-        linked, enumerationComplete: page.size < 40, sourceCompleteThroughAdvanced: false, publicationConfirmed: false });
-      if (linked) await bridge.wake();
-      return { examined: page.size, linked, sourceCompleteThroughAdvanced: false };
+        linked, aliasesReconciled, enumerationComplete: page.size < 40, sourceCompleteThroughAdvanced: false, publicationConfirmed: false });
+      } finally { work.close(); }
+      if (linked || aliasesReconciled) await bridge.wake();
+      return { examined: page.size, linked, aliasesReconciled, sourceCompleteThroughAdvanced: false };
     },
     async ingress(message) {
       // Arrival payload is an ID notification only. Re-fetch authoritative
@@ -133,11 +320,14 @@ function createMailCapture({ db, bridge, graph, archive = createEvidenceArchive(
       const settings = (await db.doc("issueTrackerSettings/current").get()).data();
       const binding = mailReadBinding(settings);
       if (settings?.enabled !== true || !binding || settings.mailAliasesVerified !== true) fail("tracker_mail_not_configured");
-      const mail = await (graph.canonicalMessage || graph.message)(supplied);
+      const work = context();
+      try {
+      const mail = await work.read(() => (graph.canonicalMessage || graph.message)(supplied, { signal: work.signal }));
       const current = (await db.doc("issueTrackerSettings/current").get()).data();
       if (current?.enabled !== true || current.mailAliasesVerified !== true || mailReadBinding(current) !== binding) fail("tracker_capture_configuration_changed");
-      const result = await capture(mail, { aliases: [supplied], schedule: true });
+      const result = await captureInternal(mail, { aliases: [supplied], schedule: true }, work);
       return { queued: Boolean(result.ticket), ignored: !result.relevant };
+      } finally { work.close(); }
     },
     async verifiedAliases(originalIds) {
       if (!Array.isArray(originalIds) || originalIds.length > 1000 || new Set(originalIds).size !== originalIds.length) fail("tracker_invalid_alias_list");
