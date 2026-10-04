@@ -4,6 +4,17 @@ Reviewed on October 2–3, 2026. This guide summarizes the available repository 
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
+## PoseTek P website icons (2026-10-03)
+
+Dylan requested the approved PoseTek P for browser tabs and Google Search.
+The source now uses the previously approved outlined lime P badge, recovered
+from the official icon asset branch, with SVG, 96px PNG, multi-size ICO and
+180px Apple touch variants. Shared Astro and compatibility heads point to stable
+same-origin icon URLs. The full wordmark remains available for page content.
+See [the icon handoff](docs/SITE_ICONS.md) for provenance, Google recrawl limits
+and the guarded metadata-only release workflow. Production publication is
+recorded separately in `deployment/SITE_ICONS_PRODUCTION.json` once verified.
+
 ## Coach and admin engineering handoff for Kai (2026-10-03)
 
 [Kai's dashboard handoff](docs/KAI_DASHBOARD_HANDOFF.md) documents current coach

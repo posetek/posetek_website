@@ -5,6 +5,7 @@ import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { resolve, relative, isAbsolute, extname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { ICON_ASSETS } from './website-icons.mjs';
 
 const marketing = fileURLToPath(new URL('../app/astro-dist/', import.meta.url));
 const reference = fileURLToPath(new URL('../.netlify/deployed-reference/6aa9b6f0d8faf6177db8fd97/', import.meta.url));
@@ -29,6 +30,8 @@ return createServer(async (req, res) => {
     } else if (pathname.startsWith('/marketing/assets/')) {
       root = marketingRoot;
       filePath = resolve(marketingRoot) === resolve(referenceRoot) ? pathname : pathname.slice('/marketing'.length);
+    } else if (ICON_ASSETS.includes(pathname)) {
+      root = marketingRoot;
     } else if (pathname.startsWith('/_astro/')) {
       root = marketingRoot;
     } else if (/^\/bookperformancetest\/?$/i.test(pathname)) {

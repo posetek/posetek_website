@@ -352,6 +352,11 @@ data, service decisions, and the application preservation boundary.
 
 ## Production build
 
+For a change limited to browser/search icons, use the guarded
+[website icon workflow](docs/SITE_ICONS.md). It preserves existing page bodies
+and runtime assets while changing only document-head icon links and the four
+declared icon files. Ordinary builds continue to verify the protected baseline.
+
 ```powershell
 node scripts/build-production.mjs
 ```
