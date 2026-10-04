@@ -1,16 +1,64 @@
 # PoseTek website project context
 
-Reviewed on October 2–3, 2026. This guide summarizes the available repository and
+Reviewed on October 2–4, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
-## Notification coverage correction (2026-10-02–03)
+## Automation branch and production validation (2026-10-03–04)
 
-The current authenticated application is Netlify deployment
+This checkout is the `codex/user-issue-alerts` automation branch. Its website
+release notes are dated records of that branch's source and verification.
+Newer primary-site work is separate; reconcile the primary checkout and its
+current release receipt before any website build or deployment. This automation
+repair does not publish website or native application bytes, change training
+content or rules, or replace teammates' newer source.
+
+All 31 approved source endpoints passed exact deployed-source, configuration and
+IAM checks: twelve Insights, six tracker at version 7, ten user-issue and three
+Microsoft-email endpoints. The aggregate check preserved unrelated functions and
+verified the complete release chain. Tracker storage version 2 was activated and
+read back at `2026-10-04T07:04:50.217Z`. Issue sending remains disabled and the
+native queue is paused. The first-plus-daily policy was committed at
+`2026-10-04T07:10:32.256247Z` and its readback reconciled without a second commit.
+The first audited backlog page examined 25 jobs, deferred 10 and preserved 15;
+the remaining audit is incomplete. Complete backlog treatment, identity
+activation, sending resumption, genuine rebuild convergence, email delivery and physical
+publication of the captured backlog remain separate acceptance gates. The current
+validation gates and preserved baseline are in
+[the production validation handoff](docs/NOTIFICATION_PRODUCTION_VALIDATION.md).
+The [partial validation receipt](deployment/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json)
+records this checkpoint. Final operational results are recorded only after their
+separate acceptance.
+
+The active issue policy is first notice, meaningful changes and a
+daily summary of routine repeats. Every captured occurrence is retained for
+publication as a workbook instance even when its immediate email is deferred.
+Dylan is the only recipient of new application alerts and workout emails; Nolan and Taiyo retain shared
+tracker editing access. Exact-UID reporter contact remains separate from the
+target athlete, and unknown service/device operators stay unknown. Successful
+workout completion emails are separate from the issue-only tracker. No historical
+Resend replay or automatic user outreach is included.
+
+The fixed validation baseline is shared-master revision 266: 690 actions, 1,280
+instances, 764 email rows and three daily/status rows, with 3,585 pending tickets
+archived at `2026-10-04T04:14:30.165Z`. All 690 saved human records are protected by
+stable Action ID. Capture and publication retain separate checkpoints during the
+hold; the physical master remains revision 266 with no accepted post-storage-cutover
+native batch. Queued records or the active storage flag alone do not prove cloud
+publication. Cloud intake, recovery,
+email and native workbook publication do not require this chat, Codex, an hourly
+Codex procedure or Dylan's computer. The separate workout delivery is unpaused.
+Native crash/device release and uninstrumented coach workflows retain their
+acceptance limits. A coach name in a workout's team label is not an assigned-coach
+lookup.
+
+## Historical notification coverage correction (2026-10-02–03)
+
+The authenticated application release recorded by this branch is Netlify deployment
 `6ac06e0d420f2b6b34129fb5`, from frozen source digest
 `e7ad1aaa6b2b87b17b8c6885ea263e35170b86e95759e304bc3cdb8244876e88`.
 Full provider inventory and served-content checks passed for 1,485 files,
-preserving current marketing source, protected files and platform configuration.
+preserving that release's marketing source, protected files and platform configuration.
 Baseline adoption passed and protects 1,482 application/public files; its exact
 verification result is in
 [the correction receipt](deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json).
@@ -36,10 +84,11 @@ Logging export is On for the one registered iOS app, but genuine symbolicated
 device export and owning-Mac/iPhone/TestFlight acceptance remain held. The new
 Microsoft mailbox identity-conversion flow passed read-only semantic acceptance,
 and all six tracker endpoints passed exact version-six source/configuration/IAM
-checks. The additive identity settings transaction remains pending. Revision
-266's next batch exceeds the existing document limit; a reviewed adaptive writer
-candidate awaits deployment and fresh physical cloud verification. Read
-[the current verification checkpoint](deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
+checks. The additive identity settings transaction remained pending at that
+checkpoint. Revision 266's next batch exceeded the existing document limit;
+subsequent source repair and acceptance gates are recorded in the validation
+handoff above. Read
+[that verification checkpoint](deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
 and preserve every historical email row and unconfirmed alias. No automatic outreach,
 historical Resend replay, native release or training-rule change is included.
 Read [the correction handoff](docs/NOTIFICATION_COVERAGE_CORRECTION.md) for current

@@ -1,6 +1,7 @@
 "use strict";
 const crypto = require("node:crypto");
 const M = require("./microsoft-email-model");
+const NotificationPolicy = require("./user-issue-notification-policy");
 const TRACE_WINDOW = 7 * 86400000, RECEIPT_WAIT = 10 * 60000, SEND_BUDGET = 20;
 const RECIPIENT_BUDGET = 9000, RECIPIENT_WINDOW = 86400000, RECIPIENT_BUCKET = 15 * 60000;
 function recipientBudget(budget, at, recipients) {
@@ -53,6 +54,15 @@ function createMicrosoftEmail({ db, now = Date.now, randomToken = () => crypto.r
           failureCode: "provider_recipient_removed", failureMessage: "The frozen destination includes a removed recipient; no send permission was consumed." });
         return { schemaVersion: 1, allowSend: false };
       }
+      let policy;
+      if (data.kind === "issue") {
+        try { policy = await NotificationPolicy.prepare({ tx, db, settings, job: { ...job, id: data.jobId }, at }); }
+        catch (error) { NotificationPolicy.review(tx, ref, error); return { schemaVersion: 1, allowSend: false }; }
+        if (policy?.decision.action === "daily_summary") {
+          NotificationPolicy.defer(tx, ref, policy, { ...job, id: data.jobId }, at);
+          return { schemaVersion: 1, allowSend: false, deferredToSummary: true };
+        }
+      }
       const budgetRef = db.doc("microsoftEmailState/sendBudget"), budget = (await tx.get(budgetRef)).data();
       const times = (budget?.claimTimes || []).filter(value => Number.isSafeInteger(value) && value > at - 300000);
       if (times.length >= SEND_BUDGET) return { schemaVersion: 1, allowSend: false, deferred: true };
@@ -75,7 +85,9 @@ function createMicrosoftEmail({ db, now = Date.now, randomToken = () => crypto.r
       const microsoft = { ...job.microsoft, claimedAtMillis: at, runId: data.runId, claimTokenHash: M.hash(token), traceUntilMillis: at + TRACE_WINDOW,
         claimPayloadDigest: M.payloadDigest(payload), claimRecipients: [...payload.to], deliveryAmendmentId: job.deliveryAmendment?.id || null };
       tx.set(budgetRef, { claimTimes: [...times, at], recipientBuckets });
+      NotificationPolicy.commitImmediate(tx, policy, { ...job, id: data.jobId }, at);
       tx.update(ref, { microsoft, status: "sending", [M.deadlineField(data.kind)]: null, leaseId: null,
+        ...(policy ? { notificationDecision: policy.decision } : {}),
         microsoftTraceDueAtMillis: at + 300000, failureCode: null, failureMessage: null });
       return { schemaVersion: 1, allowSend: true, kind: data.kind, jobId: data.jobId, runId: data.runId, claimToken: token,
         correlation: microsoft.correlation, fromMailbox: microsoft.senderMailbox, to: payload.to.join(";"), subject: payload.subject,

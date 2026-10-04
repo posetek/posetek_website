@@ -3,7 +3,7 @@ const test = require("node:test"), assert = require("node:assert/strict");
 const { FakeFirestore } = require("./test-support/fake-firestore");
 const I = require("./issue-tracker-mail-identity"), M = require("./issue-tracker-bridge-model");
 const { normalizeIssueTracker: normalize } = require("./issue-tracker-normalize");
-const { splitSeed, rowDocumentId } = require("./issue-tracker-bridge-seed");
+const { splitSeed, rowDocumentId, partitionSeed, INDEX_BASES } = require("./issue-tracker-bridge-seed");
 const { createIssueTrackerBridge } = require("./issue-tracker-bridge");
 const { createMailCapture } = require("./issue-tracker-mail-capture");
 const { createSourceCapture } = require("./issue-tracker-source-capture");
@@ -40,6 +40,28 @@ async function fixture(ids = ["legacy", "canonical", "distinct"], patch = {}) {
 }
 const canonicalTicket = (f, id = "canonical") => f.db.snapshot(`issueTrackerQueue/mail-${M.digest([mailbox, id])}`);
 const proofArchives = db => [...db.docs].filter(([path, value]) => path.split("/").length === 2 && value.source === "outlook_alias_verification");
+
+test("capture reconstructs partitioned join indices without changing retained email IDs", async () => {
+  const f = await fixture(), split = partitionSeed(f.seed, f.seed);
+  await f.db.doc(`${INDEX_BASES}/${split.metadata.indexBaseSha256}`).set(split.indexBase);
+  await f.db.doc("issueTrackerState/seed").set(split.metadata);
+  await f.capture.capture(f.current("legacy"));
+  const queued = canonicalTicket(f);
+  assert.deepEqual(queued.message.aliasReconciliation.retainedIds.sort(), ["canonical", "legacy"]);
+  const normalized = normalize({ seed: f.seed, messages: [queued.message] });
+  for (const id of ["legacy", "canonical", "distinct"]) assert.equal(normalized.nextSeed.rows.emails[id].rowId, f.seed.rows.emails[id].rowId);
+  assert.equal(f.db.snapshot("issueTrackerState/seed").storageVersion, 2);
+  assert.equal(f.db.snapshot("issueTrackerState/capture-outlook"), undefined);
+});
+
+test("corrupt partitioned join evidence prevents an alias repair rather than guessing", async () => {
+  const f = await fixture(), split = partitionSeed(f.seed, f.seed);
+  await f.db.doc(`${INDEX_BASES}/${split.metadata.indexBaseSha256}`).set({ ...split.indexBase, maps: {} });
+  await f.db.doc("issueTrackerState/seed").set(split.metadata);
+  await assert.rejects(f.capture.capture(f.current("canonical")), { code: "tracker_invalid_seed_index_base" });
+  assert.equal(canonicalTicket(f).pending, false);
+  assert.equal(f.db.snapshot("issueTrackerState/capture-outlook"), undefined);
+});
 function retained(before, after) {
   assert.deepEqual(after.counters, before.counters);
   for (const [id, row] of Object.entries(before.rows.emails)) {

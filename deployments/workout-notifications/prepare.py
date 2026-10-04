@@ -33,6 +33,7 @@ FILES = ('workout-notifications.js', 'workout-notifications-entrypoints.js', 'wo
          'microsoft-email-model.js', 'microsoft-email-transport.js', 'microsoft-email-amendment.js',
          'user-issues.js', 'user-issue-model.js', 'user-issue-contacts.js',
          'user-issue-classification.js', 'user-issue-summary.js', 'user-issue-observations.js', 'user-issue-request-identity.js',
+         'user-issue-notification-policy.js',
          'club-access.js', 'athlete-storage-paths.js', 'insights-v2-qualification.js', 'package.json', 'package-lock.json')
 
 

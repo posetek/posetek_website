@@ -6,7 +6,7 @@ const { mailReadBinding } = require("./issue-tracker-mail-read-proxy");
 const Microsoft = require("./microsoft-email-model");
 const Identity = require("./issue-tracker-mail-identity");
 const { mailIdentityBinding } = require("./issue-tracker-mail-identity-proxy");
-const { rowDocumentId } = require("./issue-tracker-bridge-seed");
+const { rowDocumentId, createSeedStore } = require("./issue-tracker-bridge-seed");
 const ALIAS_BUDGET_MS = 60000, ALIAS_CONCURRENCY = 3, MAX_ALIAS_CANDIDATES = 20, MAX_ALIAS_LOOKUPS = 40;
 const CONTENT_FIELDS = ["internetMessageId", "receivedDateTime", "sentDateTime", "subject", "from", "sender", "body", "bodyPreview", "internetMessageHeaders", "toRecipients", "ccRecipients", "bccRecipients"];
 const contentSnapshot = mail => Object.fromEntries(CONTENT_FIELDS.map(key => [key, mail[key] ?? null]));
@@ -54,6 +54,7 @@ function relevance(mail) {
 }
 
 function createMailCapture({ db, bridge, graph, archive = createEvidenceArchive(db), now = Date.now }) {
+  const seedStore = createSeedStore(db);
   function context() {
     const started = now(), controller = new AbortController(), cache = new Map();
     const timer = setTimeout(() => controller.abort(), ALIAS_BUDGET_MS); timer.unref?.();
@@ -70,7 +71,10 @@ function createMailCapture({ db, bridge, graph, archive = createEvidenceArchive(
     return work.settings;
   }
   async function aliasSeed(work) {
-    work.seed ||= await work.read(async () => (await db.doc("issueTrackerState/seed").get()).data()) || {};
+    work.seed ||= await work.read(async () => {
+      const metadata = (await db.doc("issueTrackerState/seed").get()).data();
+      return metadata ? seedStore.loadMetadata(metadata) : {};
+    });
     if (work.seed.mailbox && work.seed.mailbox !== MAILBOX) fail("tracker_wrong_mailbox");
     return work.seed;
   }
@@ -174,7 +178,10 @@ function createMailCapture({ db, bridge, graph, archive = createEvidenceArchive(
     // A concurrent writer can publish an earlier queued proof while Graph
     // reads are in flight. Reuse that exact immutable anchor, never enqueue a
     // competing digest against a newly frozen group.
-    const seed = await work.read(async () => (await db.doc("issueTrackerState/seed").get()).data());
+    const seed = await work.read(async () => {
+      const metadata = (await db.doc("issueTrackerState/seed").get()).data();
+      return metadata ? seedStore.loadMetadata(metadata) : null;
+    });
     const queued = await work.read(async () => (await db.doc(`issueTrackerQueue/mail-${digest([MAILBOX, mail.id])}`).get()).data());
     const group = seed?.emailCanonicalItems?.[digest([MAILBOX, mail.id])];
     const anchor = group ? { schemaVersion: 1, ...group } : queued?.message?.aliasReconciliation;

@@ -9,6 +9,9 @@ spec.loader.exec_module(scope)
 audit = scope.audit
 ENDPOINTS = ('claimMicrosoftEmail', 'receiptMicrosoftEmail', 'reconcileMicrosoftEmail')
 FILES = (*scope.FILES, 'microsoft-email.js', 'microsoft-email-entrypoints.js')
+# The inherited issue/webhook closure now includes the final send-policy gate.
+# Refuse preparation if that dependency is ever removed from the base manifest.
+assert 'user-issue-notification-policy.js' in FILES
 
 def definitions():
     result = {}

@@ -1,7 +1,7 @@
 "use strict";
 const crypto = require("node:crypto");
 const M = require("./issue-tracker-bridge-model");
-const { ROWS, createSeedStore, splitSeed } = require("./issue-tracker-bridge-seed");
+const { ROWS, INDEX_BASES, INDICES, createSeedStore, splitSeed, partitionSeed, verifyIndex } = require("./issue-tracker-bridge-seed");
 const { validMessage, validKey } = require("./issue-tracker-bridge-ingress");
 const MailIdentity = require("./issue-tracker-mail-identity");
 const COALESCE_MS = 90000, LEASE_MS = 240000, MAX_BATCH = 40, MAX_DOCUMENT_BYTES = 700000, DAILY_ATTEMPT_LIMIT = 1200;
@@ -112,13 +112,15 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
     const leaseId = randomId();
     return db.runTransaction(async tx => {
       const settings = (await tx.get(db.doc(PATHS.settings))).data();
+      if (settings?.publicationPaused === true) return { paused: true };
       if (settings?.enabled !== true || settings.seedVerified !== true || settings.connectionVerified !== true || typeof settings.workbookKey !== "string" || !settings.workbookKey) M.fail("tracker_not_configured");
+      if (settings.seedStorageVersion != null && ![1, 2].includes(settings.seedStorageVersion)) M.fail("tracker_invalid_storage_version");
       const state = (await tx.get(writerRef)).data();
       if (!state || !Number.isSafeInteger(state.revision) || state.revision < 0) M.fail("tracker_missing_seed_revision");
       if (state.blockedReason) M.fail("tracker_writer_blocked");
       if (state.leaseUntilMillis > now()) M.fail("tracker_writer_busy");
       tx.update(writerRef, { leaseId, leaseUntilMillis: now() + LEASE_MS });
-      return { ...state, leaseId, workbookKey: settings.workbookKey };
+      return { ...state, leaseId, workbookKey: settings.workbookKey, seedStorageVersion: settings.seedStorageVersion === 2 ? 2 : 1 };
     });
   }
 
@@ -130,7 +132,8 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
     }
     const pending = await db.collection(PATHS.queue).where("pending", "==", true).limit(MAX_BATCH).get();
     if (pending.empty) return null;
-    const baseSeed = await seedStore.load((await seedRef.get()).data());
+    const storedSeed = (await seedRef.get()).data(), baseSeed = await seedStore.load(storedSeed);
+    if (storedSeed.storageVersion === 2 && claimed.seedStorageVersion !== 2) M.fail("tracker_storage_cutover_required");
     if (M.GROUPS.some(group => !Number.isSafeInteger(baseSeed.counts?.[group]) || baseSeed.counts[group] < 0)) M.fail("tracker_missing_seed_counts");
     // Firestore's pending query is ordered by document ID. Preserve that same
     // bounded prefix even if an adapter returns the selected snapshots unsorted.
@@ -227,29 +230,45 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
       if (!nextSeed) M.fail("tracker_missing_next_seed");
       const expectedCounts = Object.fromEntries(M.GROUPS.map(group => [group, seed.counts[group] + changes[group].filter(row => row.expectedMachineSha256 === null).length]));
       nextSeed.counts = expectedCounts;
-      const { metadata, changedRows } = splitSeed(nextSeed, seed);
-      if (size(metadata) > MAX_DOCUMENT_BYTES || changedRows.length > 150 || changedRows.some(row => size(row) > MAX_DOCUMENT_BYTES)) M.fail("tracker_seed_capacity");
+      const { metadata, changedRows, changedIndices = [], indexBase = null } = claimed.seedStorageVersion === 2 ? partitionSeed(nextSeed, seed) : splitSeed(nextSeed, seed);
+      if (size(metadata) > MAX_DOCUMENT_BYTES || changedRows.length > 150 || changedRows.length + changedIndices.length > 300 ||
+          changedRows.some(row => size(row) > MAX_DOCUMENT_BYTES) || changedIndices.some(row => size(row) > MAX_DOCUMENT_BYTES) || indexBase && size(indexBase) > MAX_DOCUMENT_BYTES) M.fail("tracker_seed_capacity");
       const payload = M.sealBatch({ batchId, workbookKey: claimed.workbookKey, expectedRevision: claimed.revision, generatedAt: new Date(preparedAtMillis).toISOString(), changes });
       const batch = { payload, nextSeedMetadata: metadata, seedRowIds: changedRows.map(row => row.id), selected: selected.map(row => ({ id: row.id, version: row.data().version, desiredHash: row.data().desiredHash })),
         state: "prepared", preparedAtMillis, attempts: 0 };
-      if (size(batch) > MAX_DOCUMENT_BYTES || size(batch) + changedRows.reduce((total, row) => total + size(row), 0) > 6000000) M.fail("tracker_batch_capacity");
-      return { batch, changedRows };
+      if (claimed.seedStorageVersion === 2) {
+        batch.seedIndexIds = changedIndices.map(row => row.id);
+        batch.expectedSeedMetadataSha256 = M.digest(storedSeed);
+        batch.seedRowsSha256 = M.digest(changedRows);
+        batch.seedTransitionSha256 = M.digest({ expectedSeedMetadataSha256: batch.expectedSeedMetadataSha256, nextSeedMetadata: metadata, seedRowsSha256: batch.seedRowsSha256, changedIndices });
+      }
+      if (size(batch) > MAX_DOCUMENT_BYTES || size(batch) + changedRows.reduce((total, row) => total + size(row), 0) + changedIndices.reduce((total, row) => total + size(row), 0) + (indexBase ? size(indexBase) : 0) > 6000000) M.fail("tracker_batch_capacity");
+      return { batch, changedRows, changedIndices, indexBase };
     }
-    let batch, changedRows;
+    let batch, changedRows, changedIndices, indexBase;
     // At most six pure candidates for the existing 40-ticket bound. Only size
     // guards permit shrinking; missing evidence, identity conflicts and any
     // other normalization failure retain the whole pending queue for review.
     for (let count = selectedDocs.length; ; count = Math.max(1, Math.floor(count / 2))) {
-      try { ({ batch, changedRows } = await candidate(selectedDocs.slice(0, count))); break; }
+      try { ({ batch, changedRows, changedIndices, indexBase } = await candidate(selectedDocs.slice(0, count))); break; }
       catch (error) {
         if (count === 1 || !["tracker_seed_capacity", "tracker_batch_capacity"].includes(error?.code)) throw error;
       }
     }
     await db.runTransaction(async tx => {
       const state = (await tx.get(writerRef)).data();
+      let baseRef, existingBase;
+      if (batch.seedIndexIds) {
+        if (M.digest((await tx.get(seedRef)).data()) !== batch.expectedSeedMetadataSha256) M.fail("tracker_seed_snapshot_changed");
+        baseRef = db.doc(`${INDEX_BASES}/${batch.nextSeedMetadata.indexBaseSha256}`);
+        existingBase = (await tx.get(baseRef)).data();
+        if (existingBase && M.digest(existingBase) !== batch.nextSeedMetadata.indexBaseSha256 || !existingBase && !indexBase) M.fail("tracker_invalid_seed_index_base");
+      }
       if (state?.leaseId !== claimed.leaseId || state.activeBatchId || state.revision !== claimed.revision) M.fail("tracker_lease_lost");
+      if (indexBase && !existingBase) tx.create(baseRef, indexBase);
       tx.create(db.doc(`${PATHS.batches}/${batchId}`), batch);
       for (const row of changedRows) tx.create(db.doc(`${PATHS.batches}/${batchId}/rows/${row.id}`), row);
+      for (const row of changedIndices) tx.create(db.doc(`${PATHS.batches}/${batchId}/indices/${row.id}`), row);
       tx.update(writerRef, { activeBatchId: batchId });
     });
     return batch;
@@ -260,6 +279,7 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
     if (M.canonical(receipt.counts) !== M.canonical(batch.nextSeedMetadata.counts)) M.fail("tracker_invalid_receipt_counts");
     await db.runTransaction(async tx => {
       const state = (await tx.get(writerRef)).data();
+      if (batch.seedIndexIds && M.digest((await tx.get(seedRef)).data()) !== batch.expectedSeedMetadataSha256) M.fail("tracker_seed_snapshot_changed");
       const rows = [];
       for (const selected of batch.selected) rows.push({ selected, ref: db.doc(`${PATHS.queue}/${selected.id}`), current: (await tx.get(db.doc(`${PATHS.queue}/${selected.id}`))).data() });
       const seedRows = [];
@@ -267,6 +287,19 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
         const row = (await tx.get(db.doc(`${PATHS.batches}/${batch.payload.batchId}/rows/${id}`))).data();
         if (!row || row.id !== id) M.fail("tracker_frozen_seed_missing");
         seedRows.push(row);
+      }
+      const seedIndices = [];
+      if (batch.seedIndexIds) {
+        if (batch.nextSeedMetadata.storageVersion !== 2 || batch.seedRowIds.length + batch.seedIndexIds.length > 300 || new Set(batch.seedIndexIds).size !== batch.seedIndexIds.length) M.fail("tracker_invalid_frozen_seed_indices");
+        for (const id of batch.seedIndexIds) {
+          const row = (await tx.get(db.doc(`${PATHS.batches}/${batch.payload.batchId}/indices/${id}`))).data();
+          verifyIndex(row, id);
+          if (row.baseSha256 !== batch.nextSeedMetadata.indexBaseSha256) M.fail("tracker_invalid_frozen_seed_indices");
+          seedIndices.push(row);
+        }
+        if (M.digest(seedRows) !== batch.seedRowsSha256 || M.digest({ expectedSeedMetadataSha256: batch.expectedSeedMetadataSha256, nextSeedMetadata: batch.nextSeedMetadata, seedRowsSha256: batch.seedRowsSha256, changedIndices: seedIndices }) !== batch.seedTransitionSha256) M.fail("tracker_invalid_frozen_seed_indices");
+        const base = (await tx.get(db.doc(`${INDEX_BASES}/${batch.nextSeedMetadata.indexBaseSha256}`))).data();
+        if (!base || M.digest(base) !== batch.nextSeedMetadata.indexBaseSha256) M.fail("tracker_invalid_seed_index_base");
       }
       if (state?.leaseId !== claimed.leaseId || state.activeBatchId !== batch.payload.batchId || state.revision !== batch.payload.expectedRevision) M.fail("tracker_lease_lost");
       for (const { selected, ref, current } of rows) {
@@ -278,6 +311,7 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
       }
       tx.set(seedRef, batch.nextSeedMetadata);
       for (const row of seedRows) tx.set(db.doc(`${ROWS}/${row.id}`), { group: row.group, key: row.key, value: row.value });
+      for (const row of seedIndices) { const { id, ...value } = row; tx.set(db.doc(`${INDICES}/${id}`), value); }
       tx.update(db.doc(`${PATHS.batches}/${batch.payload.batchId}`), { state: "applied", receipt, appliedAtMillis: now() });
       tx.update(writerRef, { revision: receipt.revision, activeBatchId: null, leaseId: null, leaseUntilMillis: 0, lastAppliedAtMillis: now(), lastBatchId: batch.payload.batchId });
     });
@@ -285,6 +319,7 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
 
   async function drain() {
     const claimed = await claim();
+    if (claimed.paused) return { applied: false, paused: true };
     let batch;
     try {
       batch = await loadBatch(claimed);
@@ -321,7 +356,7 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
         const state = (await tx.get(writerRef)).data();
         if (state?.leaseId === claimed.leaseId) tx.update(writerRef, { lastTransportReasonCode: transportReason });
       });
-      if (["tracker_remote_conflict", "tracker_remote_auth", "tracker_remote_rejected", "tracker_unverified_receipt", "tracker_incomplete_receipt", "tracker_invalid_receipt_counts"].includes(error?.code)) {
+      if (["tracker_remote_conflict", "tracker_remote_auth", "tracker_remote_rejected", "tracker_unverified_receipt", "tracker_incomplete_receipt", "tracker_invalid_receipt_counts", "tracker_invalid_frozen_seed_indices"].includes(error?.code)) {
         await db.runTransaction(async tx => {
           const state = (await tx.get(writerRef)).data();
           if (state?.leaseId === claimed.leaseId) tx.update(writerRef, { blockedReason: error.code, blockedTransportReasonCode: transportReason, blockedAtMillis: now() });

@@ -852,7 +852,7 @@ function createTestingEvents({
     });
     if (!claimedRevision) return false;
     try {
-      await finalizePlayer(playerId);
+      await finalizePlayer(playerId, { sourceKind: "testing_event", eventId: `testing-event/${eventId}/${claimedRevision}` });
       await finalizationRef.set({
         playerId,
         status: "completed",

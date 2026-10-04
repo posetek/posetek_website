@@ -201,6 +201,16 @@ function deliveryDescription(job) {
   const states = job.recipientDelivery || {};
   const status = text(job.status) || "unknown";
   const parts = [`Source job status: ${status}`];
+  if (status === "deferred_to_summary") {
+    const decision = job.notificationDecision;
+    const verified = decision?.schemaVersion === 1 && decision.source === "posetek_notification_policy" && decision.action === "daily_summary"
+      && ["routine_repeat", "backlog_before_cutover"].includes(decision.reason) && !Microsoft.hasSendEvidence(job);
+    if (verified) {
+      const reason = decision.reason === "routine_repeat" ? "Repeated occurrence retained for the daily summary" : "Historical unsent notification retained for the backlog report";
+      parts.push(`${reason}; intentional no-send, not a delivery failure. This occurrence remains documented. Summary email delivery is tracked separately.`);
+      parts.push(`Notification decision: ${decision.reason}; observed ${timestamp(decision.evaluatedAtMillis) != null ? new Date(timestamp(decision.evaluatedAtMillis)).toISOString() : "time unknown"}`);
+    } else parts.push("Deferred status has incomplete or conflicting decision evidence; delivery requires review");
+  }
   if (job.deliveryAmendment) parts.push(`Approved recipient restriction: ${job.deliveryAmendment.id}; original frozen recipients retained in source evidence: ${(job.payload?.to || []).join(", ")}`);
   if (recipients.length) {
     parts.push(`Frozen recipients: ${recipients.join(", ")}`);

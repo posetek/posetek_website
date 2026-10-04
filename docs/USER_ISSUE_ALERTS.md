@@ -1,5 +1,18 @@
 # User issue alerts
 
+See [the current production validation handoff](NOTIFICATION_PRODUCTION_VALIDATION.md)
+for the preserved revision-266 hold, verified source releases for all 31 approved
+endpoints, and tracker storage version 2 activated and read back at
+`2026-10-04T07:04:50.217Z`. Issue sending remains disabled and the native queue is
+paused. The first-plus-daily policy was committed at `2026-10-04T07:10:32.256247Z`
+and read back without a second commit; its first backlog page examined 25 jobs,
+deferred 10 and preserved 15. The backlog audit is incomplete. Identity activation,
+sending resumption, genuine delivery and post-cutover physical publication remain
+separate gates. See the
+[partial validation receipt](../deployment/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json).
+This automation branch does not establish the latest
+primary-site or native application release.
+
 The approved recipient of new incident, status-change, daily-summary and workout
 emails is `dylank@posetek.net`. Nolan and Taiyo retain shared Excel editing access.
 Microsoft 365 sends application alerts from `alerts@posetek.net` through the
@@ -34,6 +47,17 @@ The native writer preserves human fields by stable Action ID and rejects changed
 machine rows or revisions. Save edits and allow them to reach the cloud. A lock or
 conflict defers publication. Capture and publication have separate checkpoints;
 a successful flow badge does not establish complete source coverage.
+Storage version 2 is active, but no post-cutover native batch or physical shared
+publication has been accepted yet; the verified master remains revision 266.
+During the validation hold, intake can capture records that have not yet reached
+the workbook. Every captured repeat is retained independently of whether it gets
+an immediate email. The retired hourly Codex procedure is not a dependency.
+
+Ordinary successful workout completion is a separate notification to Dylan and
+does not create an issue-tracker record. Workout failures and processing errors
+belong in the issue tracker. Workout delivery remains unpaused by the issue-email
+hold. Its player and organization/team label do not constitute a dedicated
+assigned-coach lookup.
 
 ## Coverage and limits
 
@@ -117,6 +141,18 @@ staff/admin access. Anonymous reports are labeled anonymous, not guessed identit
 
 ## Delivery contract
 
+The first-plus-daily policy is active; issue sending remains disabled during the
+audited backlog and publication hold. Its immediate-notice criteria cover the first issue, a new recorded reporting
+account or target athlete, severity escalation and recurrence after Fixed/Verified. Routine
+repeats remain individual captured instances and go into the daily summary.
+Status changes remain separate; Verified recovery requires saved fix and retest
+evidence. Previously unsent pre-cutover jobs require audited deferral or review,
+so restoring sending must not create a delayed-message burst. Exact source
+verification has passed for the ten user-issue and three Microsoft-email endpoints.
+Policy activation/readback passed without a second commit. Complete backlog
+treatment, approved sending resumption and genuine Dylan-only delivery remain
+separate acceptance steps; active policy or storage settings do not prove a send.
+
 Legacy primary occurrence keys bind the original actor and event/request ID.
 Server-owned source claims and bounded branch registries preserve replay identity.
 Client/server observations share an occurrence and send permission only when the
@@ -180,13 +216,16 @@ the verified admin callable. Canonical rules remain owned by the mobile reposito
 | `userIssueRequestIdentities` | Bounded server-owned request branches; conflicting or ambiguous evidence remains distinct |
 | `userIssueDays` | Daily counts plus actor/issue aggregation subcollections |
 | `userIssueOutbox` | Frozen email job, provider claim/trace state and retained historical `receipts` |
+| `userIssueNotificationState` / `userIssueNotificationAudience` | Active first/change cadence and exact recorded audience evidence; server-only, with issue sending held during audited recovery |
 | `userIssueLimits` | Bounded intake counters |
 
 Missing/invalid settings fail closed. Activation requires `enabled: true`,
 `sendEnabled: true`, and a positive, nonfuture `activatedAtMillis`. A pilot uses a
 nonempty `testUids` array; empty/malformed arrays disable intake. Server receipts
 before activation are excluded, including delayed trigger redeliveries. Delayed
-new receipts preserve the original occurrence time. There is no historical scan.
+new receipts preserve the original occurrence time. Intake does not recreate
+historical incidents; the tracker has separate bounded source/outbox recovery,
+and approved pre-cutover deferral never replays historical Resend jobs.
 Disable intake and sending to stop the feature, or only sending to retain intake.
 Never replay delivered jobs or blindly reset uncertain provider attempts.
 

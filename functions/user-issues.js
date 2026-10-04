@@ -8,6 +8,7 @@ const { classifyOccurrence, occurrenceTitle, validCallableOutcome } = require(".
 const { reportingSummary, deliveryReviewSummary } = require("./user-issue-summary");
 const Observations = require("./user-issue-observations");
 const RequestIdentity = require("./user-issue-request-identity");
+const NotificationPolicy = require("./user-issue-notification-policy");
 const LEASE = 120000, RETRY = 23 * 3600000;
 function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = Date.now, logger = console }) {
   const contacts = createIssueContactEnrichment({ db, auth: authProvider, now });
@@ -124,7 +125,8 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
       const classification = classifyOccurrence({ ...event, source: origin.source, reporterUid: who.uid });
       const title = occurrenceTitle(event, classification);
       const label = enrichment.contact?.name || who.name || (who.uid ? "Signed-in user" : "Unknown actor");
-      const lines = [`Platform: ${event.platform}; build: ${event.build}; device: ${event.device}`,
+      const lines = [`Occurrence reference: ${occurrenceId}`,
+        `Platform: ${event.platform}; build: ${event.build}; device: ${event.device}`,
         `Error code: ${event.code}`, `Occurred: ${M.dateText(event.occurredAtMillis)}`, `Received: ${M.dateText(at)}`,
         ...(classification.effectiveKind === "diagnostic" ? ["Evidence classification: Diagnostic upload; subtype unconfirmed. This record does not establish a crash or an interrupted session."] : []),
         ...(classification.scope === "automated_service" ? ["Evidence scope: Automated service occurrence; no affected operator is established by this service record."] : []),
@@ -135,6 +137,7 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
       tx.create(occurrenceRef, { ...event, id: occurrenceId, issueId: fingerprint, reporterUid: who.uid, reporterName: who.name,
         authenticatedSnapshot: who.authenticatedSnapshot || null, currentContact: enrichment.contact, contactLookup: enrichment.lookup,
         player: who.player || null, source: origin.source, sourceReference: origin.reference || null, classification,
+        ...(reopened ? { notificationRecurrence: { schemaVersion: 1, previousState: issue.state, previousUpdatedAtMillis: issue.updatedAtMillis } } : {}),
         ...(event.requestId ? { requestCorrelation: { schemaVersion: 1, source: RequestIdentity.SOURCE, primaryOccurrenceId: primaryId,
           mode: occurrenceId === primaryId ? "primary" : "separate_attempt", reason: plan.reason || null } } : {}),
         sourceObservationSummary: Observations.initialSummary(sourceObservation), receivedAtMillis: at });
@@ -199,7 +202,11 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
       if (issue.state === data.state) return { unchanged: true };
       const id = M.hash([data.issueId, issue.updatedAtMillis, data.state]);
       tx.update(ref, { state: data.state, fixRef, verification, updatedBy: auth.uid, updatedAtMillis: Math.max(at, issue.updatedAtMillis + 1) });
-      tx.create(jobRef(id), { id, issueId: data.issueId, type: "status", actorUid: auth.uid, title: `${issue.title} — ${data.state}`, lines: [`Status changed from ${issue.state} to ${data.state}.`, `Updated: ${M.dateText(at)}`], createdAtMillis: at, status: "pending", dueAtMillis: at, attempts: 0 });
+      tx.create(jobRef(id), { id, issueId: data.issueId, type: "status", actorUid: auth.uid, title: `${issue.title} — ${data.state}`, lines: [`Status changed from ${issue.state} to ${data.state}.`, `Updated: ${M.dateText(at)}`,
+        ...(fixRef ? [`Recorded fix reference: ${fixRef}`] : []), ...(data.state === "verified" ? [`Recorded retest evidence: ${verification}`] : []),
+        ...(data.state === "fixed" ? ["A fix is recorded; recovery remains unconfirmed until verification evidence is recorded."] : [])],
+        notificationTransition: { schemaVersion: 1, from: issue.state, to: data.state, changedBy: auth.uid, fixRef, verification },
+        createdAtMillis: at, status: "pending", dueAtMillis: at, attempts: 0 });
       tx.set(dayRef, { changes: (day.changes || 0) + 1, incidents: day.incidents || 0, lastAtMillis: at }, { merge: true });
       return { updated: true };
     });
@@ -219,6 +226,10 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
         tx.update(ref, { status: "needs_review", dueAtMillis: null, failureCode: "provider_recipient_removed" });
         return null;
       }
+      let policy;
+      try { policy = await NotificationPolicy.prepare({ tx, db, settings, job: { ...job, id, deliveryProvider }, at }); }
+      catch (error) { NotificationPolicy.review(tx, ref, error); return null; }
+      if (policy?.decision.action === "daily_summary") { NotificationPolicy.defer(tx, ref, policy, { ...job, id, deliveryProvider }, at); return null; }
       const route = deliveryProvider === "microsoft" && !job.microsoft ? Microsoft.freeze("issue", id, rawPayload, microsoftConfig, at) : { deliveryProvider, payload: rawPayload };
       const next = { ...route, leaseId: crypto.randomUUID(), firstAttemptAtMillis: job.firstAttemptAtMillis || at,
         attempts: (job.attempts || 0) + 1, status: "sending", dueAtMillis: at + LEASE, uncertain: job.uncertain === true || job.status === "sending" };
@@ -244,6 +255,33 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
     for (let i = 0; i < rows.docs.length; i += 4) await Promise.all(rows.docs.slice(i, i + 4).map(row => dispatch(row.id)));
     return { checked: rows.size };
   }
+  // Maintenance-only server helper. It never wakes a flow or enables sending.
+  // The caller records each returned page in its private recovery audit.
+  async function deferBacklogPage({ cursor = null, limit = 40 } = {}) {
+    if (cursor !== null && !/^[a-f0-9]{64}$/.test(cursor) || !Number.isSafeInteger(limit) || limit < 1 || limit > 40) throw new Error("notification_backlog_page_invalid");
+    const settings = (await settingsRef.get()).data(), policy = NotificationPolicy.configuration(settings, now());
+    if (!policy || settings?.sendEnabled !== false) throw new Error("notification_backlog_requires_send_hold");
+    let query = db.collection("userIssueOutbox").orderBy("__name__").limit(limit);
+    if (cursor) query = query.startAfter(cursor);
+    const page = await query.get(); let deferred = 0, preserved = 0;
+    for (const row of page.docs) {
+      if (!/^[a-f0-9]{64}$/.test(row.id) || cursor && row.id <= cursor) throw new Error("notification_backlog_page_nonadvancing");
+      const result = await db.runTransaction(async tx => {
+        const currentSettings = (await tx.get(settingsRef)).data(), currentPolicy = NotificationPolicy.configuration(currentSettings, now());
+        const job = (await tx.get(row.ref)).data();
+        if (!currentPolicy || currentSettings?.sendEnabled !== false || currentPolicy.namespace !== policy.namespace) throw new Error("notification_backlog_hold_changed");
+        if (!job || !["pending", "sending"].includes(job.status) || Microsoft.providerFor(job, currentSettings) !== "microsoft"
+          || Microsoft.hasSendEvidence(job) || job.createdAtMillis >= policy.activatedAtMillis) return false;
+        const prepared = await NotificationPolicy.prepare({ tx, db, settings: currentSettings, job: { ...job, id: row.id, deliveryProvider: "microsoft" }, at: now() });
+        if (prepared?.decision.reason !== "backlog_before_cutover") throw new Error("notification_backlog_decision_invalid");
+        NotificationPolicy.defer(tx, row.ref, prepared, job, now()); return true;
+      });
+      if (result) deferred++; else preserved++;
+      cursor = row.id;
+    }
+    return { examined: page.size, deferred, preserved, cursor: page.size < limit ? null : cursor,
+      enumerationComplete: page.size < limit, policyNamespace: policy.namespace, sendEnabled: false };
+  }
   async function daily() {
     const at = now(), period = M.previousPeriod(at), ref = db.doc(`userIssueDays/${period}`), id = M.hash(["daily", period]);
     const [settingsSnapshot, daySnapshot, existingJob] = await Promise.all([settingsRef.get(), ref.get(), jobRef(id).get()]);
@@ -264,6 +302,7 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
         `Source scope: ${summary.serviceOccurrences} automated service occurrences; ${summary.diagnostics} diagnostic uploads; ${summary.otherOccurrences} other issue/report occurrences.`,
         `${summary.accountOccurrences} occurrences have a recorded reporting Auth UID across ${summary.reportingAccounts} accounts; ${summary.noAccountOccurrences} occurrences have no recorded account UID. Reporting accounts may be uploaders or staff; affected users are not inferred.`,
         `${summary.unknownDiagnosticSubtype} diagnostic uploads have an unknown subtype and do not establish a crash or an interrupted session; ${day.recurrences || 0} recurrences after a fix.`,
+        `Notification cadence at summary capture: ${summary.notificationCadence.routineRepeats} routine repeat emails and ${summary.notificationCadence.backlogDeferred} pre-cutover queued notifications deferred; ${summary.notificationCadence.immediateSelected} incident send permissions selected for immediate notice; ${summary.notificationCadence.undecided} occurrences have no recorded cadence decision. All ${summary.occurrences} occurrences remain documented; selected permission is not delivery confirmation.`,
         `${deliveryReview.total} email jobs currently failed or require delivery review across all time: ${deliveryReview.microsoft} Microsoft, ${deliveryReview.resend} Resend, ${deliveryReview.unassigned} unassigned provider. This backlog is separate from reporting-day incident counts.`,
         ...summary.top.map(row => `${row.count} occurrences: ${row.title}`),
         `${counts.reduce((sum, count) => sum + count.data().count, 0)} issues currently await resolution or verification.`], createdAtMillis: now(), status: "pending", dueAtMillis: now(), attempts: 0 });
@@ -302,6 +341,6 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
       if (["failed", "bounced", "suppressed"].includes(status)) logger.error("user_issue_delivery_failed", { code: status, jobId: id });
     });
   }
-  return { submit, ingest, list, triage, dispatch, sweep, daily, webhook, identity };
+  return { submit, ingest, list, triage, dispatch, sweep, deferBacklogPage, daily, webhook, identity };
 }
 module.exports = { createUserIssues, LEASE, RETRY };

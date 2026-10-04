@@ -13,6 +13,7 @@ ENDPOINTS = ('submitUserIssue', 'getUserIssues', 'updateUserIssue', 'observeIssu
 CALLABLES = ENDPOINTS[:3]
 FILES = ('user-issues.js', 'user-issue-model.js', 'user-issue-sources.js', 'user-issue-entrypoints.js',
          'user-issue-classification.js', 'user-issue-summary.js', 'user-issue-observations.js', 'user-issue-request-identity.js',
+         'user-issue-notification-policy.js',
          'microsoft-email-model.js', 'microsoft-email-transport.js', 'microsoft-email-amendment.js', 'user-issue-contacts.js',
          'workout-notifications-provider.js', 'club-access.js', 'athlete-storage-paths.js', 'package.json', 'package-lock.json')
 

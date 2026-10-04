@@ -1,20 +1,39 @@
 # Event-driven issue tracker activation
 
+See [the current production validation handoff](NOTIFICATION_PRODUCTION_VALIDATION.md)
+for the preserved revision-266 backlog, all 31 verified source endpoints, active
+storage version 2 and notification policy, and remaining backlog, identity, delivery and physical
+publication gates. This is the automation branch; its dated website receipts do
+not establish the latest primary-site release. Storage activation is distinct
+from native publication.
+
 Current contract: **event-driven shared master; Dylan-only notifications**. The
-[latest verification checkpoint](../deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
-records the verified version-six tracker source and unfinished settings and
+[preceding verification checkpoint](../deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
+records the earlier version-six tracker source and unfinished settings and
 publication gates. The [coverage correction](NOTIFICATION_COVERAGE_CORRECTION.md)
 and [its production receipt](../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
-retain the preceding release and source cutoffs. User-issue version 8 and tracker version 6 preserve the existing workbook
-schema and human fields. Compatible request observations retain both sources;
-conflicting known operations or authorized targets remain distinct. Generic
+retain the preceding release and source cutoffs. All six tracker source endpoints
+at version 7, all twelve reviewed Insights endpoints, ten user-issue endpoints and
+three Microsoft-email endpoints have passed exact deployed-source, configuration
+and IAM checks. Tracker storage version 2 was activated and read back at
+`2026-10-04T07:04:50.217Z`. The first-plus-daily policy was committed at
+`2026-10-04T07:10:32.256247Z` and its readback reconciled without a second commit.
+Issue sending remains disabled and the native queue is paused. The first backlog
+page examined 25 jobs, deferred 10 and preserved 15; the remaining audit is
+incomplete. The repaired tracker preserves the existing workbook schema and human
+fields; complete backlog treatment, identity activation, sending resumption,
+genuine delivery and fresh shared-cloud acceptance remain separate
+gates. Compatible request
+observations retain both sources; conflicting known operations or authorized targets remain distinct. Generic
 diagnostics and automated service failures do not identify an operator by
 themselves. Counts of actions, instances and original email rows are not counts of
 unique users. The dedicated Microsoft identity-conversion flow passed read-only
 semantic acceptance; historical aliases stay intact until the separately guarded
-settings cutover and native publication pass. Revision 266 has queued updates
-blocked by the batch document size cap. A tested adaptive candidate is prepared;
-deployment and fresh physical cloud readback remain pending.
+settings cutover and native publication pass. The preserved revision-266 backlog
+requires native publication and fresh physical cloud readback. The physical master
+is still revision 266, with no accepted post-storage-cutover native batch; deployed
+writer source or the active storage setting alone does not prove those queued
+updates reached Excel.
 
 New issue,
 status, daily-summary and workout emails target only `dylank@posetek.net`; both
@@ -24,6 +43,25 @@ Power Automate arrivals and backend events drive the cloud pipeline; automatic
 cloud recovery catches missed or delayed work. Ongoing capture, delivery and
 shared-workbook updates run independently of this chat, Codex and Dylan's
 computer. The native cloud writer is the sole publisher of the existing master.
+No hourly Codex procedure is required. The validation hold keeps capture distinct
+from publication and preserves all archived pending versions and saved notes.
+
+The active issue cadence authorizes the first notice and meaningful changes
+immediately, and includes routine repeats in a daily summary. Every
+captured occurrence is retained for publication as an instance in Excel regardless of its email cadence.
+New reporting account/target, severity escalation and recurrence after
+Fixed/Verified can justify an immediate change notice; recovery requires saved
+fix/retest evidence. Policy activation/readback passed, but issue sending is still
+held and genuine post-cutover Dylan-only delivery remains unverified. The
+[partial validation receipt](../deployment/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json)
+records that distinction. Historical Resend jobs, consumed claims, original
+envelopes and partial outcomes are retained without replay.
+
+Ordinary successful workout completion emails are separate from this issue-only
+workbook. Workout failures and processing errors are captured as issues. Workout
+delivery remains unpaused; a player/team label containing a coach name is not a
+dedicated assigned-coach lookup. Native device/crash and uninstrumented coach
+operation coverage retain the limits in the validation handoff.
 
 ## Historical October 2 refinement and revision-121 acceptance
 
@@ -84,7 +122,8 @@ still continuing at that audit. Dylan reported purchasing Power Automate Premium
 October 1 and authorized setup. An available Premium license is now assigned to
 dylank@posetek.net; the saved private writer no longer has the former licensing
 block. Dylan explicitly paused the hourly Codex tracker to finish Power Automate
-setup. `update-posetek-issue-tracker` is **PAUSED**; do not restart it automatically.
+setup; it was **PAUSED** at this historical checkpoint. The retired Codex
+procedure is not part of the active cloud pipeline and must not be restarted.
 The six tracker functions passed deployed source/configuration verification at
 `2026-10-02T09:37:27Z`, initially with settings disabled. Guarded backend
 activation passed at `2026-10-02T10:13:41.205Z`. Excel and Outlook connections, the dedicated application/service
@@ -209,7 +248,7 @@ The Outlook connector can have polling latency; an arrival-triggered flow is not
 a promise of instantaneous delivery. Backend changes normally coalesce briefly
 before writing. Quotas, file locks and failed writes retain queued work.
 
-## Candidate components
+## Components and gated updates
 
 - `functions/issue-tracker-bridge*.js`: independent queue, material delivery
   changes, frozen batches, authenticated transport and bounded mailbox ingress.
@@ -219,13 +258,14 @@ before writing. Quotas, file locks and failed writes retain queued work.
   separate from immediate event capture; resumes missed material changes and
   stranded tasks without overriding writer blocks or claiming source coverage.
 - `functions/issue-tracker-{graph-reader,mail-capture,source-capture,evidence}.js`:
-  fully paged whole-mailbox recovery, private original evidence, immutable-ID
-  aliases, separate capture/publication checkpoints and backend occurrence intake.
+  fully paged whole-mailbox recovery, private original evidence, authoritative
+  same-item alias proofs behind the identity gate, separate capture/publication
+  checkpoints and backend occurrence intake.
 - `scripts/issue-tracker/`: native Office Script, bootstrap and contract. The
   writer preserves stable row IDs and checks existing machine-cell hashes.
-- `deployments/issue-tracker/`: isolated packaging; the ordinary functions index
-  does not export this candidate. No website, planner, email-sender or native
-  deployment is required.
+- `deployments/issue-tracker/`: isolated tracker packaging with a closed source
+  inventory. Its scoped source release does not publish website, planner,
+  email-sender or native application bytes.
 
 Unknown identities and causes remain explicit. Generic device diagnostics do
 not establish a crash. Repeated Google Cloud emails retain separate evidence
@@ -288,13 +328,16 @@ Run script action's automatic retries, because the backend owns the frozen-batch
 retry and call budget. Only the final successful response containing the exact
 verified script receipt may acknowledge the frozen batch.
 
-The prepared Outlook intake uses the existing Dylan mailbox connection, `When a new
+The Outlook intake uses the existing Dylan mailbox connection, `When a new
 email arrives (V3)`, and a narrow authenticated queue endpoint. Its secured
 request carries only the message ID; the backend re-reads the original from
-Graph with immutable-ID preference. Preserve Internet Message-ID as evidence,
+the fixed Dylan mailbox reader. Authoritative ID conversion remains behind its
+separately accepted identity gate; a connector echo or ID appearance does not
+prove its type. Preserve Internet Message-ID as evidence,
 original receipt time, sender, subject, original body and evidence URL. Filter
 relevance using the sender, project, incident links and content, including Google
-Cloud/Cloud Monitoring and delivery failures; do not rely on one subject or
+Cloud/Cloud Monitoring, Power Automate operational warnings and delivery failures;
+do not rely on one subject or
 unread status. Do not send emails, move messages or mark them read.
 
 **The delegated mailbox route passed dated paging and connector replay checks.**
@@ -363,7 +406,9 @@ completed and `IsDehydrated` is false, but a fresh authenticated session at
 The cause of this contradictory Microsoft failure is unconfirmed. Resolve the
 narrow scope without granting tenant-wide Mail.Read if adopting that application
 route later. Current source capture uses the separately accepted Dylan-only
-delegated proxy, with full paging and legacy-to-immutable identity acceptance.
+delegated proxy with full paging. Authoritative legacy-to-immutable same-item
+identity acceptance has its own read-only proof and remains gated until the
+reviewed identity settings cutover.
 
 Earlier browser upload attempts rejected file selection; Dylan subsequently
 uploaded the packages manually, and the sender and cloud-mail intake were

@@ -1,6 +1,7 @@
 "use strict";
 const M = require("./user-issue-model");
 const { summarizeOccurrences } = require("./user-issue-classification");
+const NotificationPolicy = require("./user-issue-notification-policy");
 const PAGE = 250, MAX_PAGES = 2000;
 const REVIEW = new Set(["failed", "bounced", "suppressed", "needs_review"]);
 const error = code => Object.assign(new Error(code), { code });
@@ -32,8 +33,27 @@ async function reportingSummary(db, period) {
     .where("receivedAtMillis", "<", bounds.upper).orderBy("receivedAtMillis").orderBy("__name__");
   const occurrences = await pages(query, "receivedAtMillis");
   if (occurrences.some(row => row.receivedAtMillis < bounds.lower || row.receivedAtMillis >= bounds.upper)) throw error("summary_receipt_window_mismatch");
+  const notificationCadence = { routineRepeats: 0, backlogDeferred: 0, immediateSelected: 0, undecided: 0,
+    scope: "exact_reporting_window_incident_jobs_at_summary_capture", enumerationComplete: true };
+  // Bound each read without truncating the already fully paginated receipt-time
+  // window. Status/daily jobs are not additional incident occurrences.
+  for (let offset = 0; offset < occurrences.length; offset += 25) {
+    const snapshots = await db.getAll(...occurrences.slice(offset, offset + 25).map(row => db.doc(`userIssueOutbox/${row.id}`)));
+    if (snapshots.length !== Math.min(25, occurrences.length - offset)) throw error("summary_notification_read_incomplete");
+    for (let index = 0; index < snapshots.length; index++) {
+      const occurrence = occurrences[offset + index], job = snapshots[index].data(), decision = job?.notificationDecision;
+      if (snapshots[index].id !== occurrence.id || job && (job.id !== occurrence.id || job.type !== "incident" || job.issueId !== occurrence.issueId)) throw error("summary_notification_occurrence_mismatch");
+      if (decision?.schemaVersion === 1 && decision.source === NotificationPolicy.SOURCE && decision.jobId === occurrence.id
+        && decision.occurrenceId === occurrence.id && decision.issueId === occurrence.issueId) {
+        if (decision.action === "immediate") notificationCadence.immediateSelected++;
+        else if (decision.action === "daily_summary" && decision.reason === "routine_repeat") notificationCadence.routineRepeats++;
+        else if (decision.action === "daily_summary" && decision.reason === "backlog_before_cutover") notificationCadence.backlogDeferred++;
+        else throw error("summary_notification_decision_invalid");
+      } else notificationCadence.undecided++;
+    }
+  }
   return { schemaVersion: 2, period, lower: bounds.lower, upper: bounds.upper, enumerationComplete: true,
-    ...summarizeOccurrences(occurrences) };
+    ...summarizeOccurrences(occurrences), notificationCadence };
 }
 
 async function deliveryReviewSummary(db) {

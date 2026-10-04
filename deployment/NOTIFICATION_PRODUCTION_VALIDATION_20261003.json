@@ -1,0 +1,389 @@
+{
+  "schemaVersion": 1,
+  "purpose": "PoseTek notification production validation; partial operational checkpoint",
+  "receiptPreparedAt": "2026-10-04T07:38:30Z",
+  "status": "source-storage-policy-verified; backlog-and-runtime-acceptance-incomplete",
+  "automationComplete": false,
+  "operation": {
+    "provider": "Power Automate with the existing Google Cloud backend",
+    "codexRequiredForOngoingOperation": false,
+    "desktopRequiredForOngoingOperation": false,
+    "retiredHourlyCodexProcedureRequired": false,
+    "soleEmailRecipient": "dylank@posetek.net",
+    "programmersRetainSharedTrackerEditingAccess": true,
+    "manualOutreachOnly": true,
+    "workoutDeliveryPausedByThisIssueHold": false,
+    "websiteDeploymentPerformedByThisValidation": false,
+    "nativeApplicationReleasedByThisValidation": false
+  },
+  "sourceRelease": {
+    "project": "kickai-69dd0",
+    "aggregateReadbackCheckedAt": "2026-10-04T07:01:28.555Z",
+    "endpointCount": 31,
+    "cohortCounts": {
+      "tracker": 6,
+      "insights": 12,
+      "userIssues": 10,
+      "microsoftEmail": 3
+    },
+    "functions": {
+      "captureUserIssueTrackerSources": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceZipSha256": "706c5321af2dd791489874ecae7b39a6c3f716cd24094aaafb94aa7d49a86665",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "claimMicrosoftEmail": {
+        "versionId": "3",
+        "status": "ACTIVE",
+        "sourceZipSha256": "99c420b8a2e10ea2a7f7a91a4e17f5795894789a3066bf154c909fa7382200d6",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "closeTestingEvent": {
+        "versionId": "4",
+        "status": "ACTIVE",
+        "sourceZipSha256": "cb3e339d7ebde3c2e31a3a67601d8a27fbcc6abcfe7878293bb51718f469f4cc",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "dailyUserIssues": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "dispatchUserIssue": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "drainUserIssueTracker": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceZipSha256": "706c5321af2dd791489874ecae7b39a6c3f716cd24094aaafb94aa7d49a86665",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "getClubInsightsV2": {
+        "versionId": "5",
+        "status": "ACTIVE",
+        "sourceZipSha256": "1bc4dc556f906d1da55b1032ff9bda54ec51a1d5a2b313dfc1dedcc9fcc26e65",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "getCoachPlayerComparison": {
+        "versionId": "2",
+        "status": "ACTIVE",
+        "sourceZipSha256": "1bc4dc556f906d1da55b1032ff9bda54ec51a1d5a2b313dfc1dedcc9fcc26e65",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "getUserIssues": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "ingestUserIssueTrackerMail": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceZipSha256": "706c5321af2dd791489874ecae7b39a6c3f716cd24094aaafb94aa7d49a86665",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "observeIssueAi": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "observeIssueDiagnostic": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "observeIssueLog": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "observeIssueReport": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "observeUserIssueTracker": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceZipSha256": "706c5321af2dd791489874ecae7b39a6c3f716cd24094aaafb94aa7d49a86665",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "observeUserIssueTrackerOccurrence": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceZipSha256": "706c5321af2dd791489874ecae7b39a6c3f716cd24094aaafb94aa7d49a86665",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "projectInsightArtifactDeletes": {
+        "versionId": "5",
+        "status": "ACTIVE",
+        "sourceZipSha256": "1bc4dc556f906d1da55b1032ff9bda54ec51a1d5a2b313dfc1dedcc9fcc26e65",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "projectInsightArtifacts": {
+        "versionId": "5",
+        "status": "ACTIVE",
+        "sourceZipSha256": "1bc4dc556f906d1da55b1032ff9bda54ec51a1d5a2b313dfc1dedcc9fcc26e65",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "projectInsightFailures": {
+        "versionId": "5",
+        "status": "ACTIVE",
+        "sourceZipSha256": "1bc4dc556f906d1da55b1032ff9bda54ec51a1d5a2b313dfc1dedcc9fcc26e65",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "projectInsightPlayer": {
+        "versionId": "5",
+        "status": "ACTIVE",
+        "sourceZipSha256": "1bc4dc556f906d1da55b1032ff9bda54ec51a1d5a2b313dfc1dedcc9fcc26e65",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "projectInsightRecords": {
+        "versionId": "5",
+        "status": "ACTIVE",
+        "sourceZipSha256": "1bc4dc556f906d1da55b1032ff9bda54ec51a1d5a2b313dfc1dedcc9fcc26e65",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "projectInsightRevisions": {
+        "versionId": "5",
+        "status": "ACTIVE",
+        "sourceZipSha256": "1bc4dc556f906d1da55b1032ff9bda54ec51a1d5a2b313dfc1dedcc9fcc26e65",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "receiptMicrosoftEmail": {
+        "versionId": "3",
+        "status": "ACTIVE",
+        "sourceZipSha256": "99c420b8a2e10ea2a7f7a91a4e17f5795894789a3066bf154c909fa7382200d6",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "reconcileMicrosoftEmail": {
+        "versionId": "3",
+        "status": "ACTIVE",
+        "sourceZipSha256": "99c420b8a2e10ea2a7f7a91a4e17f5795894789a3066bf154c909fa7382200d6",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "reconcileTestingRepProgress": {
+        "versionId": "4",
+        "status": "ACTIVE",
+        "sourceZipSha256": "15cbaa4f76bda3c2b93523958bf1780a7491faa100eb954bf3239f748b7ac38b",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "reconcileTestingStationProgress": {
+        "versionId": "3",
+        "status": "ACTIVE",
+        "sourceZipSha256": "cb3e339d7ebde3c2e31a3a67601d8a27fbcc6abcfe7878293bb51718f469f4cc",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "recoverUserIssueTracker": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceZipSha256": "706c5321af2dd791489874ecae7b39a6c3f716cd24094aaafb94aa7d49a86665",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "submitUserIssue": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "sweepTestingEventFinalizations": {
+        "versionId": "3",
+        "status": "ACTIVE",
+        "sourceZipSha256": "cb3e339d7ebde3c2e31a3a67601d8a27fbcc6abcfe7878293bb51718f469f4cc",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "sweepUserIssues": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "updateUserIssue": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      }
+    },
+    "exactActualSourceZipsVerified": true,
+    "rawIamPreserved": true,
+    "staticConfigurationsPreserved": true,
+    "allUnrelatedFunctionsPreserved": true,
+    "originalFullInventoryChainVerified": true,
+    "sourceAcceptanceDoesNotProveSettingsOrPublication": true
+  },
+  "storageActivation": {
+    "state": "active; readback verified",
+    "activatedAt": "2026-10-04T07:04:50.217Z",
+    "seedStorageVersion": 2,
+    "fieldMask": [
+      "seedStorageVersion"
+    ],
+    "settingsWrites": 1,
+    "seedWrites": 0,
+    "rowWrites": 0,
+    "checkpointWrites": 0,
+    "sourceCaptureWrites": 0,
+    "queueWrites": 0,
+    "workbookWrites": 0,
+    "mailWrites": 0,
+    "permissionWrites": 0,
+    "actualReadbackVerified": true,
+    "all690SavedHumanFieldsPreserved": true,
+    "postActivationNativeBatchAccepted": false
+  },
+  "notificationPolicy": {
+    "state": "active; readback reconciled",
+    "mode": "first_and_daily",
+    "serverCommitTime": "2026-10-04T07:10:32.256247Z",
+    "settingAddition": "notificationPolicy",
+    "settingsWrites": 1,
+    "immutableActivationAuditCreated": true,
+    "secondActivationCommitPerformed": false,
+    "issueSendingEnabled": false,
+    "immediateNoticeCriteria": [
+      "first issue",
+      "new recorded reporter or target athlete",
+      "severity escalation",
+      "recurrence after Fixed or Verified"
+    ],
+    "routineRepeatHandling": "retained occurrence and daily summary; no immediate repeat notice",
+    "summaryReceiptWindow": "9 AM to 9 AM America/Los_Angeles",
+    "guardsPreserveFrozenEnvelopesConsumedClaimsAndReceipts": true,
+    "fullBacklogPreservationAuditComplete": false,
+    "genuinePostCutoverDylanOnlyDeliveryVerified": false
+  },
+  "backlogAudit": {
+    "status": "partial; first page verified",
+    "fixedReceiptUpperBound": "2026-10-04T07:10:32.256247Z",
+    "verifiedPages": 1,
+    "examined": 25,
+    "deferred": 10,
+    "preserved": 15,
+    "complete": false,
+    "remainingBacklogNotCountedByThisPage": true,
+    "historicalResendReplayPerformed": false,
+    "noImmediateDeliveryClaimed": true
+  },
+  "sharedTracker": {
+    "path": "PoseTek > Technology > Website > User Issue Tracker > PoseTek Issue Tracker.xlsx",
+    "physicalAcceptedRevision": 266,
+    "counts": {
+      "actions": 690,
+      "instances": 1280,
+      "originalEmailRows": 764,
+      "dailyStatusRows": 3
+    },
+    "archiveFixedReadTime": "2026-10-04T04:14:30.165Z",
+    "pendingTrackerTicketsAtArchive": 3585,
+    "allSavedHumanRecordsProtected": 690,
+    "humanFields": [
+      "Status",
+      "Owner",
+      "Due",
+      "Fix notes"
+    ],
+    "humanPreservationKey": "stable Action ID",
+    "nativeQueueStateAtThisCheckpoint": "PAUSED",
+    "postStorageCutoverPhysicalReadbackAccepted": false,
+    "fullyRefreshedWorkbookClaimed": false,
+    "captureAndPublicationHaveSeparateCheckpoints": true,
+    "capturedOrQueuedDoesNotMeanPublished": true
+  },
+  "identityAndCoverage": {
+    "reporterContactFromExactRecordedAuthUid": true,
+    "reporterSeparateFromTargetAthlete": true,
+    "unverifiedAndFailedContactLookupsRemainExplicit": true,
+    "serviceOperatorsNotInferred": true,
+    "genericDiagnosticsDoNotProveCrashOrInterruptedWorkout": true,
+    "routineSuccessfulWorkoutCompletionIsOutsideIssueWorkbook": true,
+    "dedicatedAssignedCoachLookupInstrumented": false,
+    "mailboxIdentitySettingsActivatedAtThisCheckpoint": false,
+    "currentTypedGraphAcceptanceRequiredBeforeActivation": true,
+    "genuineSymbolicatedNativeCrashAcceptanceVerified": false,
+    "nativeMacIPhoneTestFlightAcceptancePending": true
+  },
+  "googleCloudFallback": {
+    "configurationCheckedAt": "2026-10-04T04:49:00Z",
+    "activePolicyCount": 2,
+    "soleDestination": "dylank@posetek.net",
+    "fallbackDeliveryProvedByConfiguration": false
+  },
+  "offlineValidation": {
+    "trackerStorageTestsPassed": 209,
+    "deployedRulesClientDenialAssertionsPassed": 300,
+    "scopedSourceOperatorTestsPassed": 30,
+    "insightsSourceOperatorTestsPassed": 17,
+    "notificationPolicyOperatorTestsPassed": 17,
+    "policyPerformanceSuccessorTestsPassed": 35,
+    "auditedPolicyControlSuccessorTestsPassed": 25,
+    "nativeGetParallelPolicySuccessorTestsPassed": 32,
+    "oneExistingTaskGuardTestsPassed": 14,
+    "freshOnTimestampValidatorTestsPassed": 9,
+    "freshOnTimestampProbeTestsPassed": 21,
+    "originalTypedSemanticFixturesIncludedInProbeTests": 13,
+    "offlineTestsDoNotEstablishGenuineDeliveryOrPublication": true
+  },
+  "evidenceSha256": {
+    "aggregateSourceReadback": "be1611154cde589dec37fd9befda60b799762040c2ceaba0dd646d4dda1eb322",
+    "storageActivation": "e4b48a56961a7eccd40e4b155346b85af0d49a7c4729bfa3d36d0d9c85128902",
+    "policyActivationReadback": "461b810508014a7debe48c13ce47ba0fbfae66fa03eef8656d8013d2ac152110",
+    "firstBacklogPage": "ca7b0821eeca602152c497fef3bd2cffa0a457a51ffae042efde9ffad49cc5df"
+  },
+  "remainingAcceptanceGates": [
+    "Complete the fixed-cutoff unsent-job audit without consuming historical send permissions",
+    "Verify an ordinary post-storage-cutover native batch and fresh shared-cloud workbook bytes",
+    "Drain retained tracker updates and reconcile separate Outlook/backend capture and publication checkpoints",
+    "Obtain fresh typed Graph, source, native and saved-human-field evidence before the additive identity cutover",
+    "Complete the existing outstanding recovery scan without resetting its cursor",
+    "Resume issue sending only after the final guarded acceptance and confirm a genuine Dylan-only alert with its published record",
+    "Keep separate native device/crash and uninstrumented coach-workflow limits"
+  ],
+  "preservationLimits": [
+    "No historical Resend replay, automatic user outreach or additional purchase",
+    "Original source IDs, email rows, frozen envelopes, consumed claims and partial delivery receipts remain evidence",
+    "No resolution solely because alerts stop",
+    "No claim about all later arrivals or independent scan completeness",
+    "No private files, credentials, contact identities, message bodies or raw incident records included"
+  ]
+}
