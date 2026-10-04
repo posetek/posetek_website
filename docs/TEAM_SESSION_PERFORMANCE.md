@@ -24,6 +24,11 @@ opens a single selected-run detail panel with timing, workload, memory and stage
 Failure markers open the same panel independently of chart filters. Station colors remain consistent; phone changes do not move
 historical runs onto the currently assigned phone. Stages are available per run.
 
+Throughput and interruptions share one full-width cumulative chart and time axis.
+Outcome markers sit at their station's accepted-rep count at the reported time;
+markers do not themselves increment throughput. Station-colored rings and an
+outcome-symbol legend preserve both identities, and run markers open the selected-run
+detail panel. Undated outcomes remain counted in the coverage caption.
 Throughput and failures remain event-wide across all live-capture drills/versions.
 The throughput graph is a cumulative step chart per station. An accepted protocol rep counts once, at its earliest prepared terminal timestamp.
 Prepared partial measurement results consume a protocol slot and increase this
@@ -137,6 +142,24 @@ requests still return JSON 401 with CORS. See the linked receipt for exact evide
 The existing synthetic preview is isolated and labeled; it is never a live-data
 fallback. No new TestFlight build, rules or production player-data writes are needed.
 
+### Combined station activity chart (2026-10-03)
+
+The full-width chart replaces the two side-by-side throughput/interruption cards.
+It is integrated with the newer player-duration table, both player timeline modes
+and selected-run detail panel. The merged source passed 17 focused frontend tests,
+TypeScript, scoped lint and the Astro build.
+
+Browser verification used both the synthetic preview and the previously retrieved
+October 3 session (81 runs, 80 accepted reps, 29 interruption markers), with no
+production writes. At 1440 px the card spans the full 1312 px content width; at
+390 and 320 px the chart scrolls inside its card without document overflow.
+Marker selection opens and focuses the correct run-detail panel; closing the panel
+and both player timeline modes passed. All four player rows remain present.
+No page errors were observed. Desktop and mobile renders were visually reviewed;
+private preview artifacts remain outside Git.
+
+The change is integrated into the shared checkout and served locally on port 5173.
+Hosted publication remains unchanged.
 
 ### Player timing presentation follow-up (2026-10-03)
 

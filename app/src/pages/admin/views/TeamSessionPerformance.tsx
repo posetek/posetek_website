@@ -74,8 +74,11 @@ export function TeamSessionDashboard({session:s,preview=false}:{session:TeamSess
       <p className="dp-muted">Each dot is one run. Lines connect observations, not continuous monitoring. Missing readings break the line. {metric==="duration"?"Filled dots: processing duration. Hollow dots: older total-run timing including overhead.":metric==="thermal"?"Heat is iOS thermal state, not degrees; nominal is a real reading at level 0.":metric==="processing"?"Older builds with only total-run timing appear under Total run time.":metric==="memory"?"Memory is the sampled peak in each run, not a continuous memory trace.":""} Different drills and software versions have different workloads.</p>
     </section>
     {selectedRun&&<SelectedRunDetails session={s} run={selectedRun} onClose={()=>{setSelected(null);document.querySelector<HTMLAnchorElement>(`a[href="#team-run-${selectedRun.runId}"]`)?.focus();}}/>}
-    <div className="team-operations"><section className="admin-card dp-section"><p className="eyebrow">Station throughput</p><h2>Reps completed over time</h2><ThroughputTimeline session={s}/><p className="dp-muted">Cumulative accepted protocol reps, including partial measurement results, ordered by station. Retries count once. Flat sections mean no new reported completions, not proven phone idle time. All drills and versions; syncing is tracked separately above.</p></section>
-      <section className="admin-card dp-section"><p className="eyebrow">Station interruptions</p><h2>Failures and incomplete outcomes</h2><FailureTimeline session={s} onSelect={select}/><p className="dp-muted">× Failed · ◇ Partial · □ Cancelled · ? Interrupted / unknown · △ Capture interruption (capture-start time). Markers use the terminal timestamp when reported; otherwise the labeled run-start time. No terminal result does not imply a crash.</p></section></div>
+    <section className="admin-card dp-section team-operations"><p className="eyebrow">Station activity</p><h2>Reps completed and interruptions</h2>
+      <StationTimeline session={s} onSelect={select}/>
+      <p className="dp-muted">Lines count accepted protocol reps, including partial results; retries count once. Markers sit on their station's line and do not add reps. Select a run marker to inspect it.</p>
+      <p className="dp-muted">All drills and versions; syncing is tracked separately above. Flat sections mean no new reported completions, not proven phone idle time. Markers use the terminal timestamp when reported, otherwise the labeled run-start time. Capture interruptions use capture-start time. No terminal result does not imply a crash.</p>
+    </section>
     <details className="admin-card dp-section team-coverage"><summary>Reporting coverage and missing measurements</summary><p>{s.coverage.attempts} uploaded attempt indexes · {s.coverage.missingSummaries} awaiting diagnostic summaries · {s.coverage.staleSummaries} awaiting newer manifest versions · {s.coverage.oldSummaries} older summary versions · {s.coverage.unassigned} unmatched station/player records · {s.coverage.reprocessing} reprocessing runs</p><p>{s.coverage.unknownPhone} unknown phone identities · {s.coverage.missingProcessing} missing processing times · {s.coverage.missingMemory} missing memory readings · {s.coverage.missingThermal} missing heat readings · {s.coverage.missingCompletionTime} successes without completion timestamps · {s.coverage.missingRepIdentity} successes without a rep identity (excluded from throughput)</p><p>Phones upload asynchronously. An offline phone or a missing upload is not a zero or a confirmed failure. CPU utilization, battery temperature and queue-wait duration are not reported by these builds.</p>{s.unprocessed.length>0&&<div className="dp-table-wrap"><table className="dp-table"><caption>Attempts without a reported processing run, including capture interruptions</caption><thead><tr><th>Station</th><th>Player</th><th>Capture time</th><th>State / last stage</th></tr></thead><tbody>{s.unprocessed.map(a=><tr key={a.attemptId}><td>{a.stationId}</td><td>{s.participants.find(p=>p.id===a.playerDocumentID)?.name}</td><td>{time(a.at)}</td><td>{a.state} · {a.lastStage}{a.summaryMissing?" · summary pending":""}</td></tr>)}</tbody></table></div>}</details>
     <PlayerStationTimings session={s}/>
   </>;
@@ -105,22 +108,29 @@ export function PerformanceTimeline({session,rows,metric,onSelect}:{session:Team
   </div>;
 }
 function TimeAxis({start,end,y}:{start:number;end:number;y:number}) {return <>{[0,.25,.5,.75,1].map(f=><text key={f} x={70+f*860} y={y} textAnchor={f===0?"start":f===1?"end":"middle"}>{start===0?`${Math.round(f*(end-start)/60000)} min`:time(start+f*(end-start))}</text>)}</>;}
-export function ThroughputTimeline({session:s}:{session:TeamSession}) {
-  const [start,end]=chartWindow(s),top=Math.max(1,...s.stations.map(st=>s.completions.filter(p=>p.stationId===st.id).length));
-  const x=(at:number)=>70+(at-start)/(end-start)*860,y=(n:number)=>225-n/top*180;
-  return <div className="team-chart"><svg viewBox="0 0 1000 285" role="img" aria-label="Cumulative accepted protocol reps over time, one line per station">
-    {[0,.5,1].map(f=><g key={f}><line x1="70" x2="930" y1={y(top*f)} y2={y(top*f)} className="team-grid"/><text x="60" y={y(top*f)+4} textAnchor="end">{(top*f).toFixed(0)}</text></g>)}<text x="70" y="20">Accepted protocol reps</text><TimeAxis start={start} end={end} y={255}/>
-    {s.stations.map((st,i)=>{const points=s.completions.filter(p=>p.stationId===st.id).sort((a,b)=>a.at-b.at);const path=`M70,${y(0)} `+points.map((p,n)=>`H${x(p.at)}V${y(n+1)}`).join(" ")+" H930";return <path key={st.id} d={path} stroke={COLORS[i]} fill="none" strokeWidth="3"><title>{`Station ${st.order}: ${points.length} protocol reps`}</title></path>;})}
-    </svg><div className="team-legend">{s.stations.map((st,i)=><span key={st.id}><i style={{background:COLORS[i]}}/>Station {st.order}: {s.completions.filter(p=>p.stationId===st.id).length}{end>start?` · ${(s.completions.filter(p=>p.stationId===st.id).length/((end-start)/60000)).toFixed(2)} reps/min`:""}</span>)}</div></div>;
-}
-export function FailureTimeline({session:s,onSelect}:{session:TeamSession;onSelect:(id:string)=>void}) {
-  const [start,end]=chartWindow(s),failures=s.rows.filter(r=>r.mode==="liveCapture"&&["failed","partial","cancelled","interruptedUnknown"].includes(r.outcome));
-  const captures=s.unprocessed.filter(a=>a.state==="interruptedUnknown"&&a.at!==null);
+export function StationTimeline({session:s,onSelect}:{session:TeamSession;onSelect:(id:string)=>void}) {
+  const [start,end]=chartWindow(s);
+  const stations=s.stations.map((station,i)=>({...station,color:COLORS[i],points:s.completions.filter(p=>p.stationId===station.id).sort((a,b)=>a.at-b.at)}));
+  const top=Math.max(1,...stations.map(st=>st.points.length));
+  const x=(at:number)=>70+(at-start)/(end-start)*860,y=(n:number)=>260-n/top*210;
+  const countAt=(stationId:string,at:number)=>stations.find(st=>st.id===stationId)?.points.filter(p=>p.at<=at).length??0;
+  const failures=s.rows.filter(r=>r.mode==="liveCapture"&&["failed","partial","cancelled","interruptedUnknown"].includes(r.outcome));
   const points=failures.filter(r=>r.dateReliable&&(r.terminalAt!==null||r.startedAt!==null));
-  return <div className="team-chart"><svg viewBox="0 0 1000 285" role="img" aria-label={`${failures.length} unsuccessful runs over time by station`}>
-    {s.stations.map((st,i)=><g key={st.id}><line x1="70" x2="930" y1={65+i*70} y2={65+i*70} className="team-grid"/><text x="60" y={70+i*70} textAnchor="end">S{st.order}</text></g>)}<TimeAxis start={start} end={end} y={255}/>
-    {points.map(r=>{const i=s.stations.findIndex(st=>st.id===r.stationId),title=`${r.stationId} · ${status(r.outcome)} · ${time(r.terminalAt??r.startedAt)} (${r.terminalAt===null?"run start; end unknown":"terminal time"}) · ${PROCESSING_DRILLS[r.drill]}`;return <a key={r.runId} href={`#team-run-${r.runId}`} onClick={e=>{e.preventDefault();onSelect(r.runId);}} aria-label={title}><text className="team-failure-mark" fill={COLORS[i]} x={70+((r.terminalAt??r.startedAt)!-start)/(end-start)*860} y={73+i*70} textAnchor="middle">{{failed:"×",partial:"◇",cancelled:"□",interruptedUnknown:"?"}[r.outcome]}<title>{title}</title></text></a>;})}
-    {captures.map(a=><text key={a.attemptId} className="team-failure-mark" x={70+(a.at!-start)/(end-start)*860} y={73+s.stations.findIndex(st=>st.id===a.stationId)*70} textAnchor="middle">△<title>{`${a.stationId} · Capture interruption · capture started ${time(a.at)}; interruption time not reported`}</title></text>)}
-    {!points.length&&!captures.length&&<text x="500" y="30" textAnchor="middle">{failures.length?"No usable timestamps for the reported failures":"No reported failures or incomplete outcomes"}</text>}
-  </svg><p className="dp-muted">{failures.length} unsuccessful runs · {failures.length-points.length} without a usable timestamp · {s.unprocessed.filter(a=>a.state==="interruptedUnknown").length} capture interruptions listed in reporting coverage</p></div>;
+  const captures=s.unprocessed.filter(a=>a.state==="interruptedUnknown");
+  const datedCaptures=captures.filter(a=>a.at!==null);
+  const symbols:Record<string,string>={failed:"×",partial:"◇",cancelled:"□",interruptedUnknown:"?"};
+  return <div className="team-chart team-activity-chart">
+    <div className="team-legend">{stations.map(st=><span key={st.id}><i style={{background:st.color}}/>Station {st.order}: {st.points.length} · {(st.points.length/((end-start)/60000)).toFixed(2)} reps/min</span>)}</div>
+    <div className="team-legend team-outcome-legend" aria-label="Interruption symbols"><span>× Failed</span><span>◇ Partial</span><span>□ Cancelled</span><span>? Interrupted / unknown</span><span>△ Capture interruption</span></div>
+    <svg viewBox="0 0 1000 315" role="img" aria-label={`Cumulative accepted protocol reps and interruptions over time, one line per station. ${failures.length} unsuccessful runs.`}>
+      {[0,.5,1].map(f=><g key={f}><line x1="70" x2="930" y1={y(top*f)} y2={y(top*f)} className="team-grid"/><text x="60" y={y(top*f)+4} textAnchor="end">{(top*f).toFixed(0)}</text></g>)}<text x="70" y="20">Accepted protocol reps</text><TimeAxis start={start} end={end} y={297}/>
+      {stations.map(st=>{const path=`M70,${y(0)} `+st.points.map((p,n)=>`H${x(p.at)}V${y(n+1)}`).join(" ")+" H930";return <path key={st.id} d={path} stroke={st.color} fill="none" strokeWidth="3"><title>{`Station ${st.order}: ${st.points.length} protocol reps`}</title></path>;})}
+      {points.map(r=>{const at=(r.terminalAt??r.startedAt)!,station=stations.find(st=>st.id===r.stationId),count=countAt(r.stationId,at),title=`${r.stationId} · ${status(r.outcome)} · ${time(at)} (${r.terminalAt===null?"run start; end unknown":"terminal time"}) · ${PROCESSING_DRILLS[r.drill]} · ${count} accepted reps at this time`;return <a key={r.runId} href={`#team-run-${r.runId}`} onClick={e=>{e.preventDefault();onSelect(r.runId);}} aria-label={title}>
+        <circle className="team-activity-marker" cx={x(at)} cy={y(count)} r="6" stroke={station?.color||"#aaa"}/>
+        <text className="team-failure-mark" x={x(at)} y={y(count)} textAnchor="middle" dominantBaseline="central">{symbols[r.outcome]}<title>{title}</title></text>
+      </a>;})}
+      {datedCaptures.map(a=>{const station=stations.find(st=>st.id===a.stationId);return <g key={a.attemptId}><circle className="team-activity-marker" cx={x(a.at!)} cy={y(countAt(a.stationId,a.at!))} r="6" stroke={station?.color||"#aaa"}/><text className="team-failure-mark" x={x(a.at!)} y={y(countAt(a.stationId,a.at!))} textAnchor="middle" dominantBaseline="central">△<title>{`${a.stationId} · Capture interruption · capture started ${time(a.at)}; interruption time not reported`}</title></text></g>;})}
+    </svg>
+    <p className="dp-muted">{failures.length} unsuccessful runs · {failures.length-points.length} without a usable timestamp · {captures.length} capture interruptions ({captures.length-datedCaptures.length} undated)</p>
+  </div>;
 }

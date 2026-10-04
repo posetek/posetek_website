@@ -26,6 +26,12 @@ details. This presentation follow-up uses the unchanged live v5 API. See
 [phone contract](docs/DEVICE_PROCESSING_DASHBOARD.md) and
 [team contract](docs/TEAM_SESSION_PERFORMANCE.md).
 
+The requested chart follow-up combines station throughput and interruption markers
+in one full-width chart with shared time and rep-count axes. Source and local
+verification are recorded in [the team contract](docs/TEAM_SESSION_PERFORMANCE.md);
+shared-checkout integration is complete and the updated dashboard is available on
+local port 5173. Hosted publication remains unchanged.
+
 The earlier website draft `6ac1911a5b925767ec7362b8` is superseded. Production has
 changed concurrently; this follow-up updates local UI and the scoped reporting
 backend without promoting an obsolete website artifact. Historical rollout
