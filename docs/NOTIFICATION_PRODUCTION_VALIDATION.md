@@ -16,13 +16,82 @@ email delivery or publication of queued records.
 The [preceding progress receipt](../deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
 and dated production receipts remain historical evidence. The
 [partial validation receipt](../deployment/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json)
-records the source/storage/policy checkpoint, completed held email-job audit and
-first accepted storage-v2 workbook batch. Complete publication catch-up, identity
-acceptance and genuine delivery remain separate gates.
+preserves the source/storage/policy checkpoint, completed held email-job audit and
+first accepted storage-v2 workbook batch, and adds the later revision-365 physical
+and identity acceptance below. Sending and genuine delivery remain separate gates.
 This handoff is not a website release. Newer primary-site changes and native
 application releases have their own source and acceptance gates.
 
-## Preserved validation baseline
+## Latest accepted publication and identity checkpoint (October 4)
+
+The **17:03:17.750 UTC** backend snapshot had revision **365** and zero pending
+tracker tickets. Physical cloud readback at **17:06:03.434 UTC** accepted **789
+actions, 3,228 occurrences, 2,384 original email rows and four daily/status rows**.
+All 365 native receipts, machine hashes, formulas and cached results passed.
+Human-field readback at **17:09:07.313 UTC** preserved all **690 saved records**
+from revision 266 by stable Action ID, alongside 99 additional action records.
+The post-identity uniqueness proof at **17:09:52.135 UTC** accepted every one of
+the 3,228 occurrence sources, with **zero incomplete source-authority rows**.
+The original full companions retained exact raw evidence; these verifiers made
+no workbook, source-checkpoint or cloud writes.
+
+Guarded mailbox identity activation completed at **15:28:02.319 UTC** through
+one settings write and one source-binding write, without row, checkpoint, queue,
+workbook or email writes. The accepted revision-365 identity counts are **187
+recorded-actor rows**, **148 verified-email rows**, **39 unverified-email rows**,
+and **3,041 unknown-actor rows**. All 187 recorded-actor rows retain unavailable
+Auth display names; no fresh Auth lookup is claimed. These are row counts, not
+187 distinct accounts or users. The historical count of **34** meant incomplete
+source authority, not necessarily missing or pending contacts. Its current value
+is zero; unknown operators and six historical target labels remain unconfirmed.
+
+At this snapshot, Outlook captured and published through **16:58:02.536 UTC**
+(sequence 605); backend captured and published through **16:58:02.544 UTC**
+(sequence 596). Both had all captured windows published. This covers those dated
+cutoffs, without asserting coverage of later arrivals. Later revision-367 backend
+health with capture/publication through approximately **17:20 UTC** is progress,
+not fresh physical acceptance of that revision. The earlier checkpoint
+plan003 was read back in the **after** state by GET-only inspection at
+**15:19:25.005 UTC**. Its original journal remains uncertain, with 17 events and
+`restoreRequired:true`; the readback neither rewrites that history nor authorizes
+replay or establishes a new workbook revision.
+
+All held native-publication, capture and recovery operations have been restored
+to their original RUNNING/ENABLED states. The final006 guarded send attempt was
+refused at **17:15:41.837 UTC** with `issue_resume_fresh_evidence_required`:
+**no apply, send journal, consumed send intent or email send**. Overall production
+acceptance remains **false** and genuine Dylan-only delivery remains **OPEN**.
+The Microsoft sender was observed **On at 17:13:47.633 UTC**, with Dylan's
+connection unchanged. Its visible trigger-concurrency/throttling advisory remains
+unresolved by these proofs. Configuration and successful-flow badges do not prove
+delivery; the genuine-delivery gate remains open.
+
+The fixed Insights metadata read at **16:58:29.159 UTC** supports **15 actual
+settled v4 manifests**, rebuilt between **16:54:15.390 and 16:54:31.990 UTC**.
+Of 497 player-parent documents, 69 had current manifests: 63 v4 and six v2;
+62 were coherent fresh v4 and seven were stale (the six v2 plus one v4).
+The remaining 428 had no current manifest. All 101 referenced day documents
+were present; no active rebuild lease was observed. Seventeen pending testing
+markers were ordinary open/incomplete work, with no eligible unresolved finalizer
+at that fixed point. The census read parent names/presence, not profile fields;
+all-497 Insights-manifest acceptance remains false. The deployed twelve-endpoint
+cohort retains nine v4 and three older v2 dependency contracts.
+
+The earlier fully paginated **07:05–16:30 UTC** log interval contained no
+WARNING-or-higher records and ended before those rebuilds. The newer full
+**07:05–17:18 UTC** review across the twelve scoped endpoints found **29 WARNING
+records**, all from `projectInsightRecords`, and **zero ERROR-or-higher records**.
+Their retained text, “Snapshot has no readTime. Using now()”, occurred between
+**16:54:17.150030 and 16:54:33.107953 UTC**, overlapping the rebuild window; the
+text matches the local Firebase Functions **4.9.0** SDK fallback when both snapshot
+create/update times are absent; that version is also pinned by the deployed
+`projectInsightRecords` closure lockfile. Runtime SDK bytes were not independently
+downloaded. These warnings do not
+establish failed rebuilds or crashes. Settled metadata and bounded logs do not
+prove every endpoint ran, payload accuracy, user outcomes, all-account convergence,
+incident resolution or email delivery.
+
+## Preserved earlier validation checkpoints
 
 The fixed backend read at **2026-10-04 04:14:30.165 UTC** (October 3, 9:14 PM PDT)
 retained revision **266**, with **690 actions, 1,280 instances, 764 original email
@@ -98,8 +167,8 @@ a Verified recovery notice requires the saved fix and retest evidence. Routine
 repeats go into the daily summary rather than generating an email for every repeat.
 The summary uses the preceding **9 AM to 9 AM America/Los_Angeles** receipt-time
 window and separates recorded user attempts, service failures, diagnostics and
-confirmed crash evidence. Issue sending remains held pending backlog and
-publication and identity acceptance; selecting a send permission does not prove delivery.
+confirmed crash evidence. Issue sending remains held after final006's freshness
+refusal; selecting a send permission does not prove delivery.
 
 Every captured source occurrence remains documented in its appropriate workbook
 evidence: backend incidents as instances and incoming notices as individual email
@@ -138,12 +207,14 @@ who experienced or operated the failing device. Generic diagnostics and unclean
 sessions do not establish a crash, memory exhaustion or interrupted workout.
 Unknown cause and missing device/build/action context remain explicit.
 
-Exact-source review confirmed **39 automated-service message/incident joins**
-without identifying an affected operator. **34 older contact annotations** still
-need correction and native publication. **Six historical target labels** remain
-unconfirmed rather than being presented as verified athlete identities. The
-current-contact review and mailbox identity cutover are incomplete; row counts
-or retained historical contact text do not establish current outreach acceptance.
+The earlier exact-source review confirmed **39 automated-service message/incident
+joins** without identifying an affected operator. Its **34 older annotations**
+were incomplete source-authority rows, rather than a count of missing contacts;
+the later revision-365 proof reduced incomplete source authority to zero.
+**Six historical target labels** remain unconfirmed rather than being presented
+as verified athlete identities. Complete identity acceptance does not identify
+unknown operators or make unverified contacts verified, and retained historical
+contact text does not establish current outreach acceptance.
 
 ## Manual Excel status and recurrence
 
@@ -166,9 +237,9 @@ notice does not resolve the manual task or prove the user's problem is fixed.
 | Implementation | Verified behavior and preserved contract | Still required |
 | --- | --- | --- |
 | Notification cadence | Source cohorts and policy readback verified; all 130 held backlog pages audited at 3,226 examined/1,152 deferred/2,074 preserved | Approved sending resumption, then genuine Dylan-only delivery and matching published identity evidence |
-| Tracker storage version 2 | Six source endpoints and storage flag verified; first actual post-cutover batch physically accepted at revision 267, preserving all 690 saved human records and the native receipt chain; native queue restoration independently verified | Complete retained-update publication and fresh physical readback with separate source checkpoints |
-| Insights rebuild repair | Twelve source endpoints verified with each archived dependency closure preserved; ignores irrelevant bookkeeping writes, retains source-event replay identity and coalesces current work under a per-player lease | Genuine rebuild convergence and error review; busy or unfinished work remains retryable and source deployment does not resolve an incident |
-| Outlook identity conversion | Read-only typed Graph conversion and exact content/item proofs; historical aliases and rows are retained | Current source/connection acceptance, guarded settings cutover, and successful native publication |
+| Tracker storage version 2 | Six source endpoints and storage flag verified; revision 365 physically accepted with all 690 saved human records, complete native receipt chain and captured/published source cutoffs aligned through 16:58 UTC; maintenance holds restored | Fresh evidence for later arrivals and the separate final-send gate |
+| Insights rebuild repair | Twelve source endpoints retain their exact dependency closures; 15 actual settled v4 manifests and bounded log review accepted within the scope above | Seven stale and 428 missing current manifests remain explicit; no all-account, payload, user-outcome or incident-resolution acceptance |
+| Outlook identity conversion | Guarded settings activation at 15:28:02.319 UTC and revision-365 post-identity acceptance; all 3,228 occurrence sources exact and historical aliases/rows retained | Unknown operators, unverified contacts and six historical target labels remain explicit; genuine delivery is separate |
 
 The tracker repair retains the existing workbook schema, row IDs, evidence
 links, formulas and human columns. Frozen batches replay their identical payload,

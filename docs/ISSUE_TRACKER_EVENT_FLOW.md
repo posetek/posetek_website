@@ -2,8 +2,9 @@
 
 See [the current production validation handoff](NOTIFICATION_PRODUCTION_VALIDATION.md)
 for the preserved revision-266 backlog, all 31 verified source endpoints, active
-storage version 2 and notification policy, and remaining backlog, identity, delivery and physical
-publication gates. This is the automation branch; its dated website receipts do
+storage version 2 and notification policy, accepted revision-365 physical and
+identity proofs, and remaining sending and genuine-delivery gates. This is the
+automation branch; its dated website receipts do
 not establish the latest primary-site release. Storage activation is distinct
 from native publication.
 
@@ -18,22 +19,29 @@ three Microsoft-email endpoints have passed exact deployed-source, configuration
 and IAM checks. Tracker storage version 2 was activated and read back at
 `2026-10-04T07:04:50.217Z`. The first-plus-daily policy was committed at
 `2026-10-04T07:10:32.256247Z` and its readback reconciled without a second commit.
-Issue sending remains disabled and the native queue is paused. The first backlog
-page examined 25 jobs, deferred 10 and preserved 15; the remaining audit is
-incomplete. The repaired tracker preserves the existing workbook schema and human
-fields; complete backlog treatment, identity activation, sending resumption,
-genuine delivery and fresh shared-cloud acceptance remain separate
-gates. Compatible request
+The first backlog page examined 25 jobs, deferred 10 and preserved 15; its completed
+held-cutoff audit later covered 130 pages, with 3,226 examined, 1,152 deferred and
+2,074 preserved. The repaired tracker preserves the existing workbook schema and human
+fields. Guarded mailbox identity activation completed at **15:28:02.319 UTC**.
+Revision **365** passed physical readback at **17:06:03.434 UTC**, all **690 saved
+human records** at **17:09:07.313 UTC**, and post-identity uniqueness at
+**17:09:52.135 UTC**: **789 actions, 3,228 occurrences, 2,384 original email rows
+and four daily/status rows**. Every occurrence had exact source authority, with
+zero incomplete rows. The historical 34 counted incomplete source authority,
+not missing contacts; unknown operators and unverified contacts stay explicit.
+Native publication, capture and recovery holds are restored. Final006 was refused
+at **17:15:41.837 UTC**, without apply, intent or send. Overall acceptance remains
+false; sending and genuine Dylan-only delivery remain separate gates. Compatible
+request
 observations retain both sources; conflicting known operations or authorized targets remain distinct. Generic
 diagnostics and automated service failures do not identify an operator by
 themselves. Counts of actions, instances and original email rows are not counts of
 unique users. The dedicated Microsoft identity-conversion flow passed read-only
-semantic acceptance; historical aliases stay intact until the separately guarded
-settings cutover and native publication pass. The preserved revision-266 backlog
-requires native publication and fresh physical cloud readback. The physical master
-is still revision 266, with no accepted post-storage-cutover native batch; deployed
-writer source or the active storage setting alone does not prove those queued
-updates reached Excel.
+semantic acceptance; the guarded settings cutover and revision-365 native proof
+preserve historical aliases and original email rows. At that accepted snapshot,
+Outlook capture and publication both reached **16:58:02.536 UTC** and backend
+both reached **16:58:02.544 UTC**. This does not cover later arrivals. Deployed
+writer source or an active storage setting alone does not prove publication.
 
 New issue,
 status, daily-summary and workout emails target only `dylank@posetek.net`; both

@@ -38,10 +38,31 @@ that is not fresh physical acceptance of revision 268 or complete catch-up.
 Outlook/backend capture reached approximately `09:54Z`, while their respective
 published checkpoints remained `00:34:05.451Z` and `00:34:05.351Z`. Capture and
 publication stay separate, and the existing outstanding-delivery scan remains
-active. Final catch-up, mailbox identity cutover, current-contact corrections,
-issue-send resumption, genuine delivery and genuine Insights convergence remain
-separate acceptance gates. Read the [validation handoff](docs/NOTIFICATION_PRODUCTION_VALIDATION.md)
+active. Those were incomplete gates at that dated checkpoint; the later accepted
+publication and identity state is recorded below. Read the [validation handoff](docs/NOTIFICATION_PRODUCTION_VALIDATION.md)
 and [partial receipt](deployment/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json).
+
+The later accepted **revision 365** has **789 actions, 3,228 occurrences, 2,384
+original email rows and four daily/status rows**, with all **690 saved human
+records** preserved. Backend evidence is dated **17:03:17.750 UTC**, physical cloud
+acceptance **17:06:03.434 UTC**, human-field acceptance **17:09:07.313 UTC**, and
+post-identity uniqueness **17:09:52.135 UTC**. Guarded mailbox identity activation
+completed at **15:28:02.319 UTC**. All 3,228 occurrence sources were exact with zero
+incomplete source authority; 187 recorded-actor rows retain unavailable Auth display
+names, with 148 verified and 39 unverified email rows, while 3,041 unknown-actor
+rows remain unknown. Outlook/backend capture and publication align through
+**16:58:02.536/16:58:02.544 UTC**, without a claim about later arrivals.
+Native publication, capture and recovery holds are restored. Final006 was refused
+at **17:15:41.837 UTC** without apply, intent or send; overall acceptance remains
+false and genuine Dylan-only delivery remains open.
+
+Insights metadata at **16:58:29.159 UTC** supports 15 actual settled v4 rebuilds.
+Seven current manifests remain stale, including six v2, and 428 player-parent
+documents have no current manifest; 17 pending testing markers are ordinary
+open/incomplete work. The full scoped **07:05–17:18 UTC** log review found 29 SDK
+snapshot-clock warnings and no ERROR-or-higher records. This is scoped metadata
+and log evidence, not all-account convergence, verified payloads, user outcomes or
+incident resolution. No native release or dedicated assigned-coach lookup is added.
 
 Dylan is the sole recipient of new application and workout emails. Both Google
 Cloud fallback policies were On with Dylan alone at `08:38:52.808Z`; Nolan and
@@ -50,8 +71,9 @@ Outlook review of all subjects/read states from `08:35Z` inclusive to `09:38:30Z
 exclusive found no messages; it does not establish delivery outside that interval.
 Exact-UID reporter/contact is separate from target athlete and attempted action.
 The 39 verified automated-service mail joins keep unknown operators unknown;
-34 older contact annotations require correction, and six historical target labels
-remain unconfirmed. Diagnostic/device records do not prove a crash.
+the older count of 34 described incomplete source-authority rows, not unknown or
+pending contacts. Revision 365 has zero such incomplete rows; unknown contacts
+and six historical target labels remain unconfirmed. Diagnostic/device records do not prove a crash.
 
 Every captured occurrence is retained, with first/meaningful-change notices and
 a daily summary of routine repeats once sending is accepted. Manual Excel
