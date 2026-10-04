@@ -2,8 +2,9 @@
 
 Status (2026-10-03): the user approved callable reachability, the binding is active,
 and genuine authenticated requests have returned HTTP 200. The local dashboard
-uses live Firebase data. The completeness/station-timing follow-up is prepared;
-see the current receipt for deployment verification. Older Netlify drafts are
+uses live Firebase data. The completeness/station-timing follow-up is deployed as callable v5 from `f996b83`;
+all 16 source files match and all 124 other functions are unchanged. See the
+[verification receipt](../deployment/DEVICE_PROCESSING_COMPLETENESS.json). Older Netlify drafts are
 superseded and must not be promoted over concurrent production changes.
 
 ## Admin workflow
@@ -111,6 +112,8 @@ Station 2 interval includes a long pause, so its mean and median differ markedly
 Focused checks cover backend aggregation, identity, missing evidence, default
 history, partial timing, per-player intervals and frontend charts/cards. Chromium
 checks include all metric tabs, point-to-row navigation and 1440/1024/390/320 widths.
-See the completeness release receipt for exact command results and live version.
+37 backend and 81 focused frontend tests, TypeScript and the Astro build passed.
+The verified callable v5 served genuine authenticated HTTP 200 requests; unsigned
+requests still return JSON 401 with CORS. See the linked receipt for exact evidence.
 The existing synthetic preview is isolated and labeled; it is never a live-data
 fallback. No new TestFlight build, rules or production player-data writes are needed.

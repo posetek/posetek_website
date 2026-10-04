@@ -1,6 +1,6 @@
 # Phone processing dashboard
 
-Status (2026-10-03): live callable reachability approved and enabled; authenticated requests succeed. Local dashboard completeness and station-timing follow-up prepared; see the completeness receipt for its live deployment verification. Older website drafts are superseded.
+Status (2026-10-03): live callable reachability approved and enabled; authenticated requests succeed. Local dashboard completeness and station-timing follow-up verified with deployed callable v5. See the [verification receipt](../deployment/DEVICE_PROCESSING_COMPLETENESS.json). Older website drafts are superseded.
 
 The admin overview starts with one condensed table: installation UUID, phone type,
 per-drill completed-processing average time, largest sampled memory footprint, total frame

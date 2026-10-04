@@ -33,8 +33,8 @@ mandatory. Genuine admin requests returned 200; unsigned requests receive JSON
 The completeness follow-up changes reporting only; the observer normalizer remains
 summary version 2. Deploy only `getDeviceProcessingV1` from the prepared immutable
 source bundle, preserve its invoker binding and HTTPS-only setting, then verify
-source bytes and all unrelated function versions. See the completeness receipt
-for the resulting version and verification. Do not promote the superseded website
+source bytes and all unrelated function versions. Callable v5 is source-verified from `f996b83` (16 exact files); observer v2 and all
+124 other functions are unchanged. See the [verification receipt](../../deployment/DEVICE_PROCESSING_COMPLETENESS.json). Do not promote the superseded website
 draft: production changed concurrently and must be reconciled before any hosted release.
 
 See [dashboard contract](../../docs/DEVICE_PROCESSING_DASHBOARD.md) for the exact

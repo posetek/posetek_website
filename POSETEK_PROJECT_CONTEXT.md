@@ -25,7 +25,9 @@ has all 81 processing runs and 80 accepted/synced reps available. See
 The earlier website draft `6ac1911a5b925767ec7362b8` is superseded. Production has
 changed concurrently; this follow-up updates local UI and the scoped reporting
 backend without promoting an obsolete website artifact. Historical rollout
-receipts remain historical; the completeness receipt records current verification.
+receipts remain historical; the [completeness receipt](deployment/DEVICE_PROCESSING_COMPLETENESS.json)
+records callable v5 source verification, genuine authenticated HTTP 200 requests,
+37 backend tests, 81 frontend tests, build and actual-data browser checks.
 
 ## Optional app feedback (2026-10-03)
 
