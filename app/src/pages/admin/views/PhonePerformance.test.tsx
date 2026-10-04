@@ -13,7 +13,7 @@ describe("phone processing comparisons",()=>{
     expect(html).toContain("Peak memory");expect(html).toContain("Frame reads / calls");
     expect((html.match(/<tr/g)||[]).length).toBe(4);
   });
-  it("has exactly one row per drill and keeps missing or partial-only averages unavailable",async()=>{
+  it("has exactly one row per drill and keeps unreported measurements unavailable",async()=>{
     const report=await previewReport(request),phone=report.phones[0];phone.cohorts=phone.cohorts.filter(c=>c.drill==="sprint");
     phone.cohorts[0].duration={count:0,mean:null,median:null,p90:null,max:null};phone.cohorts[0].partial=4;phone.cohorts[0].successful=0;
     const html=renderToStaticMarkup(<DrillAnalyticsTable phone={phone}/>);
@@ -31,4 +31,9 @@ describe("phone processing comparisons",()=>{
     expect(()=>parseProcessingReport({...report,rows:Array(101).fill({})})).toThrow();
     report.phones[0].cohorts[0].duration.mean=NaN;expect(()=>parseProcessingReport(report)).toThrow();
   });
+});
+
+it("shows partial-only compute timing with its quality count and failed time separately",async()=>{
+ const report=await previewReport(request),phone=report.phones[0],c=phone.cohorts[0];phone.cohorts=[{...c,successful:0,partial:4,failed:1,duration:{count:4,mean:11000,median:11000,p90:11000,max:11000},failedDuration:{count:1,mean:500,median:500,p90:500,max:500}}];
+ const html=renderToStaticMarkup(<DrillAnalyticsTable phone={phone}/>);expect(html).toContain("11.00 s");expect(html).toContain("4 completed");expect(html).toContain("4 partial");expect(html).toContain("Failed avg: 0.50 s");
 });

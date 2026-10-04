@@ -1,11 +1,10 @@
 # Team testing performance
 
-Status (2026-10-03): backend deployed and source-verified; 238 manifests imported
-into summary version 2. The website draft `6ac1911a5b925767ec7362b8` is built and
-verified, with 1,596 provider inventory records and zero artifact mismatches.
-Production is unchanged. The existing callable invoker approval and authenticated
-browser acceptance remain pending; this page does not bypass them. Exact evidence
-and the remaining release step: [release receipt](../deployment/TEAM_SESSION_PERFORMANCE_DRAFT.json).
+Status (2026-10-03): the user approved callable reachability, the binding is active,
+and genuine authenticated requests have returned HTTP 200. The local dashboard
+uses live Firebase data. The completeness/station-timing follow-up is prepared;
+see the current receipt for deployment verification. Older Netlify drafts are
+superseded and must not be promoted over concurrent production changes.
 
 ## Admin workflow
 
@@ -17,16 +16,17 @@ participant overrides). Live snapshots refresh every 30 seconds while visible,
 after the previous request completes. A failed refresh retains a labeled stale
 snapshot. The 50 most recently created events are listed; saved links open older events.
 
-The shared time chart switches between processing duration, total-run duration,
+The shared time chart defaults to All timing (filled processing points, hollow legacy total-run points), and switches between processing duration, total-run duration,
 thermal state at run end, sampled peak memory, frame reads and model calls.
 Drill/source filters apply to this chart and the run table. Each point opens the
 matching table page. Station colors remain consistent; phone changes do not move
 historical runs onto the currently assigned phone. Stages are available per run.
 
 Throughput and failures remain event-wide across all live-capture drills/versions.
-The throughput graph is a cumulative step chart per station. A successful logical
-rep counts once, at its earliest valid reported terminal timestamp. Partial,
-failed, cancelled, unfinished and reprocessing runs do not increase throughput.
+The throughput graph is a cumulative step chart per station. An accepted protocol rep counts once, at its earliest prepared terminal timestamp.
+Prepared partial measurement results consume a protocol slot and increase this
+operational throughput. Failed, cancelled, unfinished and reprocessing runs do not.
+Valid-result and all-processed unique completions remain separate report fields.
 Missing rep IDs or completion times are excluded and reported as coverage gaps.
 The reps/min figure uses the displayed event time window, including rotation and
 other gaps; it is not CPU utilization or an estimate of pure compute throughput.
@@ -36,7 +36,22 @@ progress are checked against the event's committed-rep records. They are not
 placed on the phone processing timeline because committed timestamps can change
 on later Firestore rep updates. Planned work comes from the same `effectiveStations`
 helper used by the operational testing-event backend. Each player has a row across
-all three stations, showing completed/planned work and synced counts.
+all three stations, showing completed/planned work, synced counts and per-player elapsed time.
+
+Station cards show average time per completed player, median/range and sample
+coverage. The measured interval begins at the first reported capture attempt
+(including capture interruptions) and ends at the earliest prepared completion of
+the last accepted rep. Every accepted rep needs terminal evidence and the player
+must have completed the station; incomplete coverage stays unavailable. Pauses
+between reps remain included. Station entry, initial setup and queue waiting are
+not recorded and cannot be reconstructed from progress.updatedAt.
+
+Each station card lists every drill's average completed processing duration,
+including valid and partial results, with sample counts and quality counts.
+Failed-run duration remains separate. Source revision, installation, configuration,
+frame format and timing definition remain separate groups. Phone links open the
+full default 90-day history, not only the selected event's date. Station recording
+UUIDs map to execution installation UUIDs only through exact attempt identities.
 
 A missing terminal outcome is pending, not a proven crash. Only `interruptedAt`
 marks an interrupted processing run. Failure markers use terminal time where
@@ -77,29 +92,25 @@ operational report; the selected testing event defines the roster.
 
 ## Verification
 
-- Backend: 29 focused tests passed (18 diagnostic adapter + 11 team reports).
-- Frontend/navigation: 18 focused tests passed.
-- TypeScript project build passed.
-- All 133 cached real manifests normalized with the extended identity checks.
-- Read-only report queries against five actual Firebase events passed, including
-  a four-player event with incoming runs and an older four-player rotation.
-  This verifies report logic/data shape, not browser callable reachability.
-- Chromium: navigation from Device performance, 3 phone cards, 4 players, six
-  metric switches, drill filtering, chart-to-table pagination, failure-to-row
-  navigation and 1440/1024/390/320 widths passed; no page errors/outer overflow.
-  Desktop/mobile screenshots visually reviewed.
+The October 3 completeness audit reconciled all 315 existing Storage manifests
+with their exact derived source generations. They contain 310 processing runs,
+269 attributed to nine installation identities (six recent phones plus three
+historical identities), and 41 inspectable unattributed runs. Of 412 Firebase
+attempt indexes, 97 older records have no current manifest, retained deleted
+manifest, or summary. They remain explicitly listed as missing diagnostic evidence.
+Two sampled corresponding athlete reps retain athletic results but no processor
+telemetry; athletic drill time is never substituted for processing duration.
 
-Deployed callable version 4 and observer version 2 passed exact 16-file source
-verification each; all 122 other functions are unchanged. Observer source is
-`5d4185b`, callable and website source `dabd60c`; their normalizer bytes are identical.
-The observer does not execute the later report-only reliability guard. The import
-accepted all 238 manifests (235 runs, eight known installations), modifying only
-derived summaries/inventory. Post-migration reads found no diagnostic coverage gaps
-in the active four-player event; the older four-player rotation has 64 reported
-runs and retains unavailable memory/processing-only timing from its older builds.
-Hosted unauthenticated and preview-bypass gates passed, as did feedback header
-checks. No genuine authenticated callable/browser acceptance has been claimed.
+The current four-player event contains 83 attempt indexes, 81 processing runs,
+80 accepted/synced protocol reps, 52 valid measurement results and 29 partials.
+All 81 have processing, memory, thermal and terminal-time evidence. Per-station
+run counts are 12/29/40; protocol counts are 12/28/40. Station 2 includes one extra
+processed attempt. All 12 player/station intervals have complete timing. One
+Station 2 interval includes a long pause, so its mean and median differ markedly.
 
-Production web acceptance and promotion remain pending the existing explicit
-invoker approval. Do not claim the DEV synthetic preview is the live event view.
-The local preview is `/admin/device-performance/team-sessions/demo-team-rotation?preview=1`.
+Focused checks cover backend aggregation, identity, missing evidence, default
+history, partial timing, per-player intervals and frontend charts/cards. Chromium
+checks include all metric tabs, point-to-row navigation and 1440/1024/390/320 widths.
+See the completeness release receipt for exact command results and live version.
+The existing synthetic preview is isolated and labeled; it is never a live-data
+fallback. No new TestFlight build, rules or production player-data writes are needed.

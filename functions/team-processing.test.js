@@ -1,6 +1,6 @@
 "use strict";
 const {test}=require("node:test"),assert=require("node:assert/strict");
-const {createTeamProcessingReports,completionPoints}=require("./team-processing");
+const {createTeamProcessingReports,completionPoints,stationTimings}=require("./team-processing");
 const {FakeFirestore,HttpsError,Timestamp}=require("./test-support/device-performance/fake-firestore");
 const {effectiveStations}=require("./testing-events");
 const at=Date.parse("2026-10-03T18:00:00Z"),admin={uid:"admin",email:"admin@posetek.net",emailVerified:true,isAnonymous:false};
@@ -54,4 +54,42 @@ test("session list is explicitly the most recent 50, never a truncated aggregate
 });
 test("oversized event fails instead of returning incomplete chart totals",async()=>{
  const s=seed();add(s,run(),{}, {runs:Array.from({length:2001},(_,i)=>run(i+1))});await assert.rejects(report(s),e=>e.code==="resource-exhausted");
+});
+
+test("station duration covers first capture through accepted results, including pauses and partials",()=>{
+ const targets=["p1","p2","p3"].map(playerId=>({playerId,drills:[{drillType:"jump",repCount:1}]}));
+ const progress=targets.map((p,i)=>({playerDocId:p.playerId,repIds:[`rep-${i+1}`],status:"completed"}));
+ const rows=[run(1,{capturedAt:at+5000,startedAt:at+6000,terminalAt:at+10000,outcome:"partial"}),
+   run(2,{playerDocumentID:"p2",capturedAt:at+10000,terminalAt:at+30000}),
+   run(4,{logicalRepId:"rep-1",capturedAt:at+5000,terminalAt:at+50000}), // later retry cannot extend accepted completion
+   run(5,{logicalRepId:"rep-1",mode:"reprocess",capturedAt:at-100000,terminalAt:at+60000})];
+ const t=stationTimings(rows,progress,targets,at+100000,[{playerDocumentID:"p1",at}]);
+ assert.equal(t.playerTime.count,2);assert.equal(t.playerTime.mean,15000);assert.equal(t.playerTime.median,15000);assert.equal(t.playerTime.players[0].elapsedMs,10000);assert.equal(t.playerTime.players[2].elapsedMs,null);
+ assert.equal(t.drillTimings[0].groups[0].duration.count,3);
+});
+test("in-progress players and missing accepted rep timing do not masquerade as complete station durations",()=>{
+ const targets=[{playerId:"p1",drills:[{drillType:"jump",repCount:2}]}];
+ for(const progress of [{playerDocId:"p1",status:"completed",repIds:["rep-1","rep-2"]},{playerDocId:"p1",status:"inProgress",repIds:["rep-1"]}]){
+   const t=stationTimings([run()], [progress], targets,at+10000);assert.equal(t.playerTime.mean,null);assert.equal(t.playerTime.count,0);
+ }
+});
+test("drill card averages separate source revisions and timing definitions, and include prepared partials",()=>{
+ const rows=[run(1,{processingMs:2000,wallMs:3000,timingKind:"processing",sourceRevision:"a"}),run(2,{processingMs:4000,wallMs:5000,timingKind:"processing",sourceRevision:"a",outcome:"partial"}),run(3,{processingMs:100,wallMs:200,timingKind:"processing",sourceRevision:"a",outcome:"failed"}),run(4,{processingMs:null,wallMs:6000,timingKind:"runWall",sourceRevision:"a"}),run(5,{processingMs:9000,wallMs:10000,timingKind:"processing",sourceRevision:"b"})];
+ const t=stationTimings(rows,[],[],at+100000).drillTimings[0];assert.equal(t.groups.length,3);assert.equal(t.groups[0].duration.mean,3000);assert.equal(t.groups[0].partial,1);assert.equal(t.groups[0].failedTiming.mean,100);assert.equal(t.groups[1].duration.mean,6000);
+});
+test("protocol throughput counts accepted partials once while valid-result throughput remains separate",async()=>{
+ const s=seed();add(s,run(1,{outcome:"partial"}));add(s,run(2,{logicalRepId:"rep-1"}));add(s,run(3,{logicalRepId:"extra-rep"}));
+ s["testingEvents/event/progress/p1"]={stationId:"station-1",playerDocId:"p1",repIds:["rep-1"],status:"inProgress"};
+ const r=(await report(s)).session;assert.equal(r.completions.length,1);assert.equal(r.completions[0].runId,uid(1));assert.equal(r.processedCompletions.length,2);assert.equal(r.validCompletions.length,2);assert.equal(r.stations[0].finishedRuns,3);assert.deepEqual(r.stations[0].drills,["jump"]);
+});
+test("recording-device leases join through exact attempt identity to the executing phone",async()=>{
+ const s=seed();const recording=uid(9999);s["testingEvents/event/stations/station-1"].claimedDeviceId=recording;
+ add(s,run(),{recordingDeviceId:recording.toUpperCase()},{originInstallId:uid(9000)});
+ const st=(await report(s)).session.stations[0];assert.equal(st.phones.length,1);assert.equal(st.phones[0].installId,uid(9000));assert.equal(st.phones[0].current,true);
+});
+
+test("a terminal timestamp before capture cannot complete a player interval",()=>{
+ const p={playerDocId:"p1",status:"completed",repIds:["rep-1","rep-2"]};
+ const t=stationTimings([run(1,{capturedAt:at+10000,terminalAt:at+9000}),run(2,{capturedAt:at+15000,terminalAt:at+20000})],[p],[{playerId:"p1",drills:[{drillType:"jump",repCount:2}]}],at+60000);
+ assert.equal(t.playerTime.count,0);assert.equal(t.playerTime.players[0].coverage.timedReps,1);
 });

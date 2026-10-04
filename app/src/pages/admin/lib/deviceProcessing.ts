@@ -18,7 +18,7 @@ export interface ProcessingCohort {
   key: string; drill: ProcessingDrill; algorithmId: string; sourceRevision: string | null; sampling: string | null;
   configuration: string | null; timingKind: string; capture: RunMeasurement["capture"]; current: boolean; builds: string[];
   count: number; successful: number; failed: number; partial: number; other: number;
-  duration: Distribution; wall?: Distribution; clip?: Distribution; stages?: { id: string; kind: string; duration: Distribution }[]; frames: Distribution; calls: Distribution;
+  duration: Distribution; successfulDuration?: Distribution; partialDuration?: Distribution; failedDuration?: Distribution; wall?: Distribution; clip?: Distribution; stages?: { id: string; kind: string; duration: Distribution }[]; frames: Distribution; calls: Distribution;
   sampledPeakBytes: number | null; memorySamples: number; thermalStates: string[]; lowPowerRuns: number;
 }
 export interface ProcessingPhone {
@@ -29,7 +29,8 @@ export interface ProcessingPhone {
 export interface ProcessingReport {
   schemaVersion: 1; generatedAt: number; period: { startDate: string; endDate: string; timeZone: string };
   current: { label: string; sourceRevisions: string[] }; filters: Record<string, string | null>; revision: string;
-  coverage: { attempts: number; runs: number; unknownDevice: number; timingMissing: number; memoryMissing: number };
+  unavailableAttempts?: {attemptId:string;at:number|null;drill:string|null;recordingDeviceId:string|null;testingEventId:string|null;stationId:string|null;state:string|null}[];
+  coverage: { indexedAttempts?:number; missingSummaries?:number; filteredOut?:number; attempts: number; runs: number; unknownDevice: number; timingMissing: number; memoryMissing: number };
   algorithms: { id: string; sourceRevision: string | null; sampling: string | null; drill: ProcessingDrill; current: boolean }[];
   phones: ProcessingPhone[]; sessions: { id: string; number: number | null; startedAt: number; runs: number; drills: ProcessingDrill[] }[];
   rows: RunMeasurement[]; chart: RunMeasurement[]; totalRows: number; nextCursor: string | null;

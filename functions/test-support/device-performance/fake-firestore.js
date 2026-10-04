@@ -72,10 +72,10 @@ function fieldOf(data, field) {
 
 function compareValues(a, b) {
   const rank = (value) => (value === null || value === undefined ? 0 : typeof value === "boolean" ? 1
-    : typeof value === "number" || value instanceof Timestamp ? 2 : typeof value === "string" ? 3 : 4);
+    : typeof value === "number" || value instanceof Timestamp || value instanceof Date ? 2 : typeof value === "string" ? 3 : 4);
   const ra = rank(a), rb = rank(b);
   if (ra !== rb) return ra < rb ? -1 : 1;
-  const va = a instanceof Timestamp ? a.millis : a, vb = b instanceof Timestamp ? b.millis : b;
+  const va = a instanceof Timestamp ? a.millis : a instanceof Date ? a.getTime() : a, vb = b instanceof Timestamp ? b.millis : b instanceof Date ? b.getTime() : b;
   if (va === vb) return 0;
   return va < vb ? -1 : 1;
 }

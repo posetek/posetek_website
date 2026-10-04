@@ -37,3 +37,13 @@ describe("team session analytics",()=>{
   const html=renderToStaticMarkup(<PerformanceTimeline session={s} rows={[]} metric="memory" onSelect={()=>{}}/>);expect(html).toContain("No reported measurements");expect(html).not.toContain("NaN");
  });
 });
+
+it("puts per-person elapsed time and every drill average on each station card",async()=>{
+ const s=(await previewTeamReport("demo")).session!;const html=renderToStaticMarkup(<MemoryRouter><TeamSessionDashboard session={s}/></MemoryRouter>);
+ expect((html.match(/Average time \/ player/g)||[]).length).toBe(3);expect((html.match(/Average processing by drill/g)||[]).length).toBe(3);expect(html).toContain("Median");expect(html).toContain("includes pauses between reps");expect(html).toContain("Includes 1 partial results");expect(html).not.toContain("phoneStart=");
+});
+it("all-timing view retains older total-run observations with their definition",async()=>{
+ const s=(await previewTeamReport("demo")).session!,row={...s.rows[0],processingMs:null,wallMs:7000,durationMs:7000,timingKind:"runWall"};
+ expect(metricValue(row,"duration")).toBe(7);expect(metricValue(row,"processing")).toBeNull();
+ const html=renderToStaticMarkup(<PerformanceTimeline session={s} rows={[row]} metric="duration" onSelect={()=>{}}/>);expect(html).toContain("7.00 Seconds · Total run");expect(html).toContain('fill="none"');
+});
