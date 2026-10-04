@@ -22,6 +22,11 @@ has all 81 processing runs and 80 accepted/synced reps available. See
 [phone contract](docs/DEVICE_PROCESSING_DASHBOARD.md) and
 [team contract](docs/TEAM_SESSION_PERFORMANCE.md).
 
+The requested chart follow-up combines station throughput and interruption markers
+in one full-width chart with shared time and rep-count axes. Source and local
+verification are recorded in [the team contract](docs/TEAM_SESSION_PERFORMANCE.md);
+shared-checkout integration and publication remain pending.
+
 The earlier website draft `6ac1911a5b925767ec7362b8` is superseded. Production has
 changed concurrently; this follow-up updates local UI and the scoped reporting
 backend without promoting an obsolete website artifact. Historical rollout

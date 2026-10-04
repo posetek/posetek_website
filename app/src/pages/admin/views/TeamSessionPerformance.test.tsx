@@ -1,7 +1,7 @@
 import {describe,it,expect} from "vitest";
 import {renderToStaticMarkup} from "react-dom/server";
 import {MemoryRouter} from "react-router-dom";
-import {TeamSessionDashboard,PerformanceTimeline,ThroughputTimeline,FailureTimeline} from "./TeamSessionPerformance";
+import {TeamSessionDashboard,PerformanceTimeline,StationTimeline} from "./TeamSessionPerformance";
 import {previewTeamReport} from "../lib/teamProcessingPreview";
 import {metricValue,parseTeamReport} from "../lib/teamProcessing";
 describe("team session analytics",()=>{
@@ -25,8 +25,19 @@ describe("team session analytics",()=>{
  it("keeps operational throughput independent of drill chart selection and failed attempts",async()=>{
   const s=(await previewTeamReport("demo")).session!;
   expect(s.completions.length).toBe(s.rows.filter(r=>r.outcome==="valid").length);
-  const html=renderToStaticMarkup(<ThroughputTimeline session={s}/>);expect((html.match(/<path/g)||[]).length).toBe(3);
-  const failed=renderToStaticMarkup(<FailureTimeline session={s} onSelect={()=>{}}/>);expect((failed.match(/href="#team-run-/g)||[]).length).toBe(2);
+  const html=renderToStaticMarkup(<StationTimeline session={s} onSelect={()=>{}}/>);
+  expect((html.match(/<svg/g)||[]).length).toBe(1);expect((html.match(/<path/g)||[]).length).toBe(3);
+  expect((html.match(/href="#team-run-/g)||[]).length).toBe(2);
+ });
+ it("places partial outcomes at the accepted count and keeps undated interruptions out of the plot",async()=>{
+  const s=(await previewTeamReport("demo")).session!,partial=s.rows.find(r=>r.outcome==="partial")!;
+  s.completions=[{key:"accepted-partial",stationId:partial.stationId,at:partial.terminalAt!,runId:partial.runId}];
+  s.rows=[partial,{...partial,runId:"undated",dateReliable:false},{...partial,runId:"start-only",outcome:"failed",terminalAt:null}];
+  s.unprocessed=[{attemptId:"capture",stationId:partial.stationId,playerDocumentID:partial.playerDocumentID,at:null,state:"interruptedUnknown",lastStage:"unknown",summaryMissing:false}];
+  const html=renderToStaticMarkup(<StationTimeline session={s} onSelect={()=>{}}/>);
+  expect(html).toContain("1 accepted reps at this time");expect(html).toContain("0 accepted reps at this time");
+  expect(html).toContain("run start; end unknown");expect(html).not.toContain('href="#team-run-undated"');
+  expect(html).toContain("3 unsuccessful runs · 1 without a usable timestamp · 1 capture interruptions (1 undated)");
  });
  it("rejects malformed or oversized team reports",async()=>{
   const r=await previewTeamReport("demo");expect(parseTeamReport(r)).toBe(r);expect(()=>parseTeamReport({...r,schemaVersion:2})).toThrow();

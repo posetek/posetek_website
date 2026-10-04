@@ -23,6 +23,11 @@ Drill/source filters apply to this chart and the run table. Each point opens the
 matching table page. Station colors remain consistent; phone changes do not move
 historical runs onto the currently assigned phone. Stages are available per run.
 
+Throughput and interruptions share one full-width cumulative chart and time axis.
+Outcome markers sit at their station's accepted-rep count at the reported time;
+markers do not themselves increment throughput. Station-colored rings and an
+outcome-symbol legend preserve both identities, and run markers open the matching
+run-table page. Undated outcomes remain counted in the coverage caption.
 Throughput and failures remain event-wide across all live-capture drills/versions.
 The throughput graph is a cumulative step chart per station. An accepted protocol rep counts once, at its earliest prepared terminal timestamp.
 Prepared partial measurement results consume a protocol slot and increase this
@@ -117,3 +122,16 @@ The verified callable v5 served genuine authenticated HTTP 200 requests; unsigne
 requests still return JSON 401 with CORS. See the linked receipt for exact evidence.
 The existing synthetic preview is isolated and labeled; it is never a live-data
 fallback. No new TestFlight build, rules or production player-data writes are needed.
+
+### Combined station activity chart (2026-10-03)
+
+The full-width chart replaces the two side-by-side throughput/interruption cards.
+TypeScript, lint, nine focused frontend tests and local browser checks passed.
+Browser verification used both the synthetic preview and the previously retrieved
+October 3 session (81 runs, 80 accepted reps, 29 interruption markers), with no
+production writes. At 1440 px the card spans the full 1312 px content width; at
+390 px the chart scrolls inside its card without document overflow. Marker-to-run
+selection passed and no page errors were observed. Preview artifacts are ignored.
+
+The change is on `worktree-combined-station-timeline`; integration into the shared
+checkout and website publication are pending while another session owns primary.
