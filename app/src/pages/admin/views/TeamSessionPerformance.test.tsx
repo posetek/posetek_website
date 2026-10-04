@@ -3,6 +3,7 @@ import {renderToStaticMarkup} from "react-dom/server";
 import {MemoryRouter} from "react-router-dom";
 import {TeamSessionDashboard,PerformanceTimeline,StationTimeline} from "./TeamSessionPerformance";
 import {previewTeamReport} from "../lib/teamProcessingPreview";
+import PlayerStationTimings from "./PlayerStationTimings";
 import {metricValue,parseTeamReport} from "../lib/teamProcessing";
 describe("team session analytics",()=>{
  it("shows three phones, four players, all metric switches and sync progress",async()=>{
@@ -57,4 +58,14 @@ it("all-timing view retains older total-run observations with their definition",
  const s=(await previewTeamReport("demo")).session!,row={...s.rows[0],processingMs:null,wallMs:7000,durationMs:7000,timingKind:"runWall"};
  expect(metricValue(row,"duration")).toBe(7);expect(metricValue(row,"processing")).toBeNull();
  const html=renderToStaticMarkup(<PerformanceTimeline session={s} rows={[row]} metric="duration" onSelect={()=>{}}/>);expect(html).toContain("7.00 Seconds · Total run");expect(html).toContain('fill="none"');
+});
+
+it("replaces the all-attempt log with per-player station durations, totals and a bottom timeline",async()=>{
+ const s=(await previewTeamReport("demo")).session!,html=renderToStaticMarkup(<MemoryRouter><TeamSessionDashboard session={s}/></MemoryRouter>);
+ expect(html).not.toContain("Every processing attempt");expect(html).not.toContain("team-runs");expect(html).toContain("Average full runthrough / player");expect(html).toContain("Full runthrough");expect(html).toContain("Between stations");expect(html).toContain("Time by player and station");
+ expect((html.match(/<tr id="player-timing-/g)||[]).length).toBe(4);expect((html.match(/class="team-player-chart-row"/g)||[]).length).toBe(4);expect(html).toContain("3 / 4 players with all stations timed");
+});
+it("makes unfinished player timing explicit while keeping the player in the table and chart",async()=>{
+ const s=(await previewTeamReport("demo")).session!;for(const st of s.stations)delete st.playerTime;
+ const html=renderToStaticMarkup(<PlayerStationTimings session={s}/>);expect(html).toContain("0 / 4 players with all stations timed");expect((html.match(/No completed station timing yet/g)||[]).length).toBe(4);expect(html).not.toContain("NaN");expect(html).not.toContain("Infinity");
 });

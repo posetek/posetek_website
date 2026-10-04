@@ -46,16 +46,6 @@
   .team-outcome-legend { margin-bottom:16px; }
   .dp-table small { display:block; font-size:11px; line-height:1.5; margin-top:4px; }
   .team-rotation { width:100%; min-width:640px; }
-  .team-runs { min-width:1500px; font-size:12px; }
-  .team-runs th,.team-runs td { padding:12px; vertical-align:top; }
-  .team-runs th { width:210px; }
-  .team-runs code { display:block; font-size:10px; max-width:210px; margin-top:4px; }
-  .team-runs td:last-child { max-width:240px; }
-  .team-runs details p { overflow-wrap:anywhere; }
-  .team-selected { background:color-mix(in srgb,var(--accent) 12%,transparent); outline:1px solid var(--accent); scroll-margin-top:120px; }
-  .team-outcome { display:inline-block; border-radius:5px; padding:4px 7px; background:var(--surface-2); }
-  .outcome-valid { color:var(--accent); }
-  .outcome-failed,.outcome-partial { color:#ffad9e; }
   .team-events > a { padding:20px; color:var(--text-primary); text-decoration:none; }
   .team-events h2 { font-size:19px; }
   .team-events a:hover { border-color:var(--accent); }
@@ -76,4 +66,33 @@
   .team-drill-averages td { text-align:right; }
   .team-drill-averages td > div + div { margin-top:10px; }
   .team-phone code { overflow-wrap:anywhere; }
+}
+
+.pt-admin .team-performance {
+  .team-player-timings .team-rotation { min-width:1080px; width:100%; }
+  .team-player-timings .team-rotation th,.team-player-timings .team-rotation td { padding:16px 14px; vertical-align:top; }
+  .team-player-timings .team-rotation tbody th { min-width:150px; }
+  .team-player-timings .team-rotation tfoot { background:var(--surface-2); border-top:2px solid var(--surface-border); }
+  .team-player-timings .team-duration { font-size:16px; white-space:nowrap; }
+  .team-player-timings .team-timing-basis { text-align:left; margin-bottom:16px; max-width:900px; color:var(--text-muted); font-size:12px; line-height:1.6; }
+  .team-circuit-average { padding:16px 20px; background:var(--surface-2); border:1px solid var(--surface-border); border-radius:12px; display:grid; gap:7px; }
+  .team-circuit-average span,.team-circuit-average small { font-size:12px; color:var(--text-muted); }
+  .team-circuit-average strong { font-size:28px; letter-spacing:-.6px; }
+  .team-player-timeline { margin-top:28px; padding-top:24px; border-top:1px solid var(--surface-border); }
+  .team-player-timeline h3 { margin:0; font-size:18px; }
+  .team-player-timeline .team-tabs { margin-bottom:0; border:0; }
+  .team-chart .team-player-chart-name { fill:var(--text-primary); font-size:14px; font-weight:600; }
+  .team-chart .team-bar-label { fill:#10241b; font-size:12px; font-weight:600; }
+  .team-station-interval:focus { outline:none; }
+  .team-station-interval:focus-visible rect { stroke:var(--text-primary); stroke-width:3px; }
+  .team-run-detail { scroll-margin-top:100px; }
+  .team-run-detail dd,.team-run-detail code { overflow-wrap:anywhere; }
+  @media(max-width:700px) { .team-circuit-average { width:100%; box-sizing:border-box; } .team-player-timeline .team-chart svg { min-width:860px; } }
+}
+
+.pt-admin .team-performance {
+  .team-table-hint { display:none; }
+  .team-player-timings .team-rotation tr > th:first-child { position:sticky; left:0; z-index:1; background:var(--surface-1); }
+  .team-player-timings .team-rotation tfoot th:first-child { background:var(--surface-2); }
+  @media(max-width:700px) { .team-table-hint { display:block; font-size:12px; } }
 }

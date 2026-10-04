@@ -18,14 +18,19 @@ processing result, including pauses), median/range and coverage, plus per-drill
 completed-processing averages including partial measurement results. Source and
 timing cohorts remain separate. Protocol throughput counts accepted partials;
 measurement quality and syncing remain separate. The current four-player event
-has all 81 processing runs and 80 accepted/synced reps available. See
+has all 81 processing runs and 80 accepted/synced reps available. The bottom
+player table now prioritizes station durations, full-runthrough totals, inter-station
+gaps and averages, followed by a per-player station chart with duration and shared
+clock modes. The all-attempt log is removed; chart points open individual run
+details. This presentation follow-up uses the unchanged live v5 API. See
 [phone contract](docs/DEVICE_PROCESSING_DASHBOARD.md) and
 [team contract](docs/TEAM_SESSION_PERFORMANCE.md).
 
 The requested chart follow-up combines station throughput and interruption markers
 in one full-width chart with shared time and rep-count axes. Source and local
 verification are recorded in [the team contract](docs/TEAM_SESSION_PERFORMANCE.md);
-shared-checkout integration and publication remain pending.
+shared-checkout integration is complete and the updated dashboard is available on
+local port 5173. Hosted publication remains unchanged.
 
 The earlier website draft `6ac1911a5b925767ec7362b8` is superseded. Production has
 changed concurrently; this follow-up updates local UI and the scoped reporting
