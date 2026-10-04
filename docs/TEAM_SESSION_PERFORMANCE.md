@@ -19,8 +19,9 @@ snapshot. The 50 most recently created events are listed; saved links open older
 
 The shared time chart defaults to All timing (filled processing points, hollow legacy total-run points), and switches between processing duration, total-run duration,
 thermal state at run end, sampled peak memory, frame reads and model calls.
-Drill/source filters apply to this chart and the run table. Each point opens the
-matching table page. Station colors remain consistent; phone changes do not move
+Drill/source and optional reprocessing filters apply to this chart. Each point
+opens a single selected-run detail panel with timing, workload, memory and stages.
+Failure markers open the same panel independently of chart filters. Station colors remain consistent; phone changes do not move
 historical runs onto the currently assigned phone. Stages are available per run.
 
 Throughput and failures remain event-wide across all live-capture drills/versions.
@@ -37,7 +38,25 @@ progress are checked against the event's committed-rep records. They are not
 placed on the phone processing timeline because committed timestamps can change
 on later Firestore rep updates. Planned work comes from the same `effectiveStations`
 helper used by the operational testing-event backend. Each player has a row across
-all three stations, showing completed/planned work, synced counts and per-player elapsed time.
+all three stations, showing station duration as the primary value, capture/result
+clock times, completed/planned work and synced counts. The bottom player section
+also shows each player's full-runthrough duration and gaps between stations,
+with an average row and an average full-runthrough tile. A full runthrough spans
+the earliest capture to the latest accepted result across all three stations;
+all station intervals must be complete, finite and internally consistent before
+it contributes to the total or average. Missing timing stays unavailable.
+Between-station gaps use the union of observed station intervals, so overlapping
+phone clocks do not produce negative gaps; any overlap is explicitly labeled.
+
+The chart below this table has one row per player. Station durations are stacked
+from zero by default, excluding between-station gaps. The Session timeline mode
+positions those same intervals on a shared Pacific clock. Station colors match
+the rest of the dashboard. Both views include completed intervals only and show
+timing coverage for every rostered player, including players with missing timing.
+The table's player column stays visible during horizontal scrolling.
+
+The former Every processing attempt log is removed. Detailed measurements remain
+available from individual performance/failure chart points and full phone history.
 
 Station cards show average time per completed player, median/range and sample
 coverage. The measured interval begins at the first reported capture attempt
@@ -86,8 +105,7 @@ read-only for this feature. No new native build, rules, indexes or endpoint is n
 Reads are bounded at 30 participants, 3 stations, 90 progress rows, 900 committed
 reps, 1,500 attempts, 2,000 runs, 32 MiB decoded summaries and 2 MiB response size.
 Oversized events fail explicitly; totals and charts are never silently truncated.
-The run table pages locally by 50 without changing event totals. All production
-reads stay authenticated; DEV-only synthetic preview data never substitutes for
+All production reads stay authenticated; DEV-only synthetic preview data never substitutes for
 an API failure. Organization/team navigation selectors do not filter this admin
 operational report; the selected testing event defines the roster.
 
@@ -111,9 +129,23 @@ Station 2 interval includes a long pause, so its mean and median differ markedly
 
 Focused checks cover backend aggregation, identity, missing evidence, default
 history, partial timing, per-player intervals and frontend charts/cards. Chromium
-checks include all metric tabs, point-to-row navigation and 1440/1024/390/320 widths.
+checks for the initial release included all metric tabs, point-to-row navigation
+and 1440/1024/390/320 widths.
 37 backend and 81 focused frontend tests, TypeScript and the Astro build passed.
 The verified callable v5 served genuine authenticated HTTP 200 requests; unsigned
 requests still return JSON 401 with CORS. See the linked receipt for exact evidence.
 The existing synthetic preview is isolated and labeled; it is never a live-data
 fallback. No new TestFlight build, rules or production player-data writes are needed.
+
+
+### Player timing presentation follow-up (2026-10-03)
+
+Six focused calculation tests and ten dashboard tests passed, including completed
+coverage, station order, missing/nonfinite timing, overlap accounting, retained
+zero measurements and removal of the old run log. TypeScript and the Astro build
+passed. The actual Firebase snapshot rendered all four player rows and twelve
+station intervals, with a 36m 30s full-runthrough average (including pauses).
+Browser checks verified both chart modes, single-run drill-down, failure drill-down
+and 1440/1024/390/320 widths without outer overflow or page errors. Desktop and
+mobile renders were visually reviewed. This follow-up uses the existing v5 API;
+no backend deployment, native release, Firebase writes or hosted publication was needed.
