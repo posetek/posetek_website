@@ -12,6 +12,8 @@ ENDPOINTS = ('submitUserIssue', 'getUserIssues', 'updateUserIssue', 'observeIssu
              'observeIssueDiagnostic', 'observeIssueLog', 'dispatchUserIssue', 'sweepUserIssues', 'dailyUserIssues')
 CALLABLES = ENDPOINTS[:3]
 FILES = ('user-issues.js', 'user-issue-model.js', 'user-issue-sources.js', 'user-issue-entrypoints.js',
+         'user-issue-classification.js', 'user-issue-summary.js', 'user-issue-observations.js', 'user-issue-request-identity.js',
+         'microsoft-email-model.js', 'microsoft-email-transport.js', 'microsoft-email-amendment.js', 'user-issue-contacts.js',
          'workout-notifications-provider.js', 'club-access.js', 'athlete-storage-paths.js', 'package.json', 'package-lock.json')
 
 def definitions():
@@ -22,7 +24,7 @@ def definitions():
         scheduled = name in ('sweepUserIssues', 'dailyUserIssues')
         row = {'timeout': '60s' if name in CALLABLES else '300s' if scheduled else '120s',
                'availableMemoryMb': 256, 'maxInstances': 10 if name in CALLABLES else 1 if scheduled else 5,
-               'secrets': ['RESEND_API_KEY'] if scheduled or name == 'dispatchUserIssue' else []}
+               'secrets': ['RESEND_API_KEY', *scope.MICROSOFT_SECRETS] if scheduled or name == 'dispatchUserIssue' else []}
         if name in CALLABLES:
             row.update({'httpsTrigger': True, 'publicInvoker': True, 'ingressSettings': 'ALLOW_ALL', 'callable': True})
         elif name in documents:
