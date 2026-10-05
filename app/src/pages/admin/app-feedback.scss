@@ -27,6 +27,11 @@
   .feedback-response-list { display: grid; gap: 12px; }
   .feedback-response header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; }
   .feedback-response header p { font-size: 12px; }
+  .feedback-author { margin: 20px 0 0; }
+  .feedback-author dt { color: var(--admin-dim); font-size: 12px; }
+  .feedback-author dd { display: grid; gap: 4px; margin: 4px 0 0; overflow-wrap: anywhere; }
+  .feedback-author-mode, .feedback-author-uid { color: var(--admin-dim); font-size: 12px; }
+  .feedback-author code { font-size: inherit; }
   .feedback-answers { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 20px 0; }
   .feedback-answers dt { color: var(--admin-dim); font-size: 12px; }
   .feedback-answers dd { margin: 4px 0 0; }

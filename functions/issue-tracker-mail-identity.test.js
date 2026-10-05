@@ -19,23 +19,49 @@ function settings() { return { mailbox: I.MAILBOX, mailIdentityProvider: "power_
   connectionAccount: I.MAILBOX, flowId: UUID, connectionName: "shared-webcontents-" + UUID, graphResource: "https://graph.microsoft.com",
   targetIdType: "restImmutableEntryId", endpointSha256: endpointHash(ENDPOINT), exportSha256: "a".repeat(64) } }; }
 
+test("native hexadecimal and legacy GUID connection identities retain every verified route proof requirement", () => {
+  for (const connectionName of ["shared-webcontents-" + UUID, "a8c3eaaf22d94fa78efa41f879d15f0a"]) {
+    const config = settings(); config.mailIdentityProxyProof.connectionName = connectionName;
+    assert.ok(mailIdentityBinding(config));
+    for (const [key, value] of [["verified", false], ["tenantId", UUID], ["clientId", UUID], ["callerObjectId", UUID],
+      ["connectionAccount", "other@example.invalid"], ["graphResource", "https://graph.microsoft.com/v1.0"],
+      ["targetIdType", "restId"], ["endpointSha256", "invalid"], ["exportSha256", "invalid"]]) {
+      const wrong = structuredClone(config); wrong.mailIdentityProxyProof[key] = value;
+      assert.equal(mailIdentityBinding(wrong), null, key);
+    }
+  }
+  for (const connectionName of ["", "a".repeat(31), "a".repeat(33), "g".repeat(32), "shared_webcontents_1",
+    "shared-webcontents-" + "-".repeat(36), "shared-webcontents-" + "a".repeat(36), "a".repeat(32) + "/other", "a".repeat(32) + "\n"]) {
+    const config = settings(); config.mailIdentityProxyProof.connectionName = connectionName;
+    assert.equal(mailIdentityBinding(config), null, connectionName);
+  }
+});
+
 test("translation validates every original ID; missing, duplicate, partial and errored results fail", () => {
   const request = I.translationRequest(["one", "two"], "restId");
-  assert.deepEqual([...I.translationResult(request, { value: [{ sourceId: "two", targetId: "same" }, { sourceId: "one", targetId: "same" }] })], [["two", "same"], ["one", "same"]]);
+  assert.deepEqual([...I.translationResult(request, { value: [{ sourceId: "two", targetId: "target-two" }, { sourceId: "one", targetId: "target-one" }] })], [["two", "target-two"], ["one", "target-one"]]);
+  assert.throws(() => I.translationResult(request, { value: [{ sourceId: "two", targetId: "same" }, { sourceId: "one", targetId: "same" }] }), { code: "tracker_graph_invalid_translation_response" });
   for (const value of [[], [{ sourceId: "one", targetId: "x" }], [{ sourceId: "one", targetId: "x" }, { sourceId: "one", targetId: "y" }], [{ sourceId: "one", targetId: "x" }, { sourceId: "two", errorDetails: { code: "not_found" } }], [{ sourceId: "unknown", targetId: "x" }, { sourceId: "two", targetId: "y" }]]) assert.throws(() => I.translationResult(request, { value }), { code: "tracker_graph_invalid_translation_response" });
   for (const ids of [[], ["a", "a"], ["\n"], Array.from({ length: 101 }, (_, n) => String(n))]) assert.throws(() => I.translationRequest(ids, "restId"));
   assert.throws(() => I.translationResult({ ...request, targetIdType: "restId" }, { value: [] }));
+  assert.throws(() => I.translationRequest(["one"], "restImmutableEntryId"));
+  assert.deepEqual(I.translationRequest(["one"], "restImmutableEntryId", "restId"), { inputIds: ["one"], sourceIdType: "restImmutableEntryId", targetIdType: "restId" });
 });
 
 test("Graph collection and arrival use explicit source types and exact canonical item proofs", async () => {
   const reads = [], translations = [];
-  const reader = createGraphReader({ requestJson: async (url) => { reads.push(url); return url.includes("/messages/") ? graphMail("legacy") : { value: [graphMail("legacy"), graphMail("different")] }; }, translateIds: async body => { translations.push(body); return { value: body.inputIds.map(sourceId => ({ sourceId, targetId: sourceId + "-immutable" })) }; } });
+  const mapping = new Map([["legacy", "legacy-immutable"], ["different", "different-immutable"], ["current-legacy", "already-immutable"]]);
+  const reader = createGraphReader({ requestJson: async (url) => { reads.push(url); return url.includes("/messages/") ? graphMail(decodeURIComponent(new URL(url).pathname.split("/").at(-1))) : { value: [graphMail("legacy"), graphMail("different")] }; }, translateIds: async body => {
+    translations.push(body);
+    if (body.sourceIdType === "restId" && body.inputIds.some(id => !mapping.has(id))) throw Object.assign(new Error("type mismatch"), { code: "tracker_mail_identity_source_type_mismatch" });
+    return { value: body.inputIds.map(sourceId => ({ sourceId, targetId: body.sourceIdType === "restId" ? mapping.get(sourceId) : [...mapping].find(([, value]) => value === sourceId)?.[0] })) };
+  } });
   const page = await reader.page({ since: "2026-10-02T00:00:00Z", until: "2026-10-02T01:00:00Z" });
   assert.equal(translations.length, 1); assert.deepEqual(translations[0].inputIds, ["legacy", "different"]); assert.equal(translations[0].sourceIdType, "restId");
   assert.equal(page.records[0].id, "legacy-immutable"); assert.equal(page.records[0].itemIdentity.sourceId, "legacy");
   const item = await reader.canonicalMessage("legacy"); assert.equal(item.id, "legacy-immutable"); assert.equal(item.itemIdentity.sourceId, "legacy");
   const immutable = await reader.canonicalMessage("already-immutable", { sourceIdType: "restImmutableEntryId" });
-  assert.equal(translations.at(-1).sourceIdType, "restImmutableEntryId"); assert.equal(immutable.itemIdentity.sourceId, "already-immutable");
+  assert.equal(translations.at(-1).sourceIdType, "restId"); assert.equal(immutable.itemIdentity.sourceId, "already-immutable"); assert.equal(immutable.itemIdentity.sourceIdType, "restImmutableEntryId");
 });
 
 test("ignored Prefer GET preserves raw identity and cannot certify or trust supplied aliases", async () => {
@@ -119,13 +145,44 @@ test("translation refuses wrong connection user, partial errors, asynchronous re
   await assert.rejects(transport(request), { code: "tracker_capture_configuration_changed" });
 });
 
+test("only exact current-request Graph400 mismatch permits the other type; generic/security/stale envelopes do not", async () => {
+  const mismatch = { schemaVersion: 1, requestId: UUID, mailbox: I.MAILBOX, sourceIdType: "restId", targetIdType: "restImmutableEntryId", graphStatus: 400, graphCode: "InvalidArgument", error: "mail_identity_source_type_mismatch" };
+  const request = I.translationRequest(["opaque-id"], "restId");
+  function transport(value, status = 502, config = settings()) {
+    return createMailIdentityProxyTransport({ configuration: async () => config, endpoint: async () => ENDPOINT, identity: async () => ({ tenantId: TENANT, clientId: CLIENT }), getAccessToken: async () => "fixture-token", randomId: () => UUID,
+      fetchImpl: async () => ({ status, json: async () => value }) });
+  }
+  await assert.rejects(transport(mismatch)(request), { code: "tracker_mail_identity_source_type_mismatch" });
+  for (const [key, value] of [["requestId", "stale"], ["schemaVersion", 2], ["mailbox", "other@example.test"], ["sourceIdType", "restImmutableEntryId"], ["targetIdType", "restId"], ["graphStatus", 403], ["graphCode", "AccessDenied"], ["error", "mail_identity_translation_failed"], ["extra", "untrusted"]]) {
+    await assert.rejects(transport({ ...mismatch, [key]: value })(request), { code: "tracker_mail_identity_translation_failed" });
+  }
+  for (const value of [{ error: "mail_identity_source_type_mismatch" }, { error: "mail_identity_translation_failed" }, null, [], {}]) await assert.rejects(transport(value)(request), { code: "tracker_mail_identity_translation_failed" });
+  for (const [status, code] of [[401, "tracker_mail_identity_access_denied"], [403, "tracker_mail_identity_access_denied"], [429, "tracker_mail_identity_throttled"], [500, "tracker_mail_identity_translation_failed"]]) await assert.rejects(transport(mismatch, status)(request), { code });
+  const reverse = I.translationRequest(["immutable"], "restImmutableEntryId", "restId");
+  await assert.rejects(transport(mismatch)(reverse), { code: "tracker_mail_identity_translation_failed" });
+  const config = settings(); let reads = 0;
+  const changed = createMailIdentityProxyTransport({ configuration: async () => { if (reads++) config.mailIdentityProxyProof.exportSha256 = "b".repeat(64); return config; }, endpoint: async () => ENDPOINT, identity: async () => ({ tenantId: TENANT, clientId: CLIENT }), getAccessToken: async () => "fixture-token", randomId: () => UUID, fetchImpl: async () => ({ status: 502, json: async () => mismatch }) });
+  await assert.rejects(changed(request), { code: "tracker_capture_configuration_changed" });
+});
+
+test("reverse proxy reply is bound to distinct source/target types and exact successful mapping", async () => {
+  const request = I.translationRequest(["immutable"], "restImmutableEntryId", "restId"), config = settings();
+  const transport = createMailIdentityProxyTransport({ configuration: async () => config, endpoint: async () => ENDPOINT, identity: async () => ({ tenantId: TENANT, clientId: CLIENT }), getAccessToken: async () => "fixture-token", randomId: () => UUID,
+    fetchImpl: async (_, options) => {
+      assert.equal(JSON.parse(options.body).targetIdType, "restId");
+      return { status: 200, json: async () => ({ schemaVersion: 1, requestId: UUID, mailbox: I.MAILBOX, mailboxUser: { id: UUID, userPrincipalName: I.MAILBOX }, graphStatus: 200, sourceIdType: request.sourceIdType, targetIdType: request.targetIdType, data: { value: [{ sourceId: "immutable", targetId: "current-rest" }] } }) };
+    } });
+  assert.equal((await transport(request)).value[0].targetId, "current-rest");
+  await assert.rejects(transport({ ...request, targetIdType: "restImmutableEntryId" }), { code: "tracker_graph_invalid_translation_request" });
+});
+
 test("configured Office365 reads inject only verified translator and canonical binding is part of capture guard", async () => {
   const { createConfiguredMailReader, mailReadBinding } = require("./issue-tracker-mail-read-proxy");
   const config = { ...settings(), mailReadProvider: "power_automate", mailReadProxyVerified: true, mailReadProxyProof: { schemaVersion: 1, verified: true, authorization: "delegated_proxy_route", tenantId: TENANT, clientId: CLIENT, callerObjectId: CALLER, connectionAccount: I.MAILBOX, flowId: UUID, connectionName: "shared-office365-" + UUID, endpointSha256: endpointHash(ENDPOINT), exportSha256: "a".repeat(64) } };
   let translated = 0;
   const reader = createConfiguredMailReader({ configuration: async () => config, graph: {}, proxyRequest: async () => graphMail("legacy"), translateIds: async request => { translated++; return { value: request.inputIds.map(sourceId => ({ sourceId, targetId: "canonical" })) }; } });
   const originalBinding = mailReadBinding(config), item = await reader.canonicalMessage("legacy");
-  assert.equal(item.id, "canonical"); assert.equal(translated, 1); assert.equal(item.itemIdentity.sourceIdType, "restId");
+  assert.equal(item.id, "canonical"); assert.equal(translated, 2); assert.equal(item.itemIdentity.sourceIdType, "restId");
   config.mailIdentityProxyProof.exportSha256 = "b".repeat(64); assert.notEqual(mailReadBinding(config), originalBinding);
   config.mailIdentityProxyVerified = false; assert.equal(mailReadBinding(config), null); await assert.rejects(reader.canonicalMessage("legacy"), { code: "tracker_mail_not_configured" });
 });

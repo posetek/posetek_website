@@ -2,10 +2,15 @@
 
 Read [the event-flow handoff](../../docs/ISSUE_TRACKER_EVENT_FLOW.md) before setup.
 This package is not wired into `functions/index.js`. Its isolated six-function
-release is now **ACTIVE at version 5** for all six endpoints, with exact
+release is now **ACTIVE at version 6** for all six endpoints, with exact
 source/configuration/IAM and unrelated-resource verification complete. The
-shared native master is event driven; the hourly Codex updater stays **PAUSED**.
+shared native master is event driven, with automatic cloud catch-up independent
+of this chat, Codex and Dylan's computer.
 Dylan alone receives alerts, while Nolan and Taiyo retain workbook editing.
+The [current verification checkpoint](../../deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
+records the unfinished identity settings cutover and capacity-blocked publication
+at native revision 266. A reviewed adaptive batch candidate is prepared; its
+deployment and physical cloud publication are not yet confirmed.
 Use [the current coverage handoff](../../docs/NOTIFICATION_COVERAGE_CORRECTION.md)
 and [correction receipt](../../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
 for the latest physical workbook revision, separate capture/publication cutoffs,
@@ -57,15 +62,18 @@ source observations and historical wording use the existing workbook columns;
 duration stays in linked Cloud Logging, with no workbook timing column. Human
 Status, Owner, Due and Fix notes remain keyed by stable Action ID after sorting.
 
-## Mailbox identity correction held
+## Mailbox identity settings cutover held
 
-The current version-5 entrypoint explicitly has `mailIdentityEnabled = false`; packaging
-checks that disabled flag. The translation connector requires its separately
-reviewed connection, tenant/caller/endpoint/export proof and exact mailbox-ID probes
-before a later cutover. The old reader's `Prefer: IdType="ImmutableId"` header and
+The package requires the explicit `mailIdentityEnabled = true` capability;
+packaging alone does not activate its settings or authorize deployment. The
+installed version-six source includes the identity resolver and its two pinned
+secret bindings, but the additive settings transaction is still pending. The
+dedicated conversion flow passed read-only semantic acceptance; this does not
+establish historical alias publication. The old reader's `Prefer: IdType="ImmutableId"` header and
 corrected inputs were saved through code view. Its actual export passed exact
-runtime-definition review and the flow is On; canonical ID conversion and
-same-item alias acceptance remain pending for the dedicated Graph connection.
+runtime-definition review and the flow is On. Current conversion behavior comes
+from the separately tested dedicated Graph connection; retained alias updates
+still require the settings cutover and native publication receipts.
 Do not claim all reader/translation changes are complete or enable the translation secret
 from local builder tests alone. The ordinary approved delegated mailbox route
 and independent backend capture remain separate from this unfinished correction.
@@ -213,9 +221,9 @@ checkpoints must come from confirmed publication, not a local save. The historic
 pre-migration publication covered both sources through `2026-10-02T04:56:51.854Z`, with
 598 instances, 128 emails and 23 actions, workbook SHA-256
 `c9bf937b4cd1507d9f376bc861d0cb3779443b6a522e190ac48fb79c68f69d19`.
-The hourly Codex updater is now **PAUSED** at Dylan's request; do not restart it
-automatically. The replacement is enabled; the original revision-eight
-publication remains historical evidence. Those original
+The cloud writer is enabled; the original revision-eight publication remains
+historical evidence. Ongoing capture and publication run entirely in the cloud.
+Those original
 cutoffs remain the initialization basis; ongoing catch-up resumes from each
 source's verified publication checkpoint in the production receipt. Never run
 the old renderer against the initialized native master. For each original Outlook
@@ -280,5 +288,5 @@ no mail and changes no read state. The connector can miss oversized/protected
 messages or moved-folder events, so live acceptance must cover both arrival and
 independent recovery. This local builder does not import, enable or purchase
 anything. Endpoint receipt validation and real connection behavior require
-fresh acceptance for a later flow change. The hourly desktop tracker has already
-been replaced and stays paused; do not restart it during this correction.
+fresh acceptance for a later flow change. Event intake and automatic cloud
+catch-up provide ongoing operation without a Codex chat or desktop process.

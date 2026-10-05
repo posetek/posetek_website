@@ -13,6 +13,18 @@ const guard = id => occurrence(id, { message: "Player data changed during the re
 const noChanges = result => Object.values(result.changes).every(rows => rows.length === 0);
 const one = (event = occurrence(), outbox = job()) => normalize({ occurrences: [event], outbox: [outbox] });
 
+test("summary deferral retains the occurrence without claiming a failed or delivered email", () => {
+  const deferred = job("occ-1", { status: "deferred_to_summary", notificationDecision: { schemaVersion: 1, source: "posetek_notification_policy", action: "daily_summary", reason: "routine_repeat", evaluatedAtMillis: AT } });
+  const result = one(occurrence(), deferred), row = result.changes.instances[0];
+  assert.equal(row.values["Occurrence ID"], "occ-1");
+  assert.match(row.values["Email delivery"], /intentional no-send, not a delivery failure/);
+  assert.match(row.values["Email delivery"], /Summary email delivery is tracked separately/);
+  assert.doesNotMatch(row.values["Email delivery"], /successfully delivered/);
+  const invalid = one(occurrence(), { ...deferred, notificationDecision: { action: "daily_summary" } });
+  assert.match(invalid.changes.instances[0].values["Email delivery"], /requires review/);
+  assert.doesNotMatch(invalid.changes.instances[0].values["Email delivery"], /intentional no-send/);
+});
+
 test("emits only full machine columns, exact keys and independent occurrence/receipt dates", () => {
   const result = one();
   const row = result.changes.instances[0];

@@ -1,0 +1,130 @@
+{
+  "date": "2026-10-05",
+  "scope": "Local source reconciliation; no push or deployment",
+  "validatedSourceCommit": "16f9ab7cbed45d7ff47aacf34aa6a8fb6621794a",
+  "inputs": {
+    "main": "a0f6a26c72e2dfb4ca6fe236e918696ba530e7fb",
+    "origin/main": "0ad845e5ac772c940923c06bbab219cd41990141",
+    "w1-replay-box-overlay": "cfb55d0c278033934682126f47f5dd7de9dcd05e",
+    "w3-journal-upload": "d14f3cc3622aebbb3f42eb19d6686294375283f5",
+    "origin/Coach-Dashboard": "7007871832909a196d87ee65a83d396201a62cd0",
+    "origin/codex/kai-coach-dashboard-release": "69de163b3956756a518413acb82840c81dc39d49",
+    "origin/codex/feedback-account-attribution": "1dca2a508374e0f52823f7f1fec3f805a0ac9968",
+    "origin/codex/user-issue-alerts": "0005f128678f75da0131d9340c5cbae4e7a98ffb"
+  },
+  "preservation": {
+    "allInputsAreAncestors": true,
+    "allLocalBranchesIncluded": true,
+    "forcePushRequired": false,
+    "untrackedCopiesPreserved": 27,
+    "remoteOnlyExperimentalBranchesUntouched": true,
+    "existingFirestoreIndexesPreserved": 23,
+    "existingFieldOverridesPreserved": 1,
+    "protectedDeployment": "6ac395bfba35bceed566d26c",
+    "protectedFiles": 1638,
+    "protectedHashesAndSizesUnchanged": true,
+    "verifiedTrackedHtmlMappingsAdded": 37
+  },
+  "conflictResolutions": [
+    "Kept both current website release notes and local phone/station dashboard notes.",
+    "Discarded the replay branch obsolete not-started device-performance note in favor of current implementation evidence.",
+    "Preserved device-processing exports together with verified-account feedback dependencies in functions/index.js.",
+    "Retained dated notification acceptance with the current website handoff; corrected the obsolete claim that this checkout is the automation branch."
+  ],
+  "additionalFixes": [
+    "Renamed the ordinary useSelection callback to applySelection to clear five pre-existing hook-name lint errors without changing its body.",
+    "Removed the extra trailing blank lines in the diagnostic rules suite.",
+    "Recover protected HTML from tracked sources with either checkout line ending only when the complete original checksum and size match; unchanged baseline bytes and three regression tests."
+  ],
+  "validation": {
+    "frontend": {
+      "passed": 1660,
+      "files": 141
+    },
+    "functions": {
+      "passed": 948,
+      "failed": 0,
+      "skipped": 3,
+      "skipReason": "Existing private-history fixtures are not available"
+    },
+    "lint": "exit 0; existing warnings",
+    "svelte": "0 errors, 0 warnings",
+    "typescriptAstroBuild": "passed on final source via production builder",
+    "releaseGuards": 55,
+    "diagnosticRulesAssertions": 60,
+    "feedbackSyntheticErasure": 12,
+    "trackerPackaging": 4,
+    "productionPreservation": "1638 protected files verified",
+    "entryChecks": {
+      "marketingRoutes": 5,
+      "applicationRoutes": 25,
+      "assets": 1527
+    },
+    "responsivePreview": "Coach snapshot/roster and admin team charts at 1440px and 390px, both player timeline modes, no outer overflow",
+    "trackingReplay": "Synthetic tracking-only canvas, slider, frame marker, playback and restart passed; no page errors",
+    "gitDiffCheck": "passed"
+  },
+  "executionNotes": [
+    "Browser skill initialization failed because node:process import was unavailable; installed local Playwright was used.",
+    "Synthetic browser requests were restricted to localhost; font and development HMR transport warnings do not establish an application error.",
+    "Temporary replay harness needed the exact Vite dependency URLs; final replay passed after correcting the harness.",
+    "Focused rules runner first found no Java on PATH; rerun passed using the existing /private/tmp/posetek-rules-runtime JRE without installation.",
+    "Preservation first caught the already-published feedback branch missing from main, then legacy HTML line endings; both causes were reconciled with the exact-byte guard retained."
+  ],
+  "releaseLimits": [
+    "No new hosted application artifact, callable deployment, rules publication, email, erasure or real-user write was performed.",
+    "Ordinary Git/Netlify build preserves the current live application; publishing newly integrated dashboard/replay UI requires the deliberate application release workflow.",
+    "Replay artifact signing and compressed diagnostic journals require their corresponding scoped callable releases before production feature acceptance.",
+    "Existing native, private-history and player-pilot acceptance gates remain outstanding; source tests and synthetic previews do not replace those checks."
+  ],
+  "logs": {
+    "frontend": {
+      "path": "/private/tmp/posetek-website-merge-frontend-combined.log",
+      "sha256": "b837a9f98d9e60fd22717b06dc598dbc1d64af71f90842ad12035ff815024596"
+    },
+    "functions": {
+      "path": "/private/tmp/posetek-website-merge-functions-combined.log",
+      "sha256": "1b9e9dbf8f909d1dc75441092a2322c11270727d13331731f92b7909ee572806"
+    },
+    "lint": {
+      "path": "/private/tmp/posetek-website-merge-lint-combined.log",
+      "sha256": "aadb3f351f4cbb4f36499b7a647bed795af4e897c04a5dcb4240b5dadc4b46ac"
+    },
+    "svelte": {
+      "path": "/private/tmp/posetek-website-merge-svelte.log",
+      "sha256": "1501acb0907825ae3cef6d18cb96749ac70513c93223314264eba8042acc77c6"
+    },
+    "releaseGuards": {
+      "path": "/private/tmp/posetek-website-merge-release-guards-final.log",
+      "sha256": "4c6b5dbe40f3bcef0035d940269b12886c207ef2a7d58429a926694b6926ac03"
+    },
+    "productionPreservation": {
+      "path": "/private/tmp/posetek-website-merge-preservation-final.log",
+      "sha256": "20b5a9f4ee359f681d736309a8a67a26052ee112258a8db63dfd6b31784a3ca5"
+    },
+    "routesAndAssets": {
+      "path": "/private/tmp/posetek-website-merge-entries.log",
+      "sha256": "3fedf80a6d528e73bb165657743c0e518daea634aa97b09cc09ea8aec19062fb"
+    },
+    "diagnosticRules": {
+      "path": "/private/tmp/posetek-website-merge-rules-final.log",
+      "sha256": "8b1719f91082c946134e3d03f63930cb3c1d505981e2c156db2e16230d04f3f9"
+    },
+    "feedbackErasure": {
+      "path": "/private/tmp/posetek-website-merge-erasure.log",
+      "sha256": "801524188e3685c494b3302dea7d76f2ce5465f79ea7636b33023966f00965f1"
+    },
+    "trackerPackaging": {
+      "path": "/private/tmp/posetek-website-merge-packaging.log",
+      "sha256": "9e3706a5dac14dc02b02c8465dfcfbd8b326f738895a5b1f2e2bf415a65380ea"
+    },
+    "responsivePreview": {
+      "path": "/private/tmp/posetek-website-merge-browser-final.log",
+      "sha256": "4a465fbe905364d47d08ef3da7a81c17ded2f498d6d8868757b35d26b1c40934"
+    },
+    "trackingReplay": {
+      "path": "/private/tmp/posetek-website-merge-replay-final.log",
+      "sha256": "7a29664a787113156c423e19705fd6c498ae657df25a4590c18e911e7e4c6580"
+    }
+  }
+}

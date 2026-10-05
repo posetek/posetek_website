@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import FeedbackPage, { FeedbackForm, FEEDBACK_QUESTIONS } from "./FeedbackPage";
+import FeedbackPage, { FeedbackForm, FeedbackIdentityNotice, FeedbackSignInGate, FEEDBACK_QUESTIONS } from "./FeedbackPage";
 import { emptyFeedbackAnswers } from "./feedback-session";
 import type { FeedbackAnswers, FeedbackStep } from "./feedback-session";
 
@@ -64,10 +64,28 @@ describe("public feedback form", () => {
     const html = renderToStaticMarkup(<FeedbackPage search="?preview=1&source=qr&playerId=secret" />);
     expect(html).toContain("Preview · nothing you enter here will be sent");
     expect(html).toContain("The PoseTek team reads your feedback");
-    expect(html).toContain("your answers aren’t linked to your player account");
+    expect(html).toContain("No account is linked and nothing you enter will be sent");
     expect(html).toContain('href="/privacy#app-feedback"');
     expect(html).not.toContain("secret");
     expect(html).not.toContain("<script");
     expect(html).not.toContain("type=\"email\"");
+  });
+
+  it("prominently discloses automatic account attribution without a consent checkbox", () => {
+    const html = renderToStaticMarkup(<FeedbackIdentityNotice account={{ uid: "private-uid", label: "Player example" }} />);
+    expect(html).toContain("Your signed-in account <strong>Player example</strong> will be included with this feedback and visible to PoseTek administrators.");
+    expect(html).not.toContain("private-uid");
+    expect(html).not.toContain("checkbox");
+    const anonymous = renderToStaticMarkup(<FeedbackIdentityNotice account={null} />);
+    expect(anonymous).toContain("No account is linked to this response");
+    expect(anonymous).toContain("anonymously");
+  });
+
+  it("requires sign-in from workout/results while preserving a source-only return link", () => {
+    const html = renderToStaticMarkup(<FeedbackSignInGate source="workout" />);
+    expect(html).toContain("Sign in to give feedback");
+    expect(html).toContain('href="/signin?returnTo=%2Ffeedback%3Fsource%3Dworkout"');
+    expect(html).not.toContain('type="radio"');
+    expect(html).not.toContain("anonymously");
   });
 });

@@ -5,6 +5,8 @@ import { clubCall, getClubContext, type ClubContext } from "../../lib/organizati
 import { completeReport } from "./lib/completeReport";
 import ExpandedReport from "./ExpandedReport";
 import CoachRoster from "./CoachRoster";
+import CoachOverviewSnapshot from "./CoachOverviewSnapshot";
+import PlayerFilters from "./PlayerFilters";
 import CoachPlayer from "./CoachPlayer";
 import EmbeddedCoachCommunity from "../feed/EmbeddedCoachCommunity";
 import EmbeddedRosterManagement from "../roster/EmbeddedRosterManagement";
@@ -112,6 +114,11 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
   const [rebuilding, setRebuilding] = useState(false);
   const [loading, setLoading] = useState(true), [error, setError] = useState(""), [accessDenied, setAccessDenied] = useState(false);
   const [retry, setRetry] = useState(0), [playerLabel, setPlayerLabel] = useState({ id: "", name: "Player" });
+  const rosterContext = JSON.stringify([uid, request.orgId, request.teamId]);
+  // Keep disclosure state above the report, which unmounts for every fetch.
+  // Another account or roster starts collapsed; dates, search and pages do not.
+  const [rosterDisclosure, setRosterDisclosure] = useState({ context: rosterContext, open: false });
+  const rosterOpen = rosterDisclosure.context === rosterContext && rosterDisclosure.open;
   const scrollPosition = useRef(0), previousView = useRef(request.view);
   const cursorHistory = useRef<Record<number, string>>({ 0: "" });
   const guard = useRef(createInsightsRequestGuard(() => auth.currentUser?.uid)).current;
@@ -122,6 +129,7 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
   const currentScope = report?.scope || scope;
   const selectedName = report?.players.find(player => player.id === request.playerId);
   const playerName = selectedName ? `${selectedName.firstName} ${selectedName.lastName}` : playerLabel.id === request.playerId ? playerLabel.name : "Player";
+  const activeView = request.view === "player" || request.view === "community" ? coach ? request.view : "overview" : request.view;
 
   useEffect(() => {
     if (previousView.current === "overview" && request.view !== "overview") scrollPosition.current = window.scrollY;
@@ -217,6 +225,7 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
   function nextPage() { if (report?.pagination.nextCursor) change({ page: request.page + 1, cursor: report.pagination.nextCursor }); }
   function playerLink(player: { id: string }) { return `/insights?${expandedQuery(request, { view: "player", playerId: player.id })}`; }
   function closePlayer() { change({ view: "overview", playerId: "" }); }
+  const snapshot = report && coach && activeView === "overview" && !loading ? <CoachOverviewSnapshot data={report} onChange={change} /> : null;
   function prescribe() {
     if (!report || !request.playerId) return;
     const params = new URLSearchParams({ players: request.playerId, returnTo: location.pathname + location.search });
@@ -224,7 +233,6 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
     if (report.scope.kind === "team") params.set("teamId", report.scope.teamId);
     navigate(`/programs?${params}`);
   }
-  const activeView = request.view === "player" || request.view === "community" ? coach ? request.view : "overview" : request.view;
   const content = <>
     <section className={`insights-heading${embedded ? " admin-overview-heading" : ""}`}>
       {!embedded && <p className="eyebrow">{coach ? "Team Insights" : "Insights"}</p>}
@@ -241,8 +249,10 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
       {coach && request.playerId && <div hidden={activeView !== "player"}><CoachPlayer key={JSON.stringify([uid, report.scope, request.playerId])} uid={uid} scope={report.scope} request={request} onName={name => setPlayerLabel({ id: request.playerId, name })} onPrescribe={prescribe} onClose={closePlayer} /></div>}
       {coach && activeView === "community" ? <EmbeddedCoachCommunity uid={uid} organizationId={report.scope.kind === "team" || report.scope.kind === "organization" ? report.scope.organizationId : undefined} />
         : activeView !== "player" ? <>
-          {coach && activeView === "overview" && <><CoachRoster data={report} search={request.rosterSearch} page={request.page} onSearch={rosterSearch => change({ rosterSearch })} onPrevious={previousPage} onNext={nextPage} playerLink={playerLink} /><EmbeddedRosterManagement context={context || undefined} teamId={report.scope.kind === "team" ? report.scope.teamId : undefined} onRefresh={refresh} /></>}
-          <ExpandedReport data={report} request={{ ...request, view: activeView === "community" ? "overview" : activeView }} onChange={change} hidePlayerTable={coach && activeView === "overview"} adminOverview={embedded && role === "admin"} page={request.page} onPrevious={previousPage} onNext={nextPage} playerLink={player => coach ? playerLink(player) : insightsPlayerLink(role || undefined, player.id, { orgId: player.organizationId, teamId: player.teamId || undefined, coachId: request.coachId })} />
+          {coach && activeView === "overview" && <PlayerFilters data={report} request={request} onChange={change} />}
+          {snapshot}
+          {coach && activeView === "overview" && <><CoachRoster collapsible disclosureOpen={rosterOpen} onDisclosureChange={open => setRosterDisclosure({ context: rosterContext, open })} data={report} search={request.rosterSearch} page={request.page} onSearch={rosterSearch => change({ rosterSearch })} onPrevious={previousPage} onNext={nextPage} playerLink={playerLink} /><EmbeddedRosterManagement context={context || undefined} teamId={report.scope.kind === "team" ? report.scope.teamId : undefined} onRefresh={refresh} /></>}
+          {!(coach && activeView === "overview") && <ExpandedReport data={report} request={{ ...request, view: activeView === "community" ? "overview" : activeView }} onChange={change} hidePlayerTable={coach && activeView === "overview"} adminOverview={embedded && role === "admin"} page={request.page} onPrevious={previousPage} onNext={nextPage} playerLink={player => coach ? playerLink(player) : insightsPlayerLink(role || undefined, player.id, { orgId: player.organizationId, teamId: player.teamId || undefined, coachId: request.coachId })} />}
         </> : !request.playerId ? <section className="insights-card"><h2>Select a player</h2><button type="button" className="quiet-button" onClick={closePlayer}>Open roster</button></section> : null}
     </div>}
   </>;

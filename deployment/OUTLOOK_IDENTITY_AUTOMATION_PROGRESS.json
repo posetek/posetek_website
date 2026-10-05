@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "purpose": "PoseTek cloud automation verification checkpoint; incomplete cutover",
+  "checkedAt": "2026-10-04T03:07:19Z",
+  "automationComplete": false,
+  "operation": {
+    "provider": "Power Automate with the existing Google Cloud backend",
+    "codexRequiredForOngoingOperation": false,
+    "desktopRequiredForOngoingOperation": false,
+    "oldCodexTrackerSavedDefinitionAbsent": true,
+    "soleEmailRecipient": "dylank@posetek.net",
+    "sharedWorkbookEditorsPreserved": ["nolanj@posetek.net", "taiyow@posetek.net"]
+  },
+  "powerAutomate": {
+    "allFiveFlowsObservedEnabledAt": "2026-10-04T02:22:05.632Z",
+    "flows": ["Microsoft email sender", "Outlook arrival intake", "Mailbox reader", "Native Excel writer", "Outlook item identity verifier"],
+    "flowBadgeIsNotPublicationEvidence": true,
+    "identitySettingsActivated": false
+  },
+  "sourceRelease": {
+    "project": "kickai-69dd0",
+    "allSixTrackerFunctionsActiveVersion": 6,
+    "actualSourceZipSha256": "fcb06ae2f4e8f9624405ad320a8ea90ce371e3ced755507b0a931d4718b40d39",
+    "exactSourceConfigurationIamAndUnrelatedResourcesVerified": true,
+    "getOnlyFinalAuditReconciliationSha256": "d6ea3a32524146334fd589b485aec8aebf508a9eab02c10f28766538acf051ca",
+    "auditIsSourceAcceptanceNotSettingsOrPublicationAcceptance": true
+  },
+  "outlookReview": {
+    "mailbox": "dylank@posetek.net",
+    "receiptTimeLowerInclusive": "2026-10-04T02:00:00Z",
+    "receiptTimeUpperExclusive": "2026-10-04T02:56:26Z",
+    "paginationComplete": true,
+    "pages": 3,
+    "uniqueMessages": 193,
+    "poseTekAlerts": 189,
+    "allPoseTekAlertsDylanOnlyWithEmptyCcBcc": true,
+    "googleCloudNotices": 4,
+    "allReviewedGoogleCloudNoticesDylanOnly": true,
+    "serviceInsightRebuildAlerts": 178,
+    "partialResultsAlerts": 3,
+    "processorServiceAlerts": 6,
+    "uploadServiceAlerts": 2,
+    "reviewDoesNotEstablishHistoricalDeliveryOrWorkbookPublication": true
+  },
+  "nativeTracker": {
+    "verifiedFixedReadTime": "2026-10-04T02:50:11.438Z",
+    "revision": 266,
+    "counts": {"actions": 690, "instances": 1280, "emails": 764, "dailyRows": 3},
+    "pendingUpdates": 2964,
+    "nativeReceiptAndMachineStateVerified": true,
+    "freshPhysicalCloudReadbackForThisCheckpointConfirmed": false,
+    "queueReturnedToRunningAfterDiagnosticMaintenance": true,
+    "fullyRefreshedWorkbookClaimed": false
+  },
+  "capacityRepair": {
+    "state": "tested source candidate; not deployed",
+    "bridgeSourceSha256": "95b6441aeaeebafdc09c004ba7183a5c345ffc113427683bae64eb176362159d",
+    "capacityTestSha256": "089f372539d2d27457f064c4a6d4a4ab52fddb3ce7684fcee3aea4a75bd8f9ba",
+    "independentRetainedReplaySha256": "a611d584f86a7fd82bb1aa95d182f55599ac5877b482e9b094b5d367f103a87e",
+    "oldFortyTicketBatchBytes": 726024,
+    "batchDocumentLimitBytes": 700000,
+    "fittingTwentyTicketBatchBytes": 613012,
+    "unselectedTwentyTicketsRetainedByteExactly": true,
+    "trackerTestsPassed": 196,
+    "independentReviewPassed": true,
+    "capsSchemaFrozenReplayAndPerVersionAcknowledgementPreserved": true
+  },
+  "remainingGates": [
+    "Fresh downloaded cloud workbook and current saved human-field verification",
+    "One-endpoint capacity repair deployment and exact source/configuration/IAM readback",
+    "Ordinary queued updates drained and both source publication checkpoints reconciled",
+    "Explicit mixed-cohort source acceptance and additive identity settings cutover",
+    "Fresh physical workbook readback and matching genuine alert evidence"
+  ],
+  "sharedWorkbook": "PoseTek > Technology > Website > User Issue Tracker > PoseTek Issue Tracker.xlsx",
+  "limitations": [
+    "Unknown operators, unverified contacts and unconfirmed causes remain explicit",
+    "Repeated service alerts are not unique affected-user counts",
+    "No historical Resend replay, automatic outreach, additional purchase or native release",
+    "Genuine symbolicated native crash acceptance remains a separate Mac/iPhone/TestFlight gate"
+  ]
+}

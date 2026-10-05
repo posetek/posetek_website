@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { sha1, containedPath, assertPlainPath, mergeAstroAssets } from "./astro-assets.mjs";
 import { readAstroMarketingSnapshot } from "./astro-marketing-snapshot.mjs";
+import { ICON_ASSETS } from "./website-icons.mjs";
 
 const entries = new Map([
   ["/index.html", "<!-- posetek-marketing-entry -->"],
@@ -36,7 +37,14 @@ export async function composeAstroRelease(root, { marketingSnapshot, fetchImpl =
     for (const item of await readdir(directory, { withFileTypes: true })) {
       const path = prefix + "/" + item.name;
       if (path === "/_astro" && item.isDirectory()) continue;
+      if (path === "/brand" && item.isDirectory()) { await inspect(join(directory, item.name), path); continue; }
       if (path === "/coaches" && item.isDirectory()) { await inspect(join(directory, item.name), path); continue; }
+      if (item.isFile() && ICON_ASSETS.includes(path)) {
+        const expected = await readFile(containedPath(source, path));
+        const actual = await readFile(containedPath(output, path));
+        if (sha1(expected) !== sha1(actual) || expected.length !== actual.length) throw Error("Website icon not verified: " + path);
+        continue;
+      }
       if (!item.isFile() || !entries.has(path)) throw new Error("Unexpected Astro release output: " + path);
       const bytes = await readFile(containedPath(source, path)), html = bytes.toString("utf8");
       if (!html.includes(entries.get(path)) || !html.includes('id="root"') || !html.includes("/_astro/") || /(?:src|href)=["']\/src\//.test(html)) throw new Error("Uncompiled Astro document: " + path);

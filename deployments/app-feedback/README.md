@@ -2,16 +2,29 @@
 
 This website repository owns the feedback function source and release package.
 `deployments/app-feedback/index.js` exports only `receiveAppFeedback` (plain HTTPS,
-credential-free public form) and `getAppFeedback` (authenticated PoseTek-admin
+anonymous or token-authenticated account form) and `getAppFeedback` (authenticated PoseTek-admin
 read-only callable).
-Source lives in `functions/app-feedback.js`. No account records or legacy feedback
-are read/written by the public receiver.
+Source lives in `functions/app-feedback.js`. The receiver reads Firebase Auth
+for a submitted account author; it does not modify account/player records or
+read/write legacy feedback.
 
-The two scoped functions are deployed and exact source/configuration/IAM checks
-passed. The three TTL policies are ACTIVE and session-count indexes are READY.
+The prospective October 5 contract keeps anonymous v1 responses unchanged and
+adds v2 `identityMode`. Anonymous requests carry no auth; account submissions
+carry a bearer token only, with no client author/UID/name/email fields. The
+receiver verifies the token and reads the Auth account for an immutable response
+author snapshot. V2 workout/results submissions require account mode; signed-out
+QR/message/direct visitors may remain anonymous. Sessions/counts store no author
+or account identifiers. The updated form's prominent notice precedes questions,
+with no extra consent checkbox. See [the attribution receipt](../../deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json)
+for exact publication and validation; the old anonymous receipt does not prove
+this updated contract is live.
+
+The original two-function deployment passed exact source/configuration/IAM checks.
+Updated source and deployment checks belong in the attribution receipt. The
+three TTL policies are ACTIVE and session-count indexes are READY.
 Canonical client-denial rules are published, with source tracked in
 [draft mobile PR #35](https://github.com/posetek/posetek-mobile-app/pull/35).
-Website `6ac17bc21377cbeaea114800` is verified live, published October 3, 2026 at
+The historical anonymous website `6ac17bc21377cbeaea114800` was published October 3, 2026 at
 3:12:14 PM PDT. Its exact candidate passed 20 hosted browser checks with nine
 screenshots and zero feedback writes before promotion; full production inventory
 and artifact verification passed. Publication and exact integrity results are in
@@ -44,7 +57,43 @@ Rules are owned/published only by the canonical mobile repository. Website
 `app/rules-tests/appFeedback.emulator.mjs` verifies denied direct client access
 against `RULES_PATH`; no rule files are copied into this website repository.
 Publish rules only with `python firebase/operations.py publish` from that
-repository. Public `/feedback` remains credential-free; `/admin/feedback` reads
-through the existing verified PoseTek-admin callable. Read
+repository. Public `/feedback` supports the disclosed account/anonymous modes;
+`/admin/feedback` reads through the existing verified PoseTek-admin callable and
+shows an account snapshot only for v2 account responses. It never joins or
+infers an anonymous author. Read
 [the complete handoff](../../docs/APP_FEEDBACK.md) and
-[the production receipt](../../deployment/APP_FEEDBACK_PRODUCTION.json).
+[the attribution receipt](../../deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json)
+and [the historical anonymous receipt](../../deployment/APP_FEEDBACK_PRODUCTION.json).
+
+## Verified account or privacy deletion
+
+The email-based account/privacy deletion operation must also remove attributed
+feedback within the policy's 30 days. Obtain the exact UID through that verified
+request; never infer it from an anonymous response, a name, email or network log.
+This operator step is separate from deleting the account itself and is not an
+automatic Auth-deletion hook. The 90-day feedback TTL does not replace it.
+
+With an authorized owner OAuth credential inside ignored `.netlify`, first
+preview using a fresh private run directory:
+
+```powershell
+python deployments/app-feedback/erase.py --uid "EXACT_VERIFIED_UID" --credential-file .netlify/owner.json --run-dir .netlify/feedback-erasure/preview-1
+```
+
+After reviewing the matching counts, apply with a different fresh directory:
+
+```powershell
+python deployments/app-feedback/erase.py --uid "EXACT_VERIFIED_UID" --credential-file .netlify/owner.json --run-dir .netlify/feedback-erasure/apply-1 --apply
+```
+
+Preview again in another fresh directory to confirm zero remaining matches.
+The tool selects only v2 account responses matching `author.uid`, reads only
+eligibility fields, and atomically deletes each response and its exact-UUID
+session with revision guards. V1, anonymous v2, player/Auth records and network
+counters are preserved. No rule, function or index deployment is needed.
+Outputs and `erasure.json` contain counts only; no author, answer, UID, credential
+or document path is included. On an error or lost acknowledgement, retain the
+incomplete receipt, preview again, then retry the same verified UID. The tool
+does not report an unacknowledged commit as a confirmed deletion.
+
+Synthetic checks: `python -m unittest discover -s deployments/app-feedback -p test_erase.py`.

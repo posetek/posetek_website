@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { mergeAstroAssets } from "./astro-assets.mjs";
+import { mergeWebsiteIcons } from "./website-icons.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const app = join(root, "app");
@@ -72,8 +73,10 @@ await Promise.all(Array.from({ length: 6 }, async () => {
       try {
         const local = await readFile(contained(root, "/" + localPath));
         const normalized = Buffer.from(local.toString("utf8").replace(/\r\n/g, "\n"));
-        if (hash(local) === file.sha) bytes = local;
-        else if (hash(normalized) === file.sha) bytes = normalized;
+        const windows = Buffer.from(normalized.toString("utf8").replace(/\n/g, "\r\n"));
+        // A checkout may convert in either direction. Only the exact recorded
+        // bytes qualify; neither the pinned digest nor size is normalized.
+        bytes = [local, normalized, windows].find(candidate => hash(candidate) === file.sha && candidate.length === file.size);
       } catch { /* Download when the original source is unavailable. */ }
     }
     if (!bytes || hash(bytes) !== file.sha) {
@@ -115,6 +118,7 @@ if (!coachesHtml.includes("<!-- posetek-coaches-entry -->")) throw new Error("Mi
 await mkdir(join(output, "coaches"), { recursive: true });
 await writeFile(join(output, "coaches/index.html"), coachesHtml);
 await mergeAstroAssets(join(root, "app/astro-dist"), output, manifest.files);
+await mergeWebsiteIcons(join(root, "app/astro-dist"), output, manifest.files);
 if (!preserveApplicationEntry) await cp(join(root, "deployment/home-navigation.js"), join(output, "marketing/home-navigation.js"));
 
 for (const file of manifest.files) {

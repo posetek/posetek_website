@@ -1,0 +1,127 @@
+{
+  "scope": "coach_overview_presentation",
+  "production": {
+    "deploymentId": "6ac38fde67d690075984e58b",
+    "previousDeploymentId": "6ac1abf790c8c0037928b52a",
+    "sourceCommit": "7b1aa1869624e96f6e300912ce742ffb1882b058",
+    "url": "https://posetek.net",
+    "publishedAtUtc": "2026-10-05T11:55:11.068Z",
+    "publishedAtPacific": "October 5, 2026 at 4:55:11 AM PDT",
+    "verifiedAtUtc": "2026-10-05T12:01:22.267Z",
+    "artifactFiles": 1587,
+    "providerInventoryFiles": 1588,
+    "fullInventoryVerified": true
+  },
+  "source": {
+    "author": "suzkai",
+    "originalBranch": "Coach-Dashboard",
+    "originalCommits": [
+      "0bad2029ad621477431464f1ee88440d87c4db25",
+      "7007871832909a196d87ee65a83d396201a62cd0"
+    ],
+    "releaseBranch": "codex/kai-coach-dashboard-release",
+    "productionSourceIntegrated": "8e4a290b6fa18c9bc8bdbd8a442668a5e1ca6692",
+    "teammateCommitsPreserved": true
+  },
+  "experience": {
+    "datedTeamSnapshot": true,
+    "rosterStartsCollapsed": true,
+    "rosterOpenStateSurvivesFetch": true,
+    "overviewFilterControlsPreserved": true,
+    "reviewCountsMatchDestinations": true,
+    "reviewRetainsOtherFiltersAndClearsNameSearch": true,
+    "zeroCountReviewDisabled": true,
+    "workoutNoneLabel": "No workout status",
+    "weeklyLinesSpanMissingWeeksWithExplanation": true,
+    "reportingCalculationsAndCohortsUnchanged": true
+  },
+  "preservation": {
+    "previousArtifactFilesUnchanged": 1540,
+    "changedExistingFiles": [
+      "/application.html",
+      "/netlify.toml (generated provider metadata)"
+    ],
+    "newHashedAssets": 46,
+    "previousProtectedFilesUnchanged": 1538,
+    "marketingDocuments": [
+      {
+        "path": "/index.html",
+        "sha": "78a4aaa4d4974f1e2070e70c09aa05970518bef1",
+        "size": 37745
+      },
+      {
+        "path": "/coaches/index.html",
+        "sha": "b5cab3a72ffffaaceaeaf8944e0f2ec0c65c9b84",
+        "size": 26209
+      }
+    ],
+    "marketingServedBytesPreserved": true,
+    "feedbackDocument": {
+      "path": "/feedback.html",
+      "sha": "838be000eef5f88e4626bc17674522c7bf2aacb4",
+      "size": 5817
+    },
+    "feedbackRuntimeAndSecurityHeadersPreserved": true,
+    "stablePIconsPreserved": true,
+    "backendRulesGatewayNativeAndCatalogDeployment": false
+  },
+  "validation": {
+    "frontendTests": 1478,
+    "frontendTestFiles": 131,
+    "insightsTests": 88,
+    "finalCopySnapshotTests": 4,
+    "releaseGuardTests": 52,
+    "typeScriptPassed": true,
+    "localHttpApplicationRoutes": 25,
+    "localHttpAssets": 1415,
+    "syntheticBrowserChecks": [
+      "compact dated coach snapshot",
+      "roster expands and survives loading",
+      "roster survives retry",
+      "roster survives period and refresh",
+      "name search changes roster without report totals",
+      "testing review count2 matches and clears search",
+      "Overview filter chip visible and removable",
+      "workout review count4 matches status label",
+      "clear all filters restores22",
+      "empty roster disables both review actions",
+      "manager existing overview retained",
+      "admin existing overview retained"
+    ],
+    "hostedBrowserChecks": [
+      "compiled application hydrated",
+      "Insights signed-out guard routes to signin",
+      "preview query does not enable synthetic production bypass",
+      "no console errors or warnings"
+    ],
+    "productionBrowserChecks": [
+      "production authenticated admin report completed",
+      "organization reporting scope rendered",
+      "no loading or report error",
+      "no console errors or warnings"
+    ],
+    "productionHttp": {
+      "applicationRoutes": 15,
+      "feedbackRoutes": 3,
+      "marketingRoutes": 5,
+      "icons": 4,
+      "newAssets": 46
+    },
+    "signedInAdminReportChecked": true,
+    "signedInCoachWorkflowChecked": false,
+    "limitations": "Interactive coach checks used synthetic local data. Hosted acceptance checked compiled rendering and signed-out access; production acceptance also checked an authenticated admin report. No new production club/player measurement audit or native acceptance was performed.",
+    "feedbackSubmissions": 0,
+    "athleteTrainingOrSignupWrites": 0
+  },
+  "baseline": {
+    "deploymentId": "6ac38fde67d690075984e58b",
+    "sourceCommit": "7b1aa1869624e96f6e300912ce742ffb1882b058",
+    "protectedFiles": 1585,
+    "ordinaryPreservationBuildPassed": true
+  },
+  "recovery": {
+    "deploymentId": "6ac1abf790c8c0037928b52a",
+    "url": "https://6ac1abf790c8c0037928b52a--posetek.netlify.app",
+    "method": "Restore the recorded prior Netlify deployment after verifying the site and deployment identities; reconcile the baseline with the restored inventory."
+  }
+}

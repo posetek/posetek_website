@@ -10,6 +10,7 @@ const SESSION_LIMIT = 60;
 const COLLECTIONS = Object.freeze({ responses: "appFeedbackResponsesV1", sessions: "appFeedbackSessionsV1", limits: "appFeedbackRateLimitsV1" });
 const SOURCES = ["workout", "results", "qr", "message", "direct"];
 const EVENTS = ["opened", "started", "submitted"];
+const IDENTITY_MODES = ["account", "anonymous"];
 const FEATURES = [null, "results", "workouts", "aiCoach", "videosTechnique", "other", "notUsed"];
 const EASE = [null, "veryHard", "hard", "inBetween", "easy", "veryEasy", "notSure"];
 const OBSTRUCTIONS = [null, "none", "find", "understand", "broken", "other"];
@@ -23,12 +24,49 @@ const unavailable = () => fail(503, "unavailable", "Feedback could not be saved.
 const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
 const keysWithin = (value, fields) => Object.keys(value).every(key => fields.includes(key));
 const millis = value => value?.toMillis?.();
+const validUid = value => typeof value === "string" && value.trim().length > 0 && value.length <= 128 && !/[\u0000-\u001f\u007f-\u009f]/.test(value);
+const snapshotText = (value, limit) => typeof value === "string" ? value.replace(/[\u0000-\u001f\u007f-\u009f]/g, " ").replace(/\s+/g, " ").trim().slice(0, limit) || null : null;
+const accountRequired = () => fail(401, "account-required", "Sign in to your PoseTek account and try again.");
+const sessionChanged = () => fail(409, "session-changed", "This feedback session changed. Open the form again.");
+
+function authorSnapshot(user) {
+  if (!object(user) || !validUid(user.uid)) return null;
+  return { uid: user.uid, displayName: snapshotText(user.displayName, 200), email: snapshotText(user.email, 320), emailVerified: user.emailVerified === true };
+}
+
+async function submittedAuthor(data, rawRequest, { verifyIdToken, getUser }) {
+  // Old forms promised anonymity. Neither they nor anonymous/telemetry events
+  // inspect supplied credentials, even when the browser has a signed-in user.
+  if (data.formVersion !== 2 || data.event !== "submitted" || data.identityMode !== "account") return null;
+  const header = rawRequest?.get?.("authorization") || rawRequest?.headers?.authorization;
+  const match = typeof header === "string" && header.length <= 16384 && /^Bearer[ \t]+([^\s]+)$/i.exec(header);
+  if (!match) accountRequired();
+  if (typeof verifyIdToken !== "function" || typeof getUser !== "function") unavailable();
+  let token, user;
+  try {
+    token = await verifyIdToken(match[1], true);
+    if (!object(token) || !validUid(token.uid) || token.firebase?.sign_in_provider === "anonymous") accountRequired();
+    user = await getUser(token.uid);
+  } catch (error) {
+    if (error instanceof FeedbackError) throw error;
+    if (["auth/argument-error", "auth/invalid-id-token", "auth/id-token-expired", "auth/id-token-revoked", "auth/user-disabled", "auth/user-not-found", "auth/tenant-id-mismatch"].includes(error?.code)) accountRequired();
+    unavailable();
+  }
+  if (!object(user) || user.disabled === true || user.uid !== token.uid) accountRequired();
+  const author = authorSnapshot(user);
+  if (!author) accountRequired();
+  return author;
+}
 
 function validateFeedback(input) {
-  if (!object(input) || !keysWithin(input, ["formVersion", "event", "sessionId", "entrySource", "answers", "durationSeconds"]) || input.formVersion !== 1
+  if (!object(input) || ![1, 2].includes(input.formVersion)
+    || !keysWithin(input, ["formVersion", "event", "sessionId", "entrySource", "answers", "durationSeconds", ...(input.formVersion === 2 ? ["identityMode"] : [])])
     || !EVENTS.includes(input.event) || !SOURCES.includes(input.entrySource)
     || typeof input.sessionId !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(input.sessionId)) invalid();
-  const result = { formVersion: 1, event: input.event, sessionId: input.sessionId.toLowerCase(), entrySource: input.entrySource };
+  if (input.formVersion === 2 && (!IDENTITY_MODES.includes(input.identityMode)
+    || (input.event === "submitted" && ["workout", "results"].includes(input.entrySource) && input.identityMode !== "account"))) invalid();
+  const result = { formVersion: input.formVersion, event: input.event, sessionId: input.sessionId.toLowerCase(), entrySource: input.entrySource,
+    ...(input.formVersion === 2 ? { identityMode: input.identityMode } : {}) };
   if (input.event !== "submitted") {
     if ("answers" in input || "durationSeconds" in input) invalid();
     return result;
@@ -67,9 +105,10 @@ function normalizedIp(rawRequest) {
   return isIP(ip) === 6 ? new URL(`http://[${ip}]/`).hostname : ip;
 }
 
-function createAppFeedback({ db, Timestamp, rateKey, now = () => Date.now() }) {
+function createAppFeedback({ db, Timestamp, rateKey, verifyIdToken, getUser, now = () => Date.now() }) {
   return async function receive(input, rawRequest) {
     const data = validateFeedback(input);
+    const author = await submittedAuthor(data, rawRequest, { verifyIdToken, getUser });
     const time = now(), secret = typeof rateKey === "function" ? rateKey() : rateKey;
     if (!Number.isSafeInteger(time) || time < 0 || typeof secret !== "string" || secret.length < 32) unavailable();
     const ip = normalizedIp(rawRequest);
@@ -85,11 +124,17 @@ function createAppFeedback({ db, Timestamp, rateKey, now = () => Date.now() }) {
       const quotaSnapshot = !sessionSnapshot.exists ? await tx.get(limitRef) : null;
       if (sessionSnapshot.exists) {
         if (previous?.formVersion !== data.formVersion || previous?.entrySource !== data.entrySource || !Number.isSafeInteger(millis(previous.expiresAt))) unavailable();
+        if (data.formVersion === 2) {
+          if (!IDENTITY_MODES.includes(previous.identityMode)) unavailable();
+          if (previous.identityMode !== data.identityMode) sessionChanged();
+        }
         if (millis(previous.expiresAt) <= time) fail(410, "session-expired", "This feedback session expired. Open the form again.");
       }
       if (responseSnapshot?.exists) {
         const saved = responseSnapshot.data();
-        if (!object(saved.answers) || !["feature", "ease", "obstruction", "comment"].every(field => saved.answers[field] === data.answers[field]) || saved.durationSeconds !== data.durationSeconds) {
+        if (saved.formVersion !== data.formVersion || saved.entrySource !== data.entrySource
+          || (data.formVersion === 2 && (saved.identityMode !== data.identityMode || (data.identityMode === "account" ? saved.author?.uid !== author.uid : saved.author != null)))
+          || !object(saved.answers) || !["feature", "ease", "obstruction", "comment"].every(field => saved.answers[field] === data.answers[field]) || saved.durationSeconds !== data.durationSeconds) {
           fail(409, "already-submitted", "This feedback was already saved. Open a new form to send another response.");
         }
         return { accepted: true, event: data.event, duplicate: true, submitted: true };
@@ -105,9 +150,10 @@ function createAppFeedback({ db, Timestamp, rateKey, now = () => Date.now() }) {
       }
       const stamp = Timestamp.fromMillis(time);
       const expiresAt = previous?.expiresAt || Timestamp.fromMillis(time + RETENTION_MS);
-      tx.set(sessionRef, { formVersion: 1, entrySource: data.entrySource, createdAt: previous?.createdAt || stamp, updatedAt: stamp, expiresAt,
+      tx.set(sessionRef, { formVersion: data.formVersion, entrySource: data.entrySource, ...(data.formVersion === 2 ? { identityMode: data.identityMode } : {}), createdAt: previous?.createdAt || stamp, updatedAt: stamp, expiresAt,
         opened: previous?.opened === true || data.event === "opened", started: previous?.started === true || data.event === "started", submitted: previous?.submitted === true || data.event === "submitted", [eventField]: stamp }, { merge: true });
-      if (data.event === "submitted") tx.create(responseRef, { formVersion: 1, entrySource: data.entrySource, answers: data.answers, createdAt: stamp, submittedAt: stamp, expiresAt: Timestamp.fromMillis(time + RETENTION_MS),
+      if (data.event === "submitted") tx.create(responseRef, { formVersion: data.formVersion, entrySource: data.entrySource,
+        ...(data.formVersion === 2 ? { identityMode: data.identityMode, author } : {}), answers: data.answers, createdAt: stamp, submittedAt: stamp, expiresAt: Timestamp.fromMillis(time + RETENTION_MS),
         ...(data.durationSeconds !== undefined ? { durationSeconds: data.durationSeconds } : {}) });
       return { accepted: true, event: data.event, duplicate: false, submitted: data.event === "submitted" || Boolean(previous?.submittedAt) };
     });
@@ -131,6 +177,8 @@ function createAppFeedbackAdmin({ db, Timestamp, HttpsError, now = () => Date.no
     const rows = page.docs.slice(0, 50), last = rows.at(-1);
     return {
       responses: rows.map(doc => { const row = doc.data(); return { id: doc.id, formVersion: row.formVersion, entrySource: row.entrySource, answers: row.answers,
+        identityMode: row.formVersion === 2 && row.identityMode === "account" ? "account" : "anonymous",
+        author: row.formVersion === 2 && row.identityMode === "account" ? authorSnapshot(row.author) : null,
         createdAtMillis: millis(row.createdAt), ...(row.durationSeconds !== undefined ? { durationSeconds: row.durationSeconds } : {}) }; }),
       nextCursor: page.docs.length > 50 ? { at: millis(last.data().createdAt), id: last.id } : null,
       metrics: Object.fromEntries(["opened", "started", "submitted"].map((field, index) => [field, counts[index].data().count])), retentionDays: 90,
@@ -148,7 +196,7 @@ function createAppFeedbackHttp(dependencies) {
     if (!allowedFeedbackOrigin(origin)) return res.status(403).json({ error: { code: "origin-not-allowed", message: "Open the feedback form on PoseTek." } });
     res.set("Access-Control-Allow-Origin", origin);
     res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-    res.set("Access-Control-Allow-Headers", "Content-Type");
+    res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
     if (req.method === "OPTIONS") return res.status(204).send("");
     if (req.method !== "POST") return res.status(405).json({ error: { code: "method-not-allowed", message: "Use the feedback form to submit a response." } });
     const contentType = req.get?.("content-type") || req.headers?.["content-type"] || "";

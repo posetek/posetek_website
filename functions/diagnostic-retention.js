@@ -109,6 +109,8 @@ function createDiagnosticRetention({ db, bucket, FieldValue, HttpsError, now = D
       return d.manifestPath;
     });
     if (!path) return { skipped: true };
+    // The run journal sits beside the manifest; it is absent for failed runs and older builds (404 is success).
+    await bucket.file(path.replace(/manifest\.json$/, "log.jsonl.gz")).delete({ ignoreNotFound: true });
     await bucket.file(path).delete({ ignoreNotFound: true });
     await db.runTransaction(async tx => {
       const d = (await tx.get(target)).data();

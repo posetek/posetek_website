@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { ICON_ASSETS, mergeWebsiteIcons } from './website-icons.mjs';
 
 const source = fileURLToPath(new URL('./', import.meta.url));
 const app = '<!doctype html><html><head><script type="module" crossorigin src="/assets/current.js"></script></head><body>Current application</body></html>';
@@ -26,6 +27,7 @@ async function fixture(mode, options, run) {
       ['/bookperformancetest.html', '<!doctype html><form id="bookingForm"></form>'],
     ]);
     if (modern) files.set('/marketing/home-navigation.js', '// current published bridge\n');
+    if (options.lineEndings) files.set('/bookperformancetest.html', '<!doctype html>\n<form id="bookingForm"></form>\n'.replace(/\n/g, options.lineEndings.pinned));
     if (options.localAlias) files.set('/booking-copy.html', files.get('/bookperformancetest.html'));
     if (options.marketingAlias) {
       files.set('/index 2.html', '<html><noscript><a href="/bookPerformanceTest.html">Book</a></noscript></html>');
@@ -39,7 +41,9 @@ async function fixture(mode, options, run) {
     };
     if (options.localAlias) {
       manifest.files.find(file => file.path === '/bookperformancetest.html').localPath = 'booking-source.html';
-      await put('booking-source.html', options.badLocal ? 'incorrect original source' : files.get('/bookperformancetest.html'));
+      const original = files.get('/bookperformancetest.html');
+      const local = options.lineEndings ? original.replace(/\r\n|\n/g, options.lineEndings.checkout) : original;
+      await put('booking-source.html', options.badLocal ? 'incorrect original source' : local);
     }
     await put('deployment/homepage-baseline.json', JSON.stringify(manifest));
     await put('deployment/home-navigation.js', '// local legacy-only bridge\n');
@@ -47,6 +51,11 @@ async function fixture(mode, options, run) {
     await put('app/astro-dist/coaches/index.html', options.missingMarker ? coaches.replace('<!-- posetek-coaches-entry -->', '') : coaches);
     await put('app/astro-dist/_astro/new.12345678.js', '/* new isolated homepage */');
     await put('app/astro-dist/_astro/coaches.12345678.js', '/* new isolated coaches page */');
+    for (const path of ICON_ASSETS) {
+      const bytes = 'fixture icon bytes ' + path;
+      await put('app/astro/public' + path, bytes);
+      await put('app/astro-dist' + path, bytes);
+    }
     await put('app/node_modules/typescript/bin/tsc', '// build tool fixture\n');
     await put('app/node_modules/astro/bin/astro.mjs', '// build tool fixture\n');
     await put('netlify.toml', '[build]\npublish = "production-dist"\n[[redirects]]\n  from = "/coaches"\n  to = "/coaches/index.html"\n  status = 200\n[[redirects]]\n  from = "/coaches/"\n  to = "/coaches/index.html"\n  status = 200\n[[redirects]]\nfrom = "/*"\nto = "/application.html"\nstatus = 200\n');
@@ -54,6 +63,7 @@ async function fixture(mode, options, run) {
     await mkdir(join(directory, 'scripts'), { recursive: true });
     await copyFile(join(source, 'build-production.mjs'), join(directory, 'scripts/build-production.mjs'));
     await copyFile(join(source, 'astro-assets.mjs'), join(directory, 'scripts/astro-assets.mjs'));
+    await copyFile(join(source, 'website-icons.mjs'), join(directory, 'scripts/website-icons.mjs'));
     await copyFile(join(source, 'test-production-entry.cjs'), join(directory, 'scripts/test-production-entry.cjs'));
 
     const responses = Object.fromEntries([...files].map(([path, bytes]) => [new URL(path, 'https://pinned.example').href, bytes]));
@@ -176,5 +186,50 @@ test('coaches output requires its isolated entry marker', async () => {
   await fixture('modern', { missingMarker: true }, async ({ build }) => {
     assert.notEqual(build.status, 0);
     assert.match(build.stderr, /Missing coaches entry marker/);
+  });
+});
+
+test('website icon merging retains exact pinned bytes and rejects collisions before copying any asset', async () => {
+  for (const state of ['unchanged', 'pinned-collision', 'output-collision']) await fixture('modern', {}, async ({ directory, files, build }) => {
+    assert.equal(build.status, 0, build.stderr);
+    const sourceDirectory = join(directory, 'app/astro-dist'), outputDirectory = join(directory, 'production-dist');
+    const pinned = ICON_ASSETS.map(path => ({ path, sha: sha('fixture icon bytes ' + path), size: Buffer.byteLength('fixture icon bytes ' + path) }));
+    if (state === 'unchanged') {
+      const merged = await mergeWebsiteIcons(sourceDirectory, outputDirectory, pinned);
+      assert.deepEqual(merged, pinned);
+      for (const path of ICON_ASSETS) assert.equal(await readFile(join(outputDirectory, path.slice(1)), 'utf8'), 'fixture icon bytes ' + path);
+    } else {
+      // A missing first target proves validation of a later collision completes
+      // before the helper begins copying otherwise valid earlier assets.
+      const first = join(outputDirectory, ICON_ASSETS[0].slice(1));
+      const lastPath = ICON_ASSETS.at(-1), last = join(outputDirectory, lastPath.slice(1));
+      await rm(first);
+      if (state === 'pinned-collision') await writeFile(join(sourceDirectory, lastPath.slice(1)), 'changed source icon');
+      else await writeFile(last, 'unrelated existing output icon');
+      await assert.rejects(mergeWebsiteIcons(sourceDirectory, outputDirectory, pinned), state === 'pinned-collision' ? /Website icon collision/ : /Website icon output collision/);
+      await assert.rejects(readFile(first), /ENOENT/);
+      assert.equal(await readFile(last, 'utf8'), state === 'pinned-collision' ? 'fixture icon bytes ' + lastPath : 'unrelated existing output icon');
+    }
+    for (const [path, bytes] of files) assert.equal(await readFile(join(outputDirectory, path.slice(1)), 'utf8'), bytes);
+  });
+});
+
+for (const [label, pinned, checkout] of [['Windows release / Unix checkout', '\r\n', '\n'], ['Unix release / Windows checkout', '\n', '\r\n']]) {
+  test(`line-ending recovery preserves exact pinned bytes: ${label}`, async () => {
+    await fixture('modern', { localAlias: true, lineEndings: { pinned, checkout } }, async ({ directory, files, build }) => {
+      assert.equal(build.status, 0, build.stderr);
+      for (const path of ['/bookperformancetest.html', '/booking-copy.html']) {
+        const bytes = await readFile(join(directory, 'production-dist', path.slice(1)));
+        assert.equal(sha(bytes), sha(files.get(path)));
+        assert.equal(bytes.length, Buffer.byteLength(files.get(path)));
+      }
+    });
+  });
+}
+
+test('line-ending recovery still rejects changed source content', async () => {
+  await fixture('modern', { localAlias: true, badLocal: true, lineEndings: { pinned: '\r\n', checkout: '\n' } }, async ({ build }) => {
+    assert.notEqual(build.status, 0);
+    assert.match(build.stderr, /Baseline checksum mismatch/);
   });
 });

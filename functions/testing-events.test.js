@@ -422,6 +422,29 @@ test("rep commits reconcile pending progress and coalesce player projections", a
   assert.equal(db.snapshot(`testingEvents/${eventId}/projectionFinalizations/player-a`).status, "completed");
 });
 
+test("projection retries keep the same server event/revision identity; a newer dirty revision stays distinct", async () => {
+  const eventId = "event-source-replay", dirtyPath = `testingEvents/${eventId}/projectionDirty/player-a`;
+  const progressRows = Object.fromEntries(STATIONS.map(station => [`testingEvents/${eventId}/progress/${station.id}_player-a`,
+    { stationId: station.id, playerDocId: "player-a", status: "completed", repIds: [], pendingUploadCount: 0 }]));
+  const calls = []; let failed = true;
+  const { db, testing } = harness({ [`testingEvents/${eventId}`]: { organizationId: "club", status: "closed" },
+    [dirtyPath]: { pending: true, revision: 4 }, ...progressRows }, { value: 1000 }, {
+    finalizePlayer: async (playerId, source) => { calls.push({ playerId, source }); if (failed) throw Error("projection unavailable"); },
+  });
+  const run = () => testing.onProgressWrite({ after: { data: () => progressRows[`testingEvents/${eventId}/progress/station-1_player-a`] } },
+    { params: { eventId, progressId: "station-1_player-a" } });
+  await assert.rejects(run(), /projection unavailable/);
+  assert.equal(db.snapshot(dirtyPath).pending, true);
+  failed = false; await run();
+  assert.deepEqual(calls[0], calls[1]);
+  assert.deepEqual(calls[0], { playerId: "player-a", source: { sourceKind: "testing_event", eventId: `testing-event/${eventId}/4` } });
+  assert.equal(db.snapshot(dirtyPath).pending, false);
+  await db.doc(dirtyPath).set({ pending: true, revision: 5 }, { merge: true });
+  await run();
+  assert.equal(calls[2].source.eventId, `testing-event/${eventId}/5`);
+  assert.equal(db.snapshot(`testingEvents/${eventId}/projectionFinalizations/player-a`).finalizedRevision, 5);
+});
+
 test("progress written after an early rep commit still reconciles", async () => {
   const eventId = "event-race";
   const { db, testing } = harness({

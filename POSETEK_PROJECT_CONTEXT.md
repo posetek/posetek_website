@@ -1,8 +1,132 @@
 # PoseTek website project context
 
-Reviewed on October 2–3, 2026. This guide summarizes the available repository and
+Reviewed on October 5, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
+
+## Local website source reconciliation (2026-10-05)
+
+The source integration preserves fetched main `0ad845e`, all local feature
+history, the published feedback-attribution branch `1dca2a5` and issue-alert
+branch `0005f12`. It also includes tracking-only replay and compressed diagnostic
+journals. The latest live application remains the feedback release recorded below;
+this integration does not publish a new website or backend revision.
+
+The combined source passed 1,660 frontend tests, 948 backend tests (three existing
+private-history skips), lint, TypeScript/Astro, 55 release guards and 60 diagnostic
+rule assertions. The ordinary production build preserved all 1,638 protected files.
+Tracked-source mappings and exact checksum/size checks now support either Git line
+ending without changing any pinned production bytes. See [the integration receipt](deployment/WEBSITE_MAIN_RECONCILIATION_20261005.json)
+for branch ancestry, local browser checks, remaining release boundaries and logs.
+All 27 pre-existing untracked duplicate files are preserved outside the commits.
+
+## Prospective feedback account attribution (2026-10-05)
+
+The current website is `6ac395bfba35bceed566d26c`, source `5792b63`, published
+October 5, 2026 at 5:23:26 AM PDT. It preserves the concurrently published Kai
+Overview release by merging `0ad845e` before rebuilding. The exact reviewed
+artifact matched all 1,640 files in the 1,641-record provider inventory. Hosted
+and production each passed 27 synthetic browser checks with no feedback writes;
+the reconciled baseline protects 1,638 files and passed the ordinary build guard.
+Live backend acceptance passed 48 checks with owned synthetic accounts/responses
+removed; no real feedback or user identities were inspected.
+
+Dylan requested account attribution for future feedback and confirmed that
+signed-out shared links should continue accepting anonymous responses. The
+public form explains attribution before the questions and adds no consent
+checkbox. Signed-in submissions use a server-verified Firebase Auth account
+snapshot (name/email when available and exact UID); no client-supplied author
+or player-profile mapping is trusted. Workout/results entry points require
+sign-in. Signed-out QR, message and direct links remain anonymous. Firebase
+anonymous-auth sessions are treated as signed out. Version-1 and historical
+responses remain anonymous; identities are not inferred from logs or records.
+
+The isolated form imports Auth only, with no Firestore, application issue
+tracking, usage analytics or replay. Only account submissions send a token;
+opened/started events contain no account fields. Sessions and responses share
+the deduplication UUID, so a privileged backend operator can relate a submitted
+session to its response. Reporting continues to count form sessions, not unique
+players. The private admin view labels account and anonymous responses clearly.
+Privacy disclosure is dated October 5. The user's age statement is not a
+recorded DOB or proof of parental consent; existing under-13 protections remain.
+
+Read [the feedback handoff](docs/APP_FEEDBACK.md) and
+[the attribution production receipt](deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json)
+for publication, scoped backend evidence, synthetic acceptance and recovery.
+This change preserves invitation timing, seven-day cadence, training records,
+client-denial rules, 90-day feedback retention, legacy feedback and approved
+marketing/icon bytes. Native invitations and the 12-player comprehension pilot
+remain separate and outstanding.
+Account/privacy deletion requests must also run the exact-UID feedback erasure
+procedure, including matching diagnostic sessions. The dry-run-first operator
+helper passed 12 synthetic tests; it is not an automatic Auth-deletion hook.
+
+## Kai's coach Overview release (2026-10-05)
+
+The preceding coach Overview website release was `6ac38fde67d690075984e58b`, source
+`7b1aa1869624e96f6e300912ce742ffb1882b058`, published October 5, 2026 at
+4:55:11 AM PDT. Kai's `Coach-Dashboard` commits are preserved alongside the
+current feedback and approved P-icon source. See [the release handoff](docs/COACH_OVERVIEW_RELEASE.md)
+and [verified production receipt](deployment/COACH_OVERVIEW_PRODUCTION.json).
+
+Coach Overview now leads with a dated Team snapshot and a collapsed roster whose
+open state survives fetches, retries, search, pagination, date changes and refresh.
+Visible population counts and active filters remain available. Review links
+preserve other reporting filters and clear name search to match positive snapshot
+counts; zero-count actions are disabled. **No workout status** is distinct from
+no activity: missing records, unrecognized endings and endings outside the period
+can fall here. Weekly performance lines connect available results across empty
+weeks, with the explanation and data table retaining missing-result distinctions.
+
+Production verification matched 1,587 website artifacts to 1,588 provider records.
+It preserved 1,540 predecessor records; only the application entry and generated
+provider metadata changed, with 46 runtime assets added. The predecessor is
+`6ac1abf790c8c0037928b52a`. Approved Players/Coaches, feedback and stable P icon
+bytes are preserved. Reporting calculations, cohorts, membership/access, private
+drafts, backend functions, rules, gateway, native and held content are unchanged.
+That release's reconciled baseline protected 1,585 files, and the ordinary TypeScript/Astro
+preservation build passed for all of them. The current protected-file inventory
+remains in `deployment/homepage-baseline.json`.
+
+## PoseTek P website icons (2026-10-03, historical introduction)
+
+Dylan requested the approved PoseTek P for browser tabs and Google Search.
+The source now uses the previously approved outlined lime P badge, recovered
+from the official icon asset branch, with SVG, 96px PNG, multi-size ICO and
+180px Apple touch variants. Shared Astro and compatibility heads point to stable
+same-origin icon URLs. The full wordmark remains available for page content.
+The icon-only website release was `6ac1abf790c8c0037928b52a`, published October 3, 2026 at
+6:31:53 PM PDT from source `c2ba02b`. Its 1,541 website artifacts match the
+1,542-record provider inventory. Only icon links in 83 HTML heads changed;
+1,454 existing files retain their exact bytes, and four icon files were added.
+All page bodies, runtime assets, application behavior and feedback security
+headers are preserved. Hosted and production browser checks decoded all four
+formats across five entry routes; served-content checks passed for 22 routes.
+That release's reconciled preservation baseline protected 1,539 files, and the ordinary
+TypeScript/Astro build preserved all of them after publication. See
+[the production receipt](deployment/SITE_ICONS_PRODUCTION.json) and
+[the icon handoff](docs/SITE_ICONS.md) for provenance, Google recrawl limits
+and the guarded metadata-only release workflow. Google Search display has not
+been verified; Google controls recrawling and favicon selection.
+
+## Coach and admin engineering handoff for Kai (2026-10-03)
+
+[Kai's dashboard handoff](docs/KAI_DASHBOARD_HANDOFF.md) documents current coach
+Team Insights and the admin workspace, their data definitions, source entry
+points and verification cases. The companion Word document includes desktop
+screen captures and is a generated deliverable kept outside Git. Credentials,
+signup codes and identifiable player screenshots are not included in the shared
+repository handoff.
+
+Dylan's requested direction is to help coaches understand player standing and
+development needs with fewer steps, without making workout prescription a
+required path, and to simplify admin interpretation and oversight across clubs.
+Kai has creative discretion to propose information hierarchy and workflows.
+Automatic reconciliation, exception monitoring and revised navigation are
+directions to explore, not newly released functionality or approved final designs.
+The current membership, qualification, comparison, privacy and release contracts
+remain binding. This documentation review does not change website behavior,
+production records, permissions or deployment.
 
 ## Complete phone and station performance (2026-10-03)
 
@@ -41,7 +165,7 @@ records callable v5 source verification, genuine authenticated HTTP 200 requests
 
 ## Optional app feedback (2026-10-03)
 
-The current website is Netlify deployment `6ac17bc21377cbeaea114800`, published
+The feedback application release was Netlify deployment `6ac17bc21377cbeaea114800`, published
 October 3, 2026 at 3:12:14 PM PDT, from application source commit `d82cf40`.
 It preserves the preceding issue-coverage release and approved Players/Coaches
 bytes. Full provider inventory verification passed for 1,538 files, including
@@ -55,9 +179,9 @@ Read [the feedback release receipt](deployment/APP_FEEDBACK_PRODUCTION.json) and
 An optional invitation appears on return to Training after a successful completed
 workout save, at most once per seven days in the same browser. Pain stops, early
 endings, failed saves and previews are excluded. Results retain a feedback link.
-`/feedback` is a separate public document requiring no login or name, carrying
+At that release, `/feedback` was a separate public document requiring no login or name, carrying
 only a broad source and random form-session ID to its isolated HTTPS endpoint.
-It loads no analytics/replay or authentication scripts. Verified PoseTek admins
+It loaded no analytics/replay or authentication scripts. Verified PoseTek admins
 can read recent responses and form-session counts and download a QR code at
 `/admin/feedback`.
 
@@ -74,13 +198,103 @@ remains outstanding. Automated mobile layout checks do not establish player
 comprehension or the 30–60-second target. Seven days is a pilot cadence; native
 invitations still require a separate mobile release.
 
+## Current issue alert delivery (2026-10-05)
+
+October 5 current issue-send update: [new-only delivery handoff](docs/CURRENT_ISSUE_ALERT_DELIVERY.md) and [verified source/activation receipt](deployment/CURRENT_ISSUE_ALERT_DELIVERY_20261005.json). New issue sending is enabled with a send-only cutoff; historical queues stay untouched. The dated acceptance and holds below remain historical records.
+
+## Historical automation production validation (2026-10-03–04)
+
+The `codex/user-issue-alerts` automation source is now integrated with the current
+website source. These dated automation receipts do not change the current website
+publication recorded above, training content, rules or native application bytes.
+Historical receipts below remain records of their respective checkpoints.
+
+All 31 approved source endpoints passed exact deployed-source, configuration and
+IAM checks: twelve Insights, six tracker at version 7, ten user-issue and three
+Microsoft-email endpoints. Unrelated functions and the full release chain were
+preserved. Storage version 2 was activated at `2026-10-04T07:04:50.217Z`. The
+first-plus-daily policy was committed at `2026-10-04T07:10:32.256247Z` and reconciled
+without a second commit. Its held email-job audit completed 130 pages at that
+original cutoff: 3,226 examined, 1,152 deferred and 2,074 preserved, with no email
+or workbook writes by the audit. Original envelopes, consumed claims, receipts
+and historical Resend jobs remain intact. Issue sending is still disabled.
+
+The revision-266 archive protects all 690 saved human records and 3,585 pending
+tracker tickets at `2026-10-04T04:14:30.165Z`. First post-cutover physical cloud
+acceptance at `2026-10-04T09:17:13.707Z` verified revision 267: 691 actions,
+1,319 instances, 804 original email rows and three daily/status rows. All 267
+native receipts, machine hashes and formulas passed. All 690 saved human records
+survived by stable Action ID; fresh readback confirmed the same cloud bytes at
+`09:42:35.564Z` and saved human fields at `09:43:47.033Z`.
+
+The native queue resumed RUNNING at `2026-10-04T09:57:43.847Z`, with readback at
+`09:58:01.150Z`, through exactly one empty resume request. The original pause
+journal, routing, rate limits and retry configuration remain unchanged. The
+`10:00:56.037Z` backend read observed revision 268 and an active native writer;
+that is not fresh physical acceptance of revision 268 or complete catch-up.
+Outlook/backend capture reached approximately `09:54Z`, while their respective
+published checkpoints remained `00:34:05.451Z` and `00:34:05.351Z`. Capture and
+publication stay separate, and the existing outstanding-delivery scan remains
+active. Those were incomplete gates at that dated checkpoint; the later accepted
+publication and identity state is recorded below. Read the [validation handoff](docs/NOTIFICATION_PRODUCTION_VALIDATION.md)
+and [partial receipt](deployment/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json).
+
+The later accepted **revision 365** has **789 actions, 3,228 occurrences, 2,384
+original email rows and four daily/status rows**, with all **690 saved human
+records** preserved. Backend evidence is dated **17:03:17.750 UTC**, physical cloud
+acceptance **17:06:03.434 UTC**, human-field acceptance **17:09:07.313 UTC**, and
+post-identity uniqueness **17:09:52.135 UTC**. Guarded mailbox identity activation
+completed at **15:28:02.319 UTC**. All 3,228 occurrence sources were exact with zero
+incomplete source authority; 187 recorded-actor rows retain unavailable Auth display
+names, with 148 verified and 39 unverified email rows, while 3,041 unknown-actor
+rows remain unknown. Outlook/backend capture and publication align through
+**16:58:02.536/16:58:02.544 UTC**, without a claim about later arrivals.
+Native publication, capture and recovery holds are restored. Final006 was refused
+at **17:15:41.837 UTC** without apply, intent or send; overall acceptance remains
+false and genuine Dylan-only delivery remains open.
+
+Insights metadata at **16:58:29.159 UTC** supports 15 actual settled v4 rebuilds.
+Seven current manifests remain stale, including six v2, and 428 player-parent
+documents have no current manifest; 17 pending testing markers are ordinary
+open/incomplete work. The full scoped **07:05–17:18 UTC** log review found 29 SDK
+snapshot-clock warnings and no ERROR-or-higher records. This is scoped metadata
+and log evidence, not all-account convergence, verified payloads, user outcomes or
+incident resolution. No native release or dedicated assigned-coach lookup is added.
+
+Dylan is the sole recipient of new application and workout emails. Both Google
+Cloud fallback policies were On with Dylan alone at `08:38:52.808Z`; Nolan and
+Taiyo's shared tracker editing access was confirmed at `08:00Z`. A fully paginated
+Outlook review of all subjects/read states from `08:35Z` inclusive to `09:38:30Z`
+exclusive found no messages; it does not establish delivery outside that interval.
+Exact-UID reporter/contact is separate from target athlete and attempted action.
+The 39 verified automated-service mail joins keep unknown operators unknown;
+the older count of 34 described incomplete source-authority rows, not unknown or
+pending contacts. Revision 365 has zero such incomplete rows; unknown contacts
+and six historical target labels remain unconfirmed. Diagnostic/device records do not prove a crash.
+
+Every captured occurrence is retained, with first/meaningful-change notices and
+a daily summary of routine repeats once sending is accepted. Manual Excel
+Status/Owner/Due/Fix notes stay attached to stable Action IDs and are never
+automatically reopened or resolved. Excel-only Resolved does not authorize an
+immediate recurrence email; admin Fixed/Verified recurrence requires recorded
+transition evidence. Mail-only Google repeats retain individual email rows without
+inventing backend instances or resolving human tasks. Ordinary successful workout
+emails remain separate from the issue-only tracker. The canonical master is
+**PoseTek → Technology → Website → User Issue Tracker → PoseTek Issue Tracker.xlsx**.
+Cloud intake, recovery, email and native publication do not depend on this chat,
+Codex, an hourly Codex procedure or Dylan's computer. Workout settings are
+unchanged and workout delivery is unpaused. No historical Resend replay or
+automated user outreach is included. Native device/crash acceptance and
+uninstrumented coach-workflow limits remain explicit; a coach name in a workout
+team label is not a dedicated assigned-coach lookup.
+
 ## Historical notification coverage correction (2026-10-02–03)
 
 The preceding authenticated application was Netlify deployment
 `6ac06e0d420f2b6b34129fb5`, from frozen source digest
 `e7ad1aaa6b2b87b17b8c6885ea263e35170b86e95759e304bc3cdb8244876e88`.
 Full provider inventory and served-content checks passed for 1,485 files,
-preserving current marketing source, protected files and platform configuration.
+preserving that release's marketing source, protected files and platform configuration.
 Baseline adoption passed and protects 1,482 application/public files; its exact
 verification result is in
 [the correction receipt](deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json).
@@ -99,11 +313,19 @@ not unique-user counts, and generic diagnostic uploads do not prove a crash or
 interrupted workout.
 
 Dylan remains the sole alert recipient; Nolan and Taiyo retain editing access to
-the shared tracker. The hourly Codex updater stays paused. Crashlytics Cloud
+the shared tracker. Power Automate event intake and automatic cloud recovery
+update it independently of this chat; Codex and Dylan's computer are not required
+for ongoing capture, email delivery or workbook updates. Crashlytics Cloud
 Logging export is On for the one registered iOS app, but genuine symbolicated
 device export and owning-Mac/iPhone/TestFlight acceptance remain held. The new
-Microsoft mailbox identity-conversion connection approval is unconfirmed; retain
-all historical email rows and unconfirmed aliases. No automatic outreach,
+Microsoft mailbox identity-conversion flow passed read-only semantic acceptance,
+and all six tracker endpoints passed exact version-six source/configuration/IAM
+checks. The additive identity settings transaction remained pending at that
+checkpoint. Revision 266's next batch exceeded the existing document limit;
+subsequent source repair and acceptance gates are recorded in the validation
+handoff above. Read
+[that verification checkpoint](deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
+and preserve every historical email row and unconfirmed alias. No automatic outreach,
 historical Resend replay, native release or training-rule change is included.
 Read [the correction handoff](docs/NOTIFICATION_COVERAGE_CORRECTION.md) for current
 contracts and limits; final workbook/source cutoffs come from its production
@@ -168,7 +390,7 @@ independent outstanding-delivery scan. Use the
 [refinement receipt](deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json) for those
 operational outcomes and exact coverage, and
 [the refinement handoff](docs/NOTIFICATION_OUTREACH_REFINEMENT.md) for the contract.
-The hourly Codex updater remains **PAUSED**; native cloud batches are the sole
+The Codex updater has been removed; native cloud batches are the sole
 writer for the shared master. Preserve the historical receipts below as records
 of their earlier verification times.
 
@@ -316,9 +538,9 @@ verified revision eight at `2026-10-02T10:53:58.855Z`, as recorded above. Never 
 the old whole-file renderer or reinitialize this native master. New source coverage
 must come from verified native batch and publication receipts.
 
-At Dylan's explicit request, `update-posetek-issue-tracker` remains **PAUSED**.
-Do not restart the old hourly procedure or scheduler; earlier instructions to keep
-it active are superseded. The production email route uses Microsoft for new
+At Dylan's explicit request, the old Codex tracker procedure was removed.
+Power Automate and the existing backend provide ongoing cloud operation;
+earlier instructions to run a desktop updater are superseded. The production email route uses Microsoft for new
 alerts, and the replacement tracker is active with independent revision-eight
 publication verified. Catch-up continues from each source's verified publication
 cutoff; complete publication is not claimed. Never run both workbook writers

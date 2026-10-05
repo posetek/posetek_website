@@ -21,13 +21,19 @@ SCHEMA = {'type': 'object', 'additionalProperties': False,
     'inputIds': {'type': 'array', 'minItems': 1, 'maxItems': 100, 'uniqueItems': True,
         'items': {'type': 'string', 'minLength': 1, 'maxLength': 1024}},
     'sourceIdType': {'type': 'string', 'enum': ['restId', 'restImmutableEntryId']},
-    'targetIdType': {'type': 'string', 'enum': ['restImmutableEntryId']}}}
+    'targetIdType': {'type': 'string', 'enum': ['restId', 'restImmutableEntryId']}}}
+
+# Emit a typed retry seam only for the exact native Graph error already observed
+# for a REST request containing an immutable ID. Other failures stay unclassified.
+TRANSLATION_FAILED_BODY = "@if(and(equals(outputs('Translate_Dylan_IDs')?['statusCode'],400),equals(body('Translate_Dylan_IDs')?['error']?['code'],'InvalidArgument'),equals(body('Translate_Dylan_IDs')?['error']?['message'],'Invalid value for arg: storeObjectId.IdType, value:ImmutableId, expected:EntryId'),equals(body('Validate_schema')?['sourceIdType'],'restId'),equals(body('Validate_schema')?['targetIdType'],'restImmutableEntryId')),setProperty(json('{\"schemaVersion\":1,\"mailbox\":\"dylank@posetek.net\",\"sourceIdType\":\"restId\",\"targetIdType\":\"restImmutableEntryId\",\"graphStatus\":400,\"graphCode\":\"InvalidArgument\",\"error\":\"mail_identity_source_type_mismatch\"}'),'requestId',body('Validate_schema')?['requestId']),json('{\"error\":\"mail_identity_translation_failed\"}'))"
 
 def invoke(method, url, body=None, after=None):
-    parameters = {'method': method, 'url': url, 'headers': {'Accept': 'application/json'}}
+    # InvokeHttp's saved-flow parameters use the native connector's request
+    # prefix; Learn's parameter table lists the flattened leaf names.
+    parameters = {'request/method': method, 'request/url': url, 'request/headers': {'Accept': 'application/json'}}
     if body is not None:
-        parameters['headers']['Content-Type'] = 'application/json'
-        parameters['body'] = body
+        parameters['request/headers']['Content-Type'] = 'application/json'
+        parameters['request/body'] = body
     return action('OpenApiConnection', {'parameters': parameters,
         'host': {'apiId': API, 'connectionName': 'shared_webcontents', 'operationId': 'InvokeHttp'},
         'retryPolicy': {'type': 'none'}, 'authentication': "@parameters('$authentication')"}, after)
@@ -43,7 +49,8 @@ def definition():
         f'greater(length({ids}),0)', f'lessOrEquals(length({ids}),100)', f'equals(length(union({ids},{ids})),length({ids}))',
         "equals(length(body('Invalid_message_IDs')),0)",
         "or(equals(body('Validate_schema')?['sourceIdType'],'restId'),equals(body('Validate_schema')?['sourceIdType'],'restImmutableEntryId'))",
-        "equals(body('Validate_schema')?['targetIdType'],'restImmutableEntryId')"]
+        "or(equals(body('Validate_schema')?['targetIdType'],'restId'),equals(body('Validate_schema')?['targetIdType'],'restImmutableEntryId'))",
+        "not(equals(body('Validate_schema')?['sourceIdType'],body('Validate_schema')?['targetIdType']))"]
     guards += [f"equals(substring({req},{n},1),'-')" for n in [8, 13, 18, 23]]
     route = {'Read_connection_user': invoke('GET', 'https://graph.microsoft.com/v1.0/me?$select=id,userPrincipalName,mail'),
         'Parse_connection_user': action('ParseJson', {'content': "@body('Read_connection_user')", 'schema': {
@@ -53,16 +60,16 @@ def definition():
         'Allow_only_Dylan_connection': {'type': 'If', 'runAfter': {'Connection_is_Dylan': ['Succeeded']},
             'expression': "@equals(outputs('Connection_is_Dylan'),true)", 'actions': {
                 'Fixed_translation_body': action('Compose', {'inputIds': '@' + ids,
-                    'sourceIdType': "@body('Validate_schema')?['sourceIdType']", 'targetIdType': 'restImmutableEntryId'}),
+                    'sourceIdType': "@body('Validate_schema')?['sourceIdType']", 'targetIdType': "@body('Validate_schema')?['targetIdType']"}),
                 'Translate_Dylan_IDs': invoke('POST', 'https://graph.microsoft.com/v1.0/me/translateExchangeIds',
                     "@string(outputs('Fixed_translation_body'))", {'Fixed_translation_body': ['Succeeded']}),
                 'Parse_translation': action('ParseJson', {'content': "@body('Translate_Dylan_IDs')", 'schema': {
                     'type': 'object', 'required': ['value'], 'properties': {'value': {'type': 'array'}}}}, {'Translate_Dylan_IDs': ['Succeeded']}),
                 'Return_exact_translation': response(200, {'schemaVersion': 1, 'requestId': '@' + req, 'mailbox': MAILBOX,
                     'mailboxUser': "@body('Parse_connection_user')", 'graphStatus': 200,
-                    'sourceIdType': "@body('Validate_schema')?['sourceIdType']", 'targetIdType': 'restImmutableEntryId',
+                    'sourceIdType': "@body('Validate_schema')?['sourceIdType']", 'targetIdType': "@body('Validate_schema')?['targetIdType']",
                     'data': "@body('Parse_translation')"}, {'Parse_translation': ['Succeeded']}),
-                'Translation_failed': response(502, {'error': 'mail_identity_translation_failed'}, {'Translate_Dylan_IDs': ['Failed', 'TimedOut']}),
+                'Translation_failed': response(502, TRANSLATION_FAILED_BODY, {'Translate_Dylan_IDs': ['Failed', 'TimedOut']}),
                 'Invalid_translation_response': response(502, {'error': 'mail_identity_invalid_response'}, {'Parse_translation': ['Failed', 'TimedOut']})},
             'else': {'actions': {'Wrong_connection': response(403, {'error': 'mail_identity_wrong_connection'})}}},
         'Connection_read_failed': response(502, {'error': 'mail_identity_connection_unavailable'}, {'Read_connection_user': ['Failed', 'TimedOut']}),
@@ -88,7 +95,7 @@ def build(output, private_config=None):
     cfg = json.loads(private_config.read_text(encoding='utf-8-sig')) if private_config else {}
     if cfg.keys() - {'graphConnectionName'}: raise ValueError('Unsupported private configuration field')
     name = cfg.get('graphConnectionName', 'REPLACE_EXISTING_DYLAN_GRAPH_CONNECTION')
-    if cfg and not re.fullmatch(r'shared-webcontents-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', name):
+    if cfg and not re.fullmatch(r'(?:shared-webcontents-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32})', name):
         raise ValueError('Invalid existing Graph connection reference')
     flow, api, connection = (str(uuid.uuid4()) for _ in range(3))
     title = 'PoseTek tracker - verify Outlook item IDs'

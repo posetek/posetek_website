@@ -65,12 +65,13 @@ describe("isolated public feedback transport", () => {
       const body = JSON.parse(init?.body as string) as FeedbackPayload;
       expect(body.sessionId).toBe(makeId());
       expect(body.entrySource).toBe("workout");
-      expect(body.formVersion).toBe(1);
+      expect(body.formVersion).toBe(2);
+      expect(body.identityMode).toBe("anonymous");
       return body;
     });
     expect(payloads.map(payload => payload.event)).toEqual(["opened", "started", "submitted"]);
-    expect(Object.keys(payloads[0])).toEqual(["formVersion", "event", "sessionId", "entrySource"]);
-    expect(payloads[2]).toEqual({ formVersion: 1, event: "submitted", sessionId: makeId(), entrySource: "workout",
+    expect(Object.keys(payloads[0])).toEqual(["formVersion", "event", "sessionId", "entrySource", "identityMode"]);
+    expect(payloads[2]).toEqual({ formVersion: 2, event: "submitted", sessionId: makeId(), entrySource: "workout", identityMode: "anonymous",
       answers: { feature: null, ease: "hard", obstruction: null, comment: "" }, durationSeconds: 45 });
   });
 
@@ -133,5 +134,73 @@ describe("isolated public feedback transport", () => {
     expect(payloads[0].durationSeconds).toBe(86400);
     expect(payloads[0].sessionId).not.toBe(payloads[1].sessionId);
     expect(payloads[0].sessionId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  });
+
+  it("attributes only submissions using a bound account token, without identifying body fields", async () => {
+    const fetcher = vi.fn<typeof fetch>(success);
+    const tokenSupplier = vi.fn(async () => "test-only-token");
+    const session = createFeedbackSession({ source: "workout", identityMode: "account", tokenSupplier, isCurrentIdentity: () => true, fetcher, makeId });
+    session.open(); session.start();
+    expect(tokenSupplier).not.toHaveBeenCalled();
+    await session.submit({ ...emptyFeedbackAnswers(), feature: "workouts" });
+    expect(tokenSupplier).toHaveBeenCalledOnce();
+    const requests = fetcher.mock.calls.map(([, init]) => ({ headers: init?.headers, body: JSON.parse(init?.body as string) }));
+    expect(requests[0].headers).toEqual({ "Content-Type": "application/json" });
+    expect(requests[1].headers).toEqual({ "Content-Type": "application/json" });
+    expect(requests[2].headers).toEqual({ "Content-Type": "application/json", Authorization: "Bearer test-only-token" });
+    expect(requests.every(request => request.body.identityMode === "account")).toBe(true);
+    expect(Object.keys(requests[2].body).sort()).toEqual(["answers", "durationSeconds", "entrySource", "event", "formVersion", "identityMode", "sessionId"]);
+    expect(fetcher.mock.calls[2][1]?.body).not.toContain("test-only-token");
+  });
+
+  it("refreshes the token but freezes mode, answers and duration across account retries", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockRejectedValueOnce(new Error("Lost response")).mockImplementation(success);
+    const tokenSupplier = vi.fn<() => Promise<string>>().mockResolvedValueOnce("token-before-refresh").mockResolvedValueOnce("token-after-refresh");
+    const session = createFeedbackSession({ source: "results", identityMode: "account", tokenSupplier, isCurrentIdentity: () => true, fetcher, makeId });
+    const answers = { ...emptyFeedbackAnswers(), feature: "results" as const };
+    await expect(session.submit(answers)).rejects.toThrow("Lost response");
+    await session.submit({ ...answers, comment: "edited after send" });
+    expect(fetcher.mock.calls[0][1]?.body).toBe(fetcher.mock.calls[1][1]?.body);
+    expect(fetcher.mock.calls[0][1]?.headers).toEqual({ "Content-Type": "application/json", Authorization: "Bearer token-before-refresh" });
+    expect(fetcher.mock.calls[1][1]?.headers).toEqual({ "Content-Type": "application/json", Authorization: "Bearer token-after-refresh" });
+  });
+
+  it("cannot retry an account submission after a switch or sign-out", async () => {
+    let current = true;
+    const fetcher = vi.fn<typeof fetch>().mockRejectedValueOnce(new Error("Lost response"));
+    const tokenSupplier = vi.fn(async () => "bound-token");
+    const session = createFeedbackSession({ source: "workout", identityMode: "account", tokenSupplier, isCurrentIdentity: () => current, fetcher, makeId });
+    const answers = { ...emptyFeedbackAnswers(), feature: "workouts" as const };
+    await expect(session.submit(answers)).rejects.toThrow("Lost response");
+    current = false;
+    await expect(session.submit(answers)).rejects.toThrow("account changed");
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(tokenSupplier).toHaveBeenCalledOnce();
+  });
+
+  it("cannot send after the account changes during token refresh", async () => {
+    let current = true;
+    const fetcher = vi.fn<typeof fetch>(success);
+    const session = createFeedbackSession({ source: "workout", identityMode: "account", fetcher, makeId,
+      tokenSupplier: async () => { current = false; return "previous-account-token"; }, isCurrentIdentity: () => current });
+    await expect(session.submit({ ...emptyFeedbackAnswers(), feature: "workouts" })).rejects.toThrow("account changed");
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it("does not silently send anonymously when an account token cannot be obtained", async () => {
+    const fetcher = vi.fn<typeof fetch>(success);
+    const session = createFeedbackSession({ source: "qr", identityMode: "account", fetcher, makeId,
+      tokenSupplier: () => Promise.reject(new Error("Auth unavailable")), isCurrentIdentity: () => true });
+    await expect(session.submit({ ...emptyFeedbackAnswers(), feature: "other" })).rejects.toThrow("Auth unavailable");
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it("does not import or contact auth in preview even with an account supplier", async () => {
+    const fetcher = vi.fn<typeof fetch>(success), tokenSupplier = vi.fn(async () => "must-never-read");
+    const session = createFeedbackSession({ source: "workout", preview: true, identityMode: "account", tokenSupplier, fetcher, makeId });
+    session.open(); session.start();
+    await session.submit({ ...emptyFeedbackAnswers(), feature: "notUsed" });
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(tokenSupplier).not.toHaveBeenCalled();
   });
 });

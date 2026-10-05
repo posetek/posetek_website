@@ -20,7 +20,7 @@ const pick = (value, fields) => Object.fromEntries(fields.filter(field => value?
 // confirmed delivery. Sending is presented as pending until the provider replies.
 function materialOutbox(job) {
   if (!job || !["incident", "status", "daily"].includes(job.type)) return null;
-  const value = pick(job, ["type", "issueId", "title", "lines", "createdAtMillis", "actorUid", "providerId", "acceptedAtMillis", "deliveredAtMillis", "deliveryObservedAtMillis", "deliveryProvider", "failureCode", "uncertain"]);
+  const value = pick(job, ["type", "issueId", "title", "lines", "createdAtMillis", "actorUid", "providerId", "acceptedAtMillis", "deliveredAtMillis", "deliveryObservedAtMillis", "deliveryProvider", "failureCode", "uncertain", "notificationDecision"]);
   if (job.deliveryProvider === "microsoft") value.microsoft = pick(job.microsoft, ["correlation", "senderMailbox", "runId", "receiptAcceptedAtMillis", "receiptUncertainAtMillis", "internetMessageId", "traceErrorCode", "traceAmbiguous", "claimPayloadDigest", "claimRecipients", "deliveryAmendmentId"]);
   value.status = job.status === "sending" ? "pending" : job.status || "unknown";
   const payload = Microsoft.effectiveDeliveryPayload(job);

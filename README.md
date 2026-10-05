@@ -3,15 +3,42 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
+The current website is `6ac395bfba35bceed566d26c`, source `5792b63`, published
+October 5, 2026 at 5:23:26 AM PDT. New signed-in feedback includes a server-verified
+account snapshot after a clear notice before the questions. Signed-out shared
+links and earlier anonymous responses remain anonymous. See [the feedback handoff](docs/APP_FEEDBACK.md)
+and [attribution receipt](deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json).
+The reconciled baseline protects 1,638 files; the ordinary TypeScript/Astro
+preservation build passed for all of them.
+
+Kai's preceding coach Overview release is preserved. It leads with a dated Team
+snapshot, count-matching review links, visible filters and a collapsed roster
+that retains its open state through fetches. See [the release handoff](docs/COACH_OVERVIEW_RELEASE.md)
+and [verified production receipt](deployment/COACH_OVERVIEW_PRODUCTION.json).
+Reporting/access contracts, approved marketing and stable P icons are preserved.
+The attribution update releases only the two scoped feedback functions; rules,
+gateway, native, training records and held content are unchanged.
+
+The historical icon-only release `6ac1abf790c8c0037928b52a` was published October 3,
+2026 at 6:31:53 PM PDT and protected 1,539 baseline files. Browser tabs and search
+favicon metadata retain the approved lime PoseTek P. See [the icon handoff](docs/SITE_ICONS.md)
+and [its production receipt](deployment/SITE_ICONS_PRODUCTION.json). Google controls
+when the refreshed icon appears in search results.
+
+For the current coach/admin interface and the next engineering direction, read
+[Kai's dashboard handoff](docs/KAI_DASHBOARD_HANDOFF.md). It covers navigation,
+functionality, metric definitions and verification cases, followed by Dylan's
+open-ended brief for simpler coach use and admin oversight across clubs.
+
 Optional app feedback uses public `/feedback` and verified PoseTek-admin review
 at `/admin/feedback`, including a locally generated QR code and copyable share
 links. Assigned and personal workouts invite only after an acknowledged completed
 save with recorded work, at most once every seven days in the same browser;
-results feedback remains optional and available separately. The verified live
-website is `6ac17bc21377cbeaea114800`, published October 3, 2026 at 3:12:14 PM PDT.
+results feedback remains optional and available separately. The verified feedback
+introduction release was `6ac17bc21377cbeaea114800`, published October 3, 2026 at 3:12:14 PM PDT.
 The exact candidate passed 20 hosted browser checks across nine screenshots with
 zero feedback writes before promotion. See [the feedback handoff](docs/APP_FEEDBACK.md)
-and [production evidence](deployment/APP_FEEDBACK_PRODUCTION.json) for publication
+and [attribution production evidence](deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json) for current publication
 and integrity checks. The website owns the two scoped feedback
 functions; the canonical mobile repository owns and publishes their client-denial
 rules. The [12-player comprehension pilot](docs/APP_FEEDBACK_PILOT.md) remains outstanding, and native
@@ -32,12 +59,37 @@ passed with 1,482 protected application/public files; that deployment/count is
 historical after the feedback release. The historical
 revision-121 results below do not establish the latest source coverage.
 
-Dylan alone receives alerts; Nolan and Taiyo retain shared workbook editing.
+Dylan alone is the approved recipient; Nolan and Taiyo retain shared workbook editing.
 Native Crashlytics export is configured On for the registered iOS app, but the
-owning-Mac/iPhone/TestFlight genuine crash acceptance gate remains held. Approval
-of the new Microsoft mailbox identity-conversion connection remains unconfirmed.
-The hourly Codex updater stays paused. No automatic outreach or historical Resend
-replay is included.
+owning-Mac/iPhone/TestFlight genuine crash acceptance gate remains held. At the
+preceding checkpoint, approval
+of the new Microsoft mailbox identity-conversion connection passed its separate
+read-only acceptance; the version-six tracker source is verified, while the
+identity settings cutover and retained-alias publication were still pending. The
+[historical verification checkpoint](deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
+records revision 266 and the capacity repair awaiting deployment and physical
+cloud workbook verification. It does not claim a fully refreshed tracker.
+Power Automate event intake and automatic cloud recovery operate independently
+of this chat. Codex and Dylan's computer are not required for ongoing capture,
+email delivery or shared-workbook updates. No automatic outreach or historical
+Resend replay is included.
+
+The October 4 validation now physically accepts **revision 365**: **789 actions,
+3,228 occurrences, 2,384 original email rows and four daily/status rows**. All
+**690 saved human records** remain attached to stable Action IDs. Guarded mailbox
+identity activation completed at **15:28:02.319 UTC**; the **17:09:52.135 UTC**
+post-identity proof verified all 3,228 exact sources with zero incomplete source
+authority. The older count of 34 described incomplete source authority, not 34
+unknown contacts. Unknown operators and unverified contacts remain explicit.
+Native publication, capture and recovery holds are restored. The final006 send
+attempt was refused at **17:15:41.837 UTC**, without apply, a send intent or a send;
+overall acceptance is false and genuine Dylan-only delivery remains open.
+Scoped Insights metadata supports 15 settled v4 rebuilds, with seven stale current
+manifests (including six v2), 428 missing current manifests and 17 ordinary
+unfinished testing markers still explicit. Read the
+[current validation handoff](docs/NOTIFICATION_PRODUCTION_VALIDATION.md) and
+[receipt](deployment/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json) for the
+dated source cutoffs, log review and remaining native and coach-workflow limits.
 
 Guided personal workouts were published as deployment `6abeaf5702a9c9983c7a41b9`, source
 `8956871`, published October 1, 2026 at 12:18:33 PM PDT. Players choose focus,
@@ -76,8 +128,8 @@ keeps actor and target athlete separate and preserves stable IDs, evidence and t
 team's triage notes.
 
 The Power Automate shared tracker is event driven, with an accepted Dylan-only
-delegated mailbox reader and independent cloud source catch-up. The old hourly
-Codex automation remains **paused**. Fresh cloud evidence matched revision 87 to
+delegated mailbox reader and independent cloud source catch-up. Fresh cloud
+evidence matched revision 87 to
 the exact frozen batch, allowing its existing receipt to be acknowledged without
 an Excel rewrite; the first ordinary retry returned revision 88. All eleven
 approved recent amendments delivered to Dylan alone with their original payloads
@@ -347,6 +399,11 @@ data, service decisions, and the application preservation boundary.
 
 ## Production build
 
+For a change limited to browser/search icons, use the guarded
+[website icon workflow](docs/SITE_ICONS.md). It preserves existing page bodies
+and runtime assets while changing only document-head icon links and the four
+declared icon files. Ordinary builds continue to verify the protected baseline.
+
 ```powershell
 node scripts/build-production.mjs
 ```
@@ -357,6 +414,11 @@ recorded in that baseline. A fresh build downloads and
 checksums baseline assets and uses matching tracked HTML where the host rewrites
 served pages; internet access is required. The build stops if the live application
 has drifted. Reconcile a reviewed baseline instead of bypassing the guard.
+
+For legacy HTML rewritten by the host, verified `localPath` entries recover the
+original source bytes. Git line-ending conversion is supported in both directions
+only when the reconstructed file matches the pinned checksum and size exactly.
+The builder does not change or normalize the protected baseline hashes.
 
 `netlify.toml` uses this production command and publishes `production-dist/`.
 The repository root, `marketing-dist/`, and the ordinary application `dist/`

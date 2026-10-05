@@ -130,8 +130,13 @@ function createSourceCapture({ db, bridge, graph, mailCapture, backend = createB
         const page = source === "outlook" ? await graph.page(active) : await backend.page(active);
         if (!Array.isArray(page.records) || typeof page.complete !== "boolean" || page.complete !== (page.cursor === null)) fail("tracker_capture_invalid_page");
         const tickets = [], reasons = {}; let relevant = 0;
-        for (const record of page.records) {
-          const result = source === "outlook" ? await mailCapture.capture(record) : await backend.capture(record);
+        // One shared bounded identity/alias operation covers the entire Outlook
+        // page. Any failed item leaves the frozen page/cursor checkpoint intact;
+        // successfully queued immutable evidence can be reused on its retry.
+        const mailResults = source === "outlook" && typeof mailCapture.capturePage === "function" ? await mailCapture.capturePage(page.records) : null;
+        for (let index = 0; index < page.records.length; index++) {
+          const record = page.records[index];
+          const result = mailResults ? mailResults[index] : source === "outlook" ? await mailCapture.capture(record) : await backend.capture(record);
           if (result.relevant) { if (!result.ticket || !Number.isSafeInteger(result.ticket.version) || result.ticket.version < 1) fail("tracker_capture_not_queued"); tickets.push(result.ticket); relevant++; }
           else { const reason = result.reason || "excluded"; reasons[reason] = (reasons[reason] || 0) + 1; }
         }
