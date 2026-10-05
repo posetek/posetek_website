@@ -1,5 +1,7 @@
 # User issue alerts
 
+October 5 current issue-send update: [new-only delivery handoff](CURRENT_ISSUE_ALERT_DELIVERY.md) and [verified source/activation receipt](../deployment/CURRENT_ISSUE_ALERT_DELIVERY_20261005.json). New issue sending is enabled with a send-only cutoff; historical queues stay untouched. The dated acceptance and holds below remain historical records.
+
 See [the current production validation handoff](NOTIFICATION_PRODUCTION_VALIDATION.md)
 for the preserved revision-266 hold, verified source releases for all 31 approved
 endpoints, and tracker storage version 2 activated and read back at

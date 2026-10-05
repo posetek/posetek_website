@@ -1,5 +1,7 @@
 # PoseTek website project context
 
+October 5 current issue-send update: [new-only delivery handoff](docs/CURRENT_ISSUE_ALERT_DELIVERY.md) and [verified source/activation receipt](deployment/CURRENT_ISSUE_ALERT_DELIVERY_20261005.json). New issue sending is enabled with a send-only cutoff; historical queues stay untouched. The dated acceptance and holds below remain historical records.
+
 Reviewed on October 2–4, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.

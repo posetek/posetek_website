@@ -11,8 +11,13 @@ Only `dispatchUserIssue`, `sweepUserIssues`, `dailyUserIssues` and
 configuration, triggers, secrets and IAM. Activate by setting one fixed current
 `sendFromMillis` and `sendEnabled: true` on `userIssueSettings/current`, retaining
 all other fields. On an uncertain response, read back that same cutoff; do not
-choose a later one. Deployment and activation evidence will be recorded after
-actual verification; this source change alone does not establish live delivery.
+choose a later one. The four functions were published from pushed commit `a7b9e25`
+and exact serving archives, configuration and IAM verified. New-only sending
+was enabled and read back at **2026-10-05T12:07:51.861Z** (5:07 AM PDT).
+See [the production receipt](../deployment/CURRENT_ISSUE_ALERT_DELIVERY_20261005.json).
+No genuine post-activation issue had arrived at the initial bounded check; the
+existing Microsoft flow is On and a genuine Dylan-only workout email was
+confirmed in Outlook. A new issue delivery is not claimed before its receipt.
 
 New authenticated-user incidents already resolve contact through the exact
 recorded Auth UID. Emails separately show Account/reporter, Contact email with
