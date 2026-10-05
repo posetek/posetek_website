@@ -1,6 +1,38 @@
 # PoseTek Coach and Admin Dashboard Handoff
 
-Prepared for Kai by Dylan Keller. Current-state review dated October 3, 2026.
+Prepared for Kai by Dylan Keller. Original current-state review dated October 3, 2026.
+
+## Coach Overview follow-up (October 5, 2026)
+
+Kai's coach Overview is live in website `6ac38fde67d690075984e58b`, source
+`7b1aa186`, published October 5, 2026 at 4:55:11 AM PDT. It leads with a dated Team snapshot of the
+filtered reporting population, testing activity and workout activity. The roster
+starts collapsed and retains its open state through loading, retries, search,
+pagination, date changes and refresh. Another account or team starts collapsed.
+Roster columns, signup actions, Add player and player detail remain available.
+
+Included/filtered population counts, removable active-filter chips and Clear all
+filters remain visible on the compact Overview. Worth reviewing preserves other
+reporting filters and clears roster name search, so a positive-count review opens
+the population represented by that count. Zero-count review buttons are disabled.
+Name search still narrows roster rows alone, rather than totals or comparison
+cohorts.
+
+The workout category is **No workout status**. Its snapshot row says **with no
+available workout status in this period**: missing records, unrecognized endings
+and workouts ending outside this period can fall here. This status can coexist
+with recorded workout activity; it does not prove that no workout occurred.
+
+The prior coach Overview summary charts and breakdowns are removed from that tab;
+Testing, Workouts, Active use, Community, player detail and admin/manager reporting
+retain their views. Weekly qualified-performance lines connect available results
+across empty weeks. The explanation and chart data table identify weeks with no
+qualified result; the connecting line does not supply measurements for those
+weeks or demonstrate individual improvement.
+
+See [the coach Overview release handoff](COACH_OVERVIEW_RELEASE.md) for provenance,
+release boundaries and verification, and [the verified publication receipt](../deployment/COACH_OVERVIEW_PRODUCTION.json).
+The roster-first Overview below records the original October 3 review.
 
 ## Purpose and expected outcome
 
@@ -8,9 +40,9 @@ Kai, we want coaches to understand where their players stand and which areas des
 
 The dashboards already contain substantial reporting, player detail and operational tools. Your starting task is to establish that the displayed information is correct, then propose a simpler experience around the decisions coaches and admins actually need to make. The questions below provide direction and leave room for your creative judgment.
 
-The current website release is `6ac17bc21377cbeaea114800`, published October 3, 2026 at 3:12:14 PM PDT. The source review used `eb6215a`. The companion Word handoff includes current desktop screen captures; credentials, signup codes and identifiable player screenshots are excluded from this repository document.
+At the original October 3 review, the website release was `6ac17bc21377cbeaea114800`, published October 3, 2026 at 3:12:14 PM PDT. The source review used `eb6215a`. The companion Word handoff includes desktop screen captures from that review; credentials, signup codes and identifiable player screenshots are excluded from this repository document.
 
-## Coach workspace currently in place
+## Coach workspace at the October 3 review (historical Overview)
 
 Coaches sign in at `/signin` and use Team Insights at `/insights`. Organization coaches see their currently assigned teams; independent coaches see their authorized roster. Current canonical membership and player ownership determine access, rather than a coach name or legacy roster mirror.
 
@@ -20,7 +52,7 @@ Overview starts with the roster. Columns show Player, recorded Age, Testing stat
 
 Below the roster are summary tiles for Players, Fully tested, Workouts completed and Estimated active use, then participation, testing coverage, division, age and engagement breakdowns. Category selections filter the reporting population and appear as removable filter chips. Name search only narrows displayed roster results; it does not change report totals or comparison cohorts.
 
-| Coach area | Current functionality |
+| Coach area | Functionality at the October 3 review |
 | --- | --- |
 | Overview | Roster first, player search, signup actions, summary tiles and reporting breakdowns. |
 | Testing | Six-test coverage, qualified results, distinct attempts, weekly activity, recording audit, separate failure reports and qualified performance charts. |

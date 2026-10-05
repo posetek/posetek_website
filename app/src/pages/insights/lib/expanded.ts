@@ -39,7 +39,7 @@ export interface ExpandedInsights {
   pagination: { total: number; pageSize: number; nextCursor: string | null };
 }
 export const TESTING_LABELS: Record<string, string> = { fullyTested: "Fully tested", partiallyTested: "Partially tested", noSuccessfulTests: "No successful tests", noRecordedTests: "No recorded tests" };
-export const WORKOUT_LABELS: Record<string, string> = { completed: "Completed a workout", inProgress: "No ending record", endedEarly: "Ended early", abandoned: "Abandoned", none: "No workouts" };
+export const WORKOUT_LABELS: Record<string, string> = { completed: "Completed a workout", inProgress: "No ending record", endedEarly: "Ended early", abandoned: "Abandoned", none: "No workout status" };
 export const USAGE_LABELS: Record<string, string> = { returning: "Returning", active: "Active on one day", inactive: "No active use", notCollected: "Not collected" };
 export const EXERCISES = ["shooting", "sprint", "jump", "broadJump", "changeOfDirection", "dribbling"];
 export const FEATURE_LABELS: Record<string, string> = { workout: "Workouts", video: "Video", training: "Training", results: "Results", planner: "Planner", feed: "Feed", overview: "Overview", other: "Other" };
