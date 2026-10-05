@@ -1,8 +1,37 @@
 # PoseTek website project context
 
-Reviewed on October 2–3, 2026. This guide summarizes the available repository and
+Reviewed on October 5, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
+
+## Prospective feedback account attribution (2026-10-05)
+
+Dylan requested account attribution for future feedback and confirmed that
+signed-out shared links should continue accepting anonymous responses. The
+public form explains attribution before the questions and adds no consent
+checkbox. Signed-in submissions use a server-verified Firebase Auth account
+snapshot (name/email when available and exact UID); no client-supplied author
+or player-profile mapping is trusted. Workout/results entry points require
+sign-in. Signed-out QR, message and direct links remain anonymous. Firebase
+anonymous-auth sessions are treated as signed out. Version-1 and historical
+responses remain anonymous; identities are not inferred from logs or records.
+
+The isolated form imports Auth only, with no Firestore, application issue
+tracking, usage analytics or replay. Only account submissions send a token;
+opened/started events contain no account fields. Sessions and responses share
+the deduplication UUID, so a privileged backend operator can relate a submitted
+session to its response. Reporting continues to count form sessions, not unique
+players. The private admin view labels account and anonymous responses clearly.
+Privacy disclosure is dated October 5. The user's age statement is not a
+recorded DOB or proof of parental consent; existing under-13 protections remain.
+
+Read [the feedback handoff](docs/APP_FEEDBACK.md) and
+[the attribution production receipt](deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json)
+for publication, scoped backend evidence, synthetic acceptance and recovery.
+This change preserves invitation timing, seven-day cadence, training records,
+client-denial rules, 90-day feedback retention, legacy feedback and approved
+marketing/icon bytes. Native invitations and the 12-player comprehension pilot
+remain separate and outstanding.
 
 ## PoseTek P website icons (2026-10-03)
 
@@ -11,7 +40,7 @@ The source now uses the previously approved outlined lime P badge, recovered
 from the official icon asset branch, with SVG, 96px PNG, multi-size ICO and
 180px Apple touch variants. Shared Astro and compatibility heads point to stable
 same-origin icon URLs. The full wordmark remains available for page content.
-The current website is `6ac1abf790c8c0037928b52a`, published October 3, 2026 at
+The icon website release was `6ac1abf790c8c0037928b52a`, published October 3, 2026 at
 6:31:53 PM PDT from source `c2ba02b`. Its 1,541 website artifacts match the
 1,542-record provider inventory. Only icon links in 83 HTML heads changed;
 1,454 existing files retain their exact bytes, and four icon files were added.
@@ -60,7 +89,7 @@ Read [the feedback release receipt](deployment/APP_FEEDBACK_PRODUCTION.json) and
 An optional invitation appears on return to Training after a successful completed
 workout save, at most once per seven days in the same browser. Pain stops, early
 endings, failed saves and previews are excluded. Results retain a feedback link.
-`/feedback` is a separate public document requiring no login or name, carrying
+At that release, `/feedback` was a separate public document requiring no login or name, carrying
 only a broad source and random form-session ID to its isolated HTTPS endpoint.
 It loads no analytics/replay or authentication scripts. Verified PoseTek admins
 can read recent responses and form-session counts and download a QR code at
