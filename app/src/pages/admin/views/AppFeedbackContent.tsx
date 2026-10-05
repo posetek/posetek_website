@@ -38,6 +38,14 @@ export function AppFeedbackRow({ response }: { response: AppFeedbackResponse }) 
       <h3>{feedbackAnswerLabel(FEATURE_LABELS, response.answers.feature)}</h3>
       <p>{response.entrySource === null ? "Source unavailable" : SOURCE_LABELS[response.entrySource]} <span aria-hidden="true">·</span> {date}{date === "Date unavailable" ? "" : " Pacific"}</p>
     </header>
+    <dl className="feedback-author">
+      <div><dt>Submitted by</dt><dd>{response.author ? <>
+        <strong>{response.author.displayName ?? response.author.email ?? response.author.uid}</strong>
+        <span className="feedback-author-mode">Signed-in account</span>
+        {response.author.email && <span>{response.author.email}{response.author.emailVerified ? " · Email verified" : " · Email not verified"}</span>}
+        <span className="feedback-author-uid">Account ID: <code>{response.author.uid}</code></span>
+      </> : <><strong>Anonymous</strong><span className="feedback-author-mode">{response.formVersion === 1 ? "Historical anonymous response · no account linked" : "No account linked"}</span></>}</dd></div>
+    </dl>
     <dl className="feedback-answers">
       <div><dt>Easy to use</dt><dd>{feedbackAnswerLabel(EASE_LABELS, response.answers.ease)}</dd></div>
       <div><dt>What got in the way</dt><dd>{feedbackAnswerLabel(OBSTRUCTION_LABELS, response.answers.obstruction)}</dd></div>

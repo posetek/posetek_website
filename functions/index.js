@@ -8,9 +8,10 @@ admin.initializeApp();
 const db = admin.firestore();
 Object.assign(exports, require("./device-processing").createDeviceProcessingEntrypoints(functions, admin, requireCaller));
 
-// Public feedback uses plain HTTPS, with no caller/auth/account association.
+// Feedback keeps legacy/visitor responses anonymous and verifies account-mode submissions.
 exports.receiveAppFeedback = functions.runWith({ secrets: ["APP_FEEDBACK_RATE_KEY"], timeoutSeconds: 30, maxInstances: 10 }).https.onRequest(
-  require("./app-feedback").createAppFeedbackHttp({ db, Timestamp: admin.firestore.Timestamp, rateKey: () => process.env.APP_FEEDBACK_RATE_KEY })
+  require("./app-feedback").createAppFeedbackHttp({ db, Timestamp: admin.firestore.Timestamp, rateKey: () => process.env.APP_FEEDBACK_RATE_KEY,
+    verifyIdToken: (token, checkRevoked) => admin.auth().verifyIdToken(token, checkRevoked), getUser: uid => admin.auth().getUser(uid) })
 );
 exports.getAppFeedback = functions.runWith({ timeoutSeconds: 30, maxInstances: 5 }).https.onCall((data, context) =>
   require("./app-feedback").createAppFeedbackAdmin({ db, Timestamp: admin.firestore.Timestamp, HttpsError: functions.https.HttpsError })(data || {}, requireCaller(context))

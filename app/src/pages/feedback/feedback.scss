@@ -42,6 +42,13 @@
   h1 { font-size: clamp(30px, 6.6vw, 39px); font-weight: 800; letter-spacing: -.045em; line-height: 1.15; text-wrap: balance; }
   .feedback-lead { font-size: 16px; margin-top: 13px; color: var(--feedback-text); text-wrap: pretty; }
   .feedback-privacy-note { color: var(--feedback-muted); font-size: 13px; margin-top: 14px; line-height: 1.65; }
+  .feedback-identity-notice { color: var(--feedback-text); font-size: 14px; line-height: 1.6; padding: 16px; margin: 0 0 20px; border: 1px solid rgba(183, 243, 74, .4); border-radius: 13px; background: rgba(183, 243, 74, .08); overflow-wrap: anywhere; }
+  .feedback-identity-notice strong { color: var(--feedback-lime); }
+  .feedback-account-changed { color: var(--feedback-muted); font-size: 13px; margin-bottom: 20px; }
+  .feedback-auth-state h2, .feedback-signin-gate h2 { font-size: 23px; line-height: 1.3; text-wrap: balance; }
+  .feedback-auth-state p, .feedback-signin-gate p { font-size: 14px; color: var(--feedback-muted); }
+  .feedback-auth-state h2 + p, .feedback-signin-gate h2 + p { margin-top: 12px; }
+  .feedback-auth-state .feedback-primary, .feedback-signin-gate .feedback-primary { margin: 20px 0 12px; }
   .feedback-card { background: var(--feedback-card); border: 1px solid var(--feedback-line); border-radius: 22px; padding: 26px; }
   .feedback-step { color: var(--feedback-lime); font-size: 12px; font-weight: 700; margin-bottom: 12px; }
   fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }

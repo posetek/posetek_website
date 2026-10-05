@@ -1,0 +1,336 @@
+{
+  "scope": "prospective_feedback_account_attribution",
+  "production": {
+    "deploymentId": "6ac395bfba35bceed566d26c",
+    "previousDeploymentId": "6ac38fde67d690075984e58b",
+    "sourceCommit": "5792b630ebe160bc7ee34cb5977bff879bbf7869",
+    "url": "https://posetek.net",
+    "publishedAtUtc": "2026-10-05T12:23:26.254Z",
+    "publishedAtPacific": "October 5, 2026 at 5:23:26 AM PDT",
+    "verifiedAtUtc": "2026-10-05T12:23:31.559Z",
+    "artifactFiles": 1640,
+    "providerInventoryFiles": 1641,
+    "fullInventoryVerified": true,
+    "exactReviewedCandidatePromoted": true
+  },
+  "attribution": {
+    "formVersion": 2,
+    "accountSources": [
+      "workout",
+      "results",
+      "qr",
+      "message",
+      "direct"
+    ],
+    "signedOutAnonymousSources": [
+      "qr",
+      "message",
+      "direct"
+    ],
+    "signedOutAccountRequiredSources": [
+      "workout",
+      "results"
+    ],
+    "anonymousFirebaseUsersTreatedAsSignedOut": true,
+    "noticeBeforeQuestions": true,
+    "separateConsentCheckbox": false,
+    "authorOrigin": "Server verifies a nonanonymous enabled Firebase Auth account from a revocation-checked ID token and reads that exact UID.",
+    "authorFields": [
+      "uid",
+      "displayName when available",
+      "email when available",
+      "emailVerified"
+    ],
+    "accountIsNotVerifiedRealWorldIdentity": true,
+    "clientSuppliedAuthorIdentifiersRejected": true,
+    "historicalAndVersion1RemainAnonymous": true,
+    "legacyCredentialsNeverInspected": true,
+    "identityNotInferredFromRecordsOrLogs": true,
+    "adminAccess": "Existing verified nonanonymous PoseTek admin predicate; private read-only callable",
+    "ageScope": "User stated current players are above 13; no DOB audit, age-envelope update or change to existing under-13 protections."
+  },
+  "transport": {
+    "jsonFields": [
+      "formVersion",
+      "event",
+      "sessionId",
+      "entrySource",
+      "identityMode",
+      "answers when submitted",
+      "durationSeconds when submitted"
+    ],
+    "accountSubmissionAuthorization": "Bearer Firebase ID token only on account submission",
+    "diagnosticAuthorization": false,
+    "anonymousAuthorization": false,
+    "cookiesOmitted": true,
+    "referrerOmitted": true,
+    "noAuthorAccountPlayerTeamWorkoutIdentifierInFeedbackJsonOrUrls": true,
+    "authOnlySdk": true,
+    "compiledJavaScriptModules": 8,
+    "noMainFirebaseFirestoreFunctionsStorageIssueUsageAnalyticsReplayInitialization": true,
+    "feedbackConnectOrigins": [
+      "self",
+      "https://us-central1-kickai-69dd0.cloudfunctions.net",
+      "https://identitytoolkit.googleapis.com",
+      "https://securetoken.googleapis.com"
+    ],
+    "frameSources": "none",
+    "fontSources": "self",
+    "previewHasNoAuthOrFeedbackRequests": true
+  },
+  "privacy": {
+    "responseRetentionDays": 90,
+    "sessionRetentionDays": 90,
+    "networkCounterMinutes": 30,
+    "ttlDeletionAsynchronous": true,
+    "sessionRecordsHaveNoAuthorFields": true,
+    "sessionResponseUuidRelationship": "Privileged backend operators can relate a submitted session to its attributed response through the shared deduplication UUID; counts describe form sessions, not unique people.",
+    "policyDate": "October 5, 2026",
+    "manualAccountDeletionStep": "deployments/app-feedback/erase.py defaults to preview; explicit apply deletes only exact-UID v2 account response and matching session pairs within the existing deletion-request process.",
+    "manualErasureIsNotAuthDeletionHook": true,
+    "erasureSyntheticTests": 12,
+    "liveErasureOnRealAccounts": false
+  },
+  "backend": {
+    "project": "kickai-69dd0",
+    "codebase": "app-feedback",
+    "functions": {
+      "receiveAppFeedback": {
+        "versionId": "2",
+        "sourceSha256": "83a59a9f3163d44acf187807ef3cffb4a471b595ac8b60e518d015b2013e5025",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "30s",
+          "availableMemoryMb": 256,
+          "maxInstances": 10,
+          "secrets": [
+            "APP_FEEDBACK_RATE_KEY"
+          ],
+          "httpsTrigger": true,
+          "publicInvoker": true,
+          "ingressSettings": "ALLOW_ALL",
+          "callable": false
+        },
+        "iamSha256": "f33e3958b9ff5f4ef1a063d3ea9dbb2cba27ea19bff5620af56b9ef4777b3dc5",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "getAppFeedback": {
+        "versionId": "2",
+        "sourceSha256": "83a59a9f3163d44acf187807ef3cffb4a471b595ac8b60e518d015b2013e5025",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "30s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "secrets": [],
+          "httpsTrigger": true,
+          "publicInvoker": true,
+          "ingressSettings": "ALLOW_ALL",
+          "callable": true
+        },
+        "iamSha256": "92ddb221b6ef03a3560ae3de13a5bb4f322cdb1582b7eaaa4fb68e53f56b1f43",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      }
+    },
+    "preparedSourceFiles": {
+      "index.js": {
+        "sha256": "1ba5af94d50edbc3aa4a9306e91f0d1109836acf31af70e5330571575a7eba5d",
+        "bytes": 1129
+      },
+      "app-feedback.js": {
+        "sha256": "cacd3fe1835e753a68780b4aee899fb3d822b5a42b70361de5ade55a2efcab8e",
+        "bytes": 15563
+      },
+      "club-access.js": {
+        "sha256": "ecc45c631b6b2bbf204621a896410f60f40d3d46f98df5576515616c82d5834a",
+        "bytes": 1326
+      },
+      "athlete-storage-paths.js": {
+        "sha256": "2b0c8a3320b82a94f32add9d2344708effcd42ce6aef7f0c88a013ec6db99d4a",
+        "bytes": 2802
+      },
+      "package.json": {
+        "sha256": "a9ac459e8c2330272c3fc52ab9d27b48f40dbd0dca9855f0983cef3f49e44686",
+        "bytes": 498
+      },
+      "package-lock.json": {
+        "sha256": "50a3b53078a82209bf36b6123e4cc27d01614274cd3aa3e9ed86d0dd420a4ea0",
+        "bytes": 261037
+      }
+    },
+    "unrelatedFunctionsPreservedAtScopedDeploymentAudit": true,
+    "triggerRuntimeAndTransportVerified": true,
+    "iamUnchanged": true,
+    "legacyFeedbackPlayerTrainingDataNotWritten": true
+  },
+  "firestore": {
+    "rulesOwner": "posetek/posetek-mobile-app/firebase",
+    "rulesPublishedByThisRun": false,
+    "rulesetName": "projects/kickai-69dd0/rulesets/98313b3d-047d-471f-afdd-641145692f0a",
+    "sha256": "64bf1a13c90c8e930d1bc7808a975e9a94170c7560c3aa172807f7e98eb68855",
+    "matchesVerifiedFeedbackDenialRuleSet": true,
+    "explicitRecursiveClientDenialsAndNoPermissiveFallbackPreserved": true,
+    "collectionsUnchanged": true,
+    "indexes": [
+      {
+        "fields": [
+          {
+            "fieldPath": "opened",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "ASCENDING"
+          }
+        ],
+        "state": "READY"
+      },
+      {
+        "fields": [
+          {
+            "fieldPath": "started",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "ASCENDING"
+          }
+        ],
+        "state": "READY"
+      },
+      {
+        "fields": [
+          {
+            "fieldPath": "submitted",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "ASCENDING"
+          }
+        ],
+        "state": "READY"
+      }
+    ],
+    "ttl": {
+      "appFeedbackResponsesV1": "ACTIVE",
+      "appFeedbackSessionsV1": "ACTIVE",
+      "appFeedbackRateLimitsV1": "ACTIVE"
+    },
+    "databaseConfigurationWrittenByThisRun": false
+  },
+  "preservation": {
+    "concurrentKaiSourceIntegrated": "0ad845e5ac772c940923c06bbab219cd41990141",
+    "coachOverviewDeploymentPreserved": "6ac38fde67d690075984e58b",
+    "protectedPriorFilesUnchanged": 1583,
+    "allPriorArtifactFilesUnchangedExceptApplicationFeedbackAndProviderMetadata": 1585,
+    "changedExistingFiles": [
+      "/application.html",
+      "/feedback.html",
+      "/netlify.toml (generated provider metadata; feedback Auth connect permissions)"
+    ],
+    "newHashedAssets": 53,
+    "marketingDocuments": [
+      {
+        "path": "/index.html",
+        "sha": "78a4aaa4d4974f1e2070e70c09aa05970518bef1",
+        "size": 37745
+      },
+      {
+        "path": "/coaches/index.html",
+        "sha": "b5cab3a72ffffaaceaeaf8944e0f2ec0c65c9b84",
+        "size": 26209
+      }
+    ],
+    "marketingServedBytesPreserved": true,
+    "stablePIconsPreserved": true,
+    "invitationTimingAndSevenDayCadencePreserved": true,
+    "painEarlyEndingFailedSaveChangedAccountHiddenTabPreviewExclusionsPreserved": true,
+    "resultsAccessAndTrainingRecordsPreserved": true,
+    "gatewayRulesNativeCatalogNotDeployed": true,
+    "documents": [
+      {
+        "path": "/application.html",
+        "sha": "d82e42111074ac4c1ec7e08e5617317aea74c276",
+        "size": 15342
+      },
+      {
+        "path": "/feedback.html",
+        "sha": "66488a3e418e4e4d128f634bed3289085a133ff8",
+        "size": 5817
+      }
+    ]
+  },
+  "validation": {
+    "applicationTests": 1504,
+    "applicationTestFiles": 133,
+    "backendTests": 20,
+    "releaseGuardTests": 46,
+    "operatorErasureTests": 12,
+    "typeScriptAndAstroPassed": true,
+    "localSyntheticBrowser": {
+      "checks": 26,
+      "screenshots": 9,
+      "liveWrites": 0,
+      "passed": true
+    },
+    "hostedSyntheticBrowser": {
+      "checks": 27,
+      "screenshots": 10,
+      "liveWrites": 0,
+      "passed": true
+    },
+    "productionSyntheticBrowser": {
+      "checks": 27,
+      "screenshots": 10,
+      "liveWrites": 0,
+      "passed": true
+    },
+    "liveSyntheticAcceptance": {
+      "verifiedAt": "2026-10-05T12:08:36.878855+00:00",
+      "checks": 48,
+      "passed": true,
+      "ownedAuthAccountsAndFeedbackSessionRecordsRemovedAndVerifiedAbsent": true,
+      "realUsersFeedbackLogsOrAdminListNotRead": true,
+      "ordinaryNetworkCountersRemainUnderTtl": true
+    },
+    "productionHttp": {
+      "applicationRoutes": 14,
+      "feedbackRoutes": 3,
+      "marketingRoutes": 5,
+      "newAssets": 53,
+      "feedbackHeadersVerified": true
+    },
+    "ordinaryPreservationBuild": {
+      "passed": true,
+      "protectedFiles": 1638,
+      "applicationRoutes": 25,
+      "marketingRoutes": 5,
+      "assets": 1513
+    },
+    "limitations": "Interactive identity flows used synthetic Auth persistence and intercepted external requests; live acceptance used only temporary owned Auth/feedback records. No real-player identity audit or signed-in production admin-list review was performed. The 12-player comprehension pilot remains outstanding; native invitations require a separate mobile release."
+  },
+  "baseline": {
+    "deploymentId": "6ac395bfba35bceed566d26c",
+    "sourceCommit": "5792b630ebe160bc7ee34cb5977bff879bbf7869",
+    "protectedFiles": 1638,
+    "ordinaryPreservationBuildPassed": true
+  },
+  "recovery": {
+    "websiteDeploymentId": "6ac38fde67d690075984e58b",
+    "url": "https://6ac38fde67d690075984e58b--posetek.netlify.app",
+    "method": "Restore the verified prior Netlify deployment and reconcile its inventory. Preserve privately stored v2 author snapshots until expiry or authorized erasure; do not relabel attributed records as historically anonymous. The receiver retains v1 compatibility; withdraw only the two scoped functions if needed.",
+    "handoff": "docs/APP_FEEDBACK.md",
+    "backendGuide": "deployments/app-feedback/README.md"
+  }
+}

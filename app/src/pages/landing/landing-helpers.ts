@@ -163,6 +163,10 @@ const RETURN_TO_ALLOWED_PATHS = new Set([
   "/admin",
   "/admin/access",
   "/admin/user-issues",
+  "/admin/feedback",
+  "/feedback",
+  "/feedback/",
+  "/feedback.html",
   "/feed",
   "/athlete",
   "/roster",
@@ -186,7 +190,15 @@ export function getSafeReturnToUrl(
     const target = new URL(raw, baseHref);
     const fileName = target.pathname.split("/").pop() ?? "";
     const allowed = RETURN_TO_ALLOWED.has(fileName) || RETURN_TO_ALLOWED_PATHS.has(target.pathname) || isAdminPlayerReturnPath(target.pathname);
-    return target.origin === origin && !target.username && !target.password && allowed ? target.href : null;
+    if (target.origin !== origin || target.username || target.password || !allowed) return null;
+    if (["/feedback", "/feedback/", "/feedback.html"].includes(target.pathname)) {
+      // Feedback return links carry only the broad invitation source.
+      const source = target.searchParams.get("source");
+      const clean = new URL("/feedback", origin);
+      if (["workout", "results", "qr", "message", "direct"].includes(source ?? "")) clean.searchParams.set("source", source!);
+      return clean.href;
+    }
+    return target.href;
   } catch {
     return null;
   }

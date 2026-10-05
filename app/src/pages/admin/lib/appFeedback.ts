@@ -1,4 +1,4 @@
-/** App-experience feedback stays separate from performance and account records. */
+/** App-experience feedback has its own records; only v2 account responses identify an account. */
 export const APP_FEEDBACK_PAGE_SIZE = 50;
 export const APP_FEEDBACK_RETENTION_DAYS = 90;
 
@@ -18,9 +18,17 @@ export const SOURCE_LABELS = {
 } as const;
 
 export type AppFeedbackEntrySource = keyof typeof SOURCE_LABELS;
+export type AppFeedbackAuthor = {
+  uid: string;
+  displayName: string | null;
+  email: string | null;
+  emailVerified: boolean;
+};
 export type AppFeedbackResponse = {
   id: string;
-  formVersion: number;
+  formVersion: 1 | 2;
+  identityMode: "account" | "anonymous";
+  author: AppFeedbackAuthor | null;
   entrySource: AppFeedbackEntrySource | null;
   answers: {
     feature: keyof typeof FEATURE_LABELS | null;
@@ -45,6 +53,25 @@ function knownKey<T extends Record<string, string>>(labels: T, value: unknown): 
   return typeof value === "string" && Object.prototype.hasOwnProperty.call(labels, value) ? value as keyof T : null;
 }
 
+function boundedAuthorText(value: unknown, limit: number): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string") throw new Error("Unexpected app feedback author.");
+  return value.replace(/[\u0000-\u001f\u007f-\u009f]/g, " ").replace(/\s+/g, " ").trim().slice(0, limit) || null;
+}
+
+function normalizeAuthor(value: unknown): AppFeedbackAuthor {
+  const author = record(value);
+  if (typeof author.uid !== "string" || !author.uid.trim() || author.uid.length > 128 || typeof author.emailVerified !== "boolean") {
+    throw new Error("Unexpected app feedback author.");
+  }
+  return {
+    uid: author.uid,
+    displayName: boundedAuthorText(author.displayName, 200),
+    email: boundedAuthorText(author.email, 320),
+    emailVerified: author.emailVerified,
+  };
+}
+
 /** Accept timestamps only when a real timestamp was supplied; never invent one. */
 function timestampMillis(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value) && value > 0) return value;
@@ -60,11 +87,19 @@ function timestampMillis(value: unknown): number | null {
 
 export function normalizeAppFeedbackResponse(id: string, value: unknown): AppFeedbackResponse {
   const row = record(value), answers = record(row.answers);
+  const formVersion = row.formVersion === undefined ? 1 : row.formVersion;
+  if (formVersion !== 1 && formVersion !== 2 || formVersion === 2 && row.identityMode !== "account" && row.identityMode !== "anonymous") {
+    throw new Error("Unexpected app feedback record.");
+  }
+  // Historical and anonymous modes never gain an author from another field.
+  const identityMode = formVersion === 2 && row.identityMode === "account" ? "account" : "anonymous";
   const duration = typeof row.durationSeconds === "number" && Number.isFinite(row.durationSeconds) && row.durationSeconds >= 0
     ? row.durationSeconds : undefined;
   return {
     id,
-    formVersion: typeof row.formVersion === "number" ? row.formVersion : 1,
+    formVersion,
+    identityMode,
+    author: identityMode === "account" ? normalizeAuthor(row.author) : null,
     entrySource: knownKey(SOURCE_LABELS, row.entrySource),
     answers: {
       feature: knownKey(FEATURE_LABELS, answers.feature), ease: knownKey(EASE_LABELS, answers.ease),
@@ -112,7 +147,7 @@ export function normalizeAppFeedbackReview(value: unknown): AppFeedbackReview {
   }
   const responses = data.responses.map(value => {
     const row = record(value);
-    if (typeof row.id !== "string" || !row.id || row.formVersion !== 1) throw new Error("Unexpected app feedback record.");
+    if (typeof row.id !== "string" || !row.id || row.formVersion !== 1 && row.formVersion !== 2) throw new Error("Unexpected app feedback record.");
     return normalizeAppFeedbackResponse(row.id, row);
   });
   return {
