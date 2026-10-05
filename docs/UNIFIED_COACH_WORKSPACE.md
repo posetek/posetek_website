@@ -1,6 +1,6 @@
 # Unified coach workspace
 
-Current presentation release: `6abb9f1e6c2c84772de67005`, source `684528b`,
+Historical comparison presentation release: `6abb9f1e6c2c84772de67005`, source `684528b`,
 published September 29, 2026 at 4:25:34 AM PDT. See the
 [comparison polish receipt](../deployment/COACH_COMPARISON_POLISH_PRODUCTION.json).
 The workspace foundation shipped as `6abb9834af8b9c320f64df04`, source `3e41c2a`,
@@ -8,11 +8,46 @@ with nine scoped Insights functions. See the
 [production receipt](../deployment/UNIFIED_COACH_WORKSPACE_PRODUCTION.json) for
 exact source, artifact, acceptance, cleanup and recovery records.
 
+## Coach Overview follow-up (October 5, 2026)
+
+The reviewed coach Overview source leads with a dated Team snapshot rather than
+the prior roster-first report. It shows the filtered reporting population and
+testing/workout participation, with links to review the represented players.
+The roster starts collapsed; its open state survives loading, retries, name
+search, pagination, date changes and refresh. A different account or team starts
+collapsed. Existing roster fields, signup actions, Add player and player links
+remain available.
+
+Overview keeps included/filtered population counts, removable active-filter chips
+and Clear all filters. Review actions preserve unrelated reporting filters and
+clear name search, so positive review destinations match the snapshot counts.
+Zero-count actions are disabled. Name search affects roster rows, while reporting
+totals and measured comparison cohorts retain their established populations.
+
+**No workout status** means no available workout status in the selected period.
+Missing records, unrecognized endings and workouts ending outside this period
+can fall here, including players with recorded workout activity. The category
+and filter do not assert that the player did no workout.
+
+Coach Overview omits its former summary charts and breakdowns. Other coach tabs,
+player detail and admin/manager reports retain their views. Weekly qualified
+performance lines connect available results across empty weeks; the explanation
+and chart data table identify weeks with no qualified result. These connecting
+segments add no measurements, and different players may set successive weekly
+bests.
+
+See [the coach Overview release handoff](COACH_OVERVIEW_RELEASE.md) for source
+provenance, validation, publication status and recovery. This source follow-up
+does not by itself confirm a production deployment. The September 29 receipts
+above remain historical evidence of the workspace foundation and comparison
+presentation.
+
 ## Product and design contract
 
 Team Insights is the coach workspace. Organization coaches select only their
 currently assigned teams; independent coaches use their existing permitted
-roster. Overview begins with the roster, followed by the existing report.
+roster. The historical September 29 Overview began with the roster, followed by
+the existing report; the October 5 follow-up above supersedes that presentation.
 Testing, Workouts, Active use and Community share the same shell. Opening a
 player adds one named tab inside the workspace; selecting another player replaces
 that tab. Browser history, selected dates, roster search and planner return links

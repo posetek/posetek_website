@@ -1,5 +1,5 @@
 import type { ExpandedInsights } from "./lib/expanded";
-import { clearPlayerFilters } from "./lib/expandedQuery";
+import type { ExpandedRequest } from "./lib/expandedQuery";
 
 function snapshotDate(date: string, includeYear = false) {
   return new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", {
@@ -7,9 +7,9 @@ function snapshotDate(date: string, includeYear = false) {
   });
 }
 
-export default function CoachOverviewSnapshot({ data, onChange }: { data: ExpandedInsights; onChange: (patch: { view: "testing" | "workouts"; testingStatus?: string; workoutStatus?: string }) => void }) {
+export default function CoachOverviewSnapshot({ data, onChange }: { data: ExpandedInsights; onChange: (patch: Partial<ExpandedRequest>) => void }) {
   const noTests = data.testing.statuses.find(row => row.key === "noRecordedTests")?.count || 0;
-  const noWorkouts = data.workouts.statuses.find(row => row.key === "none")?.count || 0;
+  const noWorkoutStatus = data.workouts.statuses.find(row => row.key === "none")?.count || 0;
   const startYear = Number(data.period.startDate.slice(0, 4)), endYear = Number(data.period.endDate.slice(0, 4));
   const dateRange = startYear === endYear
     ? `${snapshotDate(data.period.startDate)}–${snapshotDate(data.period.endDate)}, ${endYear}`
@@ -28,8 +28,8 @@ export default function CoachOverviewSnapshot({ data, onChange }: { data: Expand
     <section className="coach-overview-attention" aria-labelledby="coach-overview-attention-title">
       <div><h2 id="coach-overview-attention-title">Worth reviewing</h2><p>Activity signals only; a missing record does not show why a player was inactive.</p></div>
       <ul>
-        <li><span><strong>{noTests.toLocaleString()}</strong> with no recorded testing {data.testingMode === "cumulative" ? `through ${endDate}` : "in the selected testing window"}</span><button type="button" className="quiet-button" onClick={() => onChange({ ...clearPlayerFilters(), view: "testing", testingStatus: "noRecordedTests" })}>Review testing</button></li>
-        <li><span><strong>{noWorkouts.toLocaleString()}</strong> with no workout activity in this period</span><button type="button" className="quiet-button" onClick={() => onChange({ ...clearPlayerFilters(), view: "workouts", workoutStatus: "none" })}>Review workouts</button></li>
+        <li><span><strong>{noTests.toLocaleString()}</strong> with no recorded testing {data.testingMode === "cumulative" ? `through ${endDate}` : "in the selected testing window"}</span><button type="button" className="quiet-button" disabled={noTests === 0} onClick={() => onChange({ view: "testing", testingStatus: "noRecordedTests", rosterSearch: "" })}>Review testing</button></li>
+        <li><span><strong>{noWorkoutStatus.toLocaleString()}</strong> with no available workout status in this period<span className="insights-subtle">Missing records, unrecognized endings and workouts ending outside this period can fall here.</span></span><button type="button" className="quiet-button" disabled={noWorkoutStatus === 0} onClick={() => onChange({ view: "workouts", workoutStatus: "none", rosterSearch: "" })}>Review workouts</button></li>
       </ul>
     </section>
   </section>;

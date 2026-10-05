@@ -2,12 +2,13 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { AboutNumbers, ActivityChart, BreakdownChart } from "./BreakdownChart";
 import type { BreakdownSlice } from "./BreakdownChart";
-import { ageLabel, clearPlayerFilters, divisionLabel, hasPlayerFilters } from "./lib/expandedQuery";
+import { ageLabel, divisionLabel } from "./lib/expandedQuery";
 import type { ExpandedRequest } from "./lib/expandedQuery";
 import { EXERCISES, FEATURE_LABELS, minuteText, platformSlices, shortDate, TESTING_LABELS, USAGE_LABELS, weeklySeries, WORKOUT_LABELS, workoutDurationText, workoutOutcomeSlices } from "./lib/expanded";
 import type { CountGroup, ExpandedInsights, ExpandedPlayer } from "./lib/expanded";
 import { drillLabel } from "./lib/insights";
 import PerformanceProgress from "./PerformanceProgress";
+import PlayerFilters from "./PlayerFilters";
 
 const groups = (rows: CountGroup[], labels: Record<string, string> | ((key: string) => string)): BreakdownSlice[] => rows.map(row => ({ key: row.key, value: row.count, label: typeof labels === "function" ? labels(row.key) : labels[row.key] || row.key }));
 const amount = (value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 1 });
@@ -60,7 +61,6 @@ export default function ExpandedReport({ data, request, onChange, adminOverview 
   const testWeeks = useMemo(() => weeklySeries(testing.days, ["distinctAttempts", "qualifyingTests"], data.period.startDate, data.period.endDate), [testing.days, data.period]);
   const workoutWeeks = useMemo(() => weeklySeries(workouts.days, ["started", "completed"], data.period.startDate, data.period.endDate), [workouts.days, data.period]);
   const usageWeeks = useMemo(() => weeklySeries(usage.days, ["webMinutes", "iosMinutes"], data.period.startDate, data.period.endDate, [usage.webCollectedPlayers > 0, usage.iosCollectedPlayers > 0]), [usage, data.period]);
-  const filterLabels = { division: divisionLabel(request.division), ageBand: ageLabel(request.ageBand), testingStatus: TESTING_LABELS[request.testingStatus], workoutStatus: WORKOUT_LABELS[request.workoutStatus], usageStatus: USAGE_LABELS[request.usageStatus], usagePlatform: ({ web: "Website only", ios: "iOS only", both: "Both at once" } as Record<string,string>)[request.usagePlatform], usageFeature: FEATURE_LABELS[request.usageFeature] || request.usageFeature, teamAssignment: request.teamAssignment === "unassigned" ? "Unassigned players" : "Assigned players" };
   const adminQuery = new URLSearchParams();
   if (request.orgId) adminQuery.set("orgId", request.orgId);
   if (request.teamId) adminQuery.set("teamId", request.teamId);
@@ -68,8 +68,7 @@ export default function ExpandedReport({ data, request, onChange, adminOverview 
   const teamSlices = data.scopeBreakdown.teams.map(row => ({ key: `${row.organizationId}:${row.id || "unassigned"}`, label: data.scope.kind === "global" ? `${row.name} · ${data.choices.organizations.find(org => org.id === row.organizationId)?.name || "Organization"}` : row.name, value: row.count }));
   const selectTeam = (key: string) => { const row = data.scopeBreakdown.teams.find(team => `${team.organizationId}:${team.id || "unassigned"}` === key); if (row) onChange({ orgId: row.organizationId, teamId: row.id || undefined, coachId: undefined, teamAssignment: row.id ? "" : "unassigned" }); };
   return <>
-    <div className="insights-toolbar"><p className="insights-note">{roster.filtered.toLocaleString()} of {roster.included.toLocaleString()} included players · current roster{data.scope.assignedTeamsOnly ? " · assigned teams only" : ""}</p>{hasPlayerFilters(request) && <button className="insights-text-button" type="button" onClick={() => onChange(clearPlayerFilters())}>Clear all filters</button>}</div>
-    {hasPlayerFilters(request) && <div className="insights-filter-chips" aria-label="Active player filters">{(Object.keys(filterLabels) as (keyof typeof filterLabels)[]).filter(key => request[key]).map(key => <button type="button" key={key} onClick={() => onChange({ [key]: "" })}>{filterLabels[key]} <span aria-hidden="true">×</span><span className="insights-sr-only"> Remove filter</span></button>)}</div>}
+    <PlayerFilters data={data} request={request} onChange={onChange} />
     <section className="insights-tiles" aria-label={`${view} summary`}>
       {view === "overview" && <><Tile label="Players" value={roster.filtered} note="Current filtered roster" trend={testing.days.map(row => row.recordedDocuments)} trendLabel="Daily recording activity" /><Tile label="Fully tested" value={count("fullyTested")} note={testingScope} trend={testing.days.map(row => row.qualifyingTests)} trendLabel="Daily qualifying results" /><Tile label="Workouts completed" value={workouts.completed} note="In selected period" trend={workouts.days.map(row => row.completed)} trendLabel="Daily completed workouts" /><Tile label="Estimated active use" value={minuteText(usage.activeMinutes, usage.collectedPlayers > 0)} note={`${usage.collectedPlayers}/${roster.filtered} players with collection`} trend={usage.days.map(row => row.activeMinutes || 0)} trendLabel="Daily estimated active use" /></>}
       {view === "testing" && <><Tile label="Fully tested" value={count("fullyTested")} note="All six exercises" /><Tile label="Partially tested" value={count("partiallyTested")} note="One to five exercises" /><Tile label="Qualifying results" value={testing.qualifyingTests} note={testingScope} /><Tile label="Distinct recorded attempts" value={testing.distinctAttempts} note="Recorded documents; duplicates counted once" /></>}

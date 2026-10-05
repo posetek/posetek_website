@@ -4,10 +4,11 @@ import SignupStatus from "../admin/views/SignupStatus";
 import { minuteText, TESTING_LABELS } from "./lib/expanded";
 import type { ExpandedInsights, ExpandedPlayer } from "./lib/expanded";
 
-export default function CoachRoster({ data, search, page, onSearch, onPrevious, onNext, playerLink, onOpen, preview = false, collapsible = false }: {
+export default function CoachRoster({ data, search, page, onSearch, onPrevious, onNext, playerLink, onOpen, preview = false, collapsible = false, disclosureOpen, onDisclosureChange }: {
   data: ExpandedInsights; search: string; page: number; onSearch: (value: string) => void;
   onPrevious: () => void; onNext: () => void; playerLink: (player: ExpandedPlayer) => string;
   onOpen?: () => void; preview?: boolean; collapsible?: boolean;
+  disclosureOpen?: boolean; onDisclosureChange?: (open: boolean) => void;
 }) {
   const [draft, setDraft] = useState(search);
   useEffect(() => setDraft(search), [search]);
@@ -34,7 +35,7 @@ export default function CoachRoster({ data, search, page, onSearch, onPrevious, 
       })}</tbody></table></div> : <p>{search ? "No players match that name. Try another name or clear the search." : "No players match this selection. Check your filters or add a player below."}</p>}
     <div className="insights-pagination"><span>{data.players.length ? `${start}–${end} of ${data.pagination.total}` : "0 players"}{search ? " · Name search only changes this roster; reporting totals stay the same." : ""}</span><div><button type="button" className="quiet-button" disabled={page === 0} onClick={onPrevious}>Previous</button><button type="button" className="quiet-button" disabled={!data.pagination.nextCursor} onClick={onNext}>Next</button></div></div>
   </section>;
-  return collapsible ? <details className="insights-roster-disclosure coach-roster-disclosure">
+  return collapsible ? <details className="insights-roster-disclosure coach-roster-disclosure" open={disclosureOpen} onToggle={event => onDisclosureChange?.(event.currentTarget.open)}>
     <summary><strong>Roster</strong><span>{data.pagination.total.toLocaleString()} matching players</span><span className="material-symbols-outlined" aria-hidden="true">expand_more</span></summary>
     {content}
   </details> : content;
