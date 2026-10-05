@@ -4,6 +4,22 @@ Reviewed on October 5, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
+## Local website source reconciliation (2026-10-05)
+
+The source integration preserves fetched main `0ad845e`, all local feature
+history, the published feedback-attribution branch `1dca2a5` and issue-alert
+branch `0005f12`. It also includes tracking-only replay and compressed diagnostic
+journals. The latest live application remains the feedback release recorded below;
+this integration does not publish a new website or backend revision.
+
+The combined source passed 1,660 frontend tests, 948 backend tests (three existing
+private-history skips), lint, TypeScript/Astro, 55 release guards and 60 diagnostic
+rule assertions. The ordinary production build preserved all 1,638 protected files.
+Tracked-source mappings and exact checksum/size checks now support either Git line
+ending without changing any pinned production bytes. See [the integration receipt](deployment/WEBSITE_MAIN_RECONCILIATION_20261005.json)
+for branch ancestry, local browser checks, remaining release boundaries and logs.
+All 27 pre-existing untracked duplicate files are preserved outside the commits.
+
 ## Prospective feedback account attribution (2026-10-05)
 
 The current website is `6ac395bfba35bceed566d26c`, source `5792b63`, published
