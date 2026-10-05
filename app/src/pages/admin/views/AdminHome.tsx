@@ -25,6 +25,7 @@ export default function AdminHome() {
         <Link className="admin-home-option" to="/admin/analysis"><span className="material-symbols-outlined">edit_note</span><h2>Technique review</h2><p>Review single kicks and both feet, annotate phase frames, edit feedback, and preserve expert examples for training and evaluation.</p></Link>
         <Link className="admin-home-option" to="/admin/programs"><span className="material-symbols-outlined">tune</span><h2>Personalized planner</h2><p>Build from each player's testing, compare a draft, then choose whether to use it.</p></Link>
         <Link className="admin-home-option" to="/admin/organizations"><span className="material-symbols-outlined">groups</span><h2>Organizations</h2><p>Create clubs and teams, invite coaches and managers, and manage access to athlete rosters.</p></Link>
+        <Link className="admin-home-option" to="/admin/feedback"><span className="material-symbols-outlined">feedback</span><h2>App feedback</h2><p>Read voluntary app-experience responses, review form participation, and copy links to share.</p></Link>
         <Link className="admin-home-option" to="/admin/drills">
           <span className="material-symbols-outlined">library_books</span>
           <h2>Drill library</h2>

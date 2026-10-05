@@ -1,0 +1,101 @@
+{
+  "scope": "website_browser_and_search_icons",
+  "production": {
+    "deploymentId": "6ac1abf790c8c0037928b52a",
+    "previousDeploymentId": "6ac17bc21377cbeaea114800",
+    "sourceCommit": "c2ba02b",
+    "url": "https://posetek.net",
+    "publishedAtUtc": "2026-10-04T01:31:53.326Z",
+    "publishedAtPacific": "October 3, 2026 at 6:31:53 PM PDT",
+    "verifiedAtUtc": "2026-10-04T01:31:55.470Z",
+    "artifactFiles": 1541,
+    "providerInventoryFiles": 1542,
+    "fullInventoryVerified": true
+  },
+  "branding": {
+    "master": "app/astro/public/brand/posetek-p.svg",
+    "approvedSourceBranch": "codex/official-brand-icon",
+    "approvedSourceCommit": "4ca3227",
+    "approvedSourceAsset": "images/brand/posetek-app-icon.svg",
+    "existingUserApprovedMark": true,
+    "outlinedInterBlackP": true,
+    "externalFontRequired": false,
+    "background": "#04130e",
+    "tile": "#b7f34a",
+    "glyph": "#082015",
+    "assets": [
+      {
+        "path": "/favicon.ico",
+        "sha": "a0f409aee82936a3402d36c42397b4c33edbef0d",
+        "size": 4134
+      },
+      {
+        "path": "/brand/posetek-p.svg",
+        "sha": "2cad57bb726b52390a54fa6ff986cbe85ea85f9a",
+        "size": 838
+      },
+      {
+        "path": "/brand/posetek-p-96.png",
+        "sha": "d570ff6b3dde38051d2aaf95ce78ae3574c057dd",
+        "size": 874
+      },
+      {
+        "path": "/apple-touch-icon.png",
+        "sha": "7debcb1ca1ad96e659eb0474654df992739c9c80",
+        "size": 1990
+      }
+    ],
+    "icoSizes": [
+      16,
+      32,
+      48,
+      256
+    ],
+    "pngSize": 96,
+    "appleTouchSize": 180
+  },
+  "preservation": {
+    "changedHtmlHeads": 83,
+    "unchangedExistingFiles": 1454,
+    "newFiles": 4,
+    "onlyIconLinkElementsChanged": true,
+    "allHtmlBodiesPreserved": true,
+    "allNonIconHeadBytesPreserved": true,
+    "allRuntimeAssetsPreserved": true,
+    "fullWordmarkPreserved": true,
+    "feedbackSecurityHeadersPreserved": true,
+    "backendRulesGatewayNativeOrTrainingChanged": false
+  },
+  "validation": {
+    "releaseGuardTests": 52,
+    "hostedAndProductionBrowser": {
+      "routes": 5,
+      "iconDecodesPerRun": 20,
+      "mobileWidth": 390,
+      "passed": true
+    },
+    "servedRoutes": 22,
+    "servedIconFiles": 4,
+    "exactCandidatePromoted": true,
+    "postPublicationBaseline": {
+      "deploymentId": "6ac1abf790c8c0037928b52a",
+      "protectedFiles": 1539
+    },
+    "ordinaryPreservationBuild": {
+      "passed": true,
+      "protectedFiles": 1539,
+      "typeScriptAndAstroBuildPassed": true
+    }
+  },
+  "search": {
+    "squareRasterAndVectorMetadata": true,
+    "stableSameOriginUrls": true,
+    "googleRecrawlRequired": true,
+    "googleSearchDisplayVerified": false,
+    "requirements": "https://developers.google.com/search/docs/appearance/favicon-in-search"
+  },
+  "recovery": {
+    "restorePreviousWebsiteDeployment": "6ac17bc21377cbeaea114800",
+    "handoff": "docs/SITE_ICONS.md"
+  }
+}

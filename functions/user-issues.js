@@ -2,8 +2,15 @@
 const crypto = require("node:crypto");
 const { isClubAdmin, clubStaffCanAccessPlayer } = require("./club-access");
 const M = require("./user-issue-model");
+const Microsoft = require("./microsoft-email-model");
+const { createIssueContactEnrichment, tokenSnapshot } = require("./user-issue-contacts");
+const { classifyOccurrence, occurrenceTitle, validCallableOutcome } = require("./user-issue-classification");
+const { reportingSummary, deliveryReviewSummary } = require("./user-issue-summary");
+const Observations = require("./user-issue-observations");
+const RequestIdentity = require("./user-issue-request-identity");
 const LEASE = 120000, RETRY = 23 * 3600000;
-function createUserIssues({ db, HttpsError, provider, now = Date.now, logger = console }) {
+function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = Date.now, logger = console }) {
+  const contacts = createIssueContactEnrichment({ db, auth: authProvider, now });
   const fail = (code, message) => { throw new HttpsError(code, message); };
   const settingsRef = db.doc("userIssueSettings/current");
   const issueRef = id => db.doc(`userIssues/${id}`), jobRef = id => db.doc(`userIssueOutbox/${id}`);
@@ -16,7 +23,7 @@ function createUserIssues({ db, HttpsError, provider, now = Date.now, logger = c
       const owns = owners.length ? owners.every(value => value === auth.uid) : playerId === auth.uid;
       if (doc && (owns || isClubAdmin(auth) || await clubStaffCanAccessPlayer(db, auth.uid, doc))) player = { id: playerId, name: M.clean([doc.firstName, doc.lastName].filter(Boolean).join(" ") || doc.name) };
     }
-    return { uid: auth?.uid || null, name: M.clean(auth?.displayName) || null, player };
+    return { uid: auth?.uid || null, name: M.redact(auth?.displayName, 200) || null, player, authenticatedSnapshot: tokenSnapshot(auth, now()) };
   }
   async function submit(data, auth, ip = "unknown") {
     if (Object.hasOwn(data || {}, "ownerUid") && data.ownerUid !== (auth?.uid || null)) fail("failed-precondition", "Sign in to the account that created this report before retrying.");
@@ -25,17 +32,86 @@ function createUserIssues({ db, HttpsError, provider, now = Date.now, logger = c
     return ingest(event, who, { source: "client", sourceEvent: event.eventId, rateKey: M.hash(auth?.uid || ip) });
   }
   async function ingest(event, who, origin) {
+    if (Object.hasOwn(event, "callableOutcome")) {
+      const { callableOutcome, ...original } = event;
+      event = validCallableOutcome(callableOutcome, { ...original, source: origin.source })
+        ? { ...original, callableOutcome: { ...callableOutcome } } : original;
+    }
     const at = now(), actor = who.uid || (who.player?.id ? `player:${who.player.id}` : `anonymous:${event.sessionId}`);
-    // A correlated request is one incident even when both client and server report it.
-    const occurrenceId = M.hash([actor, event.requestId ? `request:${event.requestId}` : `${origin.source}:${origin.sourceEvent}`]);
-    const fingerprint = M.hash([event.platform, event.operation, event.code, event.kind === "report" ? occurrenceId : event.kind]);
-    const ref = issueRef(fingerprint), occurrenceRef = db.doc(`userIssueOccurrences/${occurrenceId}`), out = jobRef(occurrenceId);
+    // Do not collect contact records while intake is disabled or outside its
+    // authorized source window. The transaction below rechecks this gate.
+    const intakeSettings = M.setting((await settingsRef.get()).data(), at);
+    if (!intakeSettings.enabled || intakeSettings.testUids && !intakeSettings.testUids.includes(who.uid)
+      || Object.hasOwn(origin, "receivedAtMillis") && (!Number.isFinite(origin.receivedAtMillis) || origin.receivedAtMillis < intakeSettings.activatedAtMillis)
+      || origin.isTest && !intakeSettings.testUids) return { status: "disabled" };
+    const enrichment = await contacts.resolve(who.uid);
+    const contactSnapshot = { schemaVersion: 1, actorUid: who.uid || null, currentContact: enrichment.contact, lookup: enrichment.lookup,
+      authenticatedSnapshot: who.authenticatedSnapshot || null, player: who.player || null,
+      reporterOnly: /failureCases|fieldReports|system_diagnostic/i.test(`${origin.source} ${event.code}`), operation: event.operation };
+    // Preserve the legacy primary ID. Reused caller request references are
+    // corroboration only when server-owned action/target evidence is compatible.
+    const primaryId = M.hash([actor, event.requestId ? `request:${event.requestId}` : `${origin.source}:${origin.sourceEvent}`]);
+    const sourceKey = RequestIdentity.sourceKey(actor, event, origin), sourceClaimRef = db.doc(`userIssueSourceClaims/${sourceKey}`);
+    const registryRef = event.requestId ? db.doc(`userIssueRequestIdentities/${primaryId}`) : null;
+    // Preserve the historical aggregate key for the corrected generic upload
+    // classification. Stored new evidence/title use diagnostic, while prior
+    // triage and recurrence state stay attached to the same issue.
+    const fingerprintKind = origin.source === "failureCases" && event.kind === "diagnostic" ? "interrupted" : event.kind;
+    const observationId = M.hash([origin.source, origin.sourceEvent || event.eventId, event.eventId]);
+    const sourceObservation = { ...event, reporterUid: who.uid || null, reporterName: who.name || null, player: who.player || null,
+      authenticatedSnapshot: who.authenticatedSnapshot || null, source: origin.source, sourceEvent: origin.sourceEvent || event.eventId,
+      sourceReference: origin.reference || null, receivedAtMillis: at,
+      sourceReceivedAtMillis: Number.isSafeInteger(origin.receivedAtMillis) ? origin.receivedAtMillis : null };
     const dayRef = db.doc(`userIssueDays/${M.periodKey(at)}`);
     return db.runTransaction(async tx => {
       const settings = M.setting((await tx.get(settingsRef)).data(), at);
       if (!settings.enabled || settings.testUids && !settings.testUids.includes(who.uid) || Object.hasOwn(origin, "receivedAtMillis") && (!Number.isFinite(origin.receivedAtMillis) || origin.receivedAtMillis < settings.activatedAtMillis) || origin.isTest && !settings.testUids) return { status: "disabled" };
-      const existing = await tx.get(occurrenceRef);
-      if (existing.exists) return { status: "received", reference: existing.data().issueId, occurrenceId, duplicate: true };
+      const sourceClaim = (await tx.get(sourceClaimRef)).data();
+      if (sourceClaim) {
+        if (sourceClaim.schemaVersion !== 1 || sourceClaim.source !== RequestIdentity.SOURCE || sourceClaim.sourceKey !== sourceKey
+          || sourceClaim.primaryOccurrenceId !== primaryId || !/^[a-f0-9]{64}$/.test(sourceClaim.occurrenceId || "")) throw new Error("invalid_server_source_claim");
+        const claimed = (await tx.get(db.doc(`userIssueOccurrences/${sourceClaim.occurrenceId}`))).data();
+        if (!claimed || claimed.issueId !== sourceClaim.issueId) throw new Error("source_claim_occurrence_unavailable");
+        return { status: "received", reference: claimed.issueId, occurrenceId: sourceClaim.occurrenceId, duplicate: true };
+      }
+      const primaryRef = db.doc(`userIssueOccurrences/${primaryId}`), primary = await tx.get(primaryRef);
+      const primaryObservation = await tx.get(primaryRef.collection("observations").doc(observationId));
+      const primaryReplay = primary.exists && (primaryObservation.exists || primary.data().eventId === event.eventId && primary.data().source === origin.source);
+      let plan = RequestIdentity.route({ original: primary.data(), catalog: registryRef ? (await tx.get(registryRef)).data() : null,
+        event, who, origin, actor, primaryId, key: sourceKey, primaryReplay });
+      if (!event.requestId && primary.exists && !primaryReplay) plan = { ...plan,
+        occurrenceId: M.hash(["uncorrelated-source-v1", primaryId, sourceKey]), reason: "source_evidence_unconfirmed" };
+      let occurrenceRef = db.doc(`userIssueOccurrences/${plan.occurrenceId}`), existing = plan.occurrenceId === primaryId ? primary : await tx.get(occurrenceRef);
+      let observationRef = occurrenceRef.collection("observations").doc(observationId), observation = plan.occurrenceId === primaryId ? primaryObservation : await tx.get(observationRef);
+      const exactReplay = () => existing.exists && (observation.exists || existing.data().eventId === event.eventId && existing.data().source === origin.source);
+      if (existing.exists && !exactReplay() && !Observations.sameRequest(existing.data(), event, who, origin, plan.branch)) {
+        // A mismatched or ambiguous historical branch is never acknowledged as
+        // a duplicate. Retain this independent source with a stable secondary ID.
+        plan = event.requestId ? RequestIdentity.isolate(plan, event, who, origin, sourceKey)
+          : { ...plan, occurrenceId: M.hash(["uncorrelated-source-v1", primaryId, sourceKey]), reason: "source_evidence_unconfirmed" };
+        occurrenceRef = db.doc(`userIssueOccurrences/${plan.occurrenceId}`); existing = await tx.get(occurrenceRef);
+        observationRef = occurrenceRef.collection("observations").doc(observationId); observation = await tx.get(observationRef);
+        if (existing.exists && !exactReplay()) throw new Error("source_identity_collision");
+      }
+      const occurrenceId = plan.occurrenceId;
+      const recordIdentity = issueId => {
+        if (registryRef) tx.set(registryRef, plan.catalog);
+        tx.create(sourceClaimRef, { schemaVersion: 1, source: RequestIdentity.SOURCE, sourceKey, primaryOccurrenceId: primaryId,
+          occurrenceId, issueId, sourceEvent: origin.sourceEvent || event.eventId, eventId: event.eventId, createdAtMillis: at });
+      };
+      if (existing.exists) {
+        const original = existing.data();
+        if (!exactReplay() && Observations.sameRequest(original, event, who, origin, plan.branch)) {
+          // Exact actor/request corroboration is retained privately. A second
+          // source never rewrites the canonical actor, athlete or frozen job.
+          tx.create(observationRef, sourceObservation);
+          tx.update(occurrenceRef, { sourceObservationSummary: Observations.appendSummary(original, sourceObservation) });
+        }
+        recordIdentity(original.issueId);
+        return { status: "received", reference: original.issueId, occurrenceId, duplicate: true };
+      }
+      const fingerprint = M.hash([event.platform, event.operation, event.code, event.kind === "report" ? occurrenceId : fingerprintKind]);
+      const ref = issueRef(fingerprint), out = jobRef(occurrenceId);
       const issue = (await tx.get(ref)).data(), day = (await tx.get(dayRef)).data() || {};
       const actorRef = dayRef.collection("actors").doc(M.hash(actor)), actorSeen = await tx.get(actorRef);
       const dailyIssueRef = dayRef.collection("issues").doc(fingerprint), dailyIssue = (await tx.get(dailyIssueRef)).data();
@@ -45,19 +121,29 @@ function createUserIssues({ db, HttpsError, provider, now = Date.now, logger = c
       const global = globalRef ? (await tx.get(globalRef)).data()?.count || 0 : 0;
       if (rateRef && (rate >= (who.uid ? 120 : 15) || global >= 3000)) fail("resource-exhausted", "Report intake is busy. Your report can be retried later.");
       const reopened = issue?.state === "verified" || issue?.state === "fixed";
-      const title = `${event.kind === "report" ? "Problem reported" : event.kind === "crash" ? "App crash" : event.kind === "interrupted" ? "Interrupted session — cause unknown" : "Action failed"}: ${event.operation}`;
-      const label = who.player?.name || who.name || (who.uid ? "Signed-in user" : "Anonymous user");
-      const lines = [`Affected user: ${label}${who.uid ? ` (${who.uid})` : ""}`, `Platform: ${event.platform}; build: ${event.build}; device: ${event.device}`,
-        `Operation: ${event.operation}; code: ${event.code}`, `Occurred: ${M.dateText(event.occurredAtMillis)}`, `Received: ${M.dateText(at)}`,
+      const classification = classifyOccurrence({ ...event, source: origin.source, reporterUid: who.uid });
+      const title = occurrenceTitle(event, classification);
+      const label = enrichment.contact?.name || who.name || (who.uid ? "Signed-in user" : "Unknown actor");
+      const lines = [`Platform: ${event.platform}; build: ${event.build}; device: ${event.device}`,
+        `Error code: ${event.code}`, `Occurred: ${M.dateText(event.occurredAtMillis)}`, `Received: ${M.dateText(at)}`,
+        ...(classification.effectiveKind === "diagnostic" ? ["Evidence classification: Diagnostic upload; subtype unconfirmed. This record does not establish a crash or an interrupted session."] : []),
+        ...(classification.scope === "automated_service" ? ["Evidence scope: Automated service occurrence; no affected operator is established by this service record."] : []),
+        ...(classification.scope === "unknown_actor" && validCallableOutcome(event.callableOutcome, { ...event, source: origin.source }) ? ["Evidence scope: Verified failed callable request; no accepted authenticated reporter is recorded. The actor and contact remain unknown."] : []),
+        ...(occurrenceId !== primaryId ? ["Request correlation: This source shares a request reference with another incident, but a distinct or unconfirmed attempted action is retained separately."] : []),
         ...(reopened ? ["This issue has returned after being marked fixed or verified."] : [])];
       const count = (issue?.occurrences || 0) + 1;
       tx.create(occurrenceRef, { ...event, id: occurrenceId, issueId: fingerprint, reporterUid: who.uid, reporterName: who.name,
-        player: who.player || null, source: origin.source, sourceReference: origin.reference || null, receivedAtMillis: at });
+        authenticatedSnapshot: who.authenticatedSnapshot || null, currentContact: enrichment.contact, contactLookup: enrichment.lookup,
+        player: who.player || null, source: origin.source, sourceReference: origin.reference || null, classification,
+        ...(event.requestId ? { requestCorrelation: { schemaVersion: 1, source: RequestIdentity.SOURCE, primaryOccurrenceId: primaryId,
+          mode: occurrenceId === primaryId ? "primary" : "separate_attempt", reason: plan.reason || null } } : {}),
+        sourceObservationSummary: Observations.initialSummary(sourceObservation), receivedAtMillis: at });
+      if (!observation.exists) tx.create(observationRef, sourceObservation);
       tx.set(ref, { id: fingerprint, title, platform: event.platform, operation: event.operation, code: event.code, kind: event.kind, severity: event.severity,
-        state: reopened ? "new" : issue?.state || "new", firstReceivedAtMillis: issue?.firstReceivedAtMillis || at, updatedAtMillis: Math.max(at, (issue?.updatedAtMillis || 0) + 1),
+        classification, state: reopened ? "new" : issue?.state || "new", firstReceivedAtMillis: issue?.firstReceivedAtMillis || at, updatedAtMillis: Math.max(at, (issue?.updatedAtMillis || 0) + 1),
         occurrences: count, latestOccurrenceId: occurrenceId, latestBuild: event.build, latestUser: label,
         ...(reopened ? { reopenedAtMillis: at } : {}) }, { merge: true });
-      tx.create(out, { id: occurrenceId, issueId: fingerprint, type: "incident", title, lines, createdAtMillis: at, status: "pending", dueAtMillis: at, attempts: 0, actorUid: who.uid });
+      tx.create(out, { id: occurrenceId, issueId: fingerprint, type: "incident", title, lines, contactSnapshot, createdAtMillis: at, status: "pending", dueAtMillis: at, attempts: 0, actorUid: who.uid });
       tx.set(dayRef, { incidents: (day.incidents || 0) + 1, changes: day.changes || 0, lastAtMillis: at,
         affectedActors: (day.affectedActors || 0) + (actorSeen.exists ? 0 : 1), recurrences: (day.recurrences || 0) + (reopened ? 1 : 0),
         crashes: (day.crashes || 0) + (event.kind === "crash" ? 1 : 0), reports: (day.reports || 0) + (event.kind === "report" ? 1 : 0) }, { merge: true });
@@ -65,6 +151,7 @@ function createUserIssues({ db, HttpsError, provider, now = Date.now, logger = c
       tx.set(dailyIssueRef, { title, count: (dailyIssue?.count || 0) + 1 });
       if (who.uid) tx.set(db.doc(`userIssueActors/${M.hash([who.uid, fingerprint])}`), { uid: who.uid, issueId: fingerprint, updatedAtMillis: at });
       if (rateRef) { tx.set(rateRef, { count: rate + 1, expiresAtMillis: at + 86400000 }); tx.set(globalRef, { count: global + 1, expiresAtMillis: at + 86400000 }); }
+      recordIdentity(fingerprint);
       return { status: "received", reference: fingerprint, occurrenceId };
     });
   }
@@ -122,25 +209,34 @@ function createUserIssues({ db, HttpsError, provider, now = Date.now, logger = c
     const claimed = await db.runTransaction(async tx => {
       const at = now(), settings = M.setting((await tx.get(settingsRef)).data(), at), ref = jobRef(id), job = (await tx.get(ref)).data();
       if (!settings.enabled || settings.sendEnabled !== true || !job || !["pending", "sending"].includes(job.status) || !job.dueAtMillis || job.dueAtMillis > at) return null;
+      const deliveryProvider = Microsoft.providerFor(job, settings);
+      const microsoftConfig = deliveryProvider === "microsoft" ? (await tx.get(db.doc(Microsoft.SETTINGS))).data() : null;
+      if (!deliveryProvider || deliveryProvider === "microsoft" && (!Microsoft.enabled(microsoftConfig, "issue", id, job.createdAtMillis, at) || job.microsoft?.claimedAtMillis)) return null;
       if (job.createdAtMillis < settings.activatedAtMillis || settings.testUids && !settings.testUids.includes(job.actorUid)) { tx.update(ref, { status: "cancelled", dueAtMillis: null }); return null; }
-      if (job.firstAttemptAtMillis && at >= job.firstAttemptAtMillis + RETRY) { tx.update(ref, { status: "needs_review", dueAtMillis: null }); logger.error("user_issue_delivery_failed", { code: "retry_window", jobId: id }); return null; }
-      const next = { payload: job.payload || M.payload(job, id), leaseId: crypto.randomUUID(), firstAttemptAtMillis: job.firstAttemptAtMillis || at,
+      if (deliveryProvider === "resend" && job.firstAttemptAtMillis && at >= job.firstAttemptAtMillis + RETRY) { tx.update(ref, { status: "needs_review", dueAtMillis: null }); logger.error("user_issue_delivery_failed", { code: "retry_window", jobId: id }); return null; }
+      const rawPayload = job.payload || M.payload(job, id);
+      if (!Microsoft.issueRecipientAllowed({ ...job, payload: rawPayload })) {
+        tx.update(ref, { status: "needs_review", dueAtMillis: null, failureCode: "provider_recipient_removed" });
+        return null;
+      }
+      const route = deliveryProvider === "microsoft" && !job.microsoft ? Microsoft.freeze("issue", id, rawPayload, microsoftConfig, at) : { deliveryProvider, payload: rawPayload };
+      const next = { ...route, leaseId: crypto.randomUUID(), firstAttemptAtMillis: job.firstAttemptAtMillis || at,
         attempts: (job.attempts || 0) + 1, status: "sending", dueAtMillis: at + LEASE, uncertain: job.uncertain === true || job.status === "sending" };
       tx.update(ref, next); return { ...job, ...next };
     });
     if (!claimed) return;
     let result, error;
-    try { result = await provider.send(claimed.payload, `posetek-user-issue/${id}`); } catch (e) { error = e; }
+    try { result = await provider.send(claimed.payload, `posetek-user-issue/${id}`, { ...claimed, kind: "issue", id }); } catch (e) { error = e; }
     await db.runTransaction(async tx => {
       const ref = jobRef(id), current = (await tx.get(ref)).data();
       if (current?.leaseId !== claimed.leaseId || current.status !== "sending") return;
-      if (result?.id) { tx.update(ref, { status: "accepted", providerId: result.id, acceptedAtMillis: now(), dueAtMillis: null, leaseId: null }); return; }
+      if (result?.id && claimed.deliveryProvider !== "microsoft") { tx.update(ref, { status: "accepted", providerId: result.id, acceptedAtMillis: now(), dueAtMillis: null, leaseId: null }); return; }
       const delay = Math.max(Math.min(3600000, 60000 * 2 ** Math.min(claimed.attempts - 1, 6)), Number(error?.retryAfterMs) || 0);
-      const expired = now() + delay >= claimed.firstAttemptAtMillis + RETRY;
+      const expired = claimed.deliveryProvider !== "microsoft" && now() + delay >= claimed.firstAttemptAtMillis + RETRY;
       const status = expired || error?.permanent && claimed.uncertain ? "needs_review" : error?.permanent ? "failed" : "pending";
       tx.update(ref, { status, dueAtMillis: status === "pending" ? now() + delay : null, leaseId: null, uncertain: claimed.uncertain || !error?.permanent,
-        failureCode: /^provider_[a-z0-9_]{1,50}$/.test(error?.code || "") ? error.code : "provider_uncertain" });
-      logger.error("user_issue_delivery_failed", { code: status, jobId: id });
+        failureCode: result?.pending ? null : /^provider_[a-z0-9_]{1,50}$/.test(error?.code || "") ? error.code : "provider_uncertain" });
+      if (!result?.pending) logger.error("user_issue_delivery_failed", { code: status, jobId: id });
     });
   }
   async function sweep() {
@@ -149,20 +245,27 @@ function createUserIssues({ db, HttpsError, provider, now = Date.now, logger = c
     return { checked: rows.size };
   }
   async function daily() {
-    const period = M.previousPeriod(now()), ref = db.doc(`userIssueDays/${period}`), id = M.hash(["daily", period]);
+    const at = now(), period = M.previousPeriod(at), ref = db.doc(`userIssueDays/${period}`), id = M.hash(["daily", period]);
+    const [settingsSnapshot, daySnapshot, existingJob] = await Promise.all([settingsRef.get(), ref.get(), jobRef(id).get()]);
+    const before = daySnapshot.data();
+    // Existing summaries and their frozen payload/receipts remain historical.
+    if (!M.setting(settingsSnapshot.data(), at).enabled || !before || existingJob.exists || !(before.incidents || before.changes)) return;
+    const [summary, deliveryReview] = await Promise.all([reportingSummary(db, period), deliveryReviewSummary(db)]);
+    if (summary.occurrences !== (before.incidents || 0)) throw Object.assign(new Error("summary_occurrence_count_mismatch"), { code: "summary_occurrence_count_mismatch" });
     const counts = await Promise.all(["new", "investigating", "fixed"].map(state => db.collection("userIssues").where("state", "==", state).count().get()));
-    const failures = await Promise.all(["failed", "bounced", "suppressed", "needs_review"].map(status => db.collection("userIssueOutbox").where("status", "==", status).count().get()));
-    const top = await ref.collection("issues").orderBy("count", "desc").limit(5).get();
     await db.runTransaction(async tx => {
       const day = (await tx.get(ref)).data(), job = await tx.get(jobRef(id));
       const settings = M.setting((await tx.get(settingsRef)).data(), now());
       if (!settings.enabled) return;
       if (!day || job.exists || !(day.incidents || day.changes)) return;
-      tx.create(jobRef(id), { id, type: "daily", actorUid: settings.testUids?.[0] || null, title: `User issues: reporting day ${period}`, lines: ["Reporting window: 9 AM Pacific to 9 AM Pacific.",
-        `${day.incidents || 0} distinct user incidents; ${day.crashes || 0} crashes; ${day.reports || 0} user reports; ${day.changes || 0} status changes.`,
-        `${day.affectedActors || 0} affected accounts or anonymous sessions; ${day.recurrences || 0} recurrences after a fix.`,
-        `${failures.reduce((sum, count) => sum + count.data().count, 0)} email jobs currently failed or require delivery review.`,
-        ...top.docs.map(row => `${row.data().count} incidents: ${row.data().title}`),
+      if ((day.incidents || 0) !== summary.occurrences || day.lastAtMillis !== before.lastAtMillis || (day.changes || 0) !== (before.changes || 0)) throw Object.assign(new Error("summary_day_changed"), { code: "summary_day_changed" });
+      tx.create(jobRef(id), { id, type: "daily", actorUid: settings.testUids?.[0] || null, title: `Issue evidence: reporting day ${period}`, summary, deliveryReview, lines: ["Reporting window: 9 AM Pacific to 9 AM Pacific; counts use server receipt time.",
+        `${summary.occurrences} captured issue and diagnostic occurrences; ${summary.crashes} confirmed crashes; ${summary.reports} user-submitted reports; ${summary.interruptions} explicit interruption records; ${day.changes || 0} status changes.`,
+        `Source scope: ${summary.serviceOccurrences} automated service occurrences; ${summary.diagnostics} diagnostic uploads; ${summary.otherOccurrences} other issue/report occurrences.`,
+        `${summary.accountOccurrences} occurrences have a recorded reporting Auth UID across ${summary.reportingAccounts} accounts; ${summary.noAccountOccurrences} occurrences have no recorded account UID. Reporting accounts may be uploaders or staff; affected users are not inferred.`,
+        `${summary.unknownDiagnosticSubtype} diagnostic uploads have an unknown subtype and do not establish a crash or an interrupted session; ${day.recurrences || 0} recurrences after a fix.`,
+        `${deliveryReview.total} email jobs currently failed or require delivery review across all time: ${deliveryReview.microsoft} Microsoft, ${deliveryReview.resend} Resend, ${deliveryReview.unassigned} unassigned provider. This backlog is separate from reporting-day incident counts.`,
+        ...summary.top.map(row => `${row.count} occurrences: ${row.title}`),
         `${counts.reduce((sum, count) => sum + count.data().count, 0)} issues currently await resolution or verification.`], createdAtMillis: now(), status: "pending", dueAtMillis: now(), attempts: 0 });
     });
     await dispatch(id);
@@ -179,12 +282,23 @@ function createUserIssues({ db, HttpsError, provider, now = Date.now, logger = c
     }
     await db.runTransaction(async tx => {
       const ref = jobRef(id), job = (await tx.get(ref)).data(), receiptRef = ref.collection("receipts").doc(M.hash(eventId)), receipt = await tx.get(receiptRef);
-      if (receipt.exists || !job?.firstAttemptAtMillis || !job.payload || job.providerId && job.providerId !== providerId || eventAt < job.firstAttemptAtMillis - 300000
-        || ![M.FROM, "support@alerts.posetek.net"].includes(event.data.from) || event.data.to?.length !== 1 || event.data.to[0] !== M.TO) return;
-      tx.create(receiptRef, { type: event.type, at: eventAt, receivedAtMillis: now() });
+      const recipient = event.data.to?.[0], recipients = job?.payload?.to;
+      if (receipt.exists || !job?.firstAttemptAtMillis || job.deliveryProvider === "microsoft" || !job.payload || job.providerId && job.providerId !== providerId || eventAt < job.firstAttemptAtMillis - 300000
+        || ![M.FROM, "support@alerts.posetek.net"].includes(event.data.from) || !Array.isArray(event.data.to) || event.data.to.length !== 1
+        || !Array.isArray(recipients) || !recipients.includes(recipient)) return;
+      tx.create(receiptRef, { type: event.type, recipient, at: eventAt, receivedAtMillis: now() });
       const rank = { accepted: 1, delayed: 2, delivered: 3, failed: 4, bounced: 5, suppressed: 6 };
-      if (eventAt < (job.lastProviderAtMillis || 0) || rank[job.status] >= 3 && rank[status] < 3 || eventAt === job.lastProviderAtMillis && rank[status] <= (rank[job.status] || 0)) return;
-      tx.update(ref, { status, providerId, lastProviderAtMillis: eventAt, dueAtMillis: null, leaseId: null });
+      // Resend emits one recipient per callback. Bind to the frozen payload,
+      // including legacy Dylan-only jobs, and order events per recipient.
+      const deliveries = { ...job.recipientDelivery };
+      const previous = deliveries[recipient] || (recipients.length === 1 ? { status: job.status, at: job.lastProviderAtMillis } : {});
+      if (eventAt < (previous.at || 0) || rank[previous.status] >= 3 && rank[status] < 3 || eventAt === previous.at && rank[status] <= (rank[previous.status] || 0)) return;
+      deliveries[recipient] = { status, at: eventAt };
+      const states = recipients.map(to => deliveries[to]?.status || "accepted");
+      const aggregate = ["suppressed", "bounced", "failed", "delayed"].find(state => states.includes(state))
+        || (states.every(state => state === "delivered") ? "delivered" : "accepted");
+      tx.update(ref, { status: aggregate, recipientDelivery: deliveries, providerId,
+        lastProviderAtMillis: Math.max(eventAt, job.lastProviderAtMillis || 0), dueAtMillis: null, leaseId: null });
       if (["failed", "bounced", "suppressed"].includes(status)) logger.error("user_issue_delivery_failed", { code: status, jobId: id });
     });
   }

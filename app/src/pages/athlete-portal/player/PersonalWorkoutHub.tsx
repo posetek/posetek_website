@@ -35,9 +35,9 @@ function DrillResources({ drill }: { drill?: Row }) {
 
 type Props = { store: PersonalWorkoutStore; playerId: string; athlete: Row; config: Row | null; preview: boolean;
   source?: { workout: Row; reference?: SourceWorkout }; initialWorkout?: Row; initialCreate?: boolean; initialRequest?: string; initialHandoff?: Row; initialConversation?: boolean;
-  coachOnly?: boolean; onReview?: (proposal: Row) => void; onSelection?: (id?: string) => void; onBack: () => void };
+  coachOnly?: boolean; onReview?: (proposal: Row) => void; onSelection?: (id?: string) => void; onBack: () => void; onCompleted?: () => void };
 
-export default function PersonalWorkoutHub({ store, playerId, athlete, config, preview, source, initialWorkout, initialCreate = false, initialRequest = '', initialHandoff, initialConversation = false, coachOnly = false, onReview, onSelection, onBack }: Props) {
+export default function PersonalWorkoutHub({ store, playerId, athlete, config, preview, source, initialWorkout, initialCreate = false, initialRequest = '', initialHandoff, initialConversation = false, coachOnly = false, onReview, onSelection, onBack, onCompleted }: Props) {
   const [mode, setMode] = useState<'list' | 'chat' | 'saved'>(source || initialRequest || initialCreate || initialConversation ? 'chat' : initialWorkout ? 'saved' : 'list');
   const [selected, setSelected] = useState<Row | null>(initialWorkout || null), [playing, setPlaying] = useState<Row | null>(null);
   const [editing, setEditing] = useState<Row | null>(null), [sourceRef, setSourceRef] = useState(source?.reference);
@@ -127,7 +127,7 @@ export default function PersonalWorkoutHub({ store, playerId, athlete, config, p
   };
   const start = async () => { if (selected && access && startPain === 'no') try { setPlaying(await store.start(selected, { equipmentConfirmed: true, painFlag: false, currentAccess: { ...selected.intake, ...access, painFlag: false } })); } catch (e) { fail(e); } };
   const notice = <>{store.error && <p className="player-error" role="alert">{store.error}</p>}{store.saving && <p role="status">{store.status || 'Checking your workout…'}</p>}{store.pending && !store.saving && !store.pending.terminalFailed && <section className="portal-card"><p>Your request is saved. Recover its result to continue.</p><button onClick={() => void store.recover()}>Recover saved request</button></section>}</>;
-  if (playing) return <>{notice}<PlayerWorkout key={playing.id} workout={playing} store={store.adapter} playerId={playerId} preview={preview} onExit={() => { setPlaying(null); setMode('list'); }} /></>;
+  if (playing) return <>{notice}<PlayerWorkout key={playing.id} workout={playing} store={store.adapter} playerId={playerId} preview={preview} onExit={() => { setPlaying(null); setMode('list'); }} onCompleted={onCompleted} /></>;
   if (!store.enabled) return <section className="portal-card"><h2>Personal workouts</h2><p>Personal workout tools are not enabled for this account yet.</p><button onClick={onBack}>Back to training</button></section>;
   return <section className={`personal-workouts${coachOnly ? ' personal-coach-creation' : ''}`}>
     {!coachOnly && <><button className="text-button" disabled={blocked} onClick={() => { if (mode === 'list') onBack(); else { setMode('list'); onSelection?.(); } }}>← {mode === 'list' ? 'Training' : 'Personal workouts'}</button><p className="eyebrow">Your own sessions</p><h1>{mode === 'chat' ? p ? 'Your workout conversation.' : 'Create your workout.' : mode === 'saved' ? selected?.title || 'Your workout' : 'Personal workouts'}</h1></>}{notice}

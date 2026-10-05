@@ -22,7 +22,7 @@ function ProgressMetric({ series, denominator }: { series: QualifiedProgress; de
   useEffect(() => {
     if (!canvas.current || !hasResults) return;
     const chart = new Chart(canvas.current, {
-      type: "line", data: { labels, datasets: [{ label: "Best qualified result", data: values, spanGaps: false, tension: 0, borderColor: CHART_THEME.accent, borderWidth: 2, pointRadius: 4, pointBackgroundColor: CHART_THEME.accent, pointBorderColor: CHART_THEME.surface, pointBorderWidth: 2 }] },
+      type: "line", data: { labels, datasets: [{ label: "Best qualified result", data: values, spanGaps: true, tension: 0, borderColor: CHART_THEME.accent, borderWidth: 2, pointRadius: 4, pointBackgroundColor: CHART_THEME.accent, pointBorderColor: CHART_THEME.surface, pointBorderWidth: 2 }] },
       options: { maintainAspectRatio: false, animation: false,
         plugins: { legend: { display: false }, tooltip: { callbacks: {
           label: item => `Best: ${item.formattedValue} ${display.unit}`,
@@ -43,7 +43,7 @@ function ProgressMetric({ series, denominator }: { series: QualifiedProgress; de
 
 export default function PerformanceProgress({ data }: { data: ExpandedInsights }) {
   return <section className="insights-card" aria-labelledby="insights-progress-heading"><div className="insights-section-title"><h2 id="insights-progress-heading">Qualified performance by week</h2><span>{data.period.startDate}–{data.period.endDate}</span></div>
-    <AboutNumbers><p>Best verified primary result across the full filtered roster each week, using {data.period.timeZone}. This series always uses the selected period, including partial boundary weeks. Cumulative coverage above can include earlier results. Different players may set each weekly best; this is not a measure of individual improvement.</p></AboutNumbers>
+    <AboutNumbers><p>Best verified primary result across the full filtered roster each week, using {data.period.timeZone}. The line connects weeks with qualified results across empty weeks; the data table marks weeks with no qualified result. This series always uses the selected period, including partial boundary weeks. Cumulative coverage above can include earlier results. Different players may set each weekly best; this is not a measure of individual improvement.</p></AboutNumbers>
     {data.testing.progress ? data.testing.progress.length ? <div className="insights-metric-grid">{data.testing.progress.map(series => <ProgressMetric key={series.drill} series={series} denominator={data.roster.filtered} />)}</div> : <p className="insights-note">No qualified results in this period.</p> : <p className="insights-note" role="status">Qualified performance is unavailable in this response. Refresh to load the complete report.</p>}
   </section>;
 }

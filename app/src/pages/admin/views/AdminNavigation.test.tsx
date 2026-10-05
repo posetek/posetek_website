@@ -6,9 +6,9 @@ import AdminHeader from "./AdminHeader";
 describe("admin navigation", () => {
   it("includes User issues and keeps Community feed in the account menu", () => {
     const html = renderToStaticMarkup(<MemoryRouter><AdminHeader ready email="admin@example.test" onSignOut={() => {}} /></MemoryRouter>);
-    for (const path of ["accounts", "organizations", "programs", "analysis", "drills", "ai-incidents", "user-issues"]) expect(html).toContain(`href="/admin/${path}"`);
+    for (const path of ["accounts", "organizations", "programs", "analysis", "drills", "ai-incidents", "user-issues", "feedback"]) expect(html).toContain(`href="/admin/${path}"`);
     expect(html).toContain('href="/admin"');
-    expect((html.match(/class="admin-nav-link/g) ?? []).length).toBe(8);
+    expect((html.match(/class="admin-nav-link/g) ?? []).length).toBe(9);
     expect(html).toContain('href="/feed"');
     expect(html).toContain("Community feed");
     expect(html).toContain('href="/admin/access"');

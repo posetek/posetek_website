@@ -60,6 +60,16 @@
   status = 200
 
 # The public pages are isolated entries. Existing app routes use application.html.
+[[redirects]]
+  from = "/feedback"
+  to = "/feedback.html"
+  status = 200
+
+[[redirects]]
+  from = "/feedback/"
+  to = "/feedback.html"
+  status = 200
+
 # SPA fallback: files that exist in dist/ (unported legacy pages, assets) are
 # served directly; everything else — including the ported legacy URLs like
 # /profile.html that are intentionally absent from dist/ — is handled by the
@@ -69,6 +79,15 @@
   from = "/*"
   to = "/application.html"
   status = 200
+
+[[headers]]
+  for = "/feedback*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Referrer-Policy = "no-referrer"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://us-central1-kickai-69dd0.cloudfunctions.net; img-src 'self' data:; font-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
 
 [[headers]]
   for = "/marketing/assets/*"
