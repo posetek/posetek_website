@@ -28,5 +28,3 @@ try {
   }
   console.log(`Device processing rules: ${checks} assertions passed`);
 } finally { await env.cleanup(); }
-
-

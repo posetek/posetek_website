@@ -51,7 +51,7 @@ export function usePersonalWorkouts(playerId: string, preview: boolean, config: 
       else localStorage.removeItem(proposalKey);
     } catch { /* The server conversation remains available in history. */ }
   };
-  const useSelection = (next: { conversation: Row | null; proposal: Row | null; messages: Row[] }) => {
+  const applySelection = (next: { conversation: Row | null; proposal: Row | null; messages: Row[] }) => {
     const proposal = personalProposalWithPublication(next.proposal, next.conversation);
     selected.current = { conversation: next.conversation, proposal };
     setConversation(next.conversation); setConversationId(next.conversation?.conversationId || null);
@@ -65,7 +65,7 @@ export function usePersonalWorkouts(playerId: string, preview: boolean, config: 
       const next = preview ? samples.current.get(id) : await readPersonalConversation(conversationPort, id, uid);
       if (!next) throw new Error('This sample workout conversation is unavailable.');
       if (version !== selectionVersion.current || owner !== generation.current || !preview && auth.currentUser?.uid !== uid) throw new Error('The selected workout conversation changed.');
-      useSelection(next);
+      applySelection(next);
       return next.proposal;
     } catch (e: any) { if (version === selectionVersion.current && owner === generation.current) setError(e.message); throw e; }
     finally { if (version === selectionVersion.current && owner === generation.current) setConversationLoading(false); }
@@ -79,14 +79,14 @@ export function usePersonalWorkouts(playerId: string, preview: boolean, config: 
       const recovered = sample?.proposal || checkedPersonalProposal(await conversationPort.proposal(id), id, uid);
       const next = sample || (recovered.conversationId ? await readPersonalConversation(conversationPort, recovered.conversationId, uid) : { conversation: null, proposal: recovered, messages: [] });
       if (version !== selectionVersion.current || owner !== generation.current || !preview && auth.currentUser?.uid !== uid) throw new Error('The selected workout conversation changed.');
-      useSelection(next);
+      applySelection(next);
       return next.proposal;
     } catch (e: any) { if (version === selectionVersion.current && owner === generation.current) setError(e.message); throw e; }
     finally { if (version === selectionVersion.current && owner === generation.current) setConversationLoading(false); }
   };
   const newConversation = () => {
     if (busy.current) { setError('Wait for the current workout request before starting another.'); return; }
-    ++selectionVersion.current; useSelection({ conversation: null, proposal: null, messages: [] }); setConversationLoading(false); setError(''); setLastResult(null);
+    ++selectionVersion.current; applySelection({ conversation: null, proposal: null, messages: [] }); setConversationLoading(false); setError(''); setLastResult(null);
   };
   const savePending = (p: PendingPersonalJob | null) => {
     if (p) localStorage.setItem(key, JSON.stringify(p)); else localStorage.removeItem(key);
@@ -287,7 +287,7 @@ export function usePersonalWorkouts(playerId: string, preview: boolean, config: 
     const next = { conversation: nextConversation, proposal: nextProposal, messages: [...(before?.messages || []),
       { id: `${proposalId}_user`, role: 'user', content: params.requestText, createdAt: now, sequence: revision * 2 - 1 },
       { id: `${proposalId}_assistant`, role: 'assistant', content: nextProposal.assistantMessage, proposalId, createdAt: now, sequence: revision * 2 }] };
-    samples.current.set(id, next); useSelection(next); setConversations([...samples.current.values()].map(value => value.conversation));
+    samples.current.set(id, next); applySelection(next); setConversations([...samples.current.values()].map(value => value.conversation));
     return accept('generate_personal_workout', nextProposal);
   };
   const refine = async (requestText: string, overrides: Row = {}): Promise<Row> => {
@@ -370,7 +370,7 @@ export function usePersonalWorkouts(playerId: string, preview: boolean, config: 
       await readPersonalConversation(conversationPort, active.conversationId, uid) : { conversation: null, proposal: checkedPersonalProposal(await conversationPort.proposal(active.proposalId), active.proposalId, uid) };
     if (owner !== generation.current || version !== selectionVersion.current || !preview && auth.currentUser?.uid !== uid) throw new Error('The selected workout or player changed.');
     if (next.proposal.proposalId !== active.proposalId) {
-      if ('messages' in next) useSelection(next);
+      if ('messages' in next) applySelection(next);
       throw new Error('A newer workout proposal is available. Review it before publishing.');
     }
     // The saved marker is server owned, and allows safe recovery after a lost
