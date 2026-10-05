@@ -1,3 +1,6 @@
+import { feedbackAuthWithTimeout } from "./feedback-identity";
+import type { FeedbackIdentityMode } from "./feedback-identity";
+
 export const FEEDBACK_ENDPOINT = "https://us-central1-kickai-69dd0.cloudfunctions.net/receiveAppFeedback";
 export const FEEDBACK_COMMENT_LIMIT = 1000;
 
@@ -13,10 +16,11 @@ export interface FeedbackAnswers {
   comment: string;
 }
 export interface FeedbackPayload {
-  formVersion: 1;
+  formVersion: 2;
   event: "opened" | "started" | "submitted";
   sessionId: string;
   entrySource: FeedbackSource;
+  identityMode: FeedbackIdentityMode;
   answers?: FeedbackAnswers;
   durationSeconds?: number;
 }
@@ -68,9 +72,13 @@ interface FeedbackSessionOptions {
   fetcher?: typeof fetch;
   now?: () => number;
   makeId?: () => string;
+  identityMode?: FeedbackIdentityMode;
+  tokenSupplier?: () => Promise<string>;
+  isCurrentIdentity?: () => boolean;
 }
 
-/** One random identity per page opening; never persisted or joined to an account. */
+/** One random form identity per page opening; account authority travels only in
+ * the submitted request's verified Bearer token, never in JSON or URL fields. */
 export function createFeedbackSession(options: FeedbackSessionOptions) {
   const now = options.now ?? Date.now;
   const openedAt = now();
@@ -83,12 +91,24 @@ export function createFeedbackSession(options: FeedbackSessionOptions) {
 
   async function post(event: FeedbackPayload["event"], answers?: FeedbackAnswers): Promise<void> {
     if (options.preview) return;
-    const payload: FeedbackPayload = { formVersion: 1, event, sessionId, entrySource: options.source };
+    const identityMode = options.identityMode ?? "anonymous";
+    const payload: FeedbackPayload = { formVersion: 2, event, sessionId, entrySource: options.source, identityMode };
     if (event === "submitted" && answers) {
       payload.answers = answers;
       payload.durationSeconds = pendingSubmission?.durationSeconds;
     }
     const controller = new AbortController();
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (event === "submitted") {
+      if (options.isCurrentIdentity && !options.isCurrentIdentity()) throw new Error("The signed-in account changed.");
+      if (identityMode === "account") {
+        if (!options.tokenSupplier) throw new Error("The signed-in account could not be verified.");
+        const token = await feedbackAuthWithTimeout(options.tokenSupplier());
+        if (options.isCurrentIdentity && !options.isCurrentIdentity()) throw new Error("The signed-in account changed.");
+        if (!token) throw new Error("The signed-in account could not be verified.");
+        headers.Authorization = `Bearer ${token}`;
+      }
+    }
     const timeout = setTimeout(() => controller.abort(), 12000);
     try {
       const response = await fetcher(endpoint, {
@@ -96,7 +116,7 @@ export function createFeedbackSession(options: FeedbackSessionOptions) {
         mode: "cors",
         credentials: "omit",
         referrerPolicy: "no-referrer",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(payload),
         signal: controller.signal,
       });

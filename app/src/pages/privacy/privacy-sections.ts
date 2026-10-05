@@ -37,7 +37,7 @@ export const POLICY_SECTIONS: ReadonlyArray<{ id: PolicySectionId; title: string
 ];
 
 export const POLICY_EFFECTIVE_DATE = "September 20, 2026";
-export const POLICY_LAST_UPDATED = "October 3, 2026";
+export const POLICY_LAST_UPDATED = "October 5, 2026";
 export const POLICY_CONTACT_EMAIL = "nolanj@posetek.net";
 
 /** 1-based section number shown in the heading badge and the contents list. */

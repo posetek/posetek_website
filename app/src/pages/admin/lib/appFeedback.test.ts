@@ -28,8 +28,40 @@ describe("app feedback admin helpers", () => {
     expect(() => normalizeAppFeedbackReview({ ...review, metrics: { ...review.metrics, opened: -1 } })).toThrow();
     expect(() => normalizeAppFeedbackReview({ ...review, metrics: { ...review.metrics, submitted: "30" } })).toThrow();
     expect(() => normalizeAppFeedbackReview({ ...review, retentionDays: 30 })).toThrow();
-    expect(() => normalizeAppFeedbackReview({ ...review, responses: [{ ...response, formVersion: 2 }] })).toThrow();
+    expect(() => normalizeAppFeedbackReview({ ...review, responses: [{ ...response, formVersion: 3 }] })).toThrow();
     expect(() => normalizeAppFeedbackReview({ ...review, responses: Array.from({ length: 51 }, () => response) })).toThrow();
+  });
+
+  it("reads mixed versions without ever attributing historical or explicitly anonymous responses", () => {
+    const author = { uid: "auth-user", displayName: "Account name", email: "user@example.com", emailVerified: true };
+    const parsed = normalizeAppFeedbackReview({ ...review, responses: [
+      { ...response, author, identityMode: "account" },
+      { ...response, id: "account-response", formVersion: 2, identityMode: "account", author },
+      { ...response, id: "anonymous-response", formVersion: 2, identityMode: "anonymous", author },
+    ] });
+    expect(parsed.responses[0]).toMatchObject({ formVersion: 1, identityMode: "anonymous", author: null });
+    expect(parsed.responses[1]).toMatchObject({ formVersion: 2, identityMode: "account", author });
+    expect(parsed.responses[2]).toMatchObject({ formVersion: 2, identityMode: "anonymous", author: null });
+    expect(parsed.metrics).toEqual(review.metrics);
+  });
+
+  it("bounds optional account values, preserves the exact UID and leaves absent name/email empty", () => {
+    const row = normalizeAppFeedbackResponse("x", { ...response, formVersion: 2, identityMode: "account",
+      author: { uid: "exact-account-ID", displayName: "\u0000" + "n".repeat(220), email: "e".repeat(350) + "\n", emailVerified: false } });
+    expect(row.author).toEqual({ uid: "exact-account-ID", displayName: "n".repeat(200), email: "e".repeat(320), emailVerified: false });
+    expect(normalizeAppFeedbackResponse("x", { ...response, formVersion: 2, identityMode: "account",
+      author: { uid: "uid-only", displayName: "  ", email: null, emailVerified: false } }).author)
+      .toEqual({ uid: "uid-only", displayName: null, email: null, emailVerified: false });
+  });
+
+  it("rejects malformed account attribution rather than silently labeling it anonymous", () => {
+    for (const author of [null, { uid: "", emailVerified: true }, { uid: "u".repeat(129), emailVerified: true },
+      { uid: "account", emailVerified: "true" }, { uid: "account", displayName: {}, emailVerified: false }]) {
+      expect(() => normalizeAppFeedbackReview({ ...review, responses: [{ ...response, formVersion: 2, identityMode: "account", author }] })).toThrow("author");
+    }
+    for (const identityMode of [undefined, "unknown"]) {
+      expect(() => normalizeAppFeedbackResponse("x", { ...response, formVersion: 2, identityMode, author: null })).toThrow("record");
+    }
   });
 
   it("handles skipped answers and absent duration without inventing times", () => {

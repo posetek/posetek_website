@@ -5,7 +5,8 @@ const { createAppFeedbackHttp, createAppFeedbackAdmin } = require("./app-feedbac
 admin.initializeApp();
 const shared = { db: admin.firestore(), Timestamp: admin.firestore.Timestamp };
 exports.receiveAppFeedback = functions.runWith({ secrets: ["APP_FEEDBACK_RATE_KEY"], timeoutSeconds: 30, maxInstances: 10 }).https.onRequest(
-  createAppFeedbackHttp({ ...shared, rateKey: () => process.env.APP_FEEDBACK_RATE_KEY })
+  createAppFeedbackHttp({ ...shared, rateKey: () => process.env.APP_FEEDBACK_RATE_KEY,
+    verifyIdToken: (token, checkRevoked) => admin.auth().verifyIdToken(token, checkRevoked), getUser: uid => admin.auth().getUser(uid) })
 );
 const review = createAppFeedbackAdmin({ ...shared, HttpsError: functions.https.HttpsError });
 exports.getAppFeedback = functions.runWith({ timeoutSeconds: 30, maxInstances: 5 }).https.onCall((data, context) => {

@@ -182,6 +182,14 @@ describe("admission callable payloads", () => {
 });
 
 describe("getSafeReturnToUrl", () => {
+  it("returns to feedback after sign-in with only its broad source", () => {
+    for (const path of ["/feedback", "/feedback/", "/feedback.html"]) {
+      expect(getSafeReturnToUrl(url(path + "?source=workout&player=private&team=private#private"), BASE, ORIGIN)).toBe(`${ORIGIN}/feedback?source=workout`);
+    }
+    expect(getSafeReturnToUrl(url("/feedback?source=unknown&account=private"), BASE, ORIGIN)).toBe(`${ORIGIN}/feedback`);
+    expect(getSafeReturnToUrl(url("/admin/feedback"), BASE, ORIGIN)).toBe(`${ORIGIN}/admin/feedback`);
+    expect(getSafeReturnToUrl(url("https://evil.example/feedback?source=results"), BASE, ORIGIN)).toBeNull();
+  });
   it("returns null when there is no returnTo param", () => {
     expect(getSafeReturnToUrl("", BASE, ORIGIN)).toBeNull();
     expect(getSafeReturnToUrl("?foo=bar", BASE, ORIGIN)).toBeNull();

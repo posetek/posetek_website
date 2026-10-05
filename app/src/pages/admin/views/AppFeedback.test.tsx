@@ -28,6 +28,38 @@ describe("private app feedback rendering", () => {
     expect(html).toContain("No comment added."); expect(html).toContain("Date unavailable"); expect(html).not.toContain("Time on form");
   });
 
+  it("shows an escaped signed-in account snapshot privately without implying a verified person or joining a player", () => {
+    const attributed = normalizeAppFeedbackResponse("account-response", { ...response, formVersion: 2, identityMode: "account",
+      author: { uid: '<uid onclick="run()">', displayName: '<img src=x onerror="run()">', email: 'person+<tag>@example.com', emailVerified: true } });
+    const html = renderToStaticMarkup(<AppFeedbackRow response={attributed} />);
+    expect(html).toContain("Submitted by"); expect(html).toContain("Signed-in account"); expect(html).toContain("Email verified");
+    expect(html).toContain("&lt;img"); expect(html).toContain("person+&lt;tag&gt;@example.com"); expect(html).toContain("Account ID:");
+    expect(html).toContain("&lt;uid"); expect(html).not.toContain("<img"); expect(html).not.toContain("Verified person");
+    expect(html).not.toContain('href='); expect(html).not.toContain("/admin/accounts/player/");
+  });
+
+  it("uses email or exact UID when no name is available and labels unverified email accurately", () => {
+    for (const author of [{ uid: "uid-with-email", displayName: null, email: "user@example.com", emailVerified: false },
+      { uid: "uid-only", displayName: null, email: null, emailVerified: false }]) {
+      const html = renderToStaticMarkup(<AppFeedbackRow response={normalizeAppFeedbackResponse("x", { ...response, formVersion: 2, identityMode: "account", author })} />);
+      expect(html).toContain(`<strong>${author.email ?? author.uid}</strong>`);
+      expect(html).toContain("Signed-in account"); expect(html).toContain(author.uid);
+      expect(html).not.toContain("Anonymous"); expect(html).not.toContain("Unknown player");
+      if (author.email) expect(html).toContain("Email not verified");
+    }
+  });
+
+  it("keeps historical and future anonymous responses explicit without fabricating account associations", () => {
+    for (const formVersion of [1, 2]) {
+      const html = renderToStaticMarkup(<AppFeedbackRow response={normalizeAppFeedbackResponse("x", { ...response, formVersion, identityMode: "anonymous",
+        author: { uid: "never-disclose", displayName: "Never infer this name", email: "never@example.com", emailVerified: true } })} />);
+      expect(html).toContain("Submitted by"); expect(html).toContain("Anonymous"); expect(html).toContain("account linked");
+      expect(html).not.toContain("never-disclose"); expect(html).not.toContain("never@example.com");
+      expect(html).not.toContain("Never infer this name"); expect(html).not.toContain("Signed-in account");
+      if (formVersion === 1) expect(html).toContain("Historical anonymous response");
+    }
+  });
+
   it("keeps the current page visible after a next-page error and exposes retry/disabled pagination states", () => {
     const html = responseHtml({ pageNumber: 2, pageError: "App feedback could not be loaded. Please retry." });
     expect(html).toContain("The current page is still shown."); expect(html).toContain("Videos or technique"); expect(html).toContain('role="alert"'); expect(html).toContain("Page 2");

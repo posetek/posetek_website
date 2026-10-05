@@ -24,11 +24,13 @@ const { chromium } = playwright;
 const base = new URL(argument("--base", "http://127.0.0.1:4321"));
 const hosted = args.includes("--hosted");
 const local = ["127.0.0.1", "localhost", "[::1]"].includes(base.hostname);
+const developmentFixtures = args.includes("--dev-auth-fixtures");
 assert(!base.username && !base.password && !base.search && !base.hash && ["", "/"].includes(base.pathname), "Use an origin URL without credentials, path, query or fragment.");
 assert(local || hosted && base.protocol === "https:" && !base.port
   && (base.hostname === "posetek.net" || /^[0-9a-f]{24}--posetek\.netlify\.app$/.test(base.hostname)),
 "Use a local preview server, or --hosted with https://posetek.net or an exact PoseTek 24-hex deploy URL.");
 assert(!hosted || args.includes("--public-only"), "Hosted review requires --public-only; admin sample preview is available only in development.");
+assert(!developmentFixtures || local && !hosted, "Development Auth fixtures require a local Astro development server.");
 const output = resolve(root, argument("--output", ".netlify/app-feedback-browser"));
 const outputRelative = relative(resolve(root, ".netlify"), output);
 assert(outputRelative && !outputRelative.startsWith(`..${sep}`) && outputRelative !== "..", "Screenshots must stay in ignored .netlify output.");
@@ -39,6 +41,7 @@ await mkdir(output, { recursive: true });
 const executablePath = argument("--browser-executable", undefined);
 const browser = await chromium.launch({ headless: true, ...(executablePath ? { executablePath } : {}) });
 const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block" });
+const publicContexts = [];
 // Synthetic cookies demonstrate that credential-free cross-origin requests do
 // not inherit account cookies, even when the browser has some stored.
 await context.addCookies([{ name: "synthetic-local-account", value: "not-a-real-account", url: base.origin },
@@ -55,34 +58,91 @@ async function noOverflow(page, label) {
   assert(dimensions.html <= dimensions.viewport + 1 && dimensions.body <= dimensions.viewport + 1, `${label} has horizontal overflow: ${JSON.stringify(dimensions)}`);
   pass(`${label}: no horizontal overflow`);
 }
-async function publicPage(source = "direct", { preview = false, failFirstSubmission = false } = {}) {
-  const page = await context.newPage();
-  const state = { posts: [], externalAttempts: [], errors: [], failedSubmission: false };
+const authStorageKey = "firebase:authUser:AIzaSyBSfyXyhmD4kYGRSg-jOmGeLeOO8hX0-Gs:[DEFAULT]";
+const syntheticAccount = { uid: "synthetic-feedback-account-a", label: "Synthetic player A", email: "synthetic-feedback-a@example.test" };
+function syntheticToken(account, revision = 0) {
+  const now = Math.floor(Date.now() / 1000);
+  const header = Buffer.from(JSON.stringify({ alg: "RS256", typ: "JWT" })).toString("base64url");
+  const claims = Buffer.from(JSON.stringify({ iss: "https://securetoken.google.com/kickai-69dd0", aud: "kickai-69dd0", auth_time: now - 300,
+    user_id: account.uid, sub: account.uid, iat: now, exp: now + 3600, email: account.email, test_revision: revision,
+    firebase: { identities: {}, sign_in_provider: account.anonymous ? "anonymous" : "custom" } })).toString("base64url");
+  return `${header}.${claims}.synthetic-signature`;
+}
+function syntheticAuthRecord(account) {
+  return { uid: account.uid, email: account.email, emailVerified: true, displayName: account.label, isAnonymous: Boolean(account.anonymous), providerData: [],
+    stsTokenManager: { refreshToken: "synthetic-refresh-only", accessToken: syntheticToken(account), expirationTime: Date.now() + 3600000 },
+    createdAt: String(Date.now() - 3600000), lastLoginAt: String(Date.now()), apiKey: "AIzaSyBSfyXyhmD4kYGRSg-jOmGeLeOO8hX0-Gs", appName: "[DEFAULT]" };
+}
+function mockAdapterModule(account, failFirstReady) {
+  return `
+const state = window.__feedbackAuthHarness = { current: ${JSON.stringify(account)}, listeners: new Set(), failures: ${failFirstReady ? 1 : 0} };
+state.switchTo = next => { state.current = next; for (const listener of state.listeners) listener(next); };
+export function createFeedbackAuthAdapter() { return {
+  async ready() { if (state.failures > 0) { state.failures--; throw new Error('Synthetic auth initialization failure'); } return state.current; },
+  subscribe(listener) { state.listeners.add(listener); return () => state.listeners.delete(listener); },
+  isCurrent(uid) { return (state.current?.uid ?? null) === uid; },
+  async tokenFor(uid) { if (state.current?.uid !== uid) throw new Error('Account changed'); return 'synthetic-adapter-token'; }
+}; }`;
+}
+async function publicPage(source = "direct", { preview = false, failFirstSubmission = false,
+  account = source === "workout" || source === "results" ? syntheticAccount : null, expectGate = false, adapterMock = false, expectAuthFailure = false } = {}) {
+  const publicContext = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block" });
+  publicContexts.push(publicContext);
+  await publicContext.addCookies([{ name: "synthetic-endpoint-account", value: "not-a-real-account", url: endpoint }]);
+  if (account && !preview && !adapterMock) await publicContext.addInitScript(({ key, value, origin }) => {
+    if (location.origin === origin) localStorage.setItem(key, JSON.stringify(value));
+  }, { key: authStorageKey, value: syntheticAuthRecord(account), origin: base.origin });
+  const page = await publicContext.newPage();
+  const state = { posts: [], requests: [], authRequests: [], externalAttempts: [], errors: [], failedSubmission: false, tokenRevision: 0 };
   page.on("pageerror", error => { state.errors.push(error.message); report.publicErrors.push(error.message); });
   page.on("console", message => { if (message.type() === "error" && /Content Security Policy|Content-Security-Policy|violates.*directive/i.test(message.text())) report.publicCspErrors.push(message.text()); });
-  page.on("request", request => { report.publicRequests.push({ url: request.url(), method: request.method(), resource: request.resourceType() }); });
+  page.on("request", request => { const item = { url: request.url(), method: request.method(), resource: request.resourceType() }; state.requests.push(item); report.publicRequests.push(item); });
   await page.route("**/*", async route => {
     const request = route.request(), url = new URL(request.url());
+    if (adapterMock && !hosted && url.pathname.endsWith("/src/pages/feedback/feedback-auth.ts")) {
+      await route.fulfill({ status: 200, contentType: "text/javascript", body: mockAdapterModule(account, expectAuthFailure) }); return;
+    }
     if (url.origin === base.origin && ["GET", "HEAD"].includes(request.method())) { await route.continue(); return; }
     if (request.url() === endpoint) {
-      const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type", "Content-Type": "application/json" };
+      const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, Authorization", "Content-Type": "application/json" };
       if (request.method() === "OPTIONS") { await route.fulfill({ status: 204, headers }); return; }
       assert.equal(request.method(), "POST");
       const requestHeaders = await request.allHeaders();
-      assert(!requestHeaders.authorization && !requestHeaders.cookie && !requestHeaders.referer, "Feedback inherited account credentials or referrer.");
+      assert(!requestHeaders.cookie && !requestHeaders.referer, "Feedback inherited cookies or referrer.");
       const body = request.postData();
       const payload = JSON.parse(body);
-      assert.equal(payload.formVersion, 1);
+      assert.equal(payload.formVersion, 2);
+      assert(["account", "anonymous"].includes(payload.identityMode));
+      if (payload.event === "submitted" && payload.identityMode === "account") assert(requestHeaders.authorization?.startsWith("Bearer "), "Account feedback lacked its ID token.");
+      else assert(!requestHeaders.authorization, "Anonymous feedback or diagnostics sent an account token.");
       assert.equal(payload.entrySource, source);
       assert.match(payload.sessionId, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
-      assert(Object.keys(payload).every(key => ["formVersion", "event", "sessionId", "entrySource", "answers", "durationSeconds"].includes(key)), "Unknown feedback envelope field.");
+      assert(Object.keys(payload).every(key => ["formVersion", "event", "sessionId", "entrySource", "identityMode", "answers", "durationSeconds"].includes(key)), "Unknown feedback envelope field.");
       assert(!body.includes("not-a-real-account") && !body.includes("private-url-canary") && !body.includes("playerId"), "Feedback contains an account or URL identifier.");
+      assert(!body.includes("synthetic-feedback-account") && !body.includes("example.test"), "Account identity was copied into feedback JSON.");
       if (payload.answers) assert.deepEqual(Object.keys(payload.answers).sort(), ["comment", "ease", "feature", "obstruction"]);
-      state.posts.push({ payload, body });
+      state.posts.push({ payload, body, authorization: requestHeaders.authorization });
       if (payload.event === "submitted" && failFirstSubmission && !state.failedSubmission) {
         state.failedSubmission = true;
         await route.fulfill({ status: 503, headers, body: JSON.stringify({ error: "synthetic-unavailable" }) });
       } else await route.fulfill({ status: 200, headers, body: JSON.stringify({ ok: true }) });
+      return;
+    }
+    if (["identitytoolkit.googleapis.com", "securetoken.googleapis.com"].includes(url.hostname)) {
+      state.authRequests.push({ url: request.url(), method: request.method() });
+      const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "POST, OPTIONS", "Content-Type": "application/json" };
+      if (request.method() === "OPTIONS") { await route.fulfill({ status: 204, headers }); return; }
+      assert(account && !preview, "Signed-out or preview form unexpectedly contacted an Auth API.");
+      if (url.hostname === "identitytoolkit.googleapis.com" && url.pathname.endsWith("accounts:lookup")) {
+        await route.fulfill({ status: 200, headers, body: JSON.stringify({ users: [{ localId: account.uid,
+          ...(account.anonymous ? {} : { email: account.email, emailVerified: true, displayName: account.label, passwordHash: "synthetic" }),
+          providerUserInfo: [], validSince: String(Math.floor(Date.now() / 1000) - 3600),
+          createdAt: String(Date.now() - 3600000), lastLoginAt: String(Date.now()) }] }) });
+      } else if (url.hostname === "securetoken.googleapis.com" && url.pathname.endsWith("/token")) {
+        const token = syntheticToken(account, ++state.tokenRevision);
+        await route.fulfill({ status: 200, headers, body: JSON.stringify({ access_token: token, expires_in: "3600", token_type: "Bearer",
+          refresh_token: "synthetic-refresh-only", id_token: token, user_id: account.uid, project_id: "kickai-69dd0" }) });
+      } else throw new Error(`Unexpected Auth API request: ${url.pathname}`);
       return;
     }
     state.externalAttempts.push(request.url());
@@ -90,11 +150,13 @@ async function publicPage(source = "direct", { preview = false, failFirstSubmiss
   });
   await page.goto(new URL(`/feedback?source=${source}&playerId=private-url-canary${preview ? "&preview=1" : ""}`, base).href, { waitUntil: "domcontentloaded" });
   await page.getByRole("heading", { name: "Help us improve PoseTek." }).waitFor();
-  await page.getByRole("radio", { name: "Results", exact: true }).waitFor();
+  if (expectGate) await page.getByRole("heading", { name: "Sign in to give feedback", exact: true }).waitFor();
+  else if (expectAuthFailure) await page.getByRole("heading", { name: "We couldn’t check your sign-in status.", exact: true }).waitFor();
+  else await page.getByRole("radio", { name: "Results", exact: true }).waitFor();
   return { page, state };
 }
 async function publicSafe(state) {
-  assert.deepEqual(state.externalAttempts, [], "The isolated public form attempted external font, auth or tracking requests.");
+  assert.deepEqual(state.externalAttempts, [], "The isolated public form attempted unapproved external font, tracking or service requests.");
   assert.deepEqual(state.errors, [], "Public form had browser exceptions.");
   assert.deepEqual(report.publicCspErrors, [], "Public form had Content Security Policy failures.");
 }
@@ -104,6 +166,8 @@ try {
   // submission, and byte-identical retry with no credentials or identifiers.
   {
     const { page, state } = await publicPage("workout", { failFirstSubmission: true });
+    await page.getByRole("note").getByText("Synthetic player A", { exact: true }).waitFor();
+    assert.equal(await page.getByRole("checkbox").count(), 0, "Account identification introduced a consent checkbox.");
     for (const width of widths) {
       await page.setViewportSize({ width, height: 844 });
       await noOverflow(page, `Public question 1 at ${width}px`);
@@ -150,12 +214,15 @@ try {
     const submitted = state.posts.filter(post => post.payload.event === "submitted");
     assert.equal(submitted.length, 2);
     assert.equal(submitted[0].body, submitted[1].body, "Retry changed the original submission.");
+    assert.equal(submitted[0].payload.identityMode, "account");
+    assert.notEqual(submitted[0].authorization, submitted[1].authorization, "Account retry did not refresh its ID token.");
     assert.equal(state.posts.filter(post => post.payload.event === "opened").length, 1);
     assert.equal(state.posts.filter(post => post.payload.event === "started").length, 1);
     assert.equal(new Set(state.posts.map(post => post.payload.sessionId)).size, 1);
     await publicSafe(state);
     pass("Exact questions, keyboard selection, back recovery, failed send and identical retry");
-    pass("Requests omit auth, cookies, referrer, URL canaries and unknown identifiers");
+    pass("Disclosed account responses use refreshed Bearer tokens; diagnostics omit authentication");
+    pass("Feedback JSON and URLs omit account identifiers, cookies, referrer and unknown fields");
     await page.close();
   }
 
@@ -173,14 +240,18 @@ try {
 
   {
     const { page, state } = await publicPage("qr");
+    await page.getByRole("note").getByText("No account is linked to this response.", { exact: false }).waitFor();
     const unused = page.getByRole("radio", { name: "Haven’t used it yet", exact: true });
     await unused.focus(); await page.keyboard.press("Space");
     await page.getByRole("button", { name: "Send feedback", exact: true }).click();
     await page.getByRole("heading", { name: "Thanks for helping us improve.", exact: true }).waitFor();
     const submitted = state.posts.find(post => post.payload.event === "submitted");
     assert.deepEqual(submitted?.payload.answers, { feature: "notUsed", ease: null, obstruction: null, comment: "" });
+    assert.equal(submitted.payload.identityMode, "anonymous");
+    assert.equal(state.authRequests.length, 0);
     await publicSafe(state);
     pass("Not-used exit sends one explicit answer without ratings or writing");
+    pass("Signed-out QR responses remain anonymous without Auth API calls");
     await page.close();
   }
 
@@ -192,9 +263,83 @@ try {
     await page.getByRole("button", { name: "Send feedback", exact: true }).click();
     await page.getByRole("heading", { name: "Preview complete", exact: true }).waitFor();
     assert.equal(state.posts.length, 0);
+    assert.equal(state.authRequests.length, 0);
+    assert.equal(state.requests.filter(request => request.url.includes("feedback-auth") || /firebase_auth|firebase\/auth/.test(request.url)).length, 0, "Preview loaded the isolated Auth module.");
     await publicSafe(state);
-    pass("Preview is labeled and sends zero opens, starts or submissions");
+    pass("Preview is labeled and sends zero opens, starts, submissions or Auth requests");
     await page.close();
+  }
+
+  for (const source of ["workout", "results"]) {
+    const { page, state } = await publicPage(source, { account: null, expectGate: true });
+    assert.equal(await page.getByRole("radio").count(), 0, "A signed-out account entry showed questions.");
+    const signIn = page.getByRole("link", { name: "Sign in to PoseTek", exact: false });
+    assert.equal(await signIn.getAttribute("href"), `/signin?returnTo=${encodeURIComponent(`/feedback?source=${source}`)}`);
+    assert.equal(state.posts.filter(post => post.payload.event === "submitted").length, 0);
+    assert.equal(state.authRequests.length, 0);
+    await noOverflow(page, `Signed-out ${source} gate at 390px`);
+    if (source === "workout") await screenshot(page, "public-signin-gate-390");
+    await publicSafe(state);
+    pass(`Signed-out ${source} requires sign-in with a source-only return link`);
+    await page.close();
+  }
+
+  {
+    const anonymous = { uid: "synthetic-anonymous-auth-user", anonymous: true };
+    const { page, state } = await publicPage("message", { account: anonymous });
+    await page.getByRole("note").getByText("No account is linked to this response.", { exact: false }).waitFor();
+    await page.getByRole("radio", { name: "Haven’t used it yet", exact: true }).check();
+    await page.getByRole("button", { name: "Send feedback", exact: true }).click();
+    await page.getByRole("heading", { name: "Thanks for helping us improve.", exact: true }).waitFor();
+    assert(state.posts.every(post => post.payload.identityMode === "anonymous" && !post.authorization));
+    await publicSafe(state);
+    pass("Anonymous Firebase users can send shared-link feedback without account attribution");
+    await page.close();
+  }
+
+  // The adapter replacement is a development-server network fixture, never a
+  // production fake identity or an application URL parameter.
+  if (developmentFixtures) {
+    {
+      const { page, state } = await publicPage("direct", { adapterMock: true, expectAuthFailure: true });
+      assert.equal(await page.getByRole("radio").count(), 0);
+      assert.equal(state.posts.length, 0, "Auth initialization failure silently opened an anonymous session.");
+      await page.getByRole("button", { name: "Retry checking account", exact: true }).click();
+      await page.getByRole("radio", { name: "Results", exact: true }).waitFor();
+      await page.getByRole("note").getByText("No account is linked to this response.", { exact: false }).waitFor();
+      await publicSafe(state);
+      pass("Auth initialization failure offers retry before opening a feedback session");
+      await page.close();
+    }
+    {
+      const { page, state } = await publicPage("qr", { account: syntheticAccount, adapterMock: true, failFirstSubmission: true });
+      await page.getByRole("radio", { name: "Haven’t used it yet", exact: true }).check();
+      await page.getByRole("button", { name: "Send feedback", exact: true }).click();
+      await page.getByRole("alert").waitFor();
+      const previousSession = state.posts.find(post => post.payload.event === "submitted").payload.sessionId;
+      await page.evaluate(() => window.__feedbackAuthHarness.switchTo({ uid: "synthetic-feedback-account-b", label: "Synthetic player B" }));
+      await page.getByRole("note").getByText("Synthetic player B", { exact: true }).waitFor();
+      await page.getByText("Your sign-in status changed. This form has been reset. Check the account notice above before sending.", { exact: true }).waitFor();
+      assert.equal(await page.getByRole("button", { name: "Retry sending", exact: true }).count(), 0);
+      assert.equal(await page.getByRole("radio", { name: "Haven’t used it yet", exact: true }).isChecked(), false);
+      await page.getByRole("radio", { name: "Haven’t used it yet", exact: true }).check();
+      await page.getByRole("button", { name: "Send feedback", exact: true }).click();
+      await page.getByRole("heading", { name: "Thanks for helping us improve.", exact: true }).waitFor();
+      const submitted = state.posts.filter(post => post.payload.event === "submitted");
+      assert.equal(submitted.length, 2);
+      assert.notEqual(submitted[1].payload.sessionId, previousSession, "Account switch reused the previous feedback session.");
+      await page.evaluate(() => window.__feedbackAuthHarness.switchTo(null));
+      await page.getByRole("note").getByText("No account is linked to this response.", { exact: false }).waitFor();
+      await page.getByRole("radio", { name: "Haven’t used it yet", exact: true }).check();
+      await page.getByRole("button", { name: "Send feedback", exact: true }).click();
+      await page.getByRole("heading", { name: "Thanks for helping us improve.", exact: true }).waitFor();
+      const anonymousSubmission = state.posts.filter(post => post.payload.event === "submitted").at(-1);
+      assert.equal(anonymousSubmission.payload.identityMode, "anonymous");
+      assert(!anonymousSubmission.authorization);
+      await publicSafe(state);
+      pass("Account switches reset answers, failed retries and session identity; sign-out permits anonymous shared feedback");
+      await page.close();
+    }
   }
 
   if (!args.includes("--public-only")) {
@@ -271,6 +416,7 @@ try {
 } finally {
   await writeFile(resolve(output, "report.json"), `${JSON.stringify(report, null, 2)}\n`);
   await context.close();
+  await Promise.all(publicContexts.map(publicContext => publicContext.close()));
   await browser.close();
   console.log(JSON.stringify({ passed: report.passed, checks: report.checks.length, screenshots: report.screenshots.length, liveWrites: 0, report: resolve(output, "report.json") }));
 }
