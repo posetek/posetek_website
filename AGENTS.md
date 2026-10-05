@@ -48,9 +48,20 @@ default to a sibling `../PoseTek-mobile-app` checkout, and `RULES_PATH` /
 `deployment/*.json`, including the composed `whole-body-firestore.rules`
 (deleted), are historical records of past publishes, not instructions.
 
+## Current hosting and marketing snapshot
+
+The ordinary Git build published `b776c32` as `6ac3d1c930af650008d83718` on
+October 5, 2026 at 9:37:14 AM PDT. Application and feedback bytes still match the
+attribution release below. The reconciled baseline protects 1,697 files; all
+1,638 predecessor records are unchanged. The ignored local marketing snapshot
+passed the application-release builder and preserves the current Players/Coaches
+HTML exactly. See [the snapshot receipt](deployment/MARKETING_SNAPSHOT_20261005.json).
+No new application draft or production release was uploaded by that preparation.
+Keep the reviewed-draft workflow and protected baseline enforced.
+
 ## Current feedback attribution release
 
-The current website is `6ac395bfba35bceed566d26c`, source `5792b63`, published
+The latest application-changing release is `6ac395bfba35bceed566d26c`, source `5792b63`, published
 October 5, 2026 at 5:23:26 AM PDT. Read [the feedback handoff](docs/APP_FEEDBACK.md)
 and [production evidence](deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json).
 New signed-in feedback includes a server-verified Auth account snapshot after a
