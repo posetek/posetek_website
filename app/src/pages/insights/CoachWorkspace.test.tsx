@@ -46,6 +46,16 @@ describe("unified coach workspace", () => {
     expect(html).not.toContain(">Team</th>"); expect(html).not.toContain("Division · age");
     expect(html).toContain("Not recorded"); expect(html).toContain("view=player");
   });
+  it("restores an explicitly expanded disclosure when replacement roster data is rendered", () => {
+    const searched = previewInsights({ ...request, rosterSearch: "Alex" }, 0, "normal", "coach");
+    const renderRoster = (rows: typeof data, open: boolean) => renderToStaticMarkup(<MemoryRouter><CoachRoster collapsible disclosureOpen={open} preview data={rows} search="" page={0} onSearch={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "#player"} /></MemoryRouter>);
+    expect(renderRoster(data, false)).not.toContain('open=""');
+    for (const rows of [data, searched]) {
+      const html = renderRoster(rows, true);
+      expect(html).toContain('open=""');
+      expect(html).toContain(`${rows.pagination.total} matching players`);
+    }
+  });
   it("does not offer a merged team scope to an assigned coach", () => {
     const html = renderToStaticMarkup(<InsightsControls coach choices={data.choices} request={request} scope={data.scope} loading={false} onChange={() => {}} onRefresh={() => {}} />);
     expect(html).not.toContain("All assigned teams"); expect(html).toContain("Harbor U15");

@@ -48,6 +48,37 @@ default to a sibling `../PoseTek-mobile-app` checkout, and `RULES_PATH` /
 `deployment/*.json`, including the composed `whole-body-firestore.rules`
 (deleted), are historical records of past publishes, not instructions.
 
+## Current coach Overview release
+
+The current website is `6ac38fde67d690075984e58b`, source `7b1aa186`, published
+October 5, 2026 at 4:55:11 AM PDT. Read [the release handoff](docs/COACH_OVERVIEW_RELEASE.md)
+and [production evidence](deployment/COACH_OVERVIEW_PRODUCTION.json). Kai's compact
+Team snapshot, persistent roster disclosure and visible reporting filters are
+live. Review links preserve other filters, clear name search and match positive
+snapshot counts; zero-count actions are disabled. **No workout status** can
+coexist with recorded activity. Weekly performance lines cross empty weeks;
+their explanation and data table retain the missing-result distinction.
+
+Verified inventory contains 1,587 website artifacts and 1,588 provider records.
+The release preserves 1,540 predecessor records, changing only the application
+entry and generated provider metadata while adding 46 runtime assets. Approved
+Players/Coaches documents, isolated feedback and stable icon bytes are preserved.
+Reporting calculations/cohorts, access, private drafts, backend functions, rules,
+gateway, native and held content are unchanged. The reconciled baseline protects
+1,585 files; the ordinary TypeScript/Astro preservation build passed for all of
+them. Keep the guard enforced; `deployment/homepage-baseline.json` records protected files.
+
+## Website P icons (historical introduction)
+
+The icon-only website release was `6ac1abf790c8c0037928b52a`, published October 3, 2026 at
+6:31:53 PM PDT. Read [the icon handoff](docs/SITE_ICONS.md) and
+[production evidence](deployment/SITE_ICONS_PRODUCTION.json). The approved P
+appears in browser and search icon metadata. Only HTML-head icon links and four
+declared icon assets changed; page bodies, runtime assets, feedback isolation and
+all application contracts were preserved. That release's baseline protected 1,539 files.
+Keep stable icon URLs and the byte-preserving ordinary build guard. Google
+controls search recrawling; the website release does not verify search display.
+
 ## Optional app feedback
 
 Read [the feedback handoff](docs/APP_FEEDBACK.md) and
@@ -65,12 +96,12 @@ with recorded work. Pain stops, early endings, failed saves, changed accounts,
 hidden tabs and previews do not invite. A browser timestamp enforces a seven-day
 automatic-invitation cadence; results links and admin QR/message links remain
 optional and separate. Feedback never gates results or changes training records.
-The verified live website is `6ac17bc21377cbeaea114800`, published October 3, 2026
+The verified feedback application release is `6ac17bc21377cbeaea114800`, published October 3, 2026
 at 3:12:14 PM PDT. The exact candidate passed 20 hosted browser checks and nine
 screenshots with zero feedback writes before promotion; production inventory and
-artifact verification passed. Use the production receipt and
-`deployment/homepage-baseline.json` for current publication and protected-file
-evidence. The preceding coverage release `6ac06e0d420f2b6b34129fb5` and its
+artifact verification passed. Its receipt remains the feedback acceptance record;
+use `deployment/COACH_OVERVIEW_PRODUCTION.json` and `deployment/homepage-baseline.json`
+for current website publication and protected-file evidence. The preceding coverage release `6ac06e0d420f2b6b34129fb5` and its
 1,482-file baseline are historical checkpoints; its notification behavior is
 preserved. Scoped functions are deployed and
 source/IAM audited, TTL is active, indexes are ready and canonical rules are

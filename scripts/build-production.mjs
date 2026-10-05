@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { mergeAstroAssets } from "./astro-assets.mjs";
+import { mergeWebsiteIcons } from "./website-icons.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const app = join(root, "app");
@@ -115,6 +116,7 @@ if (!coachesHtml.includes("<!-- posetek-coaches-entry -->")) throw new Error("Mi
 await mkdir(join(output, "coaches"), { recursive: true });
 await writeFile(join(output, "coaches/index.html"), coachesHtml);
 await mergeAstroAssets(join(root, "app/astro-dist"), output, manifest.files);
+await mergeWebsiteIcons(join(root, "app/astro-dist"), output, manifest.files);
 if (!preserveApplicationEntry) await cp(join(root, "deployment/home-navigation.js"), join(output, "marketing/home-navigation.js"));
 
 for (const file of manifest.files) {
