@@ -4,7 +4,8 @@ Prepared for Kai by Dylan Keller. Original current-state review dated October 3,
 
 ## Coach Overview follow-up (October 5, 2026)
 
-Kai's reviewed source now leads coach Overview with a dated Team snapshot of the
+Kai's coach Overview is live in website `6ac38fde67d690075984e58b`, source
+`7b1aa186`, published October 5, 2026 at 4:55:11 AM PDT. It leads with a dated Team snapshot of the
 filtered reporting population, testing activity and workout activity. The roster
 starts collapsed and retains its open state through loading, retries, search,
 pagination, date changes and refresh. Another account or team starts collapsed.
@@ -30,8 +31,7 @@ qualified result; the connecting line does not supply measurements for those
 weeks or demonstrate individual improvement.
 
 See [the coach Overview release handoff](COACH_OVERVIEW_RELEASE.md) for provenance,
-release boundaries, verification and publication status. This section describes
-the reviewed source follow-up and does not itself confirm a production deployment.
+release boundaries and verification, and [the verified publication receipt](../deployment/COACH_OVERVIEW_PRODUCTION.json).
 The roster-first Overview below records the original October 3 review.
 
 ## Purpose and expected outcome

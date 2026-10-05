@@ -1,5 +1,9 @@
 # Coach overview refresh
 
+Published website: `6ac38fde67d690075984e58b`, source `7b1aa186`,
+October 5, 2026 at 4:55:11 AM PDT. See the
+[verified receipt](../deployment/COACH_OVERVIEW_PRODUCTION.json).
+
 Kai (`suzkai`) authored the dashboard changes on `Coach-Dashboard` in commits
 `0bad2029` and `7007871`. Dylan reviewed the synthetic preview and authorized
 website deployment on October 5, 2026. The release branch preserves both commits
@@ -41,12 +45,18 @@ production artifact bytes. Players and Coaches retain verified original
 documents, runtime assets and served content from the current production.
 
 Use the deliberate Astro application build with a freshly verified marketing
-snapshot. Review the exact Netlify draft, compare its full provider inventory
+snapshot. This release also restored the exact provider-bound `/feedback.html`
+from its verified baseline cache after composition: Astro's newly compiled head
+reordered unchanged links. The feedback runtime assets remained protected. Record
+that substitution in the build receipt and verify it against the prior provider
+inventory before upload. Review the exact Netlify draft, compare its full provider inventory
 with the local artifact, verify served routes/headers and promote that same
 draft. Reconcile `deployment/homepage-baseline.json` only after production
 verification, then run the ordinary preservation build.
 
 The confirmed publication, source, validation counts and recovery deployment
-are recorded in `deployment/COACH_OVERVIEW_PRODUCTION.json` after verification.
+are recorded in `deployment/COACH_OVERVIEW_PRODUCTION.json`. Production contains
+1,587 artifact files and 1,588 provider records; the reconciled baseline protects
+1,585 files and the ordinary TypeScript/Astro preservation build passed.
 Synthetic checks demonstrate UI behavior; they do not constitute a new audit
 of every production club/player measurement or device acceptance.

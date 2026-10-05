@@ -1,24 +1,51 @@
 # PoseTek website project context
 
-Reviewed on October 2–3, 2026. This guide summarizes the available repository and
+Updated through October 5, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
-## PoseTek P website icons (2026-10-03)
+## Kai's coach Overview release (2026-10-05)
+
+The current website is `6ac38fde67d690075984e58b`, source
+`7b1aa1869624e96f6e300912ce742ffb1882b058`, published October 5, 2026 at
+4:55:11 AM PDT. Kai's `Coach-Dashboard` commits are preserved alongside the
+current feedback and approved P-icon source. See [the release handoff](docs/COACH_OVERVIEW_RELEASE.md)
+and [verified production receipt](deployment/COACH_OVERVIEW_PRODUCTION.json).
+
+Coach Overview now leads with a dated Team snapshot and a collapsed roster whose
+open state survives fetches, retries, search, pagination, date changes and refresh.
+Visible population counts and active filters remain available. Review links
+preserve other reporting filters and clear name search to match positive snapshot
+counts; zero-count actions are disabled. **No workout status** is distinct from
+no activity: missing records, unrecognized endings and endings outside the period
+can fall here. Weekly performance lines connect available results across empty
+weeks, with the explanation and data table retaining missing-result distinctions.
+
+Production verification matched 1,587 website artifacts to 1,588 provider records.
+It preserved 1,540 predecessor records; only the application entry and generated
+provider metadata changed, with 46 runtime assets added. The predecessor is
+`6ac1abf790c8c0037928b52a`. Approved Players/Coaches, feedback and stable P icon
+bytes are preserved. Reporting calculations, cohorts, membership/access, private
+drafts, backend functions, rules, gateway, native and held content are unchanged.
+The reconciled baseline protects 1,585 files, and the ordinary TypeScript/Astro
+preservation build passed for all of them. The current protected-file inventory
+remains in `deployment/homepage-baseline.json`.
+
+## PoseTek P website icons (2026-10-03, historical introduction)
 
 Dylan requested the approved PoseTek P for browser tabs and Google Search.
 The source now uses the previously approved outlined lime P badge, recovered
 from the official icon asset branch, with SVG, 96px PNG, multi-size ICO and
 180px Apple touch variants. Shared Astro and compatibility heads point to stable
 same-origin icon URLs. The full wordmark remains available for page content.
-The current website is `6ac1abf790c8c0037928b52a`, published October 3, 2026 at
+The icon-only website release was `6ac1abf790c8c0037928b52a`, published October 3, 2026 at
 6:31:53 PM PDT from source `c2ba02b`. Its 1,541 website artifacts match the
 1,542-record provider inventory. Only icon links in 83 HTML heads changed;
 1,454 existing files retain their exact bytes, and four icon files were added.
 All page bodies, runtime assets, application behavior and feedback security
 headers are preserved. Hosted and production browser checks decoded all four
 formats across five entry routes; served-content checks passed for 22 routes.
-The reconciled preservation baseline protects 1,539 files, and the ordinary
+That release's reconciled preservation baseline protected 1,539 files, and the ordinary
 TypeScript/Astro build preserved all of them after publication. See
 [the production receipt](deployment/SITE_ICONS_PRODUCTION.json) and
 [the icon handoff](docs/SITE_ICONS.md) for provenance, Google recrawl limits

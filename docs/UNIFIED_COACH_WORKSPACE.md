@@ -10,8 +10,9 @@ exact source, artifact, acceptance, cleanup and recovery records.
 
 ## Coach Overview follow-up (October 5, 2026)
 
-The reviewed coach Overview source leads with a dated Team snapshot rather than
-the prior roster-first report. It shows the filtered reporting population and
+The current website is `6ac38fde67d690075984e58b`, source `7b1aa186`, published
+October 5, 2026 at 4:55:11 AM PDT. Coach Overview leads with a dated Team snapshot.
+It shows the filtered reporting population and
 testing/workout participation, with links to review the represented players.
 The roster starts collapsed; its open state survives loading, retries, name
 search, pagination, date changes and refresh. A different account or team starts
@@ -37,8 +38,8 @@ segments add no measurements, and different players may set successive weekly
 bests.
 
 See [the coach Overview release handoff](COACH_OVERVIEW_RELEASE.md) for source
-provenance, validation, publication status and recovery. This source follow-up
-does not by itself confirm a production deployment. The September 29 receipts
+provenance, validation and recovery, and [the verified publication receipt](../deployment/COACH_OVERVIEW_PRODUCTION.json).
+The September 29 receipts
 above remain historical evidence of the workspace foundation and comparison
 presentation.
 
