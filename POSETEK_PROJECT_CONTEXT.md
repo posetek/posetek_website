@@ -6,6 +6,15 @@ business document is included.
 
 ## Prospective feedback account attribution (2026-10-05)
 
+The current website is `6ac395bfba35bceed566d26c`, source `5792b63`, published
+October 5, 2026 at 5:23:26 AM PDT. It preserves the concurrently published Kai
+Overview release by merging `0ad845e` before rebuilding. The exact reviewed
+artifact matched all 1,640 files in the 1,641-record provider inventory. Hosted
+and production each passed 27 synthetic browser checks with no feedback writes;
+the reconciled baseline protects 1,638 files and passed the ordinary build guard.
+Live backend acceptance passed 48 checks with owned synthetic accounts/responses
+removed; no real feedback or user identities were inspected.
+
 Dylan requested account attribution for future feedback and confirmed that
 signed-out shared links should continue accepting anonymous responses. The
 public form explains attribution before the questions and adds no consent
@@ -32,10 +41,13 @@ This change preserves invitation timing, seven-day cadence, training records,
 client-denial rules, 90-day feedback retention, legacy feedback and approved
 marketing/icon bytes. Native invitations and the 12-player comprehension pilot
 remain separate and outstanding.
+Account/privacy deletion requests must also run the exact-UID feedback erasure
+procedure, including matching diagnostic sessions. The dry-run-first operator
+helper passed 12 synthetic tests; it is not an automatic Auth-deletion hook.
 
 ## Kai's coach Overview release (2026-10-05)
 
-The current website is `6ac38fde67d690075984e58b`, source
+The preceding coach Overview website release was `6ac38fde67d690075984e58b`, source
 `7b1aa1869624e96f6e300912ce742ffb1882b058`, published October 5, 2026 at
 4:55:11 AM PDT. Kai's `Coach-Dashboard` commits are preserved alongside the
 current feedback and approved P-icon source. See [the release handoff](docs/COACH_OVERVIEW_RELEASE.md)
@@ -56,7 +68,7 @@ provider metadata changed, with 46 runtime assets added. The predecessor is
 `6ac1abf790c8c0037928b52a`. Approved Players/Coaches, feedback and stable P icon
 bytes are preserved. Reporting calculations, cohorts, membership/access, private
 drafts, backend functions, rules, gateway, native and held content are unchanged.
-The reconciled baseline protects 1,585 files, and the ordinary TypeScript/Astro
+That release's reconciled baseline protected 1,585 files, and the ordinary TypeScript/Astro
 preservation build passed for all of them. The current protected-file inventory
 remains in `deployment/homepage-baseline.json`.
 
@@ -118,7 +130,7 @@ workout save, at most once per seven days in the same browser. Pain stops, early
 endings, failed saves and previews are excluded. Results retain a feedback link.
 At that release, `/feedback` was a separate public document requiring no login or name, carrying
 only a broad source and random form-session ID to its isolated HTTPS endpoint.
-It loads no analytics/replay or authentication scripts. Verified PoseTek admins
+It loaded no analytics/replay or authentication scripts. Verified PoseTek admins
 can read recent responses and form-session counts and download a QR code at
 `/admin/feedback`.
 

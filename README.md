@@ -3,15 +3,21 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
-The current website is `6ac38fde67d690075984e58b`, source `7b1aa186`, published
-October 5, 2026 at 4:55:11 AM PDT. Kai's coach Overview leads with a dated Team
+The current website is `6ac395bfba35bceed566d26c`, source `5792b63`, published
+October 5, 2026 at 5:23:26 AM PDT. New signed-in feedback includes a server-verified
+account snapshot after a clear notice before the questions. Signed-out shared
+links and earlier anonymous responses remain anonymous. See [the feedback handoff](docs/APP_FEEDBACK.md)
+and [attribution receipt](deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json).
+The reconciled baseline protects 1,638 files; the ordinary TypeScript/Astro
+preservation build passed for all of them.
+
+Kai's preceding coach Overview release is preserved. It leads with a dated Team
 snapshot, count-matching review links, visible filters and a collapsed roster
 that retains its open state through fetches. See [the release handoff](docs/COACH_OVERVIEW_RELEASE.md)
 and [verified production receipt](deployment/COACH_OVERVIEW_PRODUCTION.json).
-Reporting/access contracts, approved marketing, feedback and stable P icons are
-preserved; backend functions, rules, gateway, native and held content are unchanged.
-The reconciled baseline protects 1,585 files; the ordinary TypeScript/Astro
-preservation build passed for all of them.
+Reporting/access contracts, approved marketing and stable P icons are preserved.
+The attribution update releases only the two scoped feedback functions; rules,
+gateway, native, training records and held content are unchanged.
 
 The historical icon-only release `6ac1abf790c8c0037928b52a` was published October 3,
 2026 at 6:31:53 PM PDT and protected 1,539 baseline files. Browser tabs and search
@@ -32,7 +38,7 @@ results feedback remains optional and available separately. The verified feedbac
 introduction release was `6ac17bc21377cbeaea114800`, published October 3, 2026 at 3:12:14 PM PDT.
 The exact candidate passed 20 hosted browser checks across nine screenshots with
 zero feedback writes before promotion. See [the feedback handoff](docs/APP_FEEDBACK.md)
-and [production evidence](deployment/APP_FEEDBACK_PRODUCTION.json) for publication
+and [attribution production evidence](deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json) for current publication
 and integrity checks. The website owns the two scoped feedback
 functions; the canonical mobile repository owns and publishes their client-denial
 rules. The [12-player comprehension pilot](docs/APP_FEEDBACK_PILOT.md) remains outstanding, and native

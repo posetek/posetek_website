@@ -8,6 +8,16 @@ is historical evidence: `6ac17bc21377cbeaea114800` was published October 3, 2026
 at 3:12:14 PM PDT (`2026-10-03T22:12:14.725Z`). Its anonymity promises still apply
 to responses collected through that earlier form.
 
+The attribution update is live as `6ac395bfba35bceed566d26c`, source `5792b63`,
+published October 5, 2026 at 5:23:26 AM PDT. It merges and preserves Kai's
+concurrently published coach Overview. The exact draft passed 27 hosted browser
+checks and the production site passed 27 more; both used synthetic Auth/request
+interception with zero feedback writes. Separate live HTTPS tests passed 48
+checks using owned temporary accounts/responses, all removed and verified absent.
+The full 1,640-file artifact matches the 1,641-record provider inventory; the
+1,638-file baseline passed the ordinary preservation build. See the receipt for
+test boundaries, scoped function evidence and recovery.
+
 The October 5 update links new signed-in submissions to the submitting account
 after clear disclosure before the questions. It adds no consent checkbox and
 does not infer identities for earlier anonymous responses. Publication of the
