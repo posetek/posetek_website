@@ -3,13 +3,19 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
-The current website is `6ac395bfba35bceed566d26c`, source `5792b63`, published
+The current hosting deployment is `6ac3d1c930af650008d83718`, merged source
+`b776c32`, published October 5, 2026 at 9:37:14 AM PDT by the ordinary Git build.
+The application and feedback bytes remain unchanged. Its verified baseline now
+protects 1,697 files. The [marketing snapshot receipt](deployment/MARKETING_SNAPSHOT_20261005.json)
+records the ignored local snapshot and successful application-release build;
+that local candidate has not been uploaded or published.
+
+The latest application-changing release is `6ac395bfba35bceed566d26c`, source `5792b63`, published
 October 5, 2026 at 5:23:26 AM PDT. New signed-in feedback includes a server-verified
 account snapshot after a clear notice before the questions. Signed-out shared
 links and earlier anonymous responses remain anonymous. See [the feedback handoff](docs/APP_FEEDBACK.md)
 and [attribution receipt](deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json).
-The reconciled baseline protects 1,638 files; the ordinary TypeScript/Astro
-preservation build passed for all of them.
+That release protected 1,638 files, all retained unchanged by the current baseline.
 
 Kai's preceding coach Overview release is preserved. It leads with a dated Team
 snapshot, count-matching review links, visible filters and a collapsed roster

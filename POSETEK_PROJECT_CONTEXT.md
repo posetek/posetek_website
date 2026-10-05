@@ -4,6 +4,22 @@ Reviewed on October 5, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
+## Current hosting and marketing snapshot (2026-10-05)
+
+Netlify's ordinary Git build published merged source `b776c32` as
+`6ac3d1c930af650008d83718` at 9:37:14 AM PDT. The application and feedback entries
+retain the preceding attribution release bytes; this publication updates marketing
+and adds runtime assets. All 1,638 prior protected file records are unchanged.
+The reconciled baseline now protects 1,697 files, including the 59 added assets.
+
+A local, ignored `.netlify/approved-marketing/manifest.json` captures the exact
+original Players/Coaches documents, their provider hashes and five live route
+hashes. The application-release build passed using this snapshot and kept both
+marketing documents byte-for-byte; all 55 release-guard tests passed. See
+[the snapshot receipt](deployment/MARKETING_SNAPSHOT_20261005.json).
+This preparation does not upload or publish the new application. Review the exact
+hosted draft and complete its backend/feature acceptance before publication.
+
 ## Local website source reconciliation (2026-10-05)
 
 The source integration preserves fetched main `0ad845e`, all local feature
@@ -22,7 +38,7 @@ All 27 pre-existing untracked duplicate files are preserved outside the commits.
 
 ## Prospective feedback account attribution (2026-10-05)
 
-The current website is `6ac395bfba35bceed566d26c`, source `5792b63`, published
+The latest application-changing release is `6ac395bfba35bceed566d26c`, source `5792b63`, published
 October 5, 2026 at 5:23:26 AM PDT. It preserves the concurrently published Kai
 Overview release by merging `0ad845e` before rebuilding. The exact reviewed
 artifact matched all 1,640 files in the 1,641-record provider inventory. Hosted
