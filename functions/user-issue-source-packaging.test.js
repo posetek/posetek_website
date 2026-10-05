@@ -20,7 +20,7 @@ function closure(manifest) {
 test("user-issue, workout and inherited Microsoft deploy packages include full local runtime dependency closure", () => {
   const workout = files("workout-notifications"), issue = files("user-issues"), microsoft = files("microsoft-email", workout);
   for (const manifest of [workout, issue, microsoft]) {
-    for (const dependency of ["user-issue-classification.js", "user-issue-summary.js", "user-issue-observations.js", "user-issue-request-identity.js"]) assert.ok(manifest.has(dependency));
+    for (const dependency of ["user-issue-classification.js", "user-issue-summary.js", "user-issue-observations.js", "user-issue-request-identity.js", "user-issue-notification-policy.js"]) assert.ok(manifest.has(dependency));
     closure(manifest);
   }
 });

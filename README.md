@@ -59,12 +59,37 @@ passed with 1,482 protected application/public files; that deployment/count is
 historical after the feedback release. The historical
 revision-121 results below do not establish the latest source coverage.
 
-Dylan alone receives alerts; Nolan and Taiyo retain shared workbook editing.
+Dylan alone is the approved recipient; Nolan and Taiyo retain shared workbook editing.
 Native Crashlytics export is configured On for the registered iOS app, but the
-owning-Mac/iPhone/TestFlight genuine crash acceptance gate remains held. Approval
-of the new Microsoft mailbox identity-conversion connection remains unconfirmed.
-The hourly Codex updater stays paused. No automatic outreach or historical Resend
-replay is included.
+owning-Mac/iPhone/TestFlight genuine crash acceptance gate remains held. At the
+preceding checkpoint, approval
+of the new Microsoft mailbox identity-conversion connection passed its separate
+read-only acceptance; the version-six tracker source is verified, while the
+identity settings cutover and retained-alias publication were still pending. The
+[historical verification checkpoint](deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
+records revision 266 and the capacity repair awaiting deployment and physical
+cloud workbook verification. It does not claim a fully refreshed tracker.
+Power Automate event intake and automatic cloud recovery operate independently
+of this chat. Codex and Dylan's computer are not required for ongoing capture,
+email delivery or shared-workbook updates. No automatic outreach or historical
+Resend replay is included.
+
+The October 4 validation now physically accepts **revision 365**: **789 actions,
+3,228 occurrences, 2,384 original email rows and four daily/status rows**. All
+**690 saved human records** remain attached to stable Action IDs. Guarded mailbox
+identity activation completed at **15:28:02.319 UTC**; the **17:09:52.135 UTC**
+post-identity proof verified all 3,228 exact sources with zero incomplete source
+authority. The older count of 34 described incomplete source authority, not 34
+unknown contacts. Unknown operators and unverified contacts remain explicit.
+Native publication, capture and recovery holds are restored. The final006 send
+attempt was refused at **17:15:41.837 UTC**, without apply, a send intent or a send;
+overall acceptance is false and genuine Dylan-only delivery remains open.
+Scoped Insights metadata supports 15 settled v4 rebuilds, with seven stale current
+manifests (including six v2), 428 missing current manifests and 17 ordinary
+unfinished testing markers still explicit. Read the
+[current validation handoff](docs/NOTIFICATION_PRODUCTION_VALIDATION.md) and
+[receipt](deployment/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json) for the
+dated source cutoffs, log review and remaining native and coach-workflow limits.
 
 Guided personal workouts were published as deployment `6abeaf5702a9c9983c7a41b9`, source
 `8956871`, published October 1, 2026 at 12:18:33 PM PDT. Players choose focus,
@@ -103,8 +128,8 @@ keeps actor and target athlete separate and preserves stable IDs, evidence and t
 team's triage notes.
 
 The Power Automate shared tracker is event driven, with an accepted Dylan-only
-delegated mailbox reader and independent cloud source catch-up. The old hourly
-Codex automation remains **paused**. Fresh cloud evidence matched revision 87 to
+delegated mailbox reader and independent cloud source catch-up. Fresh cloud
+evidence matched revision 87 to
 the exact frozen batch, allowing its existing receipt to be acknowledged without
 an Excel rewrite; the first ordinary retry returned revision 88. All eleven
 approved recent amendments delivered to Dylan alone with their original payloads

@@ -21,8 +21,9 @@ retain their earlier dated acceptance. The current application release is
 
 The event-driven issue tracker remains in **PoseTek > Technology > Website >
 User Issue Tracker > PoseTek Issue Tracker.xlsx**, with Nolan and Taiyo retaining
-editing access. They no longer receive new alert emails. The old hourly Codex
-updater stays paused. Capture, workbook publication, send acceptance and confirmed
+editing access. They no longer receive new alert emails. Power Automate event
+intake and automatic cloud recovery run independently of this chat, Codex and
+Dylan's computer. Capture, workbook publication, send acceptance and confirmed
 recipient delivery are distinct; the latest receipt supplies the verified cutoffs.
 
 ## Historical September 28 activation and Resend acceptance

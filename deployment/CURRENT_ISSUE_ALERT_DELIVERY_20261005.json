@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Enable current user issue alerts without replaying historical queues",
+  "sourceCommit": "a7b9e251a68a9dbe748af461ebf2781ebc63fed3",
+  "verifiedAt": "2026-10-05T12:07:45.501Z",
+  "functions": [
+    {
+      "name": "dispatchUserIssue",
+      "version": "10",
+      "sourceSha256": "6ffb7e91a53cfd50887b6de53f935748e59df3e40090d12e8bea7185c2847625",
+      "protectedConfigurationUnchanged": true,
+      "iamUnchanged": true
+    },
+    {
+      "name": "sweepUserIssues",
+      "version": "10",
+      "sourceSha256": "6ffb7e91a53cfd50887b6de53f935748e59df3e40090d12e8bea7185c2847625",
+      "protectedConfigurationUnchanged": true,
+      "iamUnchanged": true
+    },
+    {
+      "name": "dailyUserIssues",
+      "version": "10",
+      "sourceSha256": "6ffb7e91a53cfd50887b6de53f935748e59df3e40090d12e8bea7185c2847625",
+      "protectedConfigurationUnchanged": true,
+      "iamUnchanged": true
+    },
+    {
+      "name": "claimMicrosoftEmail",
+      "version": "4",
+      "sourceSha256": "3f6cfcb41acb159d3ed03746bae301d6c613b58b4ff5e5142d5091ba8aa918ab",
+      "protectedConfigurationUnchanged": true,
+      "iamUnchanged": true
+    }
+  ],
+  "activation": {
+    "verifiedAt": "2026-10-05T12:07:52.004Z",
+    "sendFrom": "2026-10-05T12:07:51.861Z",
+    "sendFromMillis": 1791202071861,
+    "sendEnabled": true,
+    "changedFields": [
+      "userIssueSettings/current.sendFromMillis",
+      "userIssueSettings/current.sendEnabled"
+    ],
+    "intakeAndNotificationPolicyPreserved": true,
+    "microsoftSettingsUnchanged": true,
+    "workoutSettingsUnchanged": true
+  },
+  "recipient": "dylank@posetek.net",
+  "sender": "alerts@posetek.net",
+  "flow": "015cd141-794f-4592-a1e1-886fa2b2484f",
+  "flowObservedOn": true,
+  "focusTests": {
+    "independentReviewPassed": true,
+    "passed": 86
+  },
+  "identity": {
+    "source": "Exact recorded Auth UID resolved by Firebase Admin",
+    "accountAndTargetSeparate": true,
+    "contactVerificationAndLookupTimeExplicit": true,
+    "unknownActorsAndLookupFailuresExplicit": true
+  },
+  "cadence": "Immediate first/new-account/new-athlete/escalation/recurrence; routine repeats in daily 9 AM Pacific summary; every captured instance retained in tracker",
+  "historicalQueueReplay": false,
+  "codexHourlyProcedureRequired": false,
+  "sharedTracker": "PoseTek/Technology/Website/User Issue Tracker/PoseTek Issue Tracker.xlsx",
+  "existingTrackerCaptureAndPublicationPreserved": true,
+  "deliveryEvidence": {
+    "existingWorkoutDeliveryConfirmedAt": "2026-10-05T02:11:15Z",
+    "existingWorkoutRecipient": "dylank@posetek.net",
+    "genuinePostActivationIssueDeliveryObserved": false,
+    "lastPostActivationQueryAt": "2026-10-05T12:09:34.012Z",
+    "postActivationJobsObserved": 0,
+    "limitation": "No genuine post-activation issue had arrived at this bounded check; no synthetic incident or historical replay was used."
+  },
+  "trackerObserved": {
+    "checkedAt": "2026-10-05T12:10:42.997Z",
+    "writerRevision": 588,
+    "sources": [
+      {
+        "source": "outlook",
+        "capturedThrough": "2026-10-05T12:04:04.771Z",
+        "publishedThrough": "2026-10-05T12:04:04.771Z",
+        "lastCheckedAtMillis": 1791201967864,
+        "lastErrorCode": null
+      },
+      {
+        "source": "backend",
+        "capturedThrough": "2026-10-05T12:04:04.756Z",
+        "publishedThrough": "2026-10-05T12:04:04.756Z",
+        "lastCheckedAtMillis": 1791201985466,
+        "lastErrorCode": null
+      }
+    ],
+    "evidenceScope": "Current backend checkpoints and writer state; no new physical workbook acceptance or new incident delivery claimed."
+  }
+}

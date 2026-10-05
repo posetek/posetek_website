@@ -5,18 +5,26 @@ Power Automate Outlook connection. It does not establish an Exchange application
 RBAC role. No import, mailbox read, deployment, setting change or shared-workbook
 cutover is implied by the offline tests.
 
-For the October 2–3 correction, the tracker six-function source release is version
+The dedicated Graph identity flow has since passed read-only semantic acceptance,
+and the six tracker functions passed exact version-six source/configuration/IAM
+checks. Identity settings and retained-alias publication remain pending. Use the
+[current verification checkpoint](../../deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
+for the capacity repair and remaining physical cloud acceptance gates. The
+following version-five description records the earlier correction; its reader
+header alone remains insufficient proof of mailbox identity.
+
+For the October 2–3 correction, the tracker six-function source release was version
 5 with the mail-identity cutover flag explicitly disabled. The old reader's
 ImmutableId preference and corrected inputs were saved through code view; its
 actual export passed exact runtime-definition review and the flow is On. These
 checks do not prove canonical mailbox IDs or same-item alias equivalence. The
-dedicated Graph connection and semantic acceptance remain pending. Do not
+dedicated Graph connection and semantic acceptance were still pending. Do not
 claim all reader/translation changes passed, or enable the separate Graph ID
 translation route from a generated ZIP. Preserve the existing delegated route,
 original email rows and unconfirmed aliases until exact identity proof passes.
 See [the current handoff](../../docs/NOTIFICATION_COVERAGE_CORRECTION.md) and
 [correction receipt](../../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
-for that pending state and later acceptance. No broader mailbox authorization
+for that dated pending state. No broader mailbox authorization
 is inferred.
 
 ## Historical initial reader acceptance

@@ -1,5 +1,29 @@
 # User issue alerts
 
+October 5 current issue-send update: [new-only delivery handoff](CURRENT_ISSUE_ALERT_DELIVERY.md) and [verified source/activation receipt](../deployment/CURRENT_ISSUE_ALERT_DELIVERY_20261005.json). New issue sending is enabled with a send-only cutoff; historical queues stay untouched. The dated acceptance and holds below remain historical records.
+
+See [the current production validation handoff](NOTIFICATION_PRODUCTION_VALIDATION.md)
+for the preserved revision-266 hold, verified source releases for all 31 approved
+endpoints, and tracker storage version 2 activated and read back at
+`2026-10-04T07:04:50.217Z`. The first-plus-daily policy was committed at
+`2026-10-04T07:10:32.256247Z` and read back without a second commit. Its first
+backlog page examined 25 jobs, deferred 10 and preserved 15; the completed audit
+later covered 130 pages, with 3,226 examined, 1,152 deferred and 2,074 preserved.
+At the October 4 **17:09:52.135 UTC** post-identity checkpoint, revision **365**
+passed physical and identity acceptance: **789 actions, 3,228 occurrences, 2,384
+original email rows and four daily/status rows**, preserving all **690 saved human
+records**. All 3,228 sources were exact, with zero incomplete source authority.
+The historical 34 counted incomplete source authority, not unknown contacts;
+187 recorded-actor rows retain unavailable Auth display names, with 148 verified
+and 39 unverified email rows; 3,041 unknown-actor rows remain unknown.
+Guarded identity activation completed at **15:28:02.319 UTC**. Native publication,
+capture and recovery holds are restored. Final006 was refused at
+**17:15:41.837 UTC**, with no apply, intent or send. Sending and genuine Dylan-only
+delivery remain unaccepted; overall acceptance is false. See the
+[partial validation receipt](../deployment/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json).
+This automation branch does not establish the latest
+primary-site or native application release.
+
 The approved recipient of new incident, status-change, daily-summary and workout
 emails is `dylank@posetek.net`. Nolan and Taiyo retain shared Excel editing access.
 Microsoft 365 sends application alerts from `alerts@posetek.net` through the
@@ -27,12 +51,26 @@ notifications to their underlying incident and retains proposed fixes. Team edit
 to Status, Owner, Due and Fix notes must be preserved on refresh. A repeated alert
 is evidence of recurrence, not automatically another distinct affected user.
 
-The old hourly Codex updater remains paused. Cloud connections and Dylan's
-licensed Power Automate account must remain available; his computer can be off.
+Power Automate event intake and automatic cloud recovery operate independently
+of this chat and Codex. Cloud connections and Dylan's licensed Power Automate
+account must remain available; his computer can be off.
 The native writer preserves human fields by stable Action ID and rejects changed
 machine rows or revisions. Save edits and allow them to reach the cloud. A lock or
 conflict defers publication. Capture and publication have separate checkpoints;
 a successful flow badge does not establish complete source coverage.
+At the initial storage-version-2 checkpoint, revision 266 remained the accepted
+master. Later physical acceptance reached revision 365 as recorded above; its
+Outlook/backend capture and publication cutoffs both reached their respective
+**16:58:02.536/16:58:02.544 UTC** boundaries. Later arrivals require fresh evidence.
+During a validation hold, intake can capture records that have not yet reached
+the workbook. Every captured repeat is retained independently of whether it gets
+an immediate email. The retired hourly Codex procedure is not a dependency.
+
+Ordinary successful workout completion is a separate notification to Dylan and
+does not create an issue-tracker record. Workout failures and processing errors
+belong in the issue tracker. Workout delivery remains unpaused by the issue-email
+hold. Its player and organization/team label do not constitute a dedicated
+assigned-coach lookup.
 
 ## Coverage and limits
 
@@ -116,6 +154,18 @@ staff/admin access. Anonymous reports are labeled anonymous, not guessed identit
 
 ## Delivery contract
 
+The first-plus-daily policy is active; final006 did not accept issue sending.
+Its immediate-notice criteria cover the first issue, a new recorded reporting
+account or target athlete, severity escalation and recurrence after Fixed/Verified. Routine
+repeats remain individual captured instances and go into the daily summary.
+Status changes remain separate; Verified recovery requires saved fix and retest
+evidence. Previously unsent pre-cutover jobs require audited deferral or review,
+so restoring sending must not create a delayed-message burst. Exact source
+verification has passed for the ten user-issue and three Microsoft-email endpoints.
+Policy activation/readback and the held backlog audit passed without a second commit.
+Approved sending resumption and genuine Dylan-only delivery remain
+separate acceptance steps; active policy or storage settings do not prove a send.
+
 Legacy primary occurrence keys bind the original actor and event/request ID.
 Server-owned source claims and bounded branch registries preserve replay identity.
 Client/server observations share an occurrence and send permission only when the
@@ -179,13 +229,16 @@ the verified admin callable. Canonical rules remain owned by the mobile reposito
 | `userIssueRequestIdentities` | Bounded server-owned request branches; conflicting or ambiguous evidence remains distinct |
 | `userIssueDays` | Daily counts plus actor/issue aggregation subcollections |
 | `userIssueOutbox` | Frozen email job, provider claim/trace state and retained historical `receipts` |
+| `userIssueNotificationState` / `userIssueNotificationAudience` | Active first/change cadence and exact recorded audience evidence; server-only, with issue sending held during audited recovery |
 | `userIssueLimits` | Bounded intake counters |
 
 Missing/invalid settings fail closed. Activation requires `enabled: true`,
 `sendEnabled: true`, and a positive, nonfuture `activatedAtMillis`. A pilot uses a
 nonempty `testUids` array; empty/malformed arrays disable intake. Server receipts
 before activation are excluded, including delayed trigger redeliveries. Delayed
-new receipts preserve the original occurrence time. There is no historical scan.
+new receipts preserve the original occurrence time. Intake does not recreate
+historical incidents; the tracker has separate bounded source/outbox recovery,
+and approved pre-cutover deferral never replays historical Resend jobs.
 Disable intake and sending to stop the feature, or only sending to retain intake.
 Never replay delivered jobs or blindly reset uncertain provider attempts.
 

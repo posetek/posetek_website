@@ -4,7 +4,7 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 admin.initializeApp();
 const { normalizeIssueTracker } = require("./issue-tracker-normalize");
-// Enable only in a separately verified package after the fixed-mailbox Graph
-// translation flow and its endpoint secret pass tenant/caller acceptance.
-const mailIdentityEnabled = false;
+// Capability only: settings still require exact fixed-mailbox flow acceptance
+// and a guarded capture-binding migration before the translator can be used.
+const mailIdentityEnabled = true;
 Object.assign(exports, require("./issue-tracker-bridge-entrypoints").createIssueTrackerBridgeEntrypoints(functions, admin, { normalize: normalizeIssueTracker, mailIdentityEnabled }));

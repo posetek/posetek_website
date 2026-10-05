@@ -182,13 +182,103 @@ remains outstanding. Automated mobile layout checks do not establish player
 comprehension or the 30–60-second target. Seven days is a pilot cadence; native
 invitations still require a separate mobile release.
 
+## Current issue alert delivery (2026-10-05)
+
+October 5 current issue-send update: [new-only delivery handoff](docs/CURRENT_ISSUE_ALERT_DELIVERY.md) and [verified source/activation receipt](deployment/CURRENT_ISSUE_ALERT_DELIVERY_20261005.json). New issue sending is enabled with a send-only cutoff; historical queues stay untouched. The dated acceptance and holds below remain historical records.
+
+## Historical automation production validation (2026-10-03–04)
+
+The `codex/user-issue-alerts` automation source is now integrated with the current
+website source. These dated automation receipts do not change the current website
+publication recorded above, training content, rules or native application bytes.
+Historical receipts below remain records of their respective checkpoints.
+
+All 31 approved source endpoints passed exact deployed-source, configuration and
+IAM checks: twelve Insights, six tracker at version 7, ten user-issue and three
+Microsoft-email endpoints. Unrelated functions and the full release chain were
+preserved. Storage version 2 was activated at `2026-10-04T07:04:50.217Z`. The
+first-plus-daily policy was committed at `2026-10-04T07:10:32.256247Z` and reconciled
+without a second commit. Its held email-job audit completed 130 pages at that
+original cutoff: 3,226 examined, 1,152 deferred and 2,074 preserved, with no email
+or workbook writes by the audit. Original envelopes, consumed claims, receipts
+and historical Resend jobs remain intact. Issue sending is still disabled.
+
+The revision-266 archive protects all 690 saved human records and 3,585 pending
+tracker tickets at `2026-10-04T04:14:30.165Z`. First post-cutover physical cloud
+acceptance at `2026-10-04T09:17:13.707Z` verified revision 267: 691 actions,
+1,319 instances, 804 original email rows and three daily/status rows. All 267
+native receipts, machine hashes and formulas passed. All 690 saved human records
+survived by stable Action ID; fresh readback confirmed the same cloud bytes at
+`09:42:35.564Z` and saved human fields at `09:43:47.033Z`.
+
+The native queue resumed RUNNING at `2026-10-04T09:57:43.847Z`, with readback at
+`09:58:01.150Z`, through exactly one empty resume request. The original pause
+journal, routing, rate limits and retry configuration remain unchanged. The
+`10:00:56.037Z` backend read observed revision 268 and an active native writer;
+that is not fresh physical acceptance of revision 268 or complete catch-up.
+Outlook/backend capture reached approximately `09:54Z`, while their respective
+published checkpoints remained `00:34:05.451Z` and `00:34:05.351Z`. Capture and
+publication stay separate, and the existing outstanding-delivery scan remains
+active. Those were incomplete gates at that dated checkpoint; the later accepted
+publication and identity state is recorded below. Read the [validation handoff](docs/NOTIFICATION_PRODUCTION_VALIDATION.md)
+and [partial receipt](deployment/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json).
+
+The later accepted **revision 365** has **789 actions, 3,228 occurrences, 2,384
+original email rows and four daily/status rows**, with all **690 saved human
+records** preserved. Backend evidence is dated **17:03:17.750 UTC**, physical cloud
+acceptance **17:06:03.434 UTC**, human-field acceptance **17:09:07.313 UTC**, and
+post-identity uniqueness **17:09:52.135 UTC**. Guarded mailbox identity activation
+completed at **15:28:02.319 UTC**. All 3,228 occurrence sources were exact with zero
+incomplete source authority; 187 recorded-actor rows retain unavailable Auth display
+names, with 148 verified and 39 unverified email rows, while 3,041 unknown-actor
+rows remain unknown. Outlook/backend capture and publication align through
+**16:58:02.536/16:58:02.544 UTC**, without a claim about later arrivals.
+Native publication, capture and recovery holds are restored. Final006 was refused
+at **17:15:41.837 UTC** without apply, intent or send; overall acceptance remains
+false and genuine Dylan-only delivery remains open.
+
+Insights metadata at **16:58:29.159 UTC** supports 15 actual settled v4 rebuilds.
+Seven current manifests remain stale, including six v2, and 428 player-parent
+documents have no current manifest; 17 pending testing markers are ordinary
+open/incomplete work. The full scoped **07:05–17:18 UTC** log review found 29 SDK
+snapshot-clock warnings and no ERROR-or-higher records. This is scoped metadata
+and log evidence, not all-account convergence, verified payloads, user outcomes or
+incident resolution. No native release or dedicated assigned-coach lookup is added.
+
+Dylan is the sole recipient of new application and workout emails. Both Google
+Cloud fallback policies were On with Dylan alone at `08:38:52.808Z`; Nolan and
+Taiyo's shared tracker editing access was confirmed at `08:00Z`. A fully paginated
+Outlook review of all subjects/read states from `08:35Z` inclusive to `09:38:30Z`
+exclusive found no messages; it does not establish delivery outside that interval.
+Exact-UID reporter/contact is separate from target athlete and attempted action.
+The 39 verified automated-service mail joins keep unknown operators unknown;
+the older count of 34 described incomplete source-authority rows, not unknown or
+pending contacts. Revision 365 has zero such incomplete rows; unknown contacts
+and six historical target labels remain unconfirmed. Diagnostic/device records do not prove a crash.
+
+Every captured occurrence is retained, with first/meaningful-change notices and
+a daily summary of routine repeats once sending is accepted. Manual Excel
+Status/Owner/Due/Fix notes stay attached to stable Action IDs and are never
+automatically reopened or resolved. Excel-only Resolved does not authorize an
+immediate recurrence email; admin Fixed/Verified recurrence requires recorded
+transition evidence. Mail-only Google repeats retain individual email rows without
+inventing backend instances or resolving human tasks. Ordinary successful workout
+emails remain separate from the issue-only tracker. The canonical master is
+**PoseTek → Technology → Website → User Issue Tracker → PoseTek Issue Tracker.xlsx**.
+Cloud intake, recovery, email and native publication do not depend on this chat,
+Codex, an hourly Codex procedure or Dylan's computer. Workout settings are
+unchanged and workout delivery is unpaused. No historical Resend replay or
+automated user outreach is included. Native device/crash acceptance and
+uninstrumented coach-workflow limits remain explicit; a coach name in a workout
+team label is not a dedicated assigned-coach lookup.
+
 ## Historical notification coverage correction (2026-10-02–03)
 
 The preceding authenticated application was Netlify deployment
 `6ac06e0d420f2b6b34129fb5`, from frozen source digest
 `e7ad1aaa6b2b87b17b8c6885ea263e35170b86e95759e304bc3cdb8244876e88`.
 Full provider inventory and served-content checks passed for 1,485 files,
-preserving current marketing source, protected files and platform configuration.
+preserving that release's marketing source, protected files and platform configuration.
 Baseline adoption passed and protects 1,482 application/public files; its exact
 verification result is in
 [the correction receipt](deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json).
@@ -207,11 +297,19 @@ not unique-user counts, and generic diagnostic uploads do not prove a crash or
 interrupted workout.
 
 Dylan remains the sole alert recipient; Nolan and Taiyo retain editing access to
-the shared tracker. The hourly Codex updater stays paused. Crashlytics Cloud
+the shared tracker. Power Automate event intake and automatic cloud recovery
+update it independently of this chat; Codex and Dylan's computer are not required
+for ongoing capture, email delivery or workbook updates. Crashlytics Cloud
 Logging export is On for the one registered iOS app, but genuine symbolicated
 device export and owning-Mac/iPhone/TestFlight acceptance remain held. The new
-Microsoft mailbox identity-conversion connection approval is unconfirmed; retain
-all historical email rows and unconfirmed aliases. No automatic outreach,
+Microsoft mailbox identity-conversion flow passed read-only semantic acceptance,
+and all six tracker endpoints passed exact version-six source/configuration/IAM
+checks. The additive identity settings transaction remained pending at that
+checkpoint. Revision 266's next batch exceeded the existing document limit;
+subsequent source repair and acceptance gates are recorded in the validation
+handoff above. Read
+[that verification checkpoint](deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
+and preserve every historical email row and unconfirmed alias. No automatic outreach,
 historical Resend replay, native release or training-rule change is included.
 Read [the correction handoff](docs/NOTIFICATION_COVERAGE_CORRECTION.md) for current
 contracts and limits; final workbook/source cutoffs come from its production
@@ -276,7 +374,7 @@ independent outstanding-delivery scan. Use the
 [refinement receipt](deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json) for those
 operational outcomes and exact coverage, and
 [the refinement handoff](docs/NOTIFICATION_OUTREACH_REFINEMENT.md) for the contract.
-The hourly Codex updater remains **PAUSED**; native cloud batches are the sole
+The Codex updater has been removed; native cloud batches are the sole
 writer for the shared master. Preserve the historical receipts below as records
 of their earlier verification times.
 
@@ -424,9 +522,9 @@ verified revision eight at `2026-10-02T10:53:58.855Z`, as recorded above. Never 
 the old whole-file renderer or reinitialize this native master. New source coverage
 must come from verified native batch and publication receipts.
 
-At Dylan's explicit request, `update-posetek-issue-tracker` remains **PAUSED**.
-Do not restart the old hourly procedure or scheduler; earlier instructions to keep
-it active are superseded. The production email route uses Microsoft for new
+At Dylan's explicit request, the old Codex tracker procedure was removed.
+Power Automate and the existing backend provide ongoing cloud operation;
+earlier instructions to run a desktop updater are superseded. The production email route uses Microsoft for new
 alerts, and the replacement tracker is active with independent revision-eight
 publication verified. Catch-up continues from each source's verified publication
 cutoff; complete publication is not claimed. Never run both workbook writers

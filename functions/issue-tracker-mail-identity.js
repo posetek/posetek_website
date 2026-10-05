@@ -2,17 +2,19 @@
 const { digest, fail } = require("./issue-tracker-bridge-model");
 const MAILBOX = "dylank@posetek.net", TYPES = ["restId", "restImmutableEntryId"];
 const id = value => typeof value === "string" && value.length > 0 && value.length <= 1024 && /^[A-Za-z0-9_+/=-]+$/.test(value);
-function translationRequest(inputIds, sourceIdType) {
-  if (!Array.isArray(inputIds) || inputIds.length < 1 || inputIds.length > 100 || new Set(inputIds).size !== inputIds.length || inputIds.some(value => !id(value)) || !TYPES.includes(sourceIdType)) fail("tracker_graph_invalid_translation_request");
-  return { inputIds: [...inputIds], sourceIdType, targetIdType: "restImmutableEntryId" };
+function translationRequest(inputIds, sourceIdType, targetIdType = "restImmutableEntryId") {
+  if (!Array.isArray(inputIds) || inputIds.length < 1 || inputIds.length > 100 || new Set(inputIds).size !== inputIds.length || inputIds.some(value => !id(value)) || !TYPES.includes(sourceIdType) || !TYPES.includes(targetIdType) || sourceIdType === targetIdType) fail("tracker_graph_invalid_translation_request");
+  return { inputIds: [...inputIds], sourceIdType, targetIdType };
 }
 function translationResult(request, response) {
-  translationRequest(request.inputIds, request.sourceIdType);
-  if (request.targetIdType !== "restImmutableEntryId" || !Array.isArray(response?.value) || response.value.length !== request.inputIds.length) fail("tracker_graph_invalid_translation_response");
-  const result = new Map();
+  translationRequest(request.inputIds, request.sourceIdType, request.targetIdType);
+  if (!Array.isArray(response?.value) || response.value.length !== request.inputIds.length) fail("tracker_graph_invalid_translation_response");
+  // Within a batch require a bijection. Independently verified historical
+  // aliases may converge through separate exact one-item translations.
+  const result = new Map(), targets = new Set();
   for (const item of response.value) {
-    if (!item || !request.inputIds.includes(item.sourceId) || result.has(item.sourceId) || !id(item.targetId) || item.errorDetails || item.error) fail("tracker_graph_invalid_translation_response");
-    result.set(item.sourceId, item.targetId);
+    if (!item || !request.inputIds.includes(item.sourceId) || result.has(item.sourceId) || !id(item.targetId) || targets.has(item.targetId) || item.errorDetails || item.error) fail("tracker_graph_invalid_translation_response");
+    result.set(item.sourceId, item.targetId); targets.add(item.targetId);
   }
   return result;
 }

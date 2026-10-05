@@ -8,6 +8,8 @@ const { classifyOccurrence, occurrenceTitle, validCallableOutcome } = require(".
 const { reportingSummary, deliveryReviewSummary } = require("./user-issue-summary");
 const Observations = require("./user-issue-observations");
 const RequestIdentity = require("./user-issue-request-identity");
+const NotificationPolicy = require("./user-issue-notification-policy");
+const SendFrontier = require("./user-issue-send-frontier");
 const LEASE = 120000, RETRY = 23 * 3600000;
 function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = Date.now, logger = console }) {
   const contacts = createIssueContactEnrichment({ db, auth: authProvider, now });
@@ -124,7 +126,8 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
       const classification = classifyOccurrence({ ...event, source: origin.source, reporterUid: who.uid });
       const title = occurrenceTitle(event, classification);
       const label = enrichment.contact?.name || who.name || (who.uid ? "Signed-in user" : "Unknown actor");
-      const lines = [`Platform: ${event.platform}; build: ${event.build}; device: ${event.device}`,
+      const lines = [`Occurrence reference: ${occurrenceId}`,
+        `Platform: ${event.platform}; build: ${event.build}; device: ${event.device}`,
         `Error code: ${event.code}`, `Occurred: ${M.dateText(event.occurredAtMillis)}`, `Received: ${M.dateText(at)}`,
         ...(classification.effectiveKind === "diagnostic" ? ["Evidence classification: Diagnostic upload; subtype unconfirmed. This record does not establish a crash or an interrupted session."] : []),
         ...(classification.scope === "automated_service" ? ["Evidence scope: Automated service occurrence; no affected operator is established by this service record."] : []),
@@ -135,6 +138,7 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
       tx.create(occurrenceRef, { ...event, id: occurrenceId, issueId: fingerprint, reporterUid: who.uid, reporterName: who.name,
         authenticatedSnapshot: who.authenticatedSnapshot || null, currentContact: enrichment.contact, contactLookup: enrichment.lookup,
         player: who.player || null, source: origin.source, sourceReference: origin.reference || null, classification,
+        ...(reopened ? { notificationRecurrence: { schemaVersion: 1, previousState: issue.state, previousUpdatedAtMillis: issue.updatedAtMillis } } : {}),
         ...(event.requestId ? { requestCorrelation: { schemaVersion: 1, source: RequestIdentity.SOURCE, primaryOccurrenceId: primaryId,
           mode: occurrenceId === primaryId ? "primary" : "separate_attempt", reason: plan.reason || null } } : {}),
         sourceObservationSummary: Observations.initialSummary(sourceObservation), receivedAtMillis: at });
@@ -199,7 +203,11 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
       if (issue.state === data.state) return { unchanged: true };
       const id = M.hash([data.issueId, issue.updatedAtMillis, data.state]);
       tx.update(ref, { state: data.state, fixRef, verification, updatedBy: auth.uid, updatedAtMillis: Math.max(at, issue.updatedAtMillis + 1) });
-      tx.create(jobRef(id), { id, issueId: data.issueId, type: "status", actorUid: auth.uid, title: `${issue.title} — ${data.state}`, lines: [`Status changed from ${issue.state} to ${data.state}.`, `Updated: ${M.dateText(at)}`], createdAtMillis: at, status: "pending", dueAtMillis: at, attempts: 0 });
+      tx.create(jobRef(id), { id, issueId: data.issueId, type: "status", actorUid: auth.uid, title: `${issue.title} — ${data.state}`, lines: [`Status changed from ${issue.state} to ${data.state}.`, `Updated: ${M.dateText(at)}`,
+        ...(fixRef ? [`Recorded fix reference: ${fixRef}`] : []), ...(data.state === "verified" ? [`Recorded retest evidence: ${verification}`] : []),
+        ...(data.state === "fixed" ? ["A fix is recorded; recovery remains unconfirmed until verification evidence is recorded."] : [])],
+        notificationTransition: { schemaVersion: 1, from: issue.state, to: data.state, changedBy: auth.uid, fixRef, verification },
+        createdAtMillis: at, status: "pending", dueAtMillis: at, attempts: 0 });
       tx.set(dayRef, { changes: (day.changes || 0) + 1, incidents: day.incidents || 0, lastAtMillis: at }, { merge: true });
       return { updated: true };
     });
@@ -209,6 +217,7 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
     const claimed = await db.runTransaction(async tx => {
       const at = now(), settings = M.setting((await tx.get(settingsRef)).data(), at), ref = jobRef(id), job = (await tx.get(ref)).data();
       if (!settings.enabled || settings.sendEnabled !== true || !job || !["pending", "sending"].includes(job.status) || !job.dueAtMillis || job.dueAtMillis > at) return null;
+      if (!SendFrontier.allows(settings, job, at)) return null;
       const deliveryProvider = Microsoft.providerFor(job, settings);
       const microsoftConfig = deliveryProvider === "microsoft" ? (await tx.get(db.doc(Microsoft.SETTINGS))).data() : null;
       if (!deliveryProvider || deliveryProvider === "microsoft" && (!Microsoft.enabled(microsoftConfig, "issue", id, job.createdAtMillis, at) || job.microsoft?.claimedAtMillis)) return null;
@@ -219,6 +228,10 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
         tx.update(ref, { status: "needs_review", dueAtMillis: null, failureCode: "provider_recipient_removed" });
         return null;
       }
+      let policy;
+      try { policy = await NotificationPolicy.prepare({ tx, db, settings, job: { ...job, id, deliveryProvider }, at }); }
+      catch (error) { NotificationPolicy.review(tx, ref, error); return null; }
+      if (policy?.decision.action === "daily_summary") { NotificationPolicy.defer(tx, ref, policy, { ...job, id, deliveryProvider }, at); return null; }
       const route = deliveryProvider === "microsoft" && !job.microsoft ? Microsoft.freeze("issue", id, rawPayload, microsoftConfig, at) : { deliveryProvider, payload: rawPayload };
       const next = { ...route, leaseId: crypto.randomUUID(), firstAttemptAtMillis: job.firstAttemptAtMillis || at,
         attempts: (job.attempts || 0) + 1, status: "sending", dueAtMillis: at + LEASE, uncertain: job.uncertain === true || job.status === "sending" };
@@ -240,33 +253,110 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
     });
   }
   async function sweep() {
+    const at = now(), settings = M.setting((await settingsRef.get()).data(), at), frontier = SendFrontier.configuration(settings, at);
+    if (!settings.enabled || settings.sendEnabled !== true || !frontier.valid) return { checked: 0 };
+    if (frontier.configured) {
+      // Single-field createdAt index only. A bounded rotating scan excludes every
+      // historical job without changing it; old due jobs cannot occupy the first
+      // forty slots. New writes also retain their normal immediate trigger.
+      const scanRef = db.doc("userIssueLimits/sendFrontierSweep"), saved = (await scanRef.get()).data();
+      const validCursor = cursor => cursor && Number.isSafeInteger(cursor.at) && cursor.at >= frontier.fromMillis
+        && cursor.at <= saved?.upperMillis && /^[a-f0-9]{64}$/.test(cursor.id || "");
+      const resume = saved?.schemaVersion === 1 && saved.sendFromMillis === frontier.fromMillis
+        && Number.isSafeInteger(saved.upperMillis) && saved.upperMillis >= frontier.fromMillis && saved.upperMillis <= at && validCursor(saved.cursor);
+      const upperMillis = resume ? saved.upperMillis : at;
+      let cursor = resume ? saved.cursor : null, complete = false, examined = 0, pages = 0;
+      const eligible = [];
+      while (pages < 20 && eligible.length < 40 && !complete) {
+        let query = db.collection("userIssueOutbox").where("createdAtMillis", ">=", frontier.fromMillis)
+          .where("createdAtMillis", "<=", upperMillis).orderBy("createdAtMillis").orderBy("__name__");
+        if (cursor) query = query.startAfter(cursor.at, cursor.id);
+        const page = await query.limit(100).get(); pages++;
+        let consumed = 0;
+        for (const row of page.docs) {
+          const job = row.data();
+          if (!/^[a-f0-9]{64}$/.test(row.id) || !Number.isSafeInteger(job.createdAtMillis) || job.createdAtMillis < frontier.fromMillis
+            || job.createdAtMillis > upperMillis || cursor && (job.createdAtMillis < cursor.at || job.createdAtMillis === cursor.at && row.id <= cursor.id)) throw new Error("issue_send_scan_invalid_page");
+          cursor = { at: job.createdAtMillis, id: row.id }; consumed++; examined++;
+          if (["pending", "sending"].includes(job.status) && job.dueAtMillis > 0 && job.dueAtMillis <= at && SendFrontier.allows(settings, job, at)) eligible.push(row.id);
+          if (eligible.length === 40) break;
+        }
+        complete = consumed === page.size && page.size < 100;
+      }
+      for (let i = 0; i < eligible.length; i += 4) await Promise.all(eligible.slice(i, i + 4).map(dispatch));
+      await db.runTransaction(async tx => {
+        const current = (await tx.get(scanRef)).data(), currentSettings = (await tx.get(settingsRef)).data();
+        if (Microsoft.canonical(current || null) !== Microsoft.canonical(saved || null)
+          || currentSettings?.sendFromMillis !== frontier.fromMillis) return;
+        tx.set(scanRef, { schemaVersion: 1, sendFromMillis: frontier.fromMillis, upperMillis: complete ? null : upperMillis,
+          cursor: complete ? null : cursor, lastCheckedAtMillis: now(), examined, complete });
+      });
+      return { checked: eligible.length, examined, pages, complete };
+    }
     const rows = await db.collection("userIssueOutbox").where("dueAtMillis", ">", 0).where("dueAtMillis", "<=", now()).orderBy("dueAtMillis").limit(40).get();
     for (let i = 0; i < rows.docs.length; i += 4) await Promise.all(rows.docs.slice(i, i + 4).map(row => dispatch(row.id)));
     return { checked: rows.size };
   }
+  // Maintenance-only server helper. It never wakes a flow or enables sending.
+  // The caller records each returned page in its private recovery audit.
+  async function deferBacklogPage({ cursor = null, limit = 40 } = {}) {
+    if (cursor !== null && !/^[a-f0-9]{64}$/.test(cursor) || !Number.isSafeInteger(limit) || limit < 1 || limit > 40) throw new Error("notification_backlog_page_invalid");
+    const settings = (await settingsRef.get()).data(), policy = NotificationPolicy.configuration(settings, now());
+    if (!policy || settings?.sendEnabled !== false) throw new Error("notification_backlog_requires_send_hold");
+    let query = db.collection("userIssueOutbox").orderBy("__name__").limit(limit);
+    if (cursor) query = query.startAfter(cursor);
+    const page = await query.get(); let deferred = 0, preserved = 0;
+    for (const row of page.docs) {
+      if (!/^[a-f0-9]{64}$/.test(row.id) || cursor && row.id <= cursor) throw new Error("notification_backlog_page_nonadvancing");
+      const result = await db.runTransaction(async tx => {
+        const currentSettings = (await tx.get(settingsRef)).data(), currentPolicy = NotificationPolicy.configuration(currentSettings, now());
+        const job = (await tx.get(row.ref)).data();
+        if (!currentPolicy || currentSettings?.sendEnabled !== false || currentPolicy.namespace !== policy.namespace) throw new Error("notification_backlog_hold_changed");
+        if (!job || !["pending", "sending"].includes(job.status) || Microsoft.providerFor(job, currentSettings) !== "microsoft"
+          || Microsoft.hasSendEvidence(job) || job.createdAtMillis >= policy.activatedAtMillis) return false;
+        const prepared = await NotificationPolicy.prepare({ tx, db, settings: currentSettings, job: { ...job, id: row.id, deliveryProvider: "microsoft" }, at: now() });
+        if (prepared?.decision.reason !== "backlog_before_cutover") throw new Error("notification_backlog_decision_invalid");
+        NotificationPolicy.defer(tx, row.ref, prepared, job, now()); return true;
+      });
+      if (result) deferred++; else preserved++;
+      cursor = row.id;
+    }
+    return { examined: page.size, deferred, preserved, cursor: page.size < limit ? null : cursor,
+      enumerationComplete: page.size < limit, policyNamespace: policy.namespace, sendEnabled: false };
+  }
   async function daily() {
-    const at = now(), period = M.previousPeriod(at), ref = db.doc(`userIssueDays/${period}`), id = M.hash(["daily", period]);
-    const [settingsSnapshot, daySnapshot, existingJob] = await Promise.all([settingsRef.get(), ref.get(), jobRef(id).get()]);
+    const at = now(), period = M.previousPeriod(at), ref = db.doc(`userIssueDays/${period}`);
+    const settingsSnapshot = await settingsRef.get(), frontier = SendFrontier.configuration(settingsSnapshot.data(), at), bounds = M.periodBounds(period);
+    if (!frontier.valid || frontier.configured && frontier.fromMillis >= bounds.upper) return;
+    // A prior full-day summary remains immutable. The new partial first window
+    // gets its own deterministic identity, containing only post-frontier evidence.
+    const id = M.hash(frontier.configured ? ["daily", period, "send-from", frontier.fromMillis] : ["daily", period]);
+    const [daySnapshot, existingJob] = await Promise.all([ref.get(), jobRef(id).get()]);
     const before = daySnapshot.data();
     // Existing summaries and their frozen payload/receipts remain historical.
     if (!M.setting(settingsSnapshot.data(), at).enabled || !before || existingJob.exists || !(before.incidents || before.changes)) return;
-    const [summary, deliveryReview] = await Promise.all([reportingSummary(db, period), deliveryReviewSummary(db)]);
-    if (summary.occurrences !== (before.incidents || 0)) throw Object.assign(new Error("summary_occurrence_count_mismatch"), { code: "summary_occurrence_count_mismatch" });
-    const counts = await Promise.all(["new", "investigating", "fixed"].map(state => db.collection("userIssues").where("state", "==", state).count().get()));
+    const [summary, deliveryReview] = await Promise.all([reportingSummary(db, period, { fromMillis: frontier.configured ? frontier.fromMillis : null }), frontier.configured ? null : deliveryReviewSummary(db)]);
+    if (!frontier.configured && summary.occurrences !== (before.incidents || 0)) throw Object.assign(new Error("summary_occurrence_count_mismatch"), { code: "summary_occurrence_count_mismatch" });
+    if (frontier.configured && !(summary.occurrences || summary.statusChanges)) return;
+    const counts = frontier.configured ? [] : await Promise.all(["new", "investigating", "fixed"].map(state => db.collection("userIssues").where("state", "==", state).count().get()));
     await db.runTransaction(async tx => {
       const day = (await tx.get(ref)).data(), job = await tx.get(jobRef(id));
       const settings = M.setting((await tx.get(settingsRef)).data(), now());
       if (!settings.enabled) return;
+      if (!SendFrontier.configuration(settings, now()).valid || settings.sendFromMillis !== settingsSnapshot.data()?.sendFromMillis) return;
       if (!day || job.exists || !(day.incidents || day.changes)) return;
-      if ((day.incidents || 0) !== summary.occurrences || day.lastAtMillis !== before.lastAtMillis || (day.changes || 0) !== (before.changes || 0)) throw Object.assign(new Error("summary_day_changed"), { code: "summary_day_changed" });
-      tx.create(jobRef(id), { id, type: "daily", actorUid: settings.testUids?.[0] || null, title: `Issue evidence: reporting day ${period}`, summary, deliveryReview, lines: ["Reporting window: 9 AM Pacific to 9 AM Pacific; counts use server receipt time.",
-        `${summary.occurrences} captured issue and diagnostic occurrences; ${summary.crashes} confirmed crashes; ${summary.reports} user-submitted reports; ${summary.interruptions} explicit interruption records; ${day.changes || 0} status changes.`,
+      if ((!frontier.configured && (day.incidents || 0) !== summary.occurrences) || day.lastAtMillis !== before.lastAtMillis || (day.changes || 0) !== (before.changes || 0)) throw Object.assign(new Error("summary_day_changed"), { code: "summary_day_changed" });
+      tx.create(jobRef(id), { id, type: "daily", actorUid: settings.testUids?.[0] || null, title: `Issue evidence: reporting day ${period}`, summary, deliveryReview, lines: [frontier.configured
+        ? `Reporting window: ${M.dateText(summary.lower)} to ${M.dateText(summary.upper)}; server receipt time, restricted to new evidence after email activation.`
+        : "Reporting window: 9 AM Pacific to 9 AM Pacific; counts use server receipt time.",
+        `${summary.occurrences} captured issue and diagnostic occurrences; ${summary.crashes} confirmed crashes; ${summary.reports} user-submitted reports; ${summary.interruptions} explicit interruption records; ${frontier.configured ? summary.statusChanges : day.changes || 0} status changes.`,
         `Source scope: ${summary.serviceOccurrences} automated service occurrences; ${summary.diagnostics} diagnostic uploads; ${summary.otherOccurrences} other issue/report occurrences.`,
         `${summary.accountOccurrences} occurrences have a recorded reporting Auth UID across ${summary.reportingAccounts} accounts; ${summary.noAccountOccurrences} occurrences have no recorded account UID. Reporting accounts may be uploaders or staff; affected users are not inferred.`,
-        `${summary.unknownDiagnosticSubtype} diagnostic uploads have an unknown subtype and do not establish a crash or an interrupted session; ${day.recurrences || 0} recurrences after a fix.`,
-        `${deliveryReview.total} email jobs currently failed or require delivery review across all time: ${deliveryReview.microsoft} Microsoft, ${deliveryReview.resend} Resend, ${deliveryReview.unassigned} unassigned provider. This backlog is separate from reporting-day incident counts.`,
+        `${summary.unknownDiagnosticSubtype} diagnostic uploads have an unknown subtype and do not establish a crash or an interrupted session.${frontier.configured ? "" : ` ${day.recurrences || 0} recurrences after a fix.`}`,
+        `Notification cadence at summary capture: ${summary.notificationCadence.routineRepeats} routine repeat emails and ${summary.notificationCadence.backlogDeferred} pre-cutover queued notifications deferred; ${summary.notificationCadence.immediateSelected} incident send permissions selected for immediate notice; ${summary.notificationCadence.undecided} occurrences have no recorded cadence decision. All ${summary.occurrences} occurrences remain documented; selected permission is not delivery confirmation.`,
+        ...(deliveryReview ? [`${deliveryReview.total} email jobs currently failed or require delivery review across all time: ${deliveryReview.microsoft} Microsoft, ${deliveryReview.resend} Resend, ${deliveryReview.unassigned} unassigned provider. This backlog is separate from reporting-day incident counts.`] : []),
         ...summary.top.map(row => `${row.count} occurrences: ${row.title}`),
-        `${counts.reduce((sum, count) => sum + count.data().count, 0)} issues currently await resolution or verification.`], createdAtMillis: now(), status: "pending", dueAtMillis: now(), attempts: 0 });
+        ...(frontier.configured ? [] : [`${counts.reduce((sum, count) => sum + count.data().count, 0)} issues currently await resolution or verification.`])], createdAtMillis: now(), status: "pending", dueAtMillis: now(), attempts: 0 });
     });
     await dispatch(id);
   }
@@ -302,6 +392,6 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
       if (["failed", "bounced", "suppressed"].includes(status)) logger.error("user_issue_delivery_failed", { code: status, jobId: id });
     });
   }
-  return { submit, ingest, list, triage, dispatch, sweep, daily, webhook, identity };
+  return { submit, ingest, list, triage, dispatch, sweep, deferBacklogPage, daily, webhook, identity };
 }
 module.exports = { createUserIssues, LEASE, RETRY };

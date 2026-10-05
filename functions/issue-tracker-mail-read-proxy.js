@@ -23,7 +23,7 @@ function mailReadBinding(settings) {
 }
 
 function createMailReadProxyTransport({ endpoint, getAccessToken, configuration, identity, fetchImpl = fetch, randomId = crypto.randomUUID }) {
-  return async function requestJson(url, { item = false } = {}) {
+  return async function requestJson(url, { item = false, signal } = {}) {
     safeGraphUrl(url, item);
     const settings = await configuration(), binding = mailReadBinding(settings), target = flowEndpoint(await endpoint()), who = await identity();
     if (!binding || settings.mailReadProvider !== "power_automate" || settings.mailReadProxyProof.endpointSha256 !== endpointHash(target) ||
@@ -32,7 +32,7 @@ function createMailReadProxyTransport({ endpoint, getAccessToken, configuration,
     const token = await getAccessToken();
     if (typeof token !== "string" || !token || /[\r\n]/.test(token)) fail("tracker_mail_proxy_not_configured");
     let response;
-    try { response = await fetchImpl(target, { method: "POST", redirect: "error", signal: AbortSignal.timeout(READ_TIMEOUT_MS),
+    try { response = await fetchImpl(target, { method: "POST", redirect: "error", signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(READ_TIMEOUT_MS)]) : AbortSignal.timeout(READ_TIMEOUT_MS),
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ schemaVersion: 1, requestId, url }) }); }
     catch (_) { fail("tracker_mail_proxy_unavailable"); }
     if (response.status !== 200) fail([401, 403].includes(response.status) ? "tracker_graph_access_denied" : response.status === 404 ? "tracker_graph_message_unavailable" : response.status === 429 ? "tracker_graph_throttled" : "tracker_mail_proxy_read_failed");
@@ -55,7 +55,7 @@ function createConfiguredMailReader({ configuration, graph, proxyRequest, transl
     const fullBinding = bindingOf(settings), identityBinding = mailIdentityBinding(settings);
     if (settings.mailIdentityProvider && (!identityBinding || typeof translateIds !== "function")) fail("tracker_mail_identity_not_configured");
     const proxy = createGraphReader({ requestJson: proxyRequest, canonicalGetVerified: async () => false,
-      ...(identityBinding ? { translateIds } : {}), collectionIdType: "restId" });
+      ...(identityBinding ? { translateIds } : {}), collectionIdType: null });
     const data = await (settings.mailReadProvider === "graph" ? graph : proxy)[method](input, options);
     if (bindingOf(await configuration()) !== fullBinding) fail("tracker_capture_configuration_changed");
     return data;

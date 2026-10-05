@@ -108,8 +108,8 @@ const testingEvents = createTestingEvents({
   FieldValue: admin.firestore.FieldValue,
   Timestamp: admin.firestore.Timestamp,
   HttpsError: functions.https.HttpsError,
-  finalizePlayer: async (playerId) => {
-    await insightEntrypoints.rebuildInsightPlayer(playerId);
+  finalizePlayer: async (playerId, source) => {
+    await insightEntrypoints.rebuildInsightPlayer(playerId, source);
     await social.rebuild(playerId);
   },
   operatorIdentity: async (uid) => {

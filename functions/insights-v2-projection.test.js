@@ -2,7 +2,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { FakeFirestore, HttpsError } = require("./test-support/fake-firestore");
-const { createInsightProjection, failureMatchesRep } = require("./insights-v2-projection");
+const { createInsightProjection, failureMatchesRep, REBUILD_LEASE_MS } = require("./insights-v2-projection");
 const NOW = Date.UTC(2026, 8, 17);
 function bucketFixture(values) {
   const reads = [];
@@ -150,4 +150,109 @@ test("metadata transport failure cannot publish an unverified partial summary", 
   service.bucket.file = () => ({ async getMetadata() { throw Object.assign(Error("unavailable"), { code: 503 }); } });
   await assert.rejects(service.rebuildInsightPlayer("p"), /unavailable/);
   assert.equal(service.db.snapshot("players/p/insightSummaries/current"), undefined);
+});
+
+function deferred() { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; }
+function coalescingFixture(readEvidence, now = () => NOW, extra = {}) {
+  const db = new FakeFirestore({ "players/p": { organizationId: "club" },
+    "players/p/reps/r": { repType: "sprint", max_velocity: 8, createdAt: NOW - 1 }, ...extra });
+  const evidence = { metadata: { resultsValid: true, processingStatus: "complete" }, context: { result: { resultsValid: true, primaryMetric: 8 } } };
+  return { db, evidence, ...createInsightProjection({ db, HttpsError, now, readEvidence: async (...args) => readEvidence ? readEvidence(evidence, ...args) : evidence }) };
+}
+
+test("source replay retains its dirty token and reuses a complete published manifest", async () => {
+  let reads = 0;
+  const service = coalescingFixture(evidence => { reads++; return evidence; });
+  const source = { sourceKind: "failure", eventId: "source-event-one" };
+  const firstDirty = await service.invalidateInsightPlayer("p", source);
+  const summary = await service.rebuildInsightPlayer("p", source);
+  assert.equal(reads, 1);
+  assert.equal((await service.invalidateInsightPlayer("p", source)).invalidated, false);
+  assert.deepEqual(await service.rebuildInsightPlayer("p", source), summary);
+  assert.equal(service.db.snapshot("players/p/insightSummaries/state").token, firstDirty.token);
+  assert.equal(reads, 1);
+  const eventRecords = [...service.db.docs].filter(([path]) => path.includes("/insightSummaries/event_"));
+  assert.equal(eventRecords.length, 1);
+  assert.ok(!JSON.stringify(eventRecords).includes(source.eventId));
+});
+
+test("one rebuild owner coalesces a racing dirty revision and busy invocation stays retryable", async () => {
+  const entered = deferred(), continueRead = deferred(); let reads = 0;
+  const service = coalescingFixture(async evidence => { if (++reads === 1) { entered.resolve(); await continueRead.promise; } return evidence; });
+  const first = { sourceKind: "record", eventId: "source-one" }, second = { sourceKind: "failure", eventId: "source-two" };
+  await service.invalidateInsightPlayer("p", first);
+  const owner = service.rebuildInsightPlayer("p", first);
+  await entered.promise;
+  const latest = await service.invalidateInsightPlayer("p", second);
+  await assert.rejects(service.rebuildInsightPlayer("p", second), error => error.code === "aborted" && error.details.reason === "insights-rebuild-busy");
+  assert.equal(reads, 1);
+  assert.equal(service.db.snapshot("players/p/insightSummaries/current"), undefined);
+  continueRead.resolve();
+  const result = await owner;
+  assert.equal(result.token, latest.token); assert.equal(reads, 2);
+  assert.equal(service.db.snapshot("players/p/insightSummaries/state").rebuildLease, null);
+  assert.equal((await service.invalidateInsightPlayer("p", second)).invalidated, false);
+  assert.deepEqual(await service.rebuildInsightPlayer("p", second), result);
+  assert.equal(reads, 2);
+});
+
+test("continuous changes hit a bounded retryable continuation and retain the latest dirty token", async () => {
+  let reads = 0, latest;
+  const service = coalescingFixture(async evidence => { latest = await service.invalidateInsightPlayer("p", { sourceKind: "record", eventId: `new-source-${++reads}` }); return evidence; });
+  await assert.rejects(service.rebuildInsightPlayer("p"), error => error.code === "aborted" && error.details.reason === "insights-rebuild-continuation-required");
+  assert.equal(reads, 3);
+  assert.equal(service.db.snapshot("players/p/insightSummaries/current"), undefined);
+  assert.equal(service.db.snapshot("players/p/insightSummaries/state").token, latest.token);
+  assert.equal(service.db.snapshot("players/p/insightSummaries/state").rebuildLease, null);
+});
+
+test("expired owner cannot publish or release its successor lease", async () => {
+  let clock = NOW, reads = 0; const entered = deferred(), release = deferred();
+  const service = coalescingFixture(async evidence => { if (++reads === 1) { entered.resolve(); await release.promise; } return evidence; }, () => clock);
+  const abandoned = service.rebuildInsightPlayer("p");
+  await entered.promise;
+  clock += REBUILD_LEASE_MS + 1;
+  const latest = await service.rebuildInsightPlayer("p");
+  release.resolve();
+  await assert.rejects(abandoned, error => error.details.reason === "insights-rebuild-lease-lost");
+  assert.deepEqual(service.db.snapshot("players/p/insightSummaries/current"), latest);
+  assert.equal(service.db.snapshot("players/p/insightSummaries/state").rebuildLease, null);
+});
+
+test("actual evidence failures propagate and retrying the same event does not redirty the player", async () => {
+  let fail = true;
+  const unavailable = Object.assign(Error("storage unavailable"), { code: 503 });
+  const service = coalescingFixture(evidence => { if (fail) throw unavailable; return evidence; });
+  const source = { sourceKind: "artifact", eventId: "one-generation" };
+  const dirty = await service.invalidateInsightPlayer("p", source);
+  await assert.rejects(service.rebuildInsightPlayer("p", source), error => error === unavailable);
+  assert.equal(service.db.snapshot("players/p/insightSummaries/state").rebuildLease, null);
+  assert.equal(service.db.snapshot("players/p/insightSummaries/current"), undefined);
+  fail = false;
+  assert.equal((await service.invalidateInsightPlayer("p", source)).invalidated, false);
+  const summary = await service.rebuildInsightPlayer("p", source);
+  assert.equal(summary.token, dirty.token);
+});
+
+test("lease cleanup failure cannot replace the original evidence error", async () => {
+  const unavailable = Object.assign(Error("storage unavailable"), { code: 503 });
+  const service = coalescingFixture(() => { throw unavailable; });
+  const original = service.db.runTransaction.bind(service.db); let transactions = 0;
+  service.db.runTransaction = handler => ++transactions === 2 ? Promise.reject(Error("cleanup unavailable")) : original(handler);
+  await assert.rejects(service.rebuildInsightPlayer("p"), error => error === unavailable);
+  assert.equal(service.db.snapshot("players/p/insightSummaries/current"), undefined);
+  assert.ok(service.db.snapshot("players/p/insightSummaries/state").rebuildLease);
+});
+
+test("player deletion and deadline guards have distinct source-correlated reasons", async () => {
+  const source = { sourceKind: "failure", eventId: "private-source-event" };
+  const deletion = coalescingFixture(async evidence => { await deletion.db.doc("players/p").delete(); return evidence; });
+  await assert.rejects(deletion.rebuildInsightPlayer("p", source), error => error.details.reason === "insights-player-deleted"
+    && error.details.sourceKind === "failure" && /^[a-f0-9]{64}$/.test(error.details.sourceEventHash)
+    && !JSON.stringify(error.details).includes(source.eventId));
+  assert.equal((await deletion.rebuildInsightPlayer("p", source)).deleted, true);
+  let clock = NOW;
+  const timeout = coalescingFixture(evidence => { clock += 10 * 60000 + 1; return evidence; }, () => clock);
+  await assert.rejects(timeout.rebuildInsightPlayer("p", source), error => error.details.reason === "insights-rebuild-deadline-exceeded");
+  assert.equal(timeout.db.snapshot("players/p/insightSummaries/current"), undefined);
 });
