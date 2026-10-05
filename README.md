@@ -415,6 +415,11 @@ checksums baseline assets and uses matching tracked HTML where the host rewrites
 served pages; internet access is required. The build stops if the live application
 has drifted. Reconcile a reviewed baseline instead of bypassing the guard.
 
+For legacy HTML rewritten by the host, verified `localPath` entries recover the
+original source bytes. Git line-ending conversion is supported in both directions
+only when the reconstructed file matches the pinned checksum and size exactly.
+The builder does not change or normalize the protected baseline hashes.
+
 `netlify.toml` uses this production command and publishes `production-dist/`.
 The repository root, `marketing-dist/`, and the ordinary application `dist/`
 are not the complete homepage release artifact. Application source changes are

@@ -7513,7 +7513,8 @@
     {
       "path": "/backfill-session-summaries.html",
       "sha": "8b1e68f09e37854b667be0e01eb13a536e8e93d8",
-      "size": 31744
+      "size": 31744,
+      "localPath": "backfill-session-summaries.html"
     },
     {
       "path": "/backkickview 2.html",
@@ -7523,7 +7524,8 @@
     {
       "path": "/backkickview.html",
       "sha": "f8b93d858984441c3ae81cf1690834d6c7fc9217",
-      "size": 125009
+      "size": 125009,
+      "localPath": "backKickView.html"
     },
     {
       "path": "/banner-6x3 3.html",
@@ -7533,7 +7535,8 @@
     {
       "path": "/banner-6x3.html",
       "sha": "bfdfc4e277311625b8be1157564a4c253ac3f366",
-      "size": 11721
+      "size": 11721,
+      "localPath": "banner-6x3.html"
     },
     {
       "path": "/bookperformancetest 3.html",
@@ -7543,7 +7546,8 @@
     {
       "path": "/bookperformancetest.html",
       "sha": "f0d531d96cbeb2adb5d1f9469a07338e9ef79c8c",
-      "size": 31646
+      "size": 31646,
+      "localPath": "bookPerformanceTest.html"
     },
     {
       "path": "/brand/posetek-p-96.png",
@@ -7573,7 +7577,8 @@
     {
       "path": "/convention-qr.html",
       "sha": "37430dd2ebd77bd7c6d269bf846fcca4c735bc67",
-      "size": 15175
+      "size": 15175,
+      "localPath": "convention-qr.html"
     },
     {
       "path": "/drillcreation 2.html",
@@ -7583,7 +7588,8 @@
     {
       "path": "/drillcreation.html",
       "sha": "2f4bce245671aa1e2014ad6d52c812933644376b",
-      "size": 36332
+      "size": 36332,
+      "localPath": "drillcreation.html"
     },
     {
       "path": "/drilllist 2.html",
@@ -7593,7 +7599,8 @@
     {
       "path": "/drilllist.html",
       "sha": "8a127559db37ec6fb801d389f5bf5ec9a63723d2",
-      "size": 26020
+      "size": 26020,
+      "localPath": "drillList.html"
     },
     {
       "path": "/edge-session-posetek-carousel 2.html",
@@ -7603,7 +7610,8 @@
     {
       "path": "/edge-session-posetek-carousel.html",
       "sha": "b906ff465bd90cb5699951c8b8de841d6f44d35a",
-      "size": 45246
+      "size": 45246,
+      "localPath": "edge-session-posetek-carousel.html"
     },
     {
       "path": "/failuredashboard 2.html",
@@ -7643,7 +7651,8 @@
     {
       "path": "/feedbackform.html",
       "sha": "12383d39086836da653b5425c5bda225c4abc2a8",
-      "size": 57897
+      "size": 57897,
+      "localPath": "feedbackForm.html"
     },
     {
       "path": "/firebase-identity 2.js",
@@ -7663,7 +7672,8 @@
     {
       "path": "/freerecordpage.html",
       "sha": "b3edc206fb5c3d9470d327ce268a029918559061",
-      "size": 152943
+      "size": 152943,
+      "localPath": "freeRecordPage.html"
     },
     {
       "path": "/fusionclinic 2.html",
@@ -7673,7 +7683,8 @@
     {
       "path": "/fusionclinic.html",
       "sha": "04a0e5640b03cd69a9d51b21ef1d23abcebe080e",
-      "size": 93465
+      "size": 93465,
+      "localPath": "fusionclinic.html"
     },
     {
       "path": "/hypothesis_athleticismsubscription 2.html",
@@ -7688,12 +7699,14 @@
     {
       "path": "/hypothesis_athleticismsubscription_signup.html",
       "sha": "5e3a523f51897d6e2254074dfb097f3dffacfc59",
-      "size": 37974
+      "size": 37974,
+      "localPath": "hypothesis_athleticismSubscription_signup.html"
     },
     {
       "path": "/hypothesis_athleticismsubscription.html",
       "sha": "5b7e0ae4a0460e85f090cc5c9f2c124f07c11ce1",
-      "size": 71484
+      "size": 71484,
+      "localPath": "hypothesis_athleticismSubscription.html"
     },
     {
       "path": "/hypothesis_kickinganalysis 2.html",
@@ -7703,7 +7716,8 @@
     {
       "path": "/hypothesis_kickinganalysis.html",
       "sha": "a51e7d9018f9be1e6be1c7076c9b031fbed35367",
-      "size": 72688
+      "size": 72688,
+      "localPath": "hypothesis_kickingAnalysis.html"
     },
     {
       "path": "/hypothesis_kickinganalysissubscription 2.html",
@@ -7718,12 +7732,14 @@
     {
       "path": "/hypothesis_kickinganalysissubscription_signup.html",
       "sha": "44971c9b1a448d4b9db6b0cc820fe39909a44c87",
-      "size": 38017
+      "size": 38017,
+      "localPath": "hypothesis_kickingAnalysisSubscription_signup.html"
     },
     {
       "path": "/hypothesis_kickinganalysissubscription.html",
       "sha": "4840007d11cd541fce5da6187e146420985de137",
-      "size": 79027
+      "size": 79027,
+      "localPath": "hypothesis_kickingAnalysisSubscription.html"
     },
     {
       "path": "/hypothesis_kickingcoach 2.html",
@@ -7733,7 +7749,8 @@
     {
       "path": "/hypothesis_kickingcoach.html",
       "sha": "aa22ccecdb4b9da9d2215c97d61052c6ef6f5f7c",
-      "size": 61026
+      "size": 61026,
+      "localPath": "hypothesis_kickingCoach.html"
     },
     {
       "path": "/hypothesis_performancetesting 2.html",
@@ -7743,7 +7760,8 @@
     {
       "path": "/hypothesis_performancetesting.html",
       "sha": "48213ad5ad062c81bc241f5e5ddc140d149e1806",
-      "size": 63802
+      "size": 63802,
+      "localPath": "hypothesis_performanceTesting.html"
     },
     {
       "path": "/hypothesis_quantificationtracking 2.html",
@@ -7753,7 +7771,8 @@
     {
       "path": "/hypothesis_quantificationtracking.html",
       "sha": "1837dfd100f00286642ef93ce203bda6e0951361",
-      "size": 59134
+      "size": 59134,
+      "localPath": "hypothesis_quantificationTracking.html"
     },
     {
       "path": "/hypothesis_trainingsession 2.html",
@@ -7763,7 +7782,8 @@
     {
       "path": "/hypothesis_trainingsession.html",
       "sha": "95a5c97625a8259b00408845c599fa1a9698b8a0",
-      "size": 77721
+      "size": 77721,
+      "localPath": "hypothesis_trainingSession.html"
     },
     {
       "path": "/hypothesis_trainingsessionkick 2.html",
@@ -7773,7 +7793,8 @@
     {
       "path": "/hypothesis_trainingsessionkick.html",
       "sha": "0b6dd0cfd259f987d31bc1d7a700a9ee848fcd8a",
-      "size": 87282
+      "size": 87282,
+      "localPath": "hypothesis_trainingSessionKick.html"
     },
     {
       "path": "/icons 2.svg",
@@ -7993,7 +8014,8 @@
     {
       "path": "/kickinganalysis_upload.html",
       "sha": "cfc2a5ad61108dc8d14bfcd7048912b181b64c18",
-      "size": 60776
+      "size": 60776,
+      "localPath": "kickingAnalysis_upload.html"
     },
     {
       "path": "/kickingview 2.html",
@@ -8003,7 +8025,8 @@
     {
       "path": "/kickingview.html",
       "sha": "272088644bad9f23f2b6b0d3494c7ab105b059b6",
-      "size": 206222
+      "size": 206222,
+      "localPath": "kickingview.html"
     },
     {
       "path": "/landing-pose-demo 2.js",
@@ -8033,7 +8056,8 @@
     {
       "path": "/leaderboard.html",
       "sha": "8443e0252c0b38a48ad9dc868dbd6409fb8c6928",
-      "size": 66631
+      "size": 66631,
+      "localPath": "leaderboard.html"
     },
     {
       "path": "/marketing/home-navigation.js",
@@ -8068,7 +8092,8 @@
     {
       "path": "/premiuminfo.html",
       "sha": "7335512acbc5d98f9df4d6719c720987eca7cbc1",
-      "size": 18164
+      "size": 18164,
+      "localPath": "premiumInfo.html"
     },
     {
       "path": "/questaddplayer 2.html",
@@ -8078,7 +8103,8 @@
     {
       "path": "/questaddplayer.html",
       "sha": "e07130dc5ad44cf15a698ffb90622a21c6fe7b1f",
-      "size": 30144
+      "size": 30144,
+      "localPath": "questAddPlayer.html"
     },
     {
       "path": "/questleaderboardresultspage 2.html",
@@ -8088,7 +8114,8 @@
     {
       "path": "/questleaderboardresultspage.html",
       "sha": "6401c0a01fbc099c06c72383d42e67b99e76f286",
-      "size": 61429
+      "size": 61429,
+      "localPath": "questLeaderboardResultsPage.html"
     },
     {
       "path": "/questsearchplayer 2.html",
@@ -8098,7 +8125,8 @@
     {
       "path": "/questsearchplayer.html",
       "sha": "c78f298f6c8ec9702670502a877d0274d3f3d2c1",
-      "size": 35252
+      "size": 35252,
+      "localPath": "questSearchPlayer.html"
     },
     {
       "path": "/questviewbiomechanics 2.html",
@@ -8108,7 +8136,8 @@
     {
       "path": "/questviewbiomechanics.html",
       "sha": "7383f90738a281e403ad6ac397a9481e1877771c",
-      "size": 338578
+      "size": 338578,
+      "localPath": "questViewBiomechanics.html"
     },
     {
       "path": "/sessions 2.html",
@@ -8118,7 +8147,8 @@
     {
       "path": "/sessions.html",
       "sha": "d014c8169878b22da7849efcec4d594317cc82b7",
-      "size": 64107
+      "size": 64107,
+      "localPath": "sessions.html"
     },
     {
       "path": "/sessionsexpanded 2.html",
@@ -8128,7 +8158,8 @@
     {
       "path": "/sessionsexpanded.html",
       "sha": "207ca125fdc3f17a889cd92fd1cb31e5f4f5c06d",
-      "size": 34263
+      "size": 34263,
+      "localPath": "sessionsexpanded.html"
     },
     {
       "path": "/sidekickview 2.html",
@@ -8138,7 +8169,8 @@
     {
       "path": "/sidekickview.html",
       "sha": "f69c087a2cdbdb924613d84c0fa3e51f077d1131",
-      "size": 332459
+      "size": 332459,
+      "localPath": "SideKickView.html"
     },
     {
       "path": "/signupform 2.html",
@@ -8148,7 +8180,8 @@
     {
       "path": "/signupform.html",
       "sha": "19e9a1d2b9f18191b6ff95bcfe279c4d39e668b4",
-      "size": 22848
+      "size": 22848,
+      "localPath": "signupForm.html"
     },
     {
       "path": "/sprintpage 2.html",
@@ -8158,7 +8191,8 @@
     {
       "path": "/sprintpage.html",
       "sha": "3f7b1e148ab04468f6e03dc1124e05bd51c0da81",
-      "size": 198628
+      "size": 198628,
+      "localPath": "sprintPage.html"
     },
     {
       "path": "/staticjumppage 2.html",
@@ -8168,7 +8202,8 @@
     {
       "path": "/staticjumppage.html",
       "sha": "82343a5cde5f166a6391e0253dc39960809cf707",
-      "size": 315590
+      "size": 315590,
+      "localPath": "StaticJumpPage.html"
     },
     {
       "path": "/subscriptionwaitlist 2.html",
@@ -8178,7 +8213,8 @@
     {
       "path": "/subscriptionwaitlist.html",
       "sha": "80ed6ec5a80128b907468787ccd32463bc7248fe",
-      "size": 154013
+      "size": 154013,
+      "localPath": "subscriptionWaitlist.html"
     },
     {
       "path": "/user-badge 2.js",
@@ -8198,7 +8234,8 @@
     {
       "path": "/videopage.html",
       "sha": "176038637b2c1ac8be51476afc830c189b65f3b0",
-      "size": 66488
+      "size": 66488,
+      "localPath": "videopage.html"
     }
   ]
 }

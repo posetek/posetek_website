@@ -27,6 +27,7 @@ async function fixture(mode, options, run) {
       ['/bookperformancetest.html', '<!doctype html><form id="bookingForm"></form>'],
     ]);
     if (modern) files.set('/marketing/home-navigation.js', '// current published bridge\n');
+    if (options.lineEndings) files.set('/bookperformancetest.html', '<!doctype html>\n<form id="bookingForm"></form>\n'.replace(/\n/g, options.lineEndings.pinned));
     if (options.localAlias) files.set('/booking-copy.html', files.get('/bookperformancetest.html'));
     if (options.marketingAlias) {
       files.set('/index 2.html', '<html><noscript><a href="/bookPerformanceTest.html">Book</a></noscript></html>');
@@ -40,7 +41,9 @@ async function fixture(mode, options, run) {
     };
     if (options.localAlias) {
       manifest.files.find(file => file.path === '/bookperformancetest.html').localPath = 'booking-source.html';
-      await put('booking-source.html', options.badLocal ? 'incorrect original source' : files.get('/bookperformancetest.html'));
+      const original = files.get('/bookperformancetest.html');
+      const local = options.lineEndings ? original.replace(/\r\n|\n/g, options.lineEndings.checkout) : original;
+      await put('booking-source.html', options.badLocal ? 'incorrect original source' : local);
     }
     await put('deployment/homepage-baseline.json', JSON.stringify(manifest));
     await put('deployment/home-navigation.js', '// local legacy-only bridge\n');
@@ -208,5 +211,25 @@ test('website icon merging retains exact pinned bytes and rejects collisions bef
       assert.equal(await readFile(last, 'utf8'), state === 'pinned-collision' ? 'fixture icon bytes ' + lastPath : 'unrelated existing output icon');
     }
     for (const [path, bytes] of files) assert.equal(await readFile(join(outputDirectory, path.slice(1)), 'utf8'), bytes);
+  });
+});
+
+for (const [label, pinned, checkout] of [['Windows release / Unix checkout', '\r\n', '\n'], ['Unix release / Windows checkout', '\n', '\r\n']]) {
+  test(`line-ending recovery preserves exact pinned bytes: ${label}`, async () => {
+    await fixture('modern', { localAlias: true, lineEndings: { pinned, checkout } }, async ({ directory, files, build }) => {
+      assert.equal(build.status, 0, build.stderr);
+      for (const path of ['/bookperformancetest.html', '/booking-copy.html']) {
+        const bytes = await readFile(join(directory, 'production-dist', path.slice(1)));
+        assert.equal(sha(bytes), sha(files.get(path)));
+        assert.equal(bytes.length, Buffer.byteLength(files.get(path)));
+      }
+    });
+  });
+}
+
+test('line-ending recovery still rejects changed source content', async () => {
+  await fixture('modern', { localAlias: true, badLocal: true, lineEndings: { pinned: '\r\n', checkout: '\n' } }, async ({ build }) => {
+    assert.notEqual(build.status, 0);
+    assert.match(build.stderr, /Baseline checksum mismatch/);
   });
 });

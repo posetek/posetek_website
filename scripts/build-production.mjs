@@ -73,8 +73,10 @@ await Promise.all(Array.from({ length: 6 }, async () => {
       try {
         const local = await readFile(contained(root, "/" + localPath));
         const normalized = Buffer.from(local.toString("utf8").replace(/\r\n/g, "\n"));
-        if (hash(local) === file.sha) bytes = local;
-        else if (hash(normalized) === file.sha) bytes = normalized;
+        const windows = Buffer.from(normalized.toString("utf8").replace(/\n/g, "\r\n"));
+        // A checkout may convert in either direction. Only the exact recorded
+        // bytes qualify; neither the pinned digest nor size is normalized.
+        bytes = [local, normalized, windows].find(candidate => hash(candidate) === file.sha && candidate.length === file.size);
       } catch { /* Download when the original source is unavailable. */ }
     }
     if (!bytes || hash(bytes) !== file.sha) {
