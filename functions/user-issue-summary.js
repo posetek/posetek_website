@@ -15,8 +15,9 @@ async function pages(query, order) {
     for (const doc of result.docs) {
       const value = doc.data();
       if (!/^[a-f0-9]{64}$/.test(doc.id) || !value || typeof value !== "object") throw error("summary_invalid_source");
-      const next = order === "receivedAtMillis" ? [value.receivedAtMillis, doc.id] : [doc.id];
-      if (order === "receivedAtMillis" && !Number.isSafeInteger(next[0])) throw error("summary_invalid_receipt_time");
+      const timed = ["receivedAtMillis", "createdAtMillis"].includes(order);
+      const next = timed ? [value[order], doc.id] : [doc.id];
+      if (timed && !Number.isSafeInteger(next[0])) throw error("summary_invalid_receipt_time");
       if (cursor && (next[0] < cursor[0] || next[0] === cursor[0] && (next.length === 1 || next[1] <= cursor[1]))) throw error("summary_nonadvancing_page");
       cursor = next;
       rows.push({ ...value, id: doc.id });
@@ -27,8 +28,12 @@ async function pages(query, order) {
   throw error("summary_pagination_incomplete");
 }
 
-async function reportingSummary(db, period) {
+async function reportingSummary(db, period, { fromMillis = null } = {}) {
   const bounds = M.periodBounds(period);
+  if (fromMillis !== null) {
+    if (!Number.isSafeInteger(fromMillis) || fromMillis <= 0 || fromMillis >= bounds.upper) throw error("summary_invalid_frontier");
+    bounds.lower = Math.max(bounds.lower, fromMillis);
+  }
   const query = db.collection("userIssueOccurrences").where("receivedAtMillis", ">=", bounds.lower)
     .where("receivedAtMillis", "<", bounds.upper).orderBy("receivedAtMillis").orderBy("__name__");
   const occurrences = await pages(query, "receivedAtMillis");
@@ -52,8 +57,15 @@ async function reportingSummary(db, period) {
       } else notificationCadence.undecided++;
     }
   }
+  let statusChanges;
+  if (fromMillis !== null) {
+    const jobs = await pages(db.collection("userIssueOutbox").where("createdAtMillis", ">=", bounds.lower)
+      .where("createdAtMillis", "<", bounds.upper).orderBy("createdAtMillis").orderBy("__name__"), "createdAtMillis");
+    if (jobs.some(job => job.createdAtMillis < bounds.lower || job.createdAtMillis >= bounds.upper)) throw error("summary_receipt_window_mismatch");
+    statusChanges = jobs.filter(job => job.type === "status").length;
+  }
   return { schemaVersion: 2, period, lower: bounds.lower, upper: bounds.upper, enumerationComplete: true,
-    ...summarizeOccurrences(occurrences), notificationCadence };
+    ...summarizeOccurrences(occurrences), notificationCadence, ...(statusChanges === undefined ? {} : { statusChanges }) };
 }
 
 async function deliveryReviewSummary(db) {

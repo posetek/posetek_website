@@ -2,6 +2,7 @@
 const crypto = require("node:crypto");
 const M = require("./microsoft-email-model");
 const NotificationPolicy = require("./user-issue-notification-policy");
+const SendFrontier = require("./user-issue-send-frontier");
 const TRACE_WINDOW = 7 * 86400000, RECEIPT_WAIT = 10 * 60000, SEND_BUDGET = 20;
 const RECIPIENT_BUDGET = 9000, RECIPIENT_WINDOW = 86400000, RECIPIENT_BUCKET = 15 * 60000;
 function recipientBudget(budget, at, recipients) {
@@ -26,6 +27,7 @@ function validate(data, receipt = false) {
 function domainAllows(kind, settings, job, at) {
   const value = kind === "workout" ? require("./workout-notifications").settingsValue(settings, at) : require("./user-issue-model").setting(settings, at);
   return value.enabled && value.sendEnabled === true && job.createdAtMillis >= value.activatedAtMillis
+    && (kind !== "issue" || SendFrontier.allows(settings, job, at))
     && (kind === "workout" ? !value.pilot || value.testPlayerIds.includes(job.playerId) : !value.testUids || value.testUids.includes(job.actorUid));
 }
 function createMicrosoftEmail({ db, now = Date.now, randomToken = () => crypto.randomBytes(32).toString("hex"), traceReader, logger = console }) {
