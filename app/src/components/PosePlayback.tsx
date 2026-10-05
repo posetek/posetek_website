@@ -15,18 +15,21 @@ export interface PosePlaybackProps {
   onSpeedChange?: (speed: number) => void;
   onFrameChange?: (frame: number) => void;
   overlay?: (context: CanvasRenderingContext2D, width: number, height: number, frame: number) => void;
+  /** Frame count when the replay has no pose (tracking.json drives the slider); defaults to the pose frame count. */
+  frameCount?: number;
 }
 
-export default function PosePlayback({ frames, metadata, mediaUrl, mediaSource, markers = [], title, initialSpeed = 1, onSpeedChange, onFrameChange, overlay }: PosePlaybackProps) {
+export default function PosePlayback({ frames, metadata, mediaUrl, mediaSource, markers = [], title, initialSpeed = 1, onSpeedChange, onFrameChange, overlay, frameCount }: PosePlaybackProps) {
+  const count = frames.length || Math.max(0, Math.floor(frameCount ?? 0)), source = frames.length ? "pose" : "tracking";
   const stageRef = useRef<HTMLDivElement>(null), canvasRef = useRef<HTMLCanvasElement>(null), videoRef = useRef<HTMLVideoElement>(null);
   const [frame, setFrame] = useState(0), [playing, setPlaying] = useState(false), [speed, setSpeed] = useState(initialSpeed);
   const [videoError, setVideoError] = useState(false), [playError, setPlayError] = useState(false);
   const [showVideo, setShowVideo] = useState(true);
-  const timeline = useMemo(() => poseTimeline(metadata, frames.length), [metadata, frames.length]);
+  const timeline = useMemo(() => poseTimeline(metadata, count), [metadata, count]);
   const timed = timeline.times.length > 0, hasVideo = Boolean(mediaUrl) && !videoError && showVideo;
   const frameRef = useRef(0);
   function updateFrame(next: number) {
-    const safe = Math.max(0, Math.min(Math.max(0, frames.length - 1), Math.round(next)));
+    const safe = Math.max(0, Math.min(Math.max(0, count - 1), Math.round(next)));
     frameRef.current = safe; setFrame(safe); onFrameChange?.(safe);
   }
   function seek(next: number) {
@@ -40,8 +43,8 @@ export default function PosePlayback({ frames, metadata, mediaUrl, mediaSource, 
     if (hasVideo && video) {
       if (video.paused) { setPlayError(false); void video.play().catch(() => { setPlaying(false); setPlayError(true); }); }
       else video.pause();
-    } else if (timed && frames.length) {
-      if (frame >= frames.length - 1) updateFrame(0);
+    } else if (timed && count) {
+      if (frame >= count - 1) updateFrame(0);
       setPlaying(value => !value);
     }
   }
@@ -111,23 +114,23 @@ export default function PosePlayback({ frames, metadata, mediaUrl, mediaSource, 
   return <section className="pose-card">
     <div ref={stageRef} className="pose-stage" style={{ position: "relative", width: "100%", minHeight: 280, aspectRatio: "16 / 9", background: "#03100b", overflow: "hidden" }}>
       <span className="viewer-badge">{title}</span>
-      {hasVideo ? <video ref={videoRef} playsInline preload="metadata" src={mediaUrl!} controls={!frames.length || !timed}
+      {hasVideo ? <video ref={videoRef} playsInline preload="metadata" src={mediaUrl!} controls={!count || !timed}
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }}
         onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} onError={() => { setVideoError(true); setPlaying(false); }} /> : null}
       <canvas ref={canvasRef} aria-label="Pose playback" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} />
     </div>
-    <p role="status">{mediaSource === "error" ? "Recording files could not be loaded. Refresh the page to retry." : videoError ? "Video could not be loaded. Reopen this recording to refresh access." : hasVideo ? mediaSource === "diagnostic" ? "Original diagnostic recording" : "Original recording" : mediaUrl ? "Pose frames. Original video available." : frames.length ? "Pose playback available. Original video unavailable." : "No video or pose data is available for this attempt."}
-      {frames.length && !timed ? hasVideo ? " Frame timing unavailable; switch to pose frames for manual inspection." : " Frame timing unavailable; inspect poses with the frame slider." : ""}
+    <p role="status">{mediaSource === "error" ? "Recording files could not be loaded. Refresh the page to retry." : videoError ? "Video could not be loaded. Reopen this recording to refresh access." : hasVideo ? mediaSource === "diagnostic" ? "Original diagnostic recording" : "Original recording" : mediaUrl ? source === "pose" ? "Pose frames. Original video available." : "Tracking frames. Original video available." : count ? source === "pose" ? "Pose playback available. Original video unavailable." : "Tracking playback available. Original video unavailable." : "No video or pose data is available for this attempt."}
+      {count && !timed ? hasVideo ? ` Frame timing unavailable; switch to ${source} frames for manual inspection.` : source === "pose" ? " Frame timing unavailable; inspect poses with the frame slider." : " Frame timing unavailable; inspect tracking with the frame slider." : ""}
       {playError ? " Playback could not start. Use the video controls or reopen this recording." : ""}</p>
-    {mediaUrl && !videoError && frames.length > 0 ? <button className="quiet-button" type="button" onClick={() => { videoRef.current?.pause(); setPlaying(false); setShowVideo(value => !value); }}>{showVideo ? "Show pose frames" : "Show video"}</button> : null}
+    {mediaUrl && !videoError && count > 0 ? <button className="quiet-button" type="button" onClick={() => { videoRef.current?.pause(); setPlaying(false); setShowVideo(value => !value); }}>{showVideo ? `Show ${source} frames` : "Show video"}</button> : null}
     <div className="playback-bar">
-      <button className="play-button" type="button" onClick={toggle} aria-label={playing ? "Pause" : "Play"} disabled={!hasVideo && (!timed || !frames.length)}><span className="material-symbols-outlined">{playing ? "pause" : "play_arrow"}</span></button>
-      <input type="range" min={0} max={Math.max(0, frames.length - 1)} value={frame} onChange={event => seek(Number(event.target.value))} aria-label="Frame" disabled={!frames.length || (hasVideo && !timed)} />
+      <button className="play-button" type="button" onClick={toggle} aria-label={playing ? "Pause" : "Play"} disabled={!hasVideo && (!timed || !count)}><span className="material-symbols-outlined">{playing ? "pause" : "play_arrow"}</span></button>
+      <input type="range" min={0} max={Math.max(0, count - 1)} value={frame} onChange={event => seek(Number(event.target.value))} aria-label="Frame" disabled={!count || (hasVideo && !timed)} />
       <button className="speed-button" type="button" onClick={() => { const rates = [.25,.5,1,2], next = rates[(rates.indexOf(speed) + 1) % rates.length]; setSpeed(next); onSpeedChange?.(next); }}>{speed}×</button>
-      <span>Frame {frames.length ? frame + 1 : 0} / {frames.length}</span>
+      <span>Frame {count ? frame + 1 : 0} / {count}</span>
     </div>
     <div className="frame-markers">{markers.map(marker => <button key={marker.label} className="frame-marker" type="button"
-      disabled={marker.frame === null || !Number.isInteger(marker.frame) || marker.frame < 0 || marker.frame >= frames.length || (hasVideo && !timed)}
+      disabled={marker.frame === null || !Number.isInteger(marker.frame) || marker.frame < 0 || marker.frame >= count || (hasVideo && !timed)}
       onClick={() => marker.frame !== null && seek(marker.frame)}>{marker.label}</button>)}</div>
   </section>;
 }

@@ -6,6 +6,16 @@
 
 import { useEffect, useState } from "react";
 import PosePlayback from "../../../components/PosePlayback";
+import {
+  drawTrackingFrame,
+  parseTracking,
+  poseReplayUsable,
+  selectReplaySource,
+  TRACKING_ARTIFACT,
+  TRACKING_DRILLS,
+  trackingTimelineMeta,
+  type ReplayTracking,
+} from "../../../lib/replay-tracking";
 import { attemptLabel, resultLabel, sameResultStatus } from "../../../lib/result-values";
 import type { Drill } from "../lib/drills";
 import type { Access } from "../lib/loaders";
@@ -81,6 +91,8 @@ export default function SessionView({ drill, folder, selectedId, reps, access, p
 interface ViewerData {
   mediaUrl: string | null;
   frames: PosePoint[][];
+  tracking: ReplayTracking | null;
+  playbackMetadata: Record<string, any>;
   metrics: MetricTile[];
   markers: FrameMarker[];
   metadata: Record<string, any>;
@@ -115,9 +127,19 @@ function RepViewer({ drill, rep, access, playerId, shareToken }: RepViewerProps)
       ]);
       if (cancelled) return;
       const meta = { ...(metadata || {}) };
+      const frames = parsePose(pose, meta);
+      // Reps processed without pose carry tracking.json (person box + COM per frame).
+      const trackingRaw = TRACKING_DRILLS.has(drill.key) && !poseReplayUsable(frames.length, meta)
+        ? await fetchJson(urls[TRACKING_ARTIFACT]).catch(() => null)
+        : null;
+      if (cancelled) return;
+      const replay = selectReplaySource(frames.length, meta, parseTracking(trackingRaw, meta));
+      const tracking = replay.kind === "tracking" ? replay.tracking : null;
       setData({
         mediaUrl: payload.mediaUrl || null,
-        frames: parsePose(pose, meta),
+        frames: tracking ? [] : frames,
+        tracking,
+        playbackMetadata: tracking ? trackingTimelineMeta(meta, tracking) : meta,
         metadata: meta,
         mediaSource: payload.source,
         metrics: repMetricSpecs(drill, rep, meta),
@@ -145,7 +167,9 @@ function RepViewer({ drill, rep, access, playerId, shareToken }: RepViewerProps)
   return (
     <>
       {resultLabel(rep) ? <p role="status">{resultLabel(rep)}</p> : null}
-      <PosePlayback frames={data.frames} metadata={data.metadata} mediaUrl={data.mediaUrl} mediaSource={data.mediaSource} markers={data.markers} title={drill.label} />
+      <PosePlayback frames={data.frames} metadata={data.playbackMetadata} mediaUrl={data.mediaUrl} mediaSource={data.mediaSource} markers={data.markers} title={drill.label}
+        frameCount={data.tracking?.frames.length}
+        overlay={data.tracking ? (context, width, height, frame) => drawTrackingFrame(context, data.tracking!, frame, width, height) : undefined} />
       <div className="rep-metrics">
         {data.metrics.map(item => (
           <article key={item.label} className="rep-metric">

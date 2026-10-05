@@ -9,10 +9,12 @@ const { readProvisionalEstimates } = require("./provisional-estimates");
 const { effectiveRep, resultStatus } = require("./effective-rep");
 const ARTIFACTS = Object.freeze({
   shooting: ["pose.json", "metadata.json", "ball_detections.json", "ball_information.json", "ball_trajectory.json"],
-  sprint: ["pose.json", "metadata.json", "com_midpoints.json", "com_velocity.json"],
+  // Sprint, COD and dribbling may be processed without pose; tracking.json then
+  // carries the per-frame person box and COM the replay draws instead.
+  sprint: ["pose.json", "metadata.json", "tracking.json"],
   jump: ["pose.json", "metadata.json", "com_height.json", "torso_midpoints.json", "key_frames.json"],
   broadJump: ["pose.json", "metadata.json", "foot_piecewise_fit.json", "key_frames.json", "foot_centers.json", "com_midpoints.json", "com_height.json"],
-  changeOfDirection: ["pose.json", "metadata.json"], dribbling: ["pose.json", "metadata.json"],
+  changeOfDirection: ["pose.json", "metadata.json", "tracking.json"], dribbling: ["pose.json", "metadata.json", "tracking.json"],
 });
 const TTL_MS = 15 * 60 * 1000;
 function createEffectiveResults({ db, bucket, HttpsError, now = () => Date.now(), readEvidence: injectedEvidence }) {
