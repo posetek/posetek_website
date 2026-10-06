@@ -1,0 +1,790 @@
+{
+  "schemaVersion": 1,
+  "purpose": "PoseTek notification production validation; partial operational checkpoint",
+  "receiptPreparedAt": "2026-10-04T10:09:02Z",
+  "status": "source-storage-policy-verified; revision-365-physical-and-identity-accepted; maintenance-restored; final006-refused; genuine-delivery-open",
+  "automationComplete": false,
+  "operation": {
+    "provider": "Power Automate with the existing Google Cloud backend",
+    "codexRequiredForOngoingOperation": false,
+    "desktopRequiredForOngoingOperation": false,
+    "retiredHourlyCodexProcedureRequired": false,
+    "soleEmailRecipient": "dylank@posetek.net",
+    "programmersRetainSharedTrackerEditingAccess": true,
+    "manualOutreachOnly": true,
+    "workoutDeliveryPausedByThisIssueHold": false,
+    "websiteDeploymentPerformedByThisValidation": false,
+    "nativeApplicationReleasedByThisValidation": false
+  },
+  "sourceRelease": {
+    "project": "kickai-69dd0",
+    "aggregateReadbackCheckedAt": "2026-10-04T07:01:28.555Z",
+    "endpointCount": 31,
+    "cohortCounts": {
+      "tracker": 6,
+      "insights": 12,
+      "userIssues": 10,
+      "microsoftEmail": 3
+    },
+    "functions": {
+      "captureUserIssueTrackerSources": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceZipSha256": "706c5321af2dd791489874ecae7b39a6c3f716cd24094aaafb94aa7d49a86665",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "claimMicrosoftEmail": {
+        "versionId": "3",
+        "status": "ACTIVE",
+        "sourceZipSha256": "99c420b8a2e10ea2a7f7a91a4e17f5795894789a3066bf154c909fa7382200d6",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "closeTestingEvent": {
+        "versionId": "4",
+        "status": "ACTIVE",
+        "sourceZipSha256": "cb3e339d7ebde3c2e31a3a67601d8a27fbcc6abcfe7878293bb51718f469f4cc",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "dailyUserIssues": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "dispatchUserIssue": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "drainUserIssueTracker": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceZipSha256": "706c5321af2dd791489874ecae7b39a6c3f716cd24094aaafb94aa7d49a86665",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "getClubInsightsV2": {
+        "versionId": "5",
+        "status": "ACTIVE",
+        "sourceZipSha256": "1bc4dc556f906d1da55b1032ff9bda54ec51a1d5a2b313dfc1dedcc9fcc26e65",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "getCoachPlayerComparison": {
+        "versionId": "2",
+        "status": "ACTIVE",
+        "sourceZipSha256": "1bc4dc556f906d1da55b1032ff9bda54ec51a1d5a2b313dfc1dedcc9fcc26e65",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "getUserIssues": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "ingestUserIssueTrackerMail": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceZipSha256": "706c5321af2dd791489874ecae7b39a6c3f716cd24094aaafb94aa7d49a86665",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "observeIssueAi": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "observeIssueDiagnostic": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "observeIssueLog": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "observeIssueReport": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "observeUserIssueTracker": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceZipSha256": "706c5321af2dd791489874ecae7b39a6c3f716cd24094aaafb94aa7d49a86665",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "observeUserIssueTrackerOccurrence": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceZipSha256": "706c5321af2dd791489874ecae7b39a6c3f716cd24094aaafb94aa7d49a86665",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "projectInsightArtifactDeletes": {
+        "versionId": "5",
+        "status": "ACTIVE",
+        "sourceZipSha256": "1bc4dc556f906d1da55b1032ff9bda54ec51a1d5a2b313dfc1dedcc9fcc26e65",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "projectInsightArtifacts": {
+        "versionId": "5",
+        "status": "ACTIVE",
+        "sourceZipSha256": "1bc4dc556f906d1da55b1032ff9bda54ec51a1d5a2b313dfc1dedcc9fcc26e65",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "projectInsightFailures": {
+        "versionId": "5",
+        "status": "ACTIVE",
+        "sourceZipSha256": "1bc4dc556f906d1da55b1032ff9bda54ec51a1d5a2b313dfc1dedcc9fcc26e65",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "projectInsightPlayer": {
+        "versionId": "5",
+        "status": "ACTIVE",
+        "sourceZipSha256": "1bc4dc556f906d1da55b1032ff9bda54ec51a1d5a2b313dfc1dedcc9fcc26e65",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "projectInsightRecords": {
+        "versionId": "5",
+        "status": "ACTIVE",
+        "sourceZipSha256": "1bc4dc556f906d1da55b1032ff9bda54ec51a1d5a2b313dfc1dedcc9fcc26e65",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "projectInsightRevisions": {
+        "versionId": "5",
+        "status": "ACTIVE",
+        "sourceZipSha256": "1bc4dc556f906d1da55b1032ff9bda54ec51a1d5a2b313dfc1dedcc9fcc26e65",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "receiptMicrosoftEmail": {
+        "versionId": "3",
+        "status": "ACTIVE",
+        "sourceZipSha256": "99c420b8a2e10ea2a7f7a91a4e17f5795894789a3066bf154c909fa7382200d6",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "reconcileMicrosoftEmail": {
+        "versionId": "3",
+        "status": "ACTIVE",
+        "sourceZipSha256": "99c420b8a2e10ea2a7f7a91a4e17f5795894789a3066bf154c909fa7382200d6",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "reconcileTestingRepProgress": {
+        "versionId": "4",
+        "status": "ACTIVE",
+        "sourceZipSha256": "15cbaa4f76bda3c2b93523958bf1780a7491faa100eb954bf3239f748b7ac38b",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "reconcileTestingStationProgress": {
+        "versionId": "3",
+        "status": "ACTIVE",
+        "sourceZipSha256": "cb3e339d7ebde3c2e31a3a67601d8a27fbcc6abcfe7878293bb51718f469f4cc",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "recoverUserIssueTracker": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceZipSha256": "706c5321af2dd791489874ecae7b39a6c3f716cd24094aaafb94aa7d49a86665",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "submitUserIssue": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "sweepTestingEventFinalizations": {
+        "versionId": "3",
+        "status": "ACTIVE",
+        "sourceZipSha256": "cb3e339d7ebde3c2e31a3a67601d8a27fbcc6abcfe7878293bb51718f469f4cc",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "sweepUserIssues": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      },
+      "updateUserIssue": {
+        "versionId": "9",
+        "status": "ACTIVE",
+        "sourceZipSha256": "6f3beb1fcc9986ce694e6cfeec7c6b91fbf6cd8439661bf1c250defee1e54a31",
+        "configurationPreserved": true,
+        "rawIamPreserved": true
+      }
+    },
+    "exactActualSourceZipsVerified": true,
+    "rawIamPreserved": true,
+    "staticConfigurationsPreserved": true,
+    "allUnrelatedFunctionsPreserved": true,
+    "originalFullInventoryChainVerified": true,
+    "sourceAcceptanceDoesNotProveSettingsOrPublication": true
+  },
+  "storageActivation": {
+    "state": "active; readback verified",
+    "activatedAt": "2026-10-04T07:04:50.217Z",
+    "seedStorageVersion": 2,
+    "fieldMask": [
+      "seedStorageVersion"
+    ],
+    "settingsWrites": 1,
+    "seedWrites": 0,
+    "rowWrites": 0,
+    "checkpointWrites": 0,
+    "sourceCaptureWrites": 0,
+    "queueWrites": 0,
+    "workbookWrites": 0,
+    "mailWrites": 0,
+    "permissionWrites": 0,
+    "actualReadbackVerified": true,
+    "all690SavedHumanFieldsPreserved": true,
+    "postActivationNativeBatchAccepted": true,
+    "postActivationNativeRevision": 267,
+    "postActivationCloudReadbackCheckedAt": "2026-10-04T09:17:13.707Z",
+    "all690HumanReadbackCheckedAt": "2026-10-04T09:19:42.528Z",
+    "originalFullNativeVerificationExecuted": true,
+    "sourceStateSplicing": false
+  },
+  "notificationPolicy": {
+    "state": "active; readback reconciled",
+    "mode": "first_and_daily",
+    "serverCommitTime": "2026-10-04T07:10:32.256247Z",
+    "settingAddition": "notificationPolicy",
+    "settingsWrites": 1,
+    "immutableActivationAuditCreated": true,
+    "secondActivationCommitPerformed": false,
+    "issueSendingEnabled": false,
+    "immediateNoticeCriteria": [
+      "first issue",
+      "new recorded reporter or target athlete",
+      "severity escalation",
+      "recurrence after Fixed or Verified"
+    ],
+    "routineRepeatHandling": "retained occurrence and daily summary; no immediate repeat notice",
+    "summaryReceiptWindow": "9 AM to 9 AM America/Los_Angeles",
+    "guardsPreserveFrozenEnvelopesConsumedClaimsAndReceipts": true,
+    "fullBacklogPreservationAuditComplete": true,
+    "genuinePostCutoverDylanOnlyDeliveryVerified": false
+  },
+  "backlogAudit": {
+    "status": "complete; exact held source cutoff fully enumerated",
+    "fixedReceiptUpperBound": "2026-10-04T07:10:32.256247Z",
+    "verifiedPages": 130,
+    "examined": 3226,
+    "deferred": 1152,
+    "preserved": 2074,
+    "complete": true,
+    "remainingBacklogNotCountedByThisPage": false,
+    "historicalResendReplayPerformed": false,
+    "noImmediateDeliveryClaimed": true,
+    "actualCompletedCheckpointSavedAt": "2026-10-04T08:50:03.285210Z",
+    "countsAreJobsNotUniqueUsers": true,
+    "emailWritesByAudit": 0,
+    "workbookWritesByAudit": 0,
+    "trackerPublicationAdvancedByThisAudit": false
+  },
+  "sharedTracker": {
+    "path": "PoseTek > Technology > Website > User Issue Tracker > PoseTek Issue Tracker.xlsx",
+    "physicalAcceptedRevision": 267,
+    "counts": {
+      "actions": 691,
+      "instances": 1319,
+      "originalEmailRows": 804,
+      "dailyStatusRows": 3
+    },
+    "archiveFixedReadTime": "2026-10-04T04:14:30.165Z",
+    "pendingTrackerTicketsAtArchive": 3585,
+    "allSavedHumanRecordsProtected": 690,
+    "humanFields": [
+      "Status",
+      "Owner",
+      "Due",
+      "Fix notes"
+    ],
+    "humanPreservationKey": "stable Action ID",
+    "nativeQueueStateAtThisCheckpoint": "RUNNING",
+    "postStorageCutoverPhysicalReadbackAccepted": true,
+    "fullyRefreshedWorkbookClaimed": false,
+    "captureAndPublicationHaveSeparateCheckpoints": true,
+    "capturedOrQueuedDoesNotMeanPublished": true,
+    "physicalCloudReadbackCheckedAt": "2026-10-04T09:17:13.707Z",
+    "savedHumanReadbackCheckedAt": "2026-10-04T09:19:42.528Z",
+    "pendingTrackerTicketsAtPostCutoverSnapshot": 3598,
+    "postCutoverBackendReadTime": "2026-10-04T09:14:27.509Z",
+    "queueStateEvidenceTime": "2026-10-04T09:58:01.150Z",
+    "queueRestorationAfterThisSnapshot": {
+      "verified": true,
+      "resumedAt": "2026-10-04T09:57:43.847Z",
+      "readbackVerifiedAt": "2026-10-04T09:58:01.150Z",
+      "actualQueueState": "RUNNING",
+      "emptyResumePostAttempts": 1,
+      "originalPauseJournalBytesPreserved": true,
+      "routingRateLimitsAndRetryConfigurationPreserved": true,
+      "settingsWrites": 0,
+      "directEmailWrites": 0,
+      "directWorkbookWrites": 0,
+      "completePublicationClaimed": false
+    },
+    "all690SavedHumanRecordsVerified": true,
+    "allNativeReceiptsVerified": 267,
+    "formulaAndMachineHashVerificationPassed": true,
+    "sourceCoverageAtPostCutoverSnapshot": {
+      "outlook": {
+        "available": true,
+        "capturedThrough": "2026-10-04T09:09:03.035Z",
+        "publishedThrough": "2026-10-04T00:34:05.451Z",
+        "completedSequence": 540,
+        "publishedSequence": 459,
+        "allCapturedWindowsPublished": false
+      },
+      "backend": {
+        "available": true,
+        "capturedThrough": "2026-10-04T09:09:03.134Z",
+        "publishedThrough": "2026-10-04T00:34:05.351Z",
+        "completedSequence": 531,
+        "publishedSequence": 460,
+        "allCapturedWindowsPublished": false
+      }
+    },
+    "outstandingDeliveryScanCompleteClaimed": false,
+    "freshRevision267Recheck": {
+      "physicalCloudReadbackCheckedAt": "2026-10-04T09:42:35.564Z",
+      "savedHumanReadbackCheckedAt": "2026-10-04T09:43:47.033Z",
+      "samePreviouslyAcceptedCloudBytes": true,
+      "all690SavedHumanRecordsVerified": true
+    },
+    "laterBackendProgress": {
+      "checkedAt": "2026-10-04T10:00:56.037Z",
+      "backendAcknowledgedRevision": 268,
+      "nativeWriterActive": true,
+      "freshPhysicalReadbackOfThisRevisionAccepted": false,
+      "allRetainedUpdatesPublished": false,
+      "outstandingDeliveryScanActive": true,
+      "sourceCoverage": {
+        "outlook": {
+          "capturedThrough": "2026-10-04T09:54:04.096Z",
+          "publishedThrough": "2026-10-04T00:34:05.451Z",
+          "completedSequence": 549,
+          "publishedSequence": 459,
+          "allCapturedWindowsPublished": false
+        },
+        "backend": {
+          "capturedThrough": "2026-10-04T09:54:04.031Z",
+          "publishedThrough": "2026-10-04T00:34:05.351Z",
+          "completedSequence": 540,
+          "publishedSequence": 460,
+          "allCapturedWindowsPublished": false
+        }
+      }
+    },
+    "sharedEditingAccessCheckedAt": "2026-10-04T08:01:50.503Z",
+    "nolanAndTaiyoEditingAccessVerified": true,
+    "permissionWrites": 0,
+    "sharedEditingAccessObservedAt": "2026-10-04T08:00:07.702487Z",
+    "historicalFirstPostCutoverCheckpoint": true,
+    "latestAcceptedCheckpoint": {
+      "revision": 365,
+      "backendReadTime": "2026-10-04T17:03:17.750Z",
+      "physicalCloudReadbackCheckedAt": "2026-10-04T17:06:03.434Z",
+      "savedHumanReadbackCheckedAt": "2026-10-04T17:09:07.313Z",
+      "postIdentityUniqueAcceptanceCheckedAt": "2026-10-04T17:09:52.135Z",
+      "verified": true,
+      "physicalNativeVerified": true,
+      "identityAcceptanceComplete": true,
+      "pendingTrackerTickets": 0,
+      "counts": {
+        "actions": 789,
+        "instances": 3228,
+        "originalEmailRows": 2384,
+        "dailyStatusRows": 4
+      },
+      "all690SavedHumanRecordsVerified": true,
+      "additionalActionRecordsRetained": 99,
+      "nativeReceiptsVerified": 365,
+      "allNativeMachineHashesVerified": true,
+      "formulasAndCachedResultsVerified": true,
+      "fullOriginalCompanionFactsRecomputed": true,
+      "rawPostIdentityEvidenceUnchanged": true,
+      "sourceStateSplicing": false,
+      "sourceCoverage": {
+        "outlook": {
+          "capturedThrough": "2026-10-04T16:58:02.536Z",
+          "publishedThrough": "2026-10-04T16:58:02.536Z",
+          "completedSequence": 605,
+          "publishedSequence": 605,
+          "allCapturedWindowsPublished": true
+        },
+        "backend": {
+          "capturedThrough": "2026-10-04T16:58:02.544Z",
+          "publishedThrough": "2026-10-04T16:58:02.544Z",
+          "completedSequence": 596,
+          "publishedSequence": 596,
+          "allCapturedWindowsPublished": true
+        }
+      },
+      "allLaterArrivalsCoveredClaimed": false,
+      "verifierCloudWrites": 0,
+      "verifierWorkbookWrites": 0,
+      "verifierSourceCheckpointWrites": 0
+    }
+  },
+  "identityAndCoverage": {
+    "reporterContactFromExactRecordedAuthUid": true,
+    "reporterSeparateFromTargetAthlete": true,
+    "unverifiedAndFailedContactLookupsRemainExplicit": true,
+    "serviceOperatorsNotInferred": true,
+    "genericDiagnosticsDoNotProveCrashOrInterruptedWorkout": true,
+    "routineSuccessfulWorkoutCompletionIsOutsideIssueWorkbook": true,
+    "dedicatedAssignedCoachLookupInstrumented": false,
+    "mailboxIdentitySettingsActivatedAtThisCheckpoint": false,
+    "currentTypedGraphAcceptanceRequiredBeforeActivation": true,
+    "genuineSymbolicatedNativeCrashAcceptanceVerified": false,
+    "nativeMacIPhoneTestFlightAcceptancePending": true,
+    "separateIdentityReview": {
+      "olderContactAnnotationsPending": 34,
+      "affectedOperatorIdentityClaimedFromTheseCounts": false,
+      "postCutoverIdentityAcceptanceRecordedHere": false,
+      "automatedServiceMailJoinsVerified": 39,
+      "joinedServiceOperatorsRemainUnknown": true,
+      "historicalTargetLabelsUnconfirmed": 6,
+      "completeIdentityAcceptance": false,
+      "historical34LabelCorrection": {
+        "originalField": "olderContactAnnotationsPending",
+        "originalValue": 34,
+        "correctMeaning": "previously incomplete source-authority rows; not necessarily missing, unknown or pending contacts",
+        "latestIncompleteSourceAuthority": 0,
+        "unknownAndUnverifiedContactsMayRemainExplicit": true
+      }
+    },
+    "excelManualResolvedTriggersImmediateRecurrenceEmail": false,
+    "adminFixedVerifiedRecurrenceRequiresRecordedTransitionEvidence": true,
+    "mailOnlyMonitoringNoticeCreatesBackendInstance": false,
+    "historicalPreActivationCheckpoint": true,
+    "latestAcceptedIdentity": {
+      "checkedAt": "2026-10-04T17:09:52.135Z",
+      "revision": 365,
+      "complete": true,
+      "counts": {
+        "publishedInstances": 3228,
+        "exactSourceVerified": 3228,
+        "incompleteSourceAuthority": 0,
+        "exactFrozenOutboxSourceRows": 3228,
+        "verifiedFrozenMailJoinSourceRows": 0,
+        "recordedActorRows": 187,
+        "unknownActorRows": 3041,
+        "distinctRecordedAccounts": 8,
+        "authDisplayNameUnavailableRows": 187,
+        "verifiedEmailRows": 148,
+        "unverifiedEmailRows": 39,
+        "unavailableContactRows": 3041,
+        "failedContactLookupRows": 0,
+        "contactLookupOlderThan24HoursRows": 0,
+        "reporterUploaderOnlyRows": 127,
+        "targetRecordedRows": 117,
+        "actorDifferentFromTargetRows": 117,
+        "historicalTargetUnconfirmedRows": 6,
+        "historicalActorWordingUnconfirmedRows": 0,
+        "automatedServiceRows": 3027,
+        "unknownActorCallableRows": 0,
+        "diagnosticRows": 57,
+        "unknownDiagnosticSubtypeRows": 57
+      },
+      "allSourcesExact": true,
+      "unknownOperatorsNotInferred": true,
+      "allUnknownActorLabelsExplicit": true,
+      "allPublishedTargetsCorroboratedBySourceBodies": false,
+      "contactCurrencyAtLookupOnly": true,
+      "freshAuthLookupPerformed": false,
+      "diagnosticsDoNotProveCrash": true,
+      "countsAreRowsUnlessExplicitlyNamedAccounts": true
+    }
+  },
+  "googleCloudFallback": {
+    "configurationCheckedAt": "2026-10-04T08:38:52.808Z",
+    "activePolicyCount": 2,
+    "soleDestination": "dylank@posetek.net",
+    "fallbackDeliveryProvedByConfiguration": false,
+    "bothPoliciesOn": true
+  },
+  "offlineValidation": {
+    "trackerStorageTestsPassed": 209,
+    "deployedRulesClientDenialAssertionsPassed": 300,
+    "scopedSourceOperatorTestsPassed": 30,
+    "insightsSourceOperatorTestsPassed": 17,
+    "notificationPolicyOperatorTestsPassed": 17,
+    "policyPerformanceSuccessorTestsPassed": 35,
+    "auditedPolicyControlSuccessorTestsPassed": 25,
+    "nativeGetParallelPolicySuccessorTestsPassed": 32,
+    "oneExistingTaskGuardTestsPassed": 14,
+    "freshOnTimestampValidatorTestsPassed": 9,
+    "freshOnTimestampProbeTestsPassed": 21,
+    "originalTypedSemanticFixturesIncludedInProbeTests": 13,
+    "offlineTestsDoNotEstablishGenuineDeliveryOrPublication": true,
+    "archivedIdPolicySuccessorTestsPassed": 12,
+    "cap16ReadSuccessorTestsPassed": 41,
+    "independentCap16ReadSuccessorTestsPassed": 41,
+    "closedReadDependencySuccessorTestsPassed": 34,
+    "independentClosedReadDependencySuccessorTestsPassed": 34,
+    "focusedRecurrenceContractTestsPassed": 7,
+    "batchedNativeQueueValidationTestsPassed": 23,
+    "independentBatchedNativeQueueValidationTestsPassed": 23
+  },
+  "evidenceSha256": {
+    "aggregateSourceReadback": "be1611154cde589dec37fd9befda60b799762040c2ceaba0dd646d4dda1eb322",
+    "storageActivation": "e4b48a56961a7eccd40e4b155346b85af0d49a7c4729bfa3d36d0d9c85128902",
+    "policyActivationReadback": "461b810508014a7debe48c13ce47ba0fbfae66fa03eef8656d8013d2ac152110",
+    "firstBacklogPage": "ca7b0821eeca602152c497fef3bd2cffa0a457a51ffae042efde9ffad49cc5df",
+    "completedPolicyInputs": "33171cbe4a465ba708b48bb1ef81864a4408d0916ab230f641f0b34e8f990c4f",
+    "completedPolicyResult": "398f507bee610473b2d1069cec633e4d4dd9175277ac9235e5fac027498a7f19",
+    "completedPolicyCheckpoint": "af768eb0ca8be130c30004267a78cacf3ce201848137e8a22112aceba0c5974d",
+    "firstV2NativeCloudReadback": "af238426b0545c6de9047029c8b8ec3ca27cffa7fd3a3247cad261a14df86a7c",
+    "firstV2FullCloudCompanion": "f51fbe5010896b09938f11e85e496a42f162d031f1c7c1b564ba8644a1474f7e",
+    "firstV2All690HumanReadback": "6e283390f8aa6b24c27d1ff8df154b712d717f91cfdb080b28787e87ca994a54",
+    "firstV2FullHumanCompanion": "eae1c1fb7e0b61fc0c68d27320a99104afede085cca414427ab54dcac04fd0bc",
+    "nativeQueueRestoration": "3c04ddac4256c70937773a4c51f6a9f3e820dc5a7e717c45268504a02c54421e",
+    "freshRevision267CloudRecheck": "6977852239aab55b1364299a5215db479e534295df33f39221d9a13cf66f0399",
+    "freshRevision267CloudCompanion": "25c7865ce9beac80d8cb7b0a421c9d789cc6c780dfc8152d1230d41641b60f55",
+    "freshRevision267HumanRecheck": "c3cab234941122746136eb7829c4d77c64069aee833dcd9a01f75339168ff810",
+    "freshRevision267HumanCompanion": "ab4269723abb384b79f943a5c7f31ba8875d8e255199bf0da9eeb90710d565f7",
+    "laterBackendCoverageRead": "0c43e6f62bdfac673dcf4b2a0a309bdb4198402d50bec283a5a0c94b72be898c",
+    "currentGoogleMonitoringDestinations": "c7315bf45b320ea3d40e7d653cd64f7c43f3e330163a74b3c9abecbae613156d",
+    "currentSharedEditingAccess": "c961865c722b77bd18c81ffabb7de8932894d04be3d1a484da41a02bea8e2f60",
+    "independentOutlookReview": "9ddb7d8c84b1094b93fc678728589d66592bd8b4844cd059476276910e7e162c",
+    "nativeMailAuthorityReview": "b995dc428cacf81f31b02da98560739b12330d1e6b7aa29af7e3917e3d33c5d0",
+    "nativeMailExactJoinReview": "a07c2f2658d730222430f4ad5ae81aa682f7e946ddca9f488948953a97322391",
+    "batchedNativeQueueToolingValidation": "2f8bbd1c0520bc54097c4baa31b4c5c3a19c1911c6615d47584a90d8f94094da",
+    "independentBatchedNativeQueueToolingAcceptance": "ebf070ebd6f991c6c3f5cf744e7c2638be3f53c3e6b567520d74d3f7ed8238f7",
+    "revision365PhysicalCloudReadback": "c45c5a6a10cc19613b862f0c2c8ab90f35d45ad9522395e0c9acc13232771efb",
+    "revision365FullCloudCompanion": "09b2824713f8d2f3bb116df8d76957ec5f5af728d88c51517884760cb811cd43",
+    "revision365All690HumanReadback": "eeaa9553c8874eebe9aee7a794a861e2bd9514270581bb6ec094bfb24e453ee4",
+    "revision365FullHumanCompanion": "b96d1126a0dbb42a8a8fe2951156b27ab5f2fa8b42e9aa74b681e3580d791041",
+    "revision365PostIdentityUniqueAcceptance": "f6b460652a6d7d99544dea4b3a3d09af1f66345d93c31ffbf08a482c7f4de2bf",
+    "nativeFinalHoldRestoration": "9b99fd8128be377718f8b6c49c34e7e6b5754c84052338e41400f9d502d56a1b",
+    "captureFinalHoldRestoration": "fc7760b12a512121e5fa7c039e784e37f3fe8b21eac057b651a818d76a6a9889",
+    "recoveryFinalHoldRestoration": "5c351369ebb63c69d9acb15a7e318f16b5e0c63d35492c13995fddef73c670d3",
+    "final006RefusedStage": "2b8c4fb6f9d2d9087379083ac66c4980763bc4f30622e482972f5b485c4d036f",
+    "publicationCheckpointReadOnlyInspection002": "7206bc2a7703587ebca6d0576f0eda84cc2cf4d6bd3aead4e7c11256c528c2a5",
+    "scopedInsightsMetadataInterpretation": "acd9d4fba0543afcb6032b265868b9961c07304065426d898970a9100844fdb2",
+    "scopedInsightsMetadataCensus": "a7e2c34beccf53cd806ec03bb07338ee109c9898a6b4865bccfdd0c44cd3d5c0",
+    "scopedInsightsHistoricalLogReview": "f599168d09cca32bd904c12fa6e7fa8346b2aa17fc31ee7529098cc7adfe742c",
+    "scopedInsightsLaterLogReview": "519fe14b28ecffed554be3cca97386cb453f0e84fe84593ddf5191fce0237c1f",
+    "scopedSdkWarningInterpretation": "01f4a539e494696c388b3526b2e8857516a65c07a9222db6c6235d82bad89d0d",
+    "guardedMailboxIdentityActivationJournal": "d60f9a9e97ecca005be2283951c7280bc2d1f6640ee9ebacc93b6125dfd461b8",
+    "currentMicrosoftSenderOnObservation": "c74492e0752d0aa00e836f3ac6d869b8e65c8d30c76954111068e32d057a22cd",
+    "currentMicrosoftSenderOnScreenshot": "97073faf31d8b83c32ac6945c5e3dd780b8ad621474d4ebc6da70b4dbd559867"
+  },
+  "remainingAcceptanceGates": [
+    "Obtain fresh unchanged final-send controls and guards after final006 refusal; no automatic replay or age relaxation",
+    "Resume issue sending only after final guarded acceptance, then confirm a genuine Dylan-only alert and its accurately identified published record",
+    "Use fresh evidence for arrivals after the accepted revision-365 source cutoffs; backend-only revision-367 health is not physical acceptance",
+    "Keep independent outstanding-delivery scan completeness separate from captured/published source checkpoints and metadata reconciliation",
+    "Keep unknown operators, unverified contacts, six historical target labels and native Mac/iPhone/TestFlight and dedicated-coach limits explicit",
+    "Keep seven stale and 428 missing Insights current manifests and ordinary unfinished testing work explicit; no all-account, payload, outcome or incident-resolution acceptance"
+  ],
+  "preservationLimits": [
+    "No historical Resend replay, automatic user outreach or additional purchase",
+    "Original source IDs, email rows, frozen envelopes, consumed claims and partial delivery receipts remain evidence",
+    "No resolution solely because alerts stop",
+    "No claim about all later arrivals or independent scan completeness",
+    "No private files, credentials, contact identities, message bodies or raw incident records included",
+    "Manual Excel status, backend admin issue state, monitoring recovery and recipient delivery remain separate facts"
+  ],
+  "independentOutlookReview": {
+    "lowerInclusive": "2026-10-04T08:35:00Z",
+    "upperExclusive": "2026-10-04T09:38:30Z",
+    "checkedAt": "2026-10-04T09:38:30Z",
+    "readStatus": "all",
+    "subjectFilter": "none",
+    "fullPaginationComplete": true,
+    "messageCount": 0,
+    "noLaterDeliveryOrHistoricalCoverageClaimed": true
+  },
+  "historicalStatusAtFirstNativeCheckpoint": "source-storage-policy-and-first-native-publication-verified; backlog-audit-complete; native-queue-restored; final-runtime-acceptance-incomplete",
+  "latestDocumentationEvidenceCheckedAt": "2026-10-04T17:27:00.261Z",
+  "mailboxIdentityActivation": {
+    "state": "complete; original guarded transaction acknowledged and read back",
+    "activatedAt": "2026-10-04T15:28:02.319Z",
+    "journalPhase": "complete",
+    "settingsWrites": 1,
+    "sourceBindingWrites": 1,
+    "sourceCaptureAndPublicationFieldsPreserved": true,
+    "nativeRowsWritten": 0,
+    "checkpointWrites": 0,
+    "queueWrites": 0,
+    "workbookWrites": 0,
+    "emailRequests": 0,
+    "permissionWrites": 0,
+    "issueSendingActivatedByThisTransaction": false
+  },
+  "publicationCheckpointReconciliation": {
+    "checkedAt": "2026-10-04T15:19:25.005Z",
+    "state": "after",
+    "readOnlyGetInspection": true,
+    "originalJournalPhase": "uncertain",
+    "originalJournalRestoreRequired": true,
+    "retainedJournalEvents": 17,
+    "originalJournalDiagnosticCode": "checkpoint_recovery_failed",
+    "originalFinalVerificationControlLifetimeExpired": true,
+    "outlook": {
+      "publishedSequence": 596,
+      "publishedThrough": "2026-10-04T14:39:03.917Z"
+    },
+    "backend": {
+      "publishedSequence": 587,
+      "publishedThrough": "2026-10-04T14:39:04.050Z"
+    },
+    "captureFieldsAndQueueConfigurationUnchanged": true,
+    "inspectionCloudWrites": 0,
+    "journalHistoryPreserved": true,
+    "cleanFinalAcknowledgementClaimed": false,
+    "automaticReplayAllowed": false,
+    "newWorkbookRevisionClaimed": false,
+    "freshPhysicalPublicationAcceptanceClaimedByInspection": false,
+    "independentRecoveryScanCompletenessClaimed": false
+  },
+  "maintenanceRestoration": {
+    "nativeQueueRestored": "RUNNING",
+    "nativeResumePostAttempts": 1,
+    "captureSchedulerRestored": "ENABLED",
+    "captureRestorePostAttempts": 1,
+    "recoverySchedulerRestored": "ENABLED",
+    "recoveryRestorePostAttempts": 1,
+    "allHeldOperationsRestored": true,
+    "sourceCoverageAdvancedByRestorationClaimed": false,
+    "automaticReplayAllowed": false
+  },
+  "finalIssueSending": {
+    "attempt": "final006",
+    "refusedAt": "2026-10-04T17:15:41.837Z",
+    "errorCode": "issue_resume_fresh_evidence_required",
+    "applyInvoked": false,
+    "originalSendJournalExists": false,
+    "sendIntentConsumed": false,
+    "emailSendPerformed": false,
+    "issueSendingAccepted": false,
+    "genuinePostCutoverDylanOnlyDeliveryVerified": false,
+    "genuineDeliveryGate": "OPEN",
+    "overallProductionAcceptance": false,
+    "sourceClocksRedated": false,
+    "automaticReplayAllowed": false
+  },
+  "laterBackendHealth": {
+    "backendAcknowledgedRevision": 367,
+    "rootObservedCapturedAndPublishedThroughMinuteUtc": "2026-10-04T17:20Z",
+    "backendHealthOnly": true,
+    "freshPhysicalReadbackOfRevision367Accepted": false,
+    "latestPhysicalAcceptedRevisionRemains": 365
+  },
+  "scopedInsightsMetadata": {
+    "readTime": "2026-10-04T16:58:29.159Z",
+    "checkedAt": "2026-10-04T16:58:32.354Z",
+    "fixedReadTimeMetadataOnly": true,
+    "readRpcs": 8,
+    "playerParentDocumentNamesAndPresenceOnly": true,
+    "playerParentDocuments": 497,
+    "currentManifests": 69,
+    "version4CurrentManifests": 63,
+    "version2CurrentManifests": 6,
+    "coherentFreshVersion4CurrentManifests": 62,
+    "staleCurrentManifests": 7,
+    "staleVersion2Manifests": 6,
+    "staleVersion4Manifests": 1,
+    "missingCurrentManifests": 428,
+    "referencedDayDocuments": 101,
+    "missingReferencedDayDocuments": 0,
+    "activeRebuildLeases": 0,
+    "normalOpenOrIncompletePendingTestingMarkers": 17,
+    "eligibleUnresolvedFinalizationsAtFixedPoint": 0,
+    "actualPostRepairSettledVersion4Manifests": 15,
+    "earliestRebuiltAt": "2026-10-04T16:54:15.390Z",
+    "latestRebuiltAt": "2026-10-04T16:54:31.990Z",
+    "scopedSettledVersion4MetadataAccepted": true,
+    "deployedVersion4DependencyClosures": 9,
+    "deployedOlderVersion2DependencyClosures": 3,
+    "all497InsightsManifestsVerified": false,
+    "profileFieldsReadOrRefreshed": false,
+    "everyEndpointExecutionAttributed": false,
+    "payloadAccuracyAccepted": false,
+    "allAccountUserOutcomesAccepted": false,
+    "incidentResolutionClaimed": false,
+    "historicalLogReview": {
+      "lowerInclusive": "2026-10-04T07:05:00Z",
+      "upperExclusive": "2026-10-04T16:30:00Z",
+      "fullPaginationComplete": true,
+      "warningOrHigherRecords": 0,
+      "coversActualPostRepairRebuildWindow": false
+    },
+    "laterLogReview": {
+      "checkedAt": "2026-10-04T17:20:55.642Z",
+      "lowerInclusive": "2026-10-04T07:05:00Z",
+      "upperExclusive": "2026-10-04T17:18:00Z",
+      "endpointCount": 12,
+      "pages": 1,
+      "fullPaginationComplete": true,
+      "warningRecords": 29,
+      "allWarningsFrom": "projectInsightRecords",
+      "allWarningsHaveSameText": true,
+      "warningText": "Snapshot has no readTime. Using now()",
+      "warningEarliest": "2026-10-04T16:54:17.150030Z",
+      "warningLatest": "2026-10-04T16:54:33.107953Z",
+      "errorOrHigherRecords": 0,
+      "warningTimesOverlapActualRebuildWindow": true,
+      "deployedClosureLockfileFirebaseFunctionsVersion": "4.9.0",
+      "matchesLocalSdkFallbackWarning": true,
+      "runtimeSdkBytesIndependentlyDownloaded": false,
+      "failedRebuildCrashOrUserImpactInferredFromWarning": false
+    }
+  },
+  "historicalRemainingAcceptanceGatesAtFirstNativeCheckpoint": [
+    "Drain retained tracker updates and confirm separate Outlook/backend publication checkpoints with fresh cloud workbook bytes",
+    "Correct/review older contact annotations and publish them while preserving confirmed automated-service joins with unknown operators",
+    "Obtain current typed Graph/source/native/human evidence for the guarded mailbox identity cutover",
+    "Complete the existing outstanding recovery scan without resetting its cursor; do not imply point-in-time source coverage",
+    "Resume issue sending only after final guarded acceptance, then confirm a genuine Dylan-only alert and its accurately identified published record",
+    "Keep native device/crash and uninstrumented coach-workflow limits explicit"
+  ],
+  "microsoftSenderControl": {
+    "state": "On",
+    "observedAt": "2026-10-04T17:13:47.633Z",
+    "dylanConnectionUnchanged": true,
+    "noConfigurationSaveSinceValidatedExport": true,
+    "triggerConcurrencyThrottlingAdvisoryVisible": true,
+    "advisoryResolvedByAcceptedProof": false,
+    "mailSendsByObservation": 0,
+    "configurationWritesByObservation": 0,
+    "configurationOrFlowSuccessBadgeProvesDelivery": false,
+    "genuineDeliveryGate": "OPEN"
+  }
+}

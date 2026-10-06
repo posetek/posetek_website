@@ -60,6 +60,22 @@ test('numeric dimensions, overhead and goal-area need their exact capability; fa
 test('participant minimum preserves stricter normalized partner requirement',()=>{
   for(const id of ['STR-007','STR-008']){const r=manifest.records.find(r=>r.drillId===id).accessRequirements;assert.equal(r.participantMin,2);assert.equal(requirementsSatisfied(r,EQUIPMENT,{schemaVersion:1,confirmed:true,participantCount:1,space:{}}),false);}
 });
+test('sufficient-space assumption covers missing clearance only, with explicit restrictions authoritative',()=>{
+  const access={schemaVersion:1,confirmed:true,facility:'home',participantCount:1,space:{assumedSufficient:true}};
+  const square=manifest.records.find(r=>r.drillId==='VJP-001').accessRequirements;
+  assert.equal(requirementsSatisfied(square,['markers'],access),true);
+  assert.equal(requirementsSatisfied(square,['markers'],{...access,space:{assumedSufficient:true,lengthMeters:1}}),false);
+  assert.equal(requirementsSatisfied(square,['markers'],{...access,space:{assumedSufficient:true,widthMeters:1}}),false);
+  assert.equal(requirementsSatisfied(square,['markers'],{...access,space:{assumedSufficient:false}}),false);
+  const jump=manifest.records.find(r=>r.drillId==='VJP-002').accessRequirements;
+  assert.equal(requirementsSatisfied(jump,[],access),true);
+  assert.equal(requirementsSatisfied(jump,[],{...access,space:{assumedSufficient:true,overheadClear:false}}),false);
+  const shooting=manifest.records.find(r=>r.drillId==='SHT-502').accessRequirements;
+  assert.equal(requirementsSatisfied(shooting,['ball','cones','goal'],access),false);
+  const partner=manifest.records.find(r=>r.drillId==='STR-008').accessRequirements;
+  assert.equal(requirementsSatisfied(partner,['bench','mat'],access),false);
+  assert.equal(requirementsSatisfied(square,[],access),false);
+});
 test('only the three explicit unresolved constraints hold access-aware selection',()=>{
   for(const r of manifest.records.filter(r=>r.accessRequirements.unknowns.length))assert.equal(requirementsSatisfied(r.accessRequirements,EQUIPMENT,{schemaVersion:1,confirmed:true,facility:'pitch',participantCount:12,space:{lengthMeters:1000,widthMeters:1000,overheadClear:true,goalArea:true}}),false);
   assert.ok(manifest.records.every(r=>!r.accessRequirements.space.surfaces));

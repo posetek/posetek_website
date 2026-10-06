@@ -61,7 +61,7 @@
   }
   .admin-scope-menu > summary::-webkit-details-marker,
   .admin-account-menu > summary::-webkit-details-marker { display: none; }
-  .admin-scope-menu > summary .material-symbols-outlined { font-size: 17px; color: var(--text-muted); }
+  .admin-scope-menu > summary .material-symbols-outlined { font-size: 17px; color: var(--text-muted); width: 18px; height: 18px; flex: 0 0 18px; overflow: hidden; }
   .admin-account-menu > summary { width: 42px; height: 42px; justify-content: center; border-radius: 50%; padding: 0; }
   .admin-account-menu > summary > span:first-child { font-weight: 800; }
   .admin-account-menu > summary .material-symbols-outlined { display: none; }
@@ -155,6 +155,19 @@
   .admin-row:hover,
   .admin-home-option:hover,
   .admin-result-tile:hover { border-color: #557063; transform: none; }
+
+  // Eight tabs (Device performance, plan 07 §7). Above 760px the row must never
+  // hide a tab behind the scrollbar-less horizontal scroll above: tabs keep their
+  // natural width (admin-surfaces.scss stretches them with flex: 1), icons drop
+  // out below 1100px as they already do on phones, and if the labels still do
+  // not fit the row wraps rather than scrolls.
+  @media (min-width: 761px) and (max-width: 1250px) {
+    .admin-nav { flex-wrap: wrap; overflow-x: visible; column-gap: 18px; row-gap: 0; }
+    .admin-nav-link { flex: 0 0 auto; }
+  }
+  @media (min-width: 761px) and (max-width: 1100px) {
+    .admin-nav-link .material-symbols-outlined { display: none; }
+  }
 
   @media (max-width: 760px) {
     .admin-header { padding: 0; }

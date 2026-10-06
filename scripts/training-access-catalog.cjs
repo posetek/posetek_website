@@ -137,5 +137,5 @@ async function main(){
   }
   const plan=buildPlan(manifest,equipment,await snapshot(c));fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify(plan,null,2)+'\n');console.log(JSON.stringify(summary(plan)));
 }
-module.exports={buildPlan,verifyPlan,assertSameSnapshot,writesFor,verifyAfter,applyPlan,snapshot,summary};
+module.exports={buildPlan,verifyPlan,assertSameSnapshot,writesFor,verifyAfter,applyPlan,snapshot,summary,normalizeEmptyProtoContainers,sameTypedValues};
 if(require.main===module)main().catch(e=>{console.error(e.message);process.exitCode=1;});

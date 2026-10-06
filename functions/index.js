@@ -6,6 +6,19 @@ const { playerSegment, storageFolderCandidates } = require("./athlete-storage-pa
 
 admin.initializeApp();
 const db = admin.firestore();
+Object.assign(exports, require("./device-processing").createDeviceProcessingEntrypoints(functions, admin, requireCaller));
+
+// Feedback keeps legacy/visitor responses anonymous and verifies account-mode submissions.
+exports.receiveAppFeedback = functions.runWith({ secrets: ["APP_FEEDBACK_RATE_KEY"], timeoutSeconds: 30, maxInstances: 10 }).https.onRequest(
+  require("./app-feedback").createAppFeedbackHttp({ db, Timestamp: admin.firestore.Timestamp, rateKey: () => process.env.APP_FEEDBACK_RATE_KEY,
+    verifyIdToken: (token, checkRevoked) => admin.auth().verifyIdToken(token, checkRevoked), getUser: uid => admin.auth().getUser(uid) })
+);
+exports.getAppFeedback = functions.runWith({ timeoutSeconds: 30, maxInstances: 5 }).https.onCall((data, context) =>
+  require("./app-feedback").createAppFeedbackAdmin({ db, Timestamp: admin.firestore.Timestamp, HttpsError: functions.https.HttpsError })(data || {}, requireCaller(context))
+);
+// Private workout delivery is additive and disabled until its settings are enabled.
+Object.assign(exports, require("./workout-notifications-entrypoints").createWorkoutNotificationEntrypoints(functions, admin, requireCaller));
+Object.assign(exports, require("./user-issue-entrypoints").createUserIssueEntrypoints(functions, admin));
 const { createDiagnosticUploads } = require("./diagnostic-uploads");
 const diagnosticUploads = createDiagnosticUploads({ db, bucket: admin.storage().bucket("kickai-69dd0.firebasestorage.app"), FieldValue: admin.firestore.FieldValue, HttpsError: functions.https.HttpsError });
 exports.beginDiagnosticUpload = functions.https.onCall((data, context) => diagnosticUploads.authorize(data || {}, requireCaller(context)));
@@ -16,6 +29,11 @@ exports.acknowledgeDiagnosticArtifacts = functions.firestore.document("failureCa
 exports.acknowledgeDiagnosticAttempt = functions.firestore.document("processingAttempts/{attemptId}").onWrite((_, context) => diagnosticRetention.acknowledge(context.params.attemptId, "processingAttempts"));
 exports.setDiagnosticInvestigationHold = functions.https.onCall((data, context) => diagnosticRetention.protect(data || {}, requireCaller(context)));
 exports.cleanupDiagnosticArtifacts = functions.runWith({ timeoutSeconds: 120, memory: "256MB" }).pubsub.schedule("every 24 hours").onRun(() => diagnosticRetention.sweep());
+exports.ingestDevicePerformanceV1 = require("./device-performance-ingestion").createIngestDevicePerformanceV1(functions, admin, requireCaller);
+exports.getDevicePerformanceV1 = require("./device-performance").createDevicePerformanceCallable("getDevicePerformanceV1", functions, admin, requireCaller);
+exports.getDevicePerformanceDetailV1 = require("./device-performance").createDevicePerformanceCallable("getDevicePerformanceDetailV1", functions, admin, requireCaller);
+exports.getDevicePerformanceAttemptV1 = require("./device-performance").createDevicePerformanceCallable("getDevicePerformanceAttemptV1", functions, admin, requireCaller);
+exports.setDevicePerformanceLabelV1 = require("./device-performance").createDevicePerformanceCallable("setDevicePerformanceLabelV1", functions, admin, requireCaller);
 
 // Additive reporting and engagement endpoints; existing callables stay intact.
 const insightEntrypoints = require("./insights-entrypoints").createInsightsEntrypoints(functions, admin, requireCaller);
@@ -36,13 +54,15 @@ exports.createCoachPlayer = functions.https.onCall((data, context) => playerInvi
 exports.ensurePlayerInvitationOnWrite = functions.runWith({ failurePolicy: true }).firestore.document("players/{playerId}").onWrite((_, context) => playerInvitations.ensure(context.params.playerId));
 
 const { createSocial } = require("./social");
+const { observeSocialCallable } = require("./social-callable-observation");
 const social = createSocial({ db, bucket: admin.storage().bucket("kickai-69dd0.firebasestorage.app"), HttpsError: functions.https.HttpsError });
 for (const [endpoint, handler] of Object.entries({
   getSocialAdminDirectory: "adminDirectory", getSocialContext: "getContext", getSocialFeed: "getFeed", getSocialActivity: "getDetail",
   saveSocialPreferences: "savePreferences", setSocialVisibility: "setVisibility", getSocialPeople: "people",
   socialConnection: "connect", setSocialKudos: "kudos", getSocialComments: "comments", saveSocialComment: "comment",
   reportSocialActivity: "report", moderateSocialActivity: "moderation", getSocialMedia: "media",
-})) exports[endpoint] = functions.runWith({ timeoutSeconds: 120 }).https.onCall((data, context) => social[handler](data || {}, requireCaller(context)));
+})) exports[endpoint] = functions.runWith({ timeoutSeconds: 120 }).https.onCall(observeSocialCallable({ endpoint,
+  handler: (data, caller) => social[handler](data, caller), requireCaller, logger: functions.logger, HttpsError: functions.https.HttpsError }));
 // Re-read authoritative inputs in a transaction: duplicate and out-of-order
 // mobile/web writes cannot publish an older projection over a newer result.
 exports.projectSocialReps = functions.runWith({ timeoutSeconds: 120, failurePolicy: true }).firestore.document("players/{playerId}/reps/{repId}").onWrite((change, context) => {
@@ -81,13 +101,15 @@ exports.trainingSaveReadiness = functions.https.onCall((data, context) => traini
 const analysisReviews = createAnalysisReviews({ db, bucket: admin.storage().bucket("kickai-69dd0.firebasestorage.app"), FieldValue: admin.firestore.FieldValue, HttpsError: functions.https.HttpsError });
 const clubBranding = createClubBranding({ db, bucket: admin.storage().bucket("kickai-69dd0.firebasestorage.app"), FieldValue: admin.firestore.FieldValue, HttpsError: functions.https.HttpsError });
 const clubs = createClubs({ invitations: playerInvitations, db, FieldValue: admin.firestore.FieldValue, HttpsError: functions.https.HttpsError });
+const { createAccountAccess } = require("./account-access");
+const accountAccess = createAccountAccess({ db, authDirectory: admin.auth(), clubs, FieldValue: admin.firestore.FieldValue, HttpsError: functions.https.HttpsError });
 const testingEvents = createTestingEvents({
   db,
   FieldValue: admin.firestore.FieldValue,
   Timestamp: admin.firestore.Timestamp,
   HttpsError: functions.https.HttpsError,
-  finalizePlayer: async (playerId) => {
-    await insightEntrypoints.rebuildInsightPlayer(playerId);
+  finalizePlayer: async (playerId, source) => {
+    await insightEntrypoints.rebuildInsightPlayer(playerId, source);
     await social.rebuild(playerId);
   },
   operatorIdentity: async (uid) => {
@@ -144,7 +166,7 @@ const ATHLETE_SHARE_REP_TYPES = {
 };
 const ATHLETE_SHARE_ARTIFACTS = {
   shooting: ["pose.json", "metadata.json", "ball_detections.json"],
-  sprint: ["pose.json", "metadata.json", "com_midpoints.json", "com_velocity.json"],
+  sprint: ["pose.json", "metadata.json", "tracking.json"],
   jump: ["pose.json", "metadata.json", "com_height.json", "torso_midpoints.json"],
   broadJump: [
     "pose.json",
@@ -155,8 +177,8 @@ const ATHLETE_SHARE_ARTIFACTS = {
     "com_midpoints.json",
     "com_height.json",
   ],
-  changeOfDirection: ["pose.json", "metadata.json"],
-  dribbling: ["pose.json", "metadata.json"],
+  changeOfDirection: ["pose.json", "metadata.json", "tracking.json"],
+  dribbling: ["pose.json", "metadata.json", "tracking.json"],
   freeRecord: ["pose.json", "metadata.json", "ball_detections.json"],
 };
 
@@ -430,7 +452,7 @@ function requireCaller(context) {
   if (context.auth.token?.firebase?.sign_in_provider === "anonymous") {
     throw new functions.https.HttpsError("permission-denied", "A registered account is required.");
   }
-  return { uid: context.auth.uid, email: context.auth.token?.email || null, emailVerified: context.auth.token?.email_verified === true, isAnonymous: false };
+  return { uid: context.auth.uid, email: context.auth.token?.email || null, emailVerified: context.auth.token?.email_verified === true, authTime: context.auth.token?.auth_time, isAnonymous: false };
 }
 
 // Explicit exports keep Firebase deployment discovery stable across releases.
@@ -438,7 +460,31 @@ exports.importClubLogo = functions.runWith({ timeoutSeconds: 120 }).https.onCall
 exports.getClubContext = functions.https.onCall((data, context) => clubs.getClubContext(data, requireCaller(context)));
 exports.createClubOrganization = functions.https.onCall((data, context) => clubs.createClubOrganization(data, requireCaller(context)));
 exports.saveClubTeam = functions.https.onCall((data, context) => clubs.saveClubTeam(data, requireCaller(context)));
-exports.createClubStaffInvitation = functions.https.onCall((data, context) => clubs.createClubStaffInvitation(data, requireCaller(context)));
+exports.createClubStaffInvitation = functions.https.onCall(async (data, context) => {
+  const caller = requireCaller(context);
+  if (data?.activationMode !== "manual") return clubs.createClubStaffInvitation(data, caller);
+  await accountAccess.rate(context.rawRequest, caller, "issue", 30);
+  return accountAccess.issueStaffActivation(data, caller);
+});
+exports.replaceClubStaffInvitation = functions.https.onCall(async (data, context) => {
+  const caller = requireCaller(context);
+  await accountAccess.rate(context.rawRequest, caller, "issue", 30);
+  return accountAccess.replaceClubStaffInvitation(data || {}, caller);
+});
+for (const name of ["issueInternalAdminAccess", "issueAccountRecovery", "listAccountAccessLinks", "revokeAccountAccessLink"]) {
+  exports[name] = functions.https.onCall(async (data, context) => {
+    const caller = requireCaller(context);
+    await accountAccess.rate(context.rawRequest, caller, "manage", 60);
+    return accountAccess[name](data || {}, caller);
+  });
+}
+for (const name of ["getAccountAccessLink", "completeAccountAccessLink"]) {
+  exports[name] = functions.runWith({ timeoutSeconds: 120 }).https.onCall(async (data, context) => {
+    const caller = context.auth ? requireCaller(context) : null;
+    await accountAccess.rate(context.rawRequest, caller, name === "getAccountAccessLink" ? "check" : "complete", name === "getAccountAccessLink" ? 60 : 10);
+    return accountAccess[name](data || {}, caller);
+  });
+}
 exports.redeemClubStaffInvitation = functions.https.onCall((data, context) => clubs.redeemClubStaffInvitation(data, requireCaller(context)));
 exports.setClubStaffTeams = functions.https.onCall((data, context) => clubs.setClubStaffTeams(data, requireCaller(context)));
 exports.revokeClubStaffInvitation = functions.https.onCall((data, context) => clubs.revokeClubStaffInvitation(data, requireCaller(context)));
@@ -448,6 +494,7 @@ exports.createClubPlayer = functions.https.onCall((data, context) => clubs.creat
 exports.createTestingEvent = functions.runWith({ timeoutSeconds: 120 }).https.onCall((data, context) => testingEvents.createTestingEvent(data || {}, requireCaller(context)));
 exports.addTestingParticipant = functions.runWith({ timeoutSeconds: 120 }).https.onCall((data, context) => testingEvents.addTestingParticipant(data || {}, requireCaller(context)));
 exports.startTestingEvent = functions.runWith({ timeoutSeconds: 540 }).https.onCall((data, context) => testingEvents.startTestingEvent(data || {}, requireCaller(context)));
+exports.updateTestingRepCounts = functions.runWith({ timeoutSeconds: 120 }).https.onCall((data, context) => testingEvents.updateTestingRepCounts(data || {}, requireCaller(context)));
 exports.createTestingEventInvite = functions.https.onCall((data, context) => testingEvents.createTestingEventInvite(data || {}, requireCaller(context)));
 exports.joinTestingEvent = functions.https.onCall((data, context) => testingEvents.joinTestingEvent(data || {}, requireCaller(context)));
 exports.claimTestingStation = functions.https.onCall((data, context) => testingEvents.claimTestingStation(data || {}, requireCaller(context)));

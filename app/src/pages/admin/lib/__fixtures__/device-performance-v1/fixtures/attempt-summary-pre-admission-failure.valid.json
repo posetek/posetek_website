@@ -1,0 +1,229 @@
+{
+  "performanceSchemaVersion": 1,
+  "recordKind": "attemptSummary",
+  "recordId": "7c8d9e0f-1a2b-4c3d-8e4f-5a6b7c8d9e0f",
+  "revision": 2,
+  "attemptId": "7c8d9e0f-1a2b-4c3d-8e4f-5a6b7c8d9e0f",
+  "processingRunId": null,
+  "retryOfRunId": null,
+  "repId": null,
+  "commitJobId": null,
+  "originInstallId": "b7e2c1d4-5f6a-4b8c-9d0e-1f2a3b4c5d6e",
+  "executorInstallId": "b7e2c1d4-5f6a-4b8c-9d0e-1f2a3b4c5d6e",
+  "originLaunchId": "0C8B4E2A-1D3F-4A5B-9C6D-7E8F9A0B1C2D",
+  "executionLaunchId": "0C8B4E2A-1D3F-4A5B-9C6D-7E8F9A0B1C2D",
+  "stationDeviceId": null,
+  "originReporterUid": "uidDemoCoach0001",
+  "drillType": "changeOfDirection",
+  "recordingMode": "ordinary",
+  "processingMode": null,
+  "originPlatform": {
+    "appVersion": "1.4.0",
+    "build": "212",
+    "sourceRevision": "7baf5a7",
+    "machine": "iPhone15,2",
+    "osVersion": "Version 26.0 (Build 23A341)",
+    "configuration": "Release"
+  },
+  "executorPlatform": null,
+  "captureFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "modelFingerprint": null,
+  "policyVersion": null,
+  "occurredAtClient": "2026-09-29T08:15:41.502Z",
+  "captureOccurredAtClient": "2026-09-29T08:15:30.123Z",
+  "clockQuality": "reliable",
+  "completeness": "partial",
+  "missingReasons": [
+    {
+      "field": "/spans/timeToResultMs",
+      "reason": "notReached"
+    },
+    {
+      "field": "/spans/readyForNextRepMs",
+      "reason": "notReached"
+    },
+    {
+      "field": "/continuousSpans/timeToResultMs",
+      "reason": "notReached"
+    },
+    {
+      "field": "/continuousSpans/readyForNextRepMs",
+      "reason": "notReached"
+    },
+    {
+      "field": "/spans/saveConfirmedAfterRecordingMs",
+      "reason": "notReached"
+    },
+    {
+      "field": "/continuousSpans/saveConfirmedAfterRecordingMs",
+      "reason": "notReached"
+    }
+  ],
+  "droppedDetailCount": 0,
+  "origin": "field",
+  "evaluationRunId": null,
+  "body": {
+    "stages": [
+      {
+        "stageId": "capture.stopRequested",
+        "parentStageId": null,
+        "passId": null,
+        "status": "completed",
+        "invocationCount": 1,
+        "elapsedMs": 212.4,
+        "activeMs": 212.4,
+        "continuousElapsedMs": 212.4,
+        "timingKind": "mainPhase",
+        "framesDecoded": null,
+        "modelCalls": null,
+        "missingObservations": null,
+        "failureCode": null,
+        "failureLayer": null,
+        "lastDurableStage": null
+      },
+      {
+        "stageId": "capture.movieFinalized",
+        "parentStageId": null,
+        "passId": null,
+        "status": "completed",
+        "invocationCount": 1,
+        "elapsedMs": 3.1,
+        "activeMs": 3.1,
+        "continuousElapsedMs": 3.1,
+        "timingKind": "mainPhase",
+        "framesDecoded": null,
+        "modelCalls": null,
+        "missingObservations": null,
+        "failureCode": null,
+        "failureLayer": null,
+        "lastDurableStage": null
+      },
+      {
+        "stageId": "capture.cameraStopAck",
+        "parentStageId": "capture.movieFinalized",
+        "passId": null,
+        "status": "completed",
+        "invocationCount": 1,
+        "elapsedMs": 141.0,
+        "activeMs": 141.0,
+        "continuousElapsedMs": 141.0,
+        "timingKind": "nestedOperation",
+        "framesDecoded": null,
+        "modelCalls": null,
+        "missingObservations": null,
+        "failureCode": null,
+        "failureLayer": null,
+        "lastDurableStage": null
+      },
+      {
+        "stageId": "capture.retainCopyHash",
+        "parentStageId": null,
+        "passId": null,
+        "status": "completed",
+        "invocationCount": 1,
+        "elapsedMs": 388.7,
+        "activeMs": 388.7,
+        "continuousElapsedMs": 388.7,
+        "timingKind": "mainPhase",
+        "framesDecoded": null,
+        "modelCalls": null,
+        "missingObservations": null,
+        "failureCode": null,
+        "failureLayer": null,
+        "lastDurableStage": null
+      },
+      {
+        "stageId": "capture.calibrationFreeze",
+        "parentStageId": null,
+        "passId": null,
+        "status": "completed",
+        "invocationCount": 1,
+        "elapsedMs": 24.9,
+        "activeMs": 24.9,
+        "continuousElapsedMs": 24.9,
+        "timingKind": "mainPhase",
+        "framesDecoded": null,
+        "modelCalls": null,
+        "missingObservations": null,
+        "failureCode": null,
+        "failureLayer": null,
+        "lastDurableStage": null
+      },
+      {
+        "stageId": "capture.snapshot",
+        "parentStageId": null,
+        "passId": null,
+        "status": "completed",
+        "invocationCount": 1,
+        "elapsedMs": 61.2,
+        "activeMs": 61.2,
+        "continuousElapsedMs": 61.2,
+        "timingKind": "mainPhase",
+        "framesDecoded": null,
+        "modelCalls": null,
+        "missingObservations": null,
+        "failureCode": null,
+        "failureLayer": null,
+        "lastDurableStage": null
+      },
+      {
+        "stageId": "capture.referenceJournal",
+        "parentStageId": null,
+        "passId": null,
+        "status": "completed",
+        "invocationCount": 1,
+        "elapsedMs": 18.4,
+        "activeMs": 18.4,
+        "continuousElapsedMs": 18.4,
+        "timingKind": "mainPhase",
+        "framesDecoded": null,
+        "modelCalls": null,
+        "missingObservations": null,
+        "failureCode": null,
+        "failureLayer": null,
+        "lastDurableStage": null
+      }
+    ],
+    "spans": {
+      "timeToResultMs": null,
+      "readyForNextRepMs": null,
+      "saveConfirmedAfterRecordingMs": null
+    },
+    "continuousSpans": {
+      "timeToResultMs": null,
+      "readyForNextRepMs": null,
+      "saveConfirmedAfterRecordingMs": null
+    },
+    "inputSource": {
+      "calibration": "frozenSnapshot",
+      "mass": null,
+      "snapshotIdentityHash": "7876c576ae733e5ddcb842f49928ac34937a3b0b3b96d61b95cff4e63ead7621"
+    },
+    "captureFormat": {
+      "requestedFPS": 120,
+      "appliedFPS": 120,
+      "formatWidth": 1920,
+      "formatHeight": 1080,
+      "measuredNominalFPS": 119.95,
+      "measuredDurationSeconds": 10.02,
+      "uprightWidth": 1920,
+      "uprightHeight": 1080
+    },
+    "measurementVerdict": "pending",
+    "verdictReason": "awaitingRetry",
+    "stationVerdict": "notApplicable",
+    "preAdmissionFailure": {
+      "stage": "input.calibration",
+      "failureCode": "calibration_unavailable",
+      "failureLayer": "input"
+    },
+    "primaryMetricFinite": null,
+    "requiredSaveState": "notQueued",
+    "sidecarState": "notRequested",
+    "archiveState": "notRequested",
+    "runCount": 0,
+    "acceptedRunId": null,
+    "launchSegmentCount": 1,
+    "lifecycleTransitionCount": 0
+  }
+}

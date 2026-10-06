@@ -149,6 +149,174 @@ test("thirty-athlete pilot reserves the full 600-rep event shape", async () => {
   assert.equal(new Set(storageReads).size, 30);
 });
 
+test("team rep counts and a player override shape the snapshot and each player's reservations", async () => {
+  const { db, testing } = harness();
+  const event = await testing.createTestingEvent({
+    organizationId: "club", name: "Fall testing", playerIds: ["player-a", "player-b"],
+    repCounts: { jump: 2, deadballShot: { left: 3, right: 1 } },
+    playerRepCounts: { "player-b": { jump: 4 } },
+  }, auth("manager"));
+  const stored = db.snapshot(`testingEvents/${event.eventId}`);
+  assert.equal(stored.protocolSnapshot[0].drills[0].repCount, 2);
+  assert.deepEqual(stored.protocolSnapshot[1].drills[1].sides, ["left", "left", "left", "right"]);
+  assert.equal(stored.repsPerParticipant, 19);
+  assert.equal(db.snapshot(`testingEvents/${event.eventId}/stations/station-1`).drills[0].repCount, 2);
+  assert.deepEqual(db.snapshot(`testingEvents/${event.eventId}/participants/player-b`).protocolOverrides, { jump: { repCount: 4, sides: [] } });
+  assert.equal(db.snapshot(`testingEvents/${event.eventId}/participants/player-a`).protocolOverrides, undefined);
+  await testing.startTestingEvent({ eventId: event.eventId }, auth("manager"));
+  const reservation = (playerId, drill) => db.snapshot(`testingEvents/${event.eventId}/sessionReservations/station-1_${playerId}_${drill}`);
+  assert.equal(reservation("player-a", "jump").repCount, 2);
+  assert.equal(reservation("player-b", "jump").repCount, 4);
+  assert.equal(db.snapshot(`players/player-b/sessions/${reservation("player-b", "jump").sessionDocId}`).expectedRepCount, 4);
+});
+
+test("rep counts are validated per drill, per side and per station", async () => {
+  const { testing } = harness();
+  const create = (repCounts, playerRepCounts) => testing.createTestingEvent({
+    organizationId: "club", name: "Fall testing", playerIds: ["player-a"], repCounts, playerRepCounts,
+  }, auth("manager"));
+  await assert.rejects(create({ jump: 0 }), /whole number from 1/);
+  await assert.rejects(create({ deadballShot: 4 }), /left and right/);
+  await assert.rejects(create({ dribbling: { left: 0, right: 0 } }), /1-10 reps/);
+  await assert.rejects(create({ sprint: 5 }), /at most 10 reps/);
+  await assert.rejects(create({ unknownDrill: 3 }), /valid testing drill/);
+  await assert.rejects(create({}, { "player-c": { jump: 2 } }), /name a participant/);
+});
+
+test("an event without a stored snapshot still runs the v1 protocol", async () => {
+  const eventId = "event-legacy";
+  const progressPath = `testingEvents/${eventId}/progress/station-2_player-a`;
+  const { db, testing } = harness({
+    [`testingEvents/${eventId}`]: { organizationId: "club", operatorUids: ["manager"], status: "live" },
+    [progressPath]: {
+      stationId: "station-2", playerDocId: "player-a", status: "inProgress", currentDrillIndex: 1,
+      completedByDrill: { broadJump: 3, deadballShot: 3 }, completedByProtocolSide: { "deadballShot:left": 2, "deadballShot:right": 1 },
+      repIds: ["b1", "b2", "b3", "k1", "k2", "k3"], pendingUploadCount: 0, revision: 4, deviceId: "phone-a",
+    },
+  });
+  await testing.onRepWrite({ before: { data: () => undefined }, after: { data: () => ({
+    testingEventId: eventId, testingStationId: "station-2", testingParticipantId: "player-a",
+    testingDrillType: "deadballShot", protocolSide: "right",
+  }) } }, { params: { playerId: "player-a", repId: "k4" } });
+  assert.equal(db.snapshot(progressPath).status, "completedPendingSync");
+});
+
+test("a sided drill completes per side, not on its total", async () => {
+  const eventId = "event-sides";
+  const progressPath = `testingEvents/${eventId}/progress/station-2_player-a`;
+  const snapshot = [
+    { id: "station-1", order: 1, label: "Vertical jump", orientation: "portrait", markerCount: 0, drills: [STATIONS[0].drills[0]] },
+    { id: "station-2", order: 2, label: "Broad jump + kicking", orientation: "landscape", markerCount: 1, drills: [
+      { ...STATIONS[1].drills[0], repCount: 1 },
+      { ...STATIONS[1].drills[1], repCount: 4, sides: ["left", "left", "left", "right"] },
+    ] },
+    STATIONS[2],
+  ];
+  const { db, testing } = harness({
+    [`testingEvents/${eventId}`]: { organizationId: "club", operatorUids: ["manager"], status: "live", protocolSnapshot: snapshot },
+    [progressPath]: {
+      stationId: "station-2", playerDocId: "player-a", status: "inProgress", currentDrillIndex: 1,
+      completedByDrill: { broadJump: 1, deadballShot: 3 }, completedByProtocolSide: { "deadballShot:left": 1, "deadballShot:right": 2 },
+      repIds: ["b1", "k1", "k2", "k3"], pendingUploadCount: 0, revision: 4, deviceId: "phone-a",
+    },
+  });
+  const write = (repId, protocolSide) => testing.onRepWrite({ before: { data: () => undefined }, after: { data: () => ({
+    testingEventId: eventId, testingStationId: "station-2", testingParticipantId: "player-a",
+    testingDrillType: "deadballShot", protocolSide,
+  }) } }, { params: { playerId: "player-a", repId } });
+  await write("k4", "left");
+  assert.equal(db.snapshot(progressPath).status, "inProgress", "four kicks, but only two of three lefts");
+  await write("k5", "left");
+  assert.equal(db.snapshot(progressPath).status, "completedPendingSync");
+});
+
+async function liveEvent(testing, playerIds = ["player-a", "player-b"]) {
+  const event = await draft(testing, playerIds);
+  await testing.startTestingEvent({ eventId: event.eventId }, auth("manager"));
+  return event.eventId;
+}
+
+function seedProgress(db, eventId, playerId, stationId, fields) {
+  db.write(`testingEvents/${eventId}/progress/${stationId}_${playerId}`, {
+    stationId, playerDocId: playerId, status: "inProgress", currentDrillIndex: 0,
+    completedByDrill: {}, completedByProtocolSide: {}, repIds: [], pendingUploadCount: 0, revision: 3, deviceId: "phone-a",
+    ...fields,
+  }, { merge: false, create: false });
+}
+
+test("lowering a team count mid-event completes rows that already met it and records what moved", async () => {
+  const { db, testing } = harness();
+  const eventId = await liveEvent(testing);
+  seedProgress(db, eventId, "player-a", "station-1", { completedByDrill: { jump: 2 }, repIds: ["j1", "j2"] });
+  const result = await testing.updateTestingRepCounts({ eventId, repCounts: { jump: 2 } }, auth("manager"));
+  assert.equal(result.scope, "team");
+  assert.equal(result.protocolRevision, 2);
+  const alex = result.affected.find((row) => row.playerId === "player-a");
+  assert.deepEqual([alex.completed, alex.before, alex.after, alex.remainingBefore, alex.remainingAfter], [2, 3, 2, 1, 0]);
+  assert.equal(result.affected.find((row) => row.playerId === "player-b").remainingAfter, 2);
+  const row = db.snapshot(`testingEvents/${eventId}/progress/station-1_player-a`);
+  assert.equal(row.status, "completedPendingSync");
+  assert.deepEqual(row.repIds, ["j1", "j2"], "completed attempts are kept");
+  assert.equal(row.revision, 4);
+  const stored = db.snapshot(`testingEvents/${eventId}`);
+  assert.equal(stored.protocolSnapshot[0].drills[0].repCount, 2);
+  assert.equal(stored.repsPerParticipant, 19);
+  assert.equal(db.snapshot(`testingEvents/${eventId}/stations/station-1`).drills[0].repCount, 2);
+  const history = [...db.docs.keys()].filter((path) => path.startsWith(`testingEvents/${eventId}/protocolChanges/`));
+  assert.equal(history.length, 1);
+  assert.equal(db.snapshot(history[0]).affected.length, 2);
+  assert.equal(db.snapshot(history[0]).eventStatus, "live");
+});
+
+test("raising one athlete's count reopens their finished row and extends the reservation at the tail", async () => {
+  const { db, testing } = harness();
+  const eventId = await liveEvent(testing);
+  seedProgress(db, eventId, "player-a", "station-1", { status: "completed", completedByDrill: { jump: 3 }, repIds: ["j1", "j2", "j3"] });
+  const before = db.snapshot(`testingEvents/${eventId}/sessionReservations/station-1_player-a_jump`);
+  const counterBefore = db.snapshot("players/player-a/recordingCounters/jump").nextAbsoluteRepNumber;
+  const result = await testing.updateTestingRepCounts({ eventId, playerId: "player-a", repCounts: { jump: 5 } }, auth("manager"));
+  assert.deepEqual(result.affected.map((row) => [row.playerId, row.remainingBefore, row.remainingAfter]), [["player-a", 0, 2]]);
+  assert.equal(db.snapshot(`testingEvents/${eventId}/progress/station-1_player-a`).status, "inProgress");
+  const reservation = db.snapshot(`testingEvents/${eventId}/sessionReservations/station-1_player-a_jump`);
+  assert.equal(reservation.repCount, 5);
+  assert.equal(reservation.absoluteRepStart, before.absoluteRepStart);
+  assert.equal(reservation.absoluteRepExtensions, undefined);
+  assert.equal(db.snapshot("players/player-a/recordingCounters/jump").nextAbsoluteRepNumber, counterBefore + 2);
+  assert.equal(db.snapshot(`players/player-a/sessions/${reservation.sessionDocId}`).expectedRepCount, 5);
+  assert.deepEqual(db.snapshot(`testingEvents/${eventId}/participants/player-a`).protocolOverrides, { jump: { repCount: 5, sides: [] } });
+  assert.equal(db.snapshot(`testingEvents/${eventId}`).protocolSnapshot[0].drills[0].repCount, 3, "the team plan is unchanged");
+});
+
+test("growth after later reservations uses an extension range, and reset clears custom counts", async () => {
+  const { db, testing } = harness();
+  const eventId = await liveEvent(testing, ["player-a"]);
+  db.write("players/player-a/recordingCounters/jump", { nextAbsoluteRepNumber: 50 }, { merge: true, create: false });
+  await testing.updateTestingRepCounts({ eventId, playerId: "player-a", repCounts: { jump: 4 } }, auth("manager"));
+  const reservation = db.snapshot(`testingEvents/${eventId}/sessionReservations/station-1_player-a_jump`);
+  assert.equal(reservation.repCount, 4);
+  assert.deepEqual(reservation.absoluteRepExtensions, [{ start: 50, count: 1 }]);
+  assert.equal(db.snapshot("players/player-a/recordingCounters/jump").nextAbsoluteRepNumber, 51);
+  const cleared = await testing.updateTestingRepCounts({ eventId, playerId: "player-a", reset: true }, auth("manager"));
+  assert.equal(db.snapshot(`testingEvents/${eventId}/participants/player-a`).protocolOverrides, null);
+  assert.deepEqual(cleared.affected.map((row) => [row.before, row.after]), [[4, 3]]);
+  assert.equal(db.snapshot(`testingEvents/${eventId}/sessionReservations/station-1_player-a_jump`).repCount, 4, "reserved numbers are never returned");
+});
+
+test("a team change leaves an athlete's custom drill alone, and only owners or managers may change counts", async () => {
+  const { testing } = harness();
+  const event = await testing.createTestingEvent({
+    organizationId: "club", name: "Fall testing", playerIds: ["player-a", "player-b"],
+    playerRepCounts: { "player-b": { jump: 4 } },
+  }, auth("manager"));
+  const result = await testing.updateTestingRepCounts({ eventId: event.eventId, repCounts: { jump: 2 } }, auth("manager"));
+  assert.deepEqual(result.affected.map((row) => row.playerId), ["player-a"]);
+  await testing.createTestingEventInvite({ eventId: event.eventId }, auth("manager"));
+  await assert.rejects(testing.updateTestingRepCounts({ eventId: event.eventId, repCounts: { jump: 2 } }, auth("coach-a")), /operator|owner or a club manager/);
+  await assert.rejects(testing.updateTestingRepCounts({ eventId: event.eventId, repCounts: { sprint: 6 } }, auth("manager")), /at most 10 reps/);
+  await assert.rejects(testing.updateTestingRepCounts({ eventId: event.eventId, reset: true }, auth("manager")), /whose custom counts/);
+  await assert.rejects(testing.updateTestingRepCounts({ eventId: event.eventId, repCounts: {} }, auth("manager")), /at least one drill/);
+});
+
 test("invite contains no stored secret, enforces roster authority, and is single-use", async () => {
   const { db, testing } = harness();
   const event = await draft(testing, ["player-a"]);
@@ -252,6 +420,29 @@ test("rep commits reconcile pending progress and coalesce player projections", a
   }
   assert.equal(db.snapshot(`testingEvents/${eventId}/projectionDirty/player-a`).revision, 3);
   assert.equal(db.snapshot(`testingEvents/${eventId}/projectionFinalizations/player-a`).status, "completed");
+});
+
+test("projection retries keep the same server event/revision identity; a newer dirty revision stays distinct", async () => {
+  const eventId = "event-source-replay", dirtyPath = `testingEvents/${eventId}/projectionDirty/player-a`;
+  const progressRows = Object.fromEntries(STATIONS.map(station => [`testingEvents/${eventId}/progress/${station.id}_player-a`,
+    { stationId: station.id, playerDocId: "player-a", status: "completed", repIds: [], pendingUploadCount: 0 }]));
+  const calls = []; let failed = true;
+  const { db, testing } = harness({ [`testingEvents/${eventId}`]: { organizationId: "club", status: "closed" },
+    [dirtyPath]: { pending: true, revision: 4 }, ...progressRows }, { value: 1000 }, {
+    finalizePlayer: async (playerId, source) => { calls.push({ playerId, source }); if (failed) throw Error("projection unavailable"); },
+  });
+  const run = () => testing.onProgressWrite({ after: { data: () => progressRows[`testingEvents/${eventId}/progress/station-1_player-a`] } },
+    { params: { eventId, progressId: "station-1_player-a" } });
+  await assert.rejects(run(), /projection unavailable/);
+  assert.equal(db.snapshot(dirtyPath).pending, true);
+  failed = false; await run();
+  assert.deepEqual(calls[0], calls[1]);
+  assert.deepEqual(calls[0], { playerId: "player-a", source: { sourceKind: "testing_event", eventId: `testing-event/${eventId}/4` } });
+  assert.equal(db.snapshot(dirtyPath).pending, false);
+  await db.doc(dirtyPath).set({ pending: true, revision: 5 }, { merge: true });
+  await run();
+  assert.equal(calls[2].source.eventId, `testing-event/${eventId}/5`);
+  assert.equal(db.snapshot(`testingEvents/${eventId}/projectionFinalizations/player-a`).finalizedRevision, 5);
 });
 
 test("progress written after an early rep commit still reconciles", async () => {

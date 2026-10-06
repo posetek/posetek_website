@@ -16,7 +16,7 @@
   .player-block-strip > button { flex-shrink: 0; min-width: 44px; }
   .player-rest > div { display: grid; }
   .player-rest strong { font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
-  .player-workout-controls { border-top: 1px solid #ffffff20; padding-top: 10px; }
+  .player-workout-controls { border-top: 1px solid #ffffff20; padding-top: 10px; bottom: calc(144px + env(safe-area-inset-bottom)); margin-bottom: 56px; }
   .player-workout-controls > button:not(.primary-cta) { padding-inline: 8px; }
   button:disabled { cursor: not-allowed; }
 }

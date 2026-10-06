@@ -39,7 +39,12 @@ if (!/^\d+$/.test(portText) || !Number.isSafeInteger(portOffset) || portOffset >
 const suites = [
   { name: 'adminRules', project: 'demo-posetek-admin' },
   { name: 'insightsRules', project: 'demo-expanded-insights' },
+  { name: 'workoutNotifications', project: 'demo-workout-notifications' },
+  { name: 'deviceProcessing', project: 'demo-device-processing' },
+  { name: 'userIssues', project: 'demo-user-issues' },
+  { name: 'appFeedback', project: 'demo-app-feedback' },
   { name: 'personalizedRules', project: 'demo-personalized-planner' },
+  { name: 'personalWorkoutSetup', project: 'demo-personal-workout-setup' },
   { name: 'socialRules', project: 'demo-posetek-feed', storage: true },
   { name: 'testingEventRules', project: 'demo-posetek-testing-events' },
   { name: 'trainingExpansion', project: 'demo-personalized-planner' },

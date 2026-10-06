@@ -35,57 +35,30 @@ export interface AdminIdentity {
  * to verify again (contract §1.2).
  */
 export async function refreshAdminIdentity(user: any): Promise<AdminIdentity> {
-  try {
-    await user.reload();
-  } catch {
-    /* an offline reload must not deny an otherwise valid session */
-  }
+  const uid = String(user?.uid || "");
   let claims: any = {};
   try {
+    await user.reload();
     const token = await user.getIdTokenResult(true);
-    claims = token?.claims || {};
+    if (firebase.auth().currentUser?.uid === uid && (!token?.claims?.sub || token.claims.sub === uid)) {
+      claims = token?.claims || {};
+    }
   } catch {
-    claims = {};
+    // A cached verification flag cannot authorize a freshly activated account.
+    // The next sign-in retries authoritative refresh without sending email.
   }
-  const current = firebase.auth().currentUser ?? user;
+  const current = user;
   const email = String(claims.email ?? current?.email ?? "").trim().toLowerCase();
-  const emailVerified = claims.email_verified === true || current?.emailVerified === true;
+  const emailVerified = typeof claims.email === "string" && claims.email_verified === true;
   const adminDomain = isAdminEmail(email);
   return {
-    uid: String(current?.uid ?? user?.uid ?? ""),
+    uid,
     email,
     displayName: String(current?.displayName || email.split("@")[0] || "Admin"),
     adminDomain,
     emailVerified,
     isAdmin: adminDomain && emailVerified,
   };
-}
-
-// MARK: - The verification screen (§1.3)
-
-const VERIFICATION_SENT_KEY = "posetek.adminVerificationSentAt";
-const VERIFICATION_THROTTLE_MS = 10 * 60 * 1000;
-
-/**
- * A domain match on an UNVERIFIED address is not admin, and must not fall
- * through to the coach/player cascade. Send at most one verification mail per
- * ten minutes per device, then sign the user out.
- */
-export async function sendAdminVerification(user: any): Promise<boolean> {
-  let last = 0;
-  try {
-    last = Number(window.localStorage.getItem(VERIFICATION_SENT_KEY)) || 0;
-  } catch {
-    last = 0;
-  }
-  if (Date.now() - last < VERIFICATION_THROTTLE_MS) return false;
-  await user.sendEmailVerification();
-  try {
-    window.localStorage.setItem(VERIFICATION_SENT_KEY, String(Date.now()));
-  } catch {
-    /* private browsing — the mail was still sent */
-  }
-  return true;
 }
 
 // MARK: - admins/{uid} (§2.1)

@@ -1,4 +1,6 @@
 // Deliberate application release, separate from ordinary homepage preservation.
+// New releases use Astro. The explicitly pinned marketing-snapshot mode remains
+// available only for reproducing historical Vite releases and their contracts.
 // The existing build verifies live drift and assembles all preserved public files first.
 import { readFile, writeFile, mkdir, readdir, lstat, rm } from "node:fs/promises";
 import { join, relative, isAbsolute, dirname, resolve } from "node:path";
@@ -175,16 +177,20 @@ export async function composeApplicationRelease(root, { marketingDeploymentId } 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const root = fileURLToPath(new URL("../", import.meta.url));
   const args = process.argv.slice(2);
-  if (args.length && (args.length !== 2 || args[0] !== "--marketing-snapshot" || !args[1] || args[1].startsWith("--"))) throw new Error("Usage: node scripts/build-application-release.mjs [--marketing-snapshot <manifest-path>]");
+  if (args.length && (args.length !== 2 || !["--marketing-snapshot", "--preserve-marketing"].includes(args[0]) || !args[1] || args[1].startsWith("--"))) throw new Error("Usage: node scripts/build-application-release.mjs [--preserve-marketing <Astro-manifest-path> | --marketing-snapshot <historical-Vite-manifest-path>]");
   function run(file, args = [], cwd = root) {
     const result = spawnSync(process.execPath, [file, ...args], { cwd, stdio: "inherit", windowsHide: true });
     if (result.error) throw result.error;
     if (result.status !== 0) throw new Error("Build failed: " + file);
   }
-  run(join(root, "scripts/build-production.mjs"));
-  const marketing = args.length ? await restoreMarketingSnapshot(root, resolve(args[1])) : {};
-  // Do not copy arbitrary repository-root legacy files into a public release.
-  run(join(root, "app/node_modules/vite/bin/vite.js"), ["build"], join(root, "app"));
-  const receipt = await composeApplicationRelease(root, marketing);
-  console.log(JSON.stringify({ ...marketing, preservedFiles: receipt.preservedFiles, addedAssets: receipt.added.length, application: receipt.application }));
+  if (!args.length || args[0] === "--preserve-marketing") {
+    run(join(root, "scripts/build-astro-release.mjs"), args);
+  } else {
+    run(join(root, "scripts/build-production.mjs"));
+    const marketing = await restoreMarketingSnapshot(root, resolve(args[1]));
+    // Do not copy arbitrary repository-root legacy files into a public release.
+    run(join(root, "app/node_modules/vite/bin/vite.js"), ["build"], join(root, "app"));
+    const receipt = await composeApplicationRelease(root, marketing);
+    console.log(JSON.stringify({ ...marketing, preservedFiles: receipt.preservedFiles, addedAssets: receipt.added.length, application: receipt.application }));
+  }
 }

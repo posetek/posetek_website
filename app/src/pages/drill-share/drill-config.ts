@@ -84,7 +84,7 @@ const changeOfDirection: PageDrillConfig = {
   chartLabel: "Time (s)",
   lowerIsBetter: true,
   emptyText: "No change-of-direction results have been recorded for this athlete yet.",
-  artifacts: ["pose.json", "metadata.json"],
+  artifacts: ["pose.json", "metadata.json", "tracking.json"],
 };
 
 const dribbling: PageDrillConfig = {
@@ -103,7 +103,7 @@ const dribbling: PageDrillConfig = {
   chartLabel: "Time (s)",
   lowerIsBetter: true,
   emptyText: "No dribbling results have been recorded for this athlete yet.",
-  artifacts: ["pose.json", "metadata.json"],
+  artifacts: ["pose.json", "metadata.json", "tracking.json"],
 };
 
 // Key order matters: Object.values(configs) drives loadStatsReps / startShared /

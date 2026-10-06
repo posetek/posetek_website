@@ -1,0 +1,338 @@
+{
+  "schemaVersion": 1,
+  "kind": "floor-optional-mats",
+  "preparedAt": "2026-10-01",
+  "decision": "User-authorized optional comfort mat for five published floor drills. No prescription dose, participant, media, review, publication or clearance change.",
+  "records": [
+    {
+      "drillId": "STR-005",
+      "name": "Side-plank progression",
+      "sourceHashBefore": "4db89be77bfd20979487628eedcb890a3ca459ef119c7a0f513de502b54af4a2",
+      "sourceBefore": {
+        "drillId": "STR-005",
+        "schemaVersion": 2,
+        "name": "Side-plank progression",
+        "equipment": [
+          "mat"
+        ],
+        "requiresPartner": false,
+        "playersMin": 1,
+        "playersMax": 1,
+        "setup": "Clear floor.",
+        "execution": "Hold side plank from knees/feet with straight line; breathe.",
+        "safetyNote": "Quality over duration.",
+        "howTo": {
+          "setup": "Clear floor.",
+          "steps": [
+            "Hold side plank from knees/feet with straight line;",
+            "breathe."
+          ]
+        },
+        "coachComments": [
+          "Ribs down",
+          "hips tall",
+          "no rotation",
+          "You've got it when: Stable hold both sides.",
+          "Safety: Quality over duration."
+        ],
+        "regression": "Bent-knee side plank.",
+        "progression": "Top-leg lift or long lever.",
+        "cues": [
+          "Ribs down",
+          "hips tall",
+          "no rotation"
+        ]
+      },
+      "requirementsBefore": {
+        "schemaVersion": 1,
+        "sourceHash": "4db89be77bfd20979487628eedcb890a3ca459ef119c7a0f513de502b54af4a2",
+        "equipment": {
+          "allOf": [
+            "mat"
+          ],
+          "anyOf": []
+        },
+        "space": {},
+        "participantMin": 1,
+        "unknowns": []
+      },
+      "sourcePatch": {
+        "equipment": [],
+        "setup": "Clear floor. Use a clear, non-slipping floor; a mat is optional for comfort.",
+        "howTo": {
+          "setup": "Clear floor. Use a clear, non-slipping floor; a mat is optional for comfort."
+        }
+      },
+      "requirementsAfter": {
+        "schemaVersion": 1,
+        "sourceHash": "0f5a2ff741c95eb02ae837b5ddb4bd60bc4f56257b9a9e7ff661411892474996",
+        "equipment": {
+          "allOf": [],
+          "anyOf": []
+        },
+        "space": {},
+        "participantMin": 1,
+        "unknowns": []
+      }
+    },
+    {
+      "drillId": "STR-006",
+      "name": "Hamstring bridge walkout",
+      "sourceHashBefore": "c081cfe49add9cdeeb4a005843aae9e4a32d9697f4c60158d9a648b352e026d4",
+      "sourceBefore": {
+        "drillId": "STR-006",
+        "schemaVersion": 1,
+        "name": "Hamstring bridge walkout",
+        "equipment": [
+          "mat"
+        ],
+        "requiresPartner": null,
+        "playersMin": 1,
+        "playersMax": 1,
+        "setup": "Supine clear area.",
+        "execution": "Bridge, take small heel steps out/in while pelvis stays controlled.",
+        "safetyNote": "Regress if cramping/pain.",
+        "howTo": null,
+        "coachComments": null,
+        "regression": "Two-leg bridge holds.",
+        "progression": "Slider curl or assisted Nordic progression.",
+        "cues": [
+          "Hips stay up",
+          "slow steps",
+          "no cramp chase"
+        ]
+      },
+      "requirementsBefore": {
+        "schemaVersion": 1,
+        "sourceHash": "c081cfe49add9cdeeb4a005843aae9e4a32d9697f4c60158d9a648b352e026d4",
+        "equipment": {
+          "allOf": [
+            "mat"
+          ],
+          "anyOf": []
+        },
+        "space": {},
+        "participantMin": 1,
+        "unknowns": []
+      },
+      "sourcePatch": {
+        "equipment": [],
+        "setup": "Supine clear area. Use a clear, non-slipping floor; a mat is optional for comfort."
+      },
+      "requirementsAfter": {
+        "schemaVersion": 1,
+        "sourceHash": "0d75d3296318d13c624aeb7eebbf0c644cd8e322af01bfe3e351d70c2b678e77",
+        "equipment": {
+          "allOf": [],
+          "anyOf": []
+        },
+        "space": {},
+        "participantMin": 1,
+        "unknowns": []
+      }
+    },
+    {
+      "drillId": "STR-008",
+      "name": "Short-lever Copenhagen hold",
+      "sourceHashBefore": "6279a5d1b79acdbc40d2d936da8aac7512b7a68d6591683a37b832de5f52c344",
+      "sourceBefore": {
+        "drillId": "STR-008",
+        "schemaVersion": 2,
+        "name": "Short-lever Copenhagen hold",
+        "equipment": [
+          "bench",
+          "mat"
+        ],
+        "requiresPartner": true,
+        "playersMin": 1,
+        "playersMax": 2,
+        "setup": "Top knee supported; body aligned.",
+        "execution": "Hold side plank with top knee support, bottom leg relaxed/lifted by level.",
+        "safetyNote": "Stop for groin pain; progressive program, not one-off maximal test.",
+        "howTo": {
+          "setup": "Top knee supported; body aligned.",
+          "steps": [
+            "Hold side plank with top knee support, bottom leg relaxed/lifted by level."
+          ]
+        },
+        "coachComments": [
+          "Hips forward",
+          "ribs stacked",
+          "pain-free",
+          "You've got it when: Controlled holds both sides.",
+          "Safety: Stop for groin pain; progressive program, not one-off maximal test."
+        ],
+        "regression": "Side-lying adduction/shorter lever.",
+        "progression": "Long-lever only after progression.",
+        "cues": [
+          "Hips forward",
+          "ribs stacked",
+          "pain-free"
+        ]
+      },
+      "requirementsBefore": {
+        "schemaVersion": 1,
+        "sourceHash": "6279a5d1b79acdbc40d2d936da8aac7512b7a68d6591683a37b832de5f52c344",
+        "equipment": {
+          "allOf": [
+            "bench",
+            "mat"
+          ],
+          "anyOf": []
+        },
+        "space": {},
+        "participantMin": 2,
+        "unknowns": []
+      },
+      "sourcePatch": {
+        "equipment": [
+          "bench"
+        ],
+        "setup": "Top knee supported; body aligned. Use a clear, non-slipping floor; a mat is optional for comfort.",
+        "howTo": {
+          "setup": "Top knee supported; body aligned. Use a clear, non-slipping floor; a mat is optional for comfort."
+        }
+      },
+      "requirementsAfter": {
+        "schemaVersion": 1,
+        "sourceHash": "39c224c0164a4d6cc113f536af00201c15b447f6a771920eaa0c8e0912754987",
+        "equipment": {
+          "allOf": [
+            "bench"
+          ],
+          "anyOf": []
+        },
+        "space": {},
+        "participantMin": 2,
+        "unknowns": []
+      }
+    },
+    {
+      "drillId": "STR-501",
+      "name": "Bear crawls",
+      "sourceHashBefore": "80ae8fdd86555e7cd079acca5ddbe8aea6ee588dee09bd1cd2e10df225ed8f08",
+      "sourceBefore": {
+        "drillId": "STR-501",
+        "schemaVersion": 2,
+        "name": "Bear crawls",
+        "equipment": [
+          "mat"
+        ],
+        "requiresPartner": false,
+        "playersMin": null,
+        "playersMax": null,
+        "setup": null,
+        "execution": null,
+        "safetyNote": null,
+        "howTo": {
+          "setup": "Get into all fours and crawl while keeping your back straight. ",
+          "steps": [
+            "Knees must be at 90 degrees",
+            "Arms shoulder wide",
+            "Crawling forward 5 feet and back counts as one rep"
+          ]
+        },
+        "coachComments": [],
+        "regression": null,
+        "progression": null,
+        "cues": null
+      },
+      "requirementsBefore": {
+        "schemaVersion": 1,
+        "sourceHash": "80ae8fdd86555e7cd079acca5ddbe8aea6ee588dee09bd1cd2e10df225ed8f08",
+        "equipment": {
+          "allOf": [
+            "mat"
+          ],
+          "anyOf": []
+        },
+        "space": {
+          "minLengthMeters": 1.524
+        },
+        "participantMin": 1,
+        "unknowns": []
+      },
+      "sourcePatch": {
+        "equipment": [],
+        "howTo": {
+          "setup": "Get into all fours and crawl while keeping your back straight. Use a clear, non-slipping floor; a mat is optional for comfort."
+        }
+      },
+      "requirementsAfter": {
+        "schemaVersion": 1,
+        "sourceHash": "6e757f422870acba0ca2b3270e38924bca229d9486ad687a83c259926b6b6bfa",
+        "equipment": {
+          "allOf": [],
+          "anyOf": []
+        },
+        "space": {
+          "minLengthMeters": 1.524
+        },
+        "participantMin": 1,
+        "unknowns": []
+      }
+    },
+    {
+      "drillId": "STR-502",
+      "name": "Shoulder Taps",
+      "sourceHashBefore": "fc2c2fcf63d02de16ddbfc0afc99239815284e00a6968fcb470d0c39a4a35733",
+      "sourceBefore": {
+        "drillId": "STR-502",
+        "schemaVersion": 2,
+        "name": "Shoulder Taps",
+        "equipment": [
+          "mat"
+        ],
+        "requiresPartner": false,
+        "playersMin": null,
+        "playersMax": null,
+        "setup": null,
+        "execution": null,
+        "safetyNote": null,
+        "howTo": {
+          "setup": "Get into plank position with your legs a little wider than usual ",
+          "steps": [
+            "Plank position",
+            "Arms shoulder wide",
+            "Legs a little wider for comfort",
+            "Hips should not be moving when tapping the shoulder"
+          ]
+        },
+        "coachComments": [],
+        "regression": null,
+        "progression": null,
+        "cues": null
+      },
+      "requirementsBefore": {
+        "schemaVersion": 1,
+        "sourceHash": "fc2c2fcf63d02de16ddbfc0afc99239815284e00a6968fcb470d0c39a4a35733",
+        "equipment": {
+          "allOf": [
+            "mat"
+          ],
+          "anyOf": []
+        },
+        "space": {},
+        "participantMin": 1,
+        "unknowns": []
+      },
+      "sourcePatch": {
+        "equipment": [],
+        "howTo": {
+          "setup": "Get into plank position with your legs a little wider than usual. Use a clear, non-slipping floor; a mat is optional for comfort."
+        }
+      },
+      "requirementsAfter": {
+        "schemaVersion": 1,
+        "sourceHash": "8f6437539bd13096f29092dc9f7421e4ab9f8adab51ed1f3dc0af158389fa3bc",
+        "equipment": {
+          "allOf": [],
+          "anyOf": []
+        },
+        "space": {},
+        "participantMin": 1,
+        "unknowns": []
+      }
+    }
+  ]
+}

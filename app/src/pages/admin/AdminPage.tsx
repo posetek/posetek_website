@@ -11,7 +11,6 @@ import { Suspense, lazy } from "react";
 import type { ReactNode } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { auth } from "../../lib/firebase";
-import { sendAdminVerification } from "./lib/identity";
 import { useAdminSession } from "./lib/session";
 import type { AdminSession } from "./lib/session";
 import "../../styles/pose-portal.css";
@@ -37,6 +36,13 @@ const PlannerRedirect = lazy(() => import("./views/PlannerRedirect"));
 const AnalysisWorkspace = lazy(() => import("./views/AnalysisWorkspace"));
 const PersonalizedPrograms = lazy(() => import("./views/PersonalizedPrograms"));
 const AiIncidents = lazy(() => import("./views/AiIncidents"));
+const AccountAccess = lazy(() => import("./views/AccountAccess"));
+const TeamSessionPerformance = lazy(() => import("./views/TeamSessionPerformance"));
+const PhonePerformance = lazy(() => import("./views/PhonePerformance"));
+const DevicePerformance = lazy(() => import("./views/DevicePerformance"));
+const DevicePerformanceDetail = lazy(() => import("./views/DevicePerformanceDetail"));
+const UserIssues = lazy(() => import("./views/UserIssues"));
+const AppFeedback = lazy(() => import("./views/AppFeedback"));
 
 export default function AdminPage() {
   const location = useLocation();
@@ -61,6 +67,7 @@ function AuthenticatedAdminConsole() {
 
 function AdminConsole({ session, preview = false }: { session: AdminSession; preview?: boolean }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   async function signOut() {
     if (preview) return;
@@ -82,7 +89,7 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
         icon="lock"
         title="Sign in with your PoseTek account"
         body="The admin console is for verified @posetek.net accounts."
-        action={<Link className="primary-cta" to="/signin?returnTo=%2Fadmin">Go to sign in</Link>}
+        action={<Link className="primary-cta" to={`/signin?returnTo=${encodeURIComponent(location.pathname + location.search)}`}>Go to sign in</Link>}
       />
     );
   } else if (session.kind === "notAdmin") {
@@ -90,12 +97,11 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
       <GateCard
         icon="block"
         title="This account is not a PoseTek admin"
-        body={`${session.email || "This account"} is signed in, but only @posetek.net accounts reach the admin console. Coaches use the dashboard; athletes use the portal.`}
+        body={`${session.email || "This account"} is signed in. PoseTek administrator access is managed separately from your organization or player account.`}
         action={
           <div className="admin-gate-actions">
-            <Link className="quiet-button" to="/roster?userType=coach">Coach roster</Link>
-            <Link className="quiet-button" to="/athlete">Athlete portal</Link>
-            <button className="primary-cta" type="button" onClick={signOut}>Sign out</button>
+            <Link className="primary-cta" to="/signin">Go to your account</Link>
+            <button className="quiet-button" type="button" onClick={signOut}>Use a different account</button>
           </div>
         }
       />
@@ -114,6 +120,7 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
           <Route path="drills/:drillId/edit" element={<DrillForm mode="edit" />} />
           <Route path="organizations" element={<OrganizationPage admin />} />
           <Route path="accounts" element={<MonitorAccounts />} />
+          <Route path="access" element={<AccountAccess preview={preview} />} />
           <Route path="accounts/coach/:coachId" element={<CoachDetail />} />
           <Route path="accounts/player/:playerId" element={<PlayerDetail />} />
           <Route path="accounts/player/:playerId/results" element={<AdminResults />} />
@@ -122,6 +129,14 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
           <Route path="programs" element={<PersonalizedPrograms />} />
           <Route path="analysis" element={<AnalysisWorkspace />} />
           <Route path="ai-incidents" element={<AiIncidents />} />
+          <Route path="device-performance" element={<PhonePerformance preview={preview} />} />
+          <Route path="device-performance/team-sessions" element={<TeamSessionPerformance preview={preview} />} />
+          <Route path="device-performance/team-sessions/:eventId" element={<TeamSessionPerformance preview={preview} />} />
+          <Route path="device-performance/advanced" element={<DevicePerformance preview={preview} />} />
+          <Route path="device-performance/advanced/:installId" element={<DevicePerformanceDetail preview={preview} />} />
+          <Route path="device-performance/:installId" element={<PhonePerformance preview={preview} />} />
+          <Route path="user-issues" element={<UserIssues preview={preview} />} />
+          <Route path="feedback" element={<AppFeedback preview={preview} />} />
           <Route path="programs/personalized" element={<PlannerRedirect />} />
           <Route
             path="accounts/player/:playerId/plan/:planId/workout/:workoutId"
@@ -168,28 +183,15 @@ function GateCard({ icon, title, body, action }: { icon: string; title: string; 
 // An @posetek.net address that has never been verified is NOT an admin, and it
 // must not fall through to the coach/player cascade either (identity §1.3).
 function VerificationCard({ email, onSignOut }: { email: string; onSignOut: () => void }) {
-  async function resend() {
-    const user = auth.currentUser;
-    if (!user) return;
-    try {
-      const sent = await sendAdminVerification(user);
-      window.alert(sent
-        ? "Verification email sent. Open it, then sign in again."
-        : "A verification email was already sent in the last ten minutes — check your inbox and spam folder.");
-    } catch (error: any) {
-      window.alert(error?.message || "The verification email could not be sent.");
-    }
-  }
-
   return (
     <GateCard
-      icon="mark_email_unread"
-      title="Verify your PoseTek email"
-      body={`${email} is a PoseTek address, but it has not been verified yet. Verify it, then sign in again — admin access is granted by the verified address on your sign-in token, not by anything we could set for you here.`}
+      icon="key"
+      title="Activate your PoseTek access"
+      body={`${email} needs PoseTek administrator approval. Ask an existing PoseTek administrator to confirm your account and share a private activation link. No email has been sent.`}
       action={
         <div className="admin-gate-actions">
-          <button className="quiet-button" type="button" onClick={resend}>Resend the email</button>
-          <button className="primary-cta" type="button" onClick={onSignOut}>Sign out</button>
+          <Link className="primary-cta" to="/join">Use an activation link or code</Link>
+          <button className="quiet-button" type="button" onClick={onSignOut}>Use a different account</button>
         </div>
       }
     />

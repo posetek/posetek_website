@@ -2,6 +2,7 @@
 const crypto = require("node:crypto");
 const { playerSegment } = require("./athlete-storage-paths");
 const { isClubAdmin, memberCanAccessPlayer } = require("./club-access");
+const { staffPlayerProfile } = require("./player-profile");
 const unclaimed = p => p && p.registered !== true && !p.authenticationUID && !p.userUID;
 const digest = code => crypto.createHash("sha256").update(code.toUpperCase()).digest("hex");
 const validCode = code => typeof code === "string" && /^[A-Za-z0-9-]{6,64}$/.test(code);
@@ -154,6 +155,7 @@ function createPlayerInvitations({ db, FieldValue, HttpsError }) {
     if (!auth?.uid || auth.isAnonymous) fail("unauthenticated", "Sign in with your coach account.");
     const firstName = String(data.firstName || "").trim(), lastName = String(data.lastName || "").trim();
     if (!firstName || !lastName || firstName.length > 100 || lastName.length > 100) fail("invalid-argument", "Enter the player's name.");
+    const profile = staffPlayerProfile(data, fail);
     const creationId = typeof data.creationId === "string" && /^[a-zA-Z0-9-]{16,64}$/.test(data.creationId) ? digest(auth.uid + ":" + data.creationId) : undefined;
     const ref = creationId ? db.collection("players").doc(creationId) : db.collection("players").doc(), code = `PLR-${crypto.randomBytes(16).toString("hex").toUpperCase()}`;
     return db.runTransaction(async tx => {
@@ -168,7 +170,7 @@ function createPlayerInvitations({ db, FieldValue, HttpsError }) {
       const organizationId = coach.data().organizationId;
       const org = playerSegment(organizationId) ? await tx.get(db.doc(`organizations/${organizationId}`)) : null;
       if (org?.data()?.schemaVersion === 2) fail("permission-denied", "Choose a team in your organization to create this player.");
-      const p = { ...(org?.exists ? { organizationId } : {}), firstName, lastName, coachUID: auth.uid, coachDocId: coach.id, registered: false, sport: "Soccer", createdAt: FieldValue.serverTimestamp() };
+      const p = { ...(org?.exists ? { organizationId } : {}), ...profile, firstName, lastName, coachUID: auth.uid, coachDocId: coach.id, registered: false, sport: "Soccer", createdAt: FieldValue.serverTimestamp() };
       tx.create(ref, stage(tx, ref.id, p, code));
       const members = Array.isArray(coach.data().members) ? coach.data().members : [];
       tx.update(coach.ref, { members: [...members, ref.id], numberMembers: members.length + 1 });

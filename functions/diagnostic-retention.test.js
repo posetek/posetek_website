@@ -86,7 +86,27 @@ test("terminal acknowledged attempts expire only when no incident or hold refere
   await h.db.doc("failureCases/linked").delete();
   assert.deepEqual(await h.api.cleanAttempt(id), { state: "expired" });
   assert.ok(h.deleted.includes(`processing_attempts/reporter/${id}/manifest.json`));
+  assert.ok(h.deleted.includes(`processing_attempts/reporter/${id}/log.jsonl.gz`));
+  assert.ok(h.deleted.every(path => path.startsWith(`processing_attempts/reporter/${id}/`)));
+  assert.equal(h.deleted.length, 2);
   assert.equal((await target.get()).data().retentionState, "expired");
+});
+test("a failed journal deletion keeps the attempt claim and the retry finishes both objects", async () => {
+  const id = "cccccccc-cccc-cccc-cccc-cccccccccccc";
+  const db = new FakeFirestore({ [`processingAttempts/${id}`]: { schemaVersion: 2, lifecycle: "committed",
+    artifactUploadState: "complete", reportedByUid: "reporter", manifestPath: `processing_attempts/reporter/${id}/manifest.json`,
+    artifactsAcknowledgedAt: FakeTimestamp.fromMillis(time - 31 * 86400000) } });
+  let fail = true;
+  const deleted = [];
+  const bucket = { file: path => ({ delete: async () => {
+    if (fail && path.endsWith("log.jsonl.gz")) { fail = false; throw new Error("temporary storage failure"); }
+    deleted.push(path);
+  } }) };
+  const api = createDiagnosticRetention({ db, bucket, FieldValue, HttpsError, now: () => time });
+  await assert.rejects(api.cleanAttempt(id));
+  assert.equal((await db.doc(`processingAttempts/${id}`).get()).data().retentionState, "allDeleting");
+  assert.deepEqual(await api.cleanAttempt(id), { state: "expired" });
+  assert.deepEqual(deleted.sort(), [`processing_attempts/reporter/${id}/log.jsonl.gz`, `processing_attempts/reporter/${id}/manifest.json`]);
 });
 test("pending attempts and recent upload sessions cannot expire", async () => {
   const id = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";

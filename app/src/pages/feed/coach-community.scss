@@ -1,0 +1,30 @@
+.pt-insights .social-coach {
+  --bg: var(--surface-0);
+  --surface: var(--surface-1);
+  --card: var(--surface-1);
+  --text: var(--text-primary);
+  --muted: var(--text-muted);
+  --line: var(--surface-border);
+  --social-bg: var(--surface-0);
+  --social-surface: var(--surface-1);
+  --social-text: var(--text-primary);
+  --social-muted: var(--text-muted);
+  min-height: 0;
+  padding-bottom: 0;
+  background: transparent;
+  color: var(--text-primary);
+  .social-layout { display: block; max-width: none; padding: 0; margin: 0; }
+  .social-main { min-width: 0; padding: 0; max-width: none; }
+  .social-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
+  .social-filters { flex-wrap: wrap; margin-right: 0; }
+  .social-toolbar button, .social-filters button { min-height: 44px; color: var(--text-muted); border: 1px solid var(--surface-border); background: var(--surface-1); border-radius: var(--radius-sm); }
+  .social-toolbar button[aria-current="page"], .social-filters button[aria-pressed="true"] { color: var(--accent); background: var(--surface-2); border-color: var(--accent); }
+  .social-heading { margin: 0 0 18px; }
+  .social-heading h2 { font-size: 20px; }
+  .social-heading p { font-size: 14px; }
+  .social-card, .social-panel, .social-empty { border: 1px solid var(--surface-border); border-radius: var(--radius-md); background: var(--surface-1); color: var(--text-primary); }
+  .social-empty { padding: 30px 20px; }
+  .social-empty h2 { font-size: 18px; }
+  :where(button, a, input, textarea, summary):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (max-width: 600px) { .social-toolbar button { flex: 1 1 100px; } }
+}

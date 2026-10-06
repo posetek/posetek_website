@@ -10,6 +10,7 @@ import type { Row } from './execution';
 import TechniqueAnalysis from './TechniqueAnalysis';
 import { activeProvisionalEstimates, provisionalScore, type ProvisionalEstimate } from '../../../lib/provisional-estimates';
 import ProvisionalEstimateNote from '../../../components/athlete-stats/ProvisionalEstimateNote';
+import PlayerAgeField from './PlayerAgeField';
 
 export function SkillProfile({ profile, estimate = null, estimates = estimate ? [estimate] : [] }: { profile: Profile; estimate?: ProvisionalEstimate | null; estimates?: ProvisionalEstimate[] }) {
   const [selection, setSelection] = useState(() => [...profile.axes].filter(a => a.score !== null).sort((a, b) => a.score! - b.score!)[0]?.key || 'striking');
@@ -68,6 +69,7 @@ export default function PlayerProfile({ ctx, profile, onDrills }: { ctx: PortalC
   sessions.forEach(s => { const type = s.type || s.drillType || 'Drill'; counts[type] = (counts[type] || 0) + Math.max(s.repCount || 0, 1); });
   const favorite = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
   return <section className="player-profile"><div className="player-profile-hero"><section className="portal-card player-identity"><p className="eyebrow">Your profile</p><h1>{fullName(ctx.athlete)}</h1><p>{ctx.athlete.position || 'Position not set'}</p><div className="player-measurements"><span><small>Height</small>{heightText(Number(ctx.athlete.height) || null)}</span><span><small>Weight</small>{weightText(Number(ctx.athlete.weight) || null)}</span></div><button className="hub-secondary" onClick={() => setBody(v => !v)}>{body ? 'Close body scan' : 'View body scan'}</button></section><section className="portal-card player-club">{club?.logoUrl ? <img src={club.logoUrl} alt={`${club.name} crest`} /> : <span className="material-symbols-outlined">shield</span>}<h2>{club?.name || clubError || (ctx.athlete.organizationId ? 'Loading club…' : 'No club yet')}</h2></section></div>
+    <PlayerAgeField playerId={ctx.playerId!} athlete={ctx.athlete} editable={ctx.access === 'athlete' || ctx.access === 'preview'} preview={ctx.access === 'preview'} />
     {body && <BodyProfileView ctx={ctx} />}
     <SkillProfile profile={profile} estimates={activeProvisionalEstimates(ctx.provisionalEstimates, ctx.allResultReps?.() || ctx.allStatsReps())} />
     {sessionError && <p className="player-error" role="status">Session history could not refresh: {sessionError}</p>}

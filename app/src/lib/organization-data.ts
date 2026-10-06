@@ -55,7 +55,7 @@ export interface ClubContext {
   organization: ClubOrganization | null;
   teams: ClubTeam[];
   staff: { userUID: string; email: string; firstName: string; lastName: string; role: "manager" | "coach"; teamIds: string[]; status: string }[];
-  invitations: { id: string; email: string; firstName: string; lastName: string; role: "manager" | "coach"; teamIds: string[]; status: string; expiresAtMillis: number }[];
+  invitations: { id: string; email: string; firstName: string; lastName: string; role: "manager" | "coach"; teamIds: string[]; status: string; expiresAtMillis: number; activationMode?: "manual" | "verified_email"; activationStatus?: "pending" | "consuming" | "completed" | "revoked" | "blocked" | "expired" }[];
   players: { id: string; firstName: string; lastName: string; organizationId: string; teamId: string; canIssueSignupCode: boolean }[];
 }
 export function getClubContext(organizationId?: string): Promise<ClubContext> {

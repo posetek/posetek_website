@@ -1,0 +1,98 @@
+.pt-admin .team-performance {
+  min-width:0;
+  > * { min-width:0; }
+  .team-auto { display:flex; gap:8px; align-items:center; font-size:12px; color:var(--text-muted); min-height:44px; }
+  .team-session-picker { margin:0 0 24px; justify-content:space-between; }
+  .team-session-picker .dp-field { flex:1 1 300px; max-width:600px; }
+  .team-session-title,.team-section-heading { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin:0 0 20px; }
+  .team-session-title h2 { font-size:25px; margin:0; }
+  .team-session-status { border:1px solid var(--surface-border); padding:8px 12px; border-radius:20px; font-size:12px; color:var(--accent); }
+  .team-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1px; background:var(--surface-border); border:1px solid var(--surface-border); border-radius:12px; overflow:hidden; margin-bottom:20px; }
+  .team-kpis > div { display:grid; gap:6px; padding:20px; background:var(--surface-1); }
+  .team-kpis small { font-size:12px; }
+  .team-kpis strong { font-size:29px; letter-spacing:-1px; }
+  .team-kpis strong span,.team-station-count strong span { font-size:18px; color:var(--text-muted); font-weight:400; }
+  .team-stations,.team-events { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-bottom:24px; }
+  .team-station { padding:20px; border-top:3px solid; min-width:0; }
+  .team-station h3 { margin:8px 0 16px; font-size:19px; }
+  .team-phone { display:grid; gap:5px; text-decoration:none; color:var(--text-primary); margin-bottom:12px; }
+  .team-phone code { color:var(--text-muted); font-size:11px; }
+  .team-phone:hover strong { color:var(--accent); }
+  .team-station-count { display:flex; gap:8px; align-items:baseline; margin-top:22px; }
+  .team-station-count strong { font-size:29px; }
+  .team-station-count > span { font-size:12px; color:var(--text-muted); }
+  progress { width:100%; height:5px; margin:12px 0; accent-color:var(--accent); }
+  .team-station-stats { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:8px 0 0; }
+  .team-station-stats dt { font-size:11px; color:var(--text-muted); }
+  .team-station-stats dd { font-size:14px; margin:4px 0 0; }
+  .team-section-heading h2,.team-operations h2 { font-size:20px; margin:5px 0; }
+  .team-tabs { display:flex; flex-wrap:wrap; gap:4px; border-bottom:1px solid var(--surface-border); padding-bottom:10px; margin-bottom:16px; }
+  .team-tabs button { background:none; color:var(--text-muted); font:inherit; font-size:13px; min-height:40px; border:1px solid transparent; padding:8px 14px; border-radius:8px; cursor:pointer; }
+  .team-tabs button[aria-pressed=true] { color:var(--text-primary); border-color:var(--surface-border); background:var(--surface-2); }
+  .team-chart { width:100%; min-width:0; }
+  .team-chart svg { width:100%; height:auto; display:block; }
+  .team-chart text { fill:var(--text-muted); font:12px system-ui,sans-serif; }
+  .team-chart .team-failure-mark { fill:var(--status-danger); font-size:27px; font-weight:600; }
+  .team-chart a:focus-visible circle { stroke:var(--text-primary); stroke-width:4px; }
+  .team-chart a:focus-visible text { text-decoration:underline; }
+  .team-grid { stroke:var(--surface-border); stroke-width:1; }
+  .team-legend { display:flex; flex-wrap:wrap; gap:10px 24px; margin:6px 0 12px; }
+  .team-legend span { display:flex; gap:7px; align-items:center; font-size:12px; color:var(--text-muted); }
+  .team-legend i { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .team-operations { width:100%; box-sizing:border-box; }
+  .team-activity-chart .team-activity-marker { fill:var(--surface-1); stroke-width:1.5px; }
+  .team-activity-chart .team-failure-mark { font-size:12px; }
+  @media(max-width:700px) { .team-chart.team-activity-chart svg { min-width:860px; } }
+  .team-outcome-legend { margin-bottom:16px; }
+  .dp-table small { display:block; font-size:11px; line-height:1.5; margin-top:4px; }
+  .team-rotation { width:100%; min-width:640px; }
+  .team-events > a { padding:20px; color:var(--text-primary); text-decoration:none; }
+  .team-events h2 { font-size:19px; }
+  .team-events a:hover { border-color:var(--accent); }
+  .team-coverage p { color:var(--text-muted); font-size:13px; line-height:1.6; }
+  @media(max-width:1000px) { .team-stations { gap:10px; } .team-station { padding:14px; } }
+  @media(max-width:700px) { .team-stations,.team-events { grid-template-columns:1fr; } .team-kpis { grid-template-columns:1fr 1fr; } .team-kpis > div { padding:16px; } .dp-section { padding:14px; } .team-chart svg { min-width:620px; } .team-chart { overflow-x:auto; } .team-section-heading { align-items:stretch; } .dp-field { flex:1 1 140px; } .team-tabs button { padding:8px 10px; } }
+}
+
+.pt-admin .team-performance {
+  .team-player-average { display:grid; gap:5px; margin:20px 0; padding:16px 0; border-block:1px solid var(--surface-border); }
+  .team-player-average > span { font-size:12px; color:var(--text-muted); }
+  .team-player-average strong { font-size:27px; letter-spacing:-.7px; }
+  .team-player-average small,.team-drill-averages small { display:block; font-size:11px; line-height:1.5; color:var(--text-muted); }
+  .team-drill-averages { width:100%; border-collapse:collapse; font-size:12px; }
+  .team-drill-averages caption { text-align:left; font-size:13px; font-weight:600; padding-bottom:12px; }
+  .team-drill-averages th,.team-drill-averages td { text-align:left; vertical-align:top; padding:9px 5px; border-bottom:1px solid var(--surface-border); }
+  .team-drill-averages thead { color:var(--text-muted); font-size:10px; }
+  .team-drill-averages td { text-align:right; }
+  .team-drill-averages td > div + div { margin-top:10px; }
+  .team-phone code { overflow-wrap:anywhere; }
+}
+
+.pt-admin .team-performance {
+  .team-player-timings .team-rotation { min-width:1080px; width:100%; }
+  .team-player-timings .team-rotation th,.team-player-timings .team-rotation td { padding:16px 14px; vertical-align:top; }
+  .team-player-timings .team-rotation tbody th { min-width:150px; }
+  .team-player-timings .team-rotation tfoot { background:var(--surface-2); border-top:2px solid var(--surface-border); }
+  .team-player-timings .team-duration { font-size:16px; white-space:nowrap; }
+  .team-player-timings .team-timing-basis { text-align:left; margin-bottom:16px; max-width:900px; color:var(--text-muted); font-size:12px; line-height:1.6; }
+  .team-circuit-average { padding:16px 20px; background:var(--surface-2); border:1px solid var(--surface-border); border-radius:12px; display:grid; gap:7px; }
+  .team-circuit-average span,.team-circuit-average small { font-size:12px; color:var(--text-muted); }
+  .team-circuit-average strong { font-size:28px; letter-spacing:-.6px; }
+  .team-player-timeline { margin-top:28px; padding-top:24px; border-top:1px solid var(--surface-border); }
+  .team-player-timeline h3 { margin:0; font-size:18px; }
+  .team-player-timeline .team-tabs { margin-bottom:0; border:0; }
+  .team-chart .team-player-chart-name { fill:var(--text-primary); font-size:14px; font-weight:600; }
+  .team-chart .team-bar-label { fill:#10241b; font-size:12px; font-weight:600; }
+  .team-station-interval:focus { outline:none; }
+  .team-station-interval:focus-visible rect { stroke:var(--text-primary); stroke-width:3px; }
+  .team-run-detail { scroll-margin-top:100px; }
+  .team-run-detail dd,.team-run-detail code { overflow-wrap:anywhere; }
+  @media(max-width:700px) { .team-circuit-average { width:100%; box-sizing:border-box; } .team-player-timeline .team-chart svg { min-width:860px; } }
+}
+
+.pt-admin .team-performance {
+  .team-table-hint { display:none; }
+  .team-player-timings .team-rotation tr > th:first-child { position:sticky; left:0; z-index:1; background:var(--surface-1); }
+  .team-player-timings .team-rotation tfoot th:first-child { background:var(--surface-2); }
+  @media(max-width:700px) { .team-table-hint { display:block; font-size:12px; } }
+}

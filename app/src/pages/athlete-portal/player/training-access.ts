@@ -19,10 +19,24 @@ export const ACCESS_GROUPS = [
 export const FACILITIES = { home: 'Home', gym: 'Gym', outdoor: 'Outdoors', pitch: 'Football pitch', other: 'Another location' };
 export const SURFACES = { indoor: 'Indoor floor', grass: 'Grass', turf: 'Turf', hardcourt: 'Hard court', track: 'Running track', other: 'Another surface' };
 export type TrainingAccess = { schemaVersion: 1; confirmed: true; facility: keyof typeof FACILITIES;
-  participantCount: number; space: { lengthMeters?: number; widthMeters?: number; surface?: keyof typeof SURFACES; overheadClear?: boolean; goalArea?: boolean } };
+  participantCount: number; space: { lengthMeters?: number; widthMeters?: number; surface?: keyof typeof SURFACES; overheadClear?: boolean; goalArea?: boolean; assumedSufficient?: boolean } };
 export type SetupDraft = { equipment: string[]; equipmentAnswered: boolean; facility: keyof typeof FACILITIES | '';
   participantCount: number | ''; lengthMeters: number | ''; widthMeters: number | ''; surface: keyof typeof SURFACES | '';
-  overheadClear: boolean; goalArea: boolean; confirmed: boolean };
+  overheadClear: boolean; goalArea: boolean; confirmed: boolean; assumedSufficient?: boolean; overheadConfirmed?: boolean; goalAreaConfirmed?: boolean };
+export const LOCATION_PRESETS = {
+  home: { label: 'At home', icon: 'home', description: 'Bodyweight and floor exercises', equipment: ['timer'] },
+  gym: { label: 'Gym', icon: 'fitness_center', description: 'Weights, bands and a bench', equipment: ['dumbbells', 'resistanceBand', 'kettlebell', 'bench', 'timer'] },
+  pitch: { label: 'Field', icon: 'sports_soccer', description: 'Cones, markers and room to move', equipment: ['cones', 'markers', 'timer'] },
+} as const;
+export function locationSetup(facility: keyof typeof LOCATION_PRESETS, previous = emptySetup()): SetupDraft {
+  const ballAndGoal = previous.equipment.filter(e => e === 'ball' || e === 'goal');
+  return { ...previous, facility, equipment: [...LOCATION_PRESETS[facility].equipment, ...ballAndGoal], equipmentAnswered: true,
+    participantCount: previous.participantCount || 1, assumedSufficient: true, confirmed: false };
+}
+export function clearSpaceRestrictions(value: SetupDraft): SetupDraft {
+  const { overheadConfirmed: _overhead, goalAreaConfirmed: _goal, ...rest } = value;
+  return { ...rest, lengthMeters: '', widthMeters: '', surface: '', overheadClear: false, goalArea: false, assumedSufficient: true, confirmed: false };
+}
 export const emptySetup = (): SetupDraft => ({ equipment: [], equipmentAnswered: false, facility: '', participantCount: '',
   lengthMeters: '', widthMeters: '', surface: '', overheadClear: false, goalArea: false, confirmed: false });
 export function setupFromIntake(intake?: Row): SetupDraft {
@@ -32,7 +46,9 @@ export function setupFromIntake(intake?: Row): SetupDraft {
     participantCount: Number.isInteger(access?.participantCount) ? access.participantCount : intake?.setting === 'solo' ? 1 : intake?.setting === 'partner' ? 2 : '',
     lengthMeters: access?.space?.lengthMeters ?? '', widthMeters: access?.space?.widthMeters ?? '',
     surface: access?.space?.surface in SURFACES ? access.space.surface : '', overheadClear: access?.space?.overheadClear === true,
-    goalArea: access?.space?.goalArea === true };
+    goalArea: access?.space?.goalArea === true, ...(access?.space?.assumedSufficient === true ? { assumedSufficient: true } : {}),
+    ...(typeof access?.space?.overheadClear === 'boolean' ? { overheadConfirmed: true } : {}),
+    ...(typeof access?.space?.goalArea === 'boolean' ? { goalAreaConfirmed: true } : {}) };
 }
 export function setupErrors(value: SetupDraft): string[] {
   const errors: string[] = [];
@@ -49,10 +65,13 @@ export function confirmedSetup(value: SetupDraft): { equipment: string[]; settin
   return { equipment: [...new Set(value.equipment)].sort(), setting: value.participantCount === 1 ? 'solo' : 'partner',
     access: { schemaVersion: 1, confirmed: true, facility: value.facility as TrainingAccess['facility'], participantCount: Number(value.participantCount),
       space: { ...(value.lengthMeters !== '' ? { lengthMeters: value.lengthMeters } : {}), ...(value.widthMeters !== '' ? { widthMeters: value.widthMeters } : {}),
-        ...(value.surface ? { surface: value.surface } : {}), overheadClear: value.overheadClear, goalArea: value.goalArea } } };
+        ...(value.surface ? { surface: value.surface } : {}), ...(value.assumedSufficient ? { assumedSufficient: true } : {}),
+        ...(!value.assumedSufficient || value.overheadConfirmed || value.overheadClear ? { overheadClear: value.overheadClear } : {}),
+        ...(!value.assumedSufficient || value.goalAreaConfirmed || value.goalArea ? { goalArea: value.goalArea } : {}) } } };
 }
 export function setupSignature(value: SetupDraft): string {
-  return JSON.stringify({ ...value, equipment: [...value.equipment].sort(), confirmed: false });
+  const canonical = confirmedSetup({ ...value, confirmed: true });
+  return JSON.stringify(canonical || { ...value, equipment: [...value.equipment].sort(), confirmed: false });
 }
 export function setupForProposal(intake: Row, current: SetupDraft): SetupDraft {
   const next = setupFromIntake(intake);

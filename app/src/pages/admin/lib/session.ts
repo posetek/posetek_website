@@ -24,13 +24,16 @@ export function useAdminSession(): AdminSession {
 
   useEffect(() => {
     let live = true;
+    let epoch = 0;
     const unsubscribe = auth.onAuthStateChanged(async (user: any) => {
+      const requestEpoch = ++epoch;
       if (!user) {
         if (live) setSession({ kind: "signedOut" });
         return;
       }
+      setSession({ kind: "checking" });
       const identity = await refreshAdminIdentity(user);
-      if (!live) return;
+      if (!live || epoch !== requestEpoch || auth.currentUser?.uid !== user.uid) return;
       if (identity.isAdmin) {
         setSession({ kind: "ready", identity });
         void upsertAdminProfile(identity);

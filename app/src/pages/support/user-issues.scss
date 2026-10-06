@@ -1,0 +1,8 @@
+.user-issue-form { scroll-margin-top: 24px; form { display: grid; gap: 12px; } label { font-weight: 600; } textarea, input { width: 100%; max-width: 100%; box-sizing: border-box; font: inherit; padding: 12px; border: 1px solid #a7b0be; border-radius: 8px; } textarea { resize: vertical; } button { width: fit-content; padding: 12px 18px; cursor: pointer; border: 1px solid #203846; border-radius: 8px; color: white; background: #203846; font: inherit; } button:disabled { opacity: .55; cursor: default; } button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 3px solid #52a6a2; outline-offset: 3px; } small { display: block; overflow-wrap: anywhere; } li { margin-block: 12px; } }
+.issue-screenshot { display: block; max-width: 100%; max-height: 320px; object-fit: contain; margin-block: 12px; }
+.user-issue-help { position: fixed; bottom: max(12px, env(safe-area-inset-bottom)); right: 12px; z-index: 30; background: #203846; color: white; padding: 8px 12px; border-radius: 20px; font: 12px/1.4 system-ui; box-shadow: 0 2px 8px #0002; text-decoration: none; }
+.user-issue-recovery { max-width: 640px; margin: 12vh auto; padding: 24px; font-family: system-ui; }
+
+.user-issue-form textarea, .user-issue-form input { background: #fff; color: #172c22; }
+
+body:has(.player-guided) .user-issue-help { bottom: max(96px, calc(env(safe-area-inset-bottom) + 84px)); }

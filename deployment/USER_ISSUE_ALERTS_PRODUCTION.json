@@ -1,0 +1,402 @@
+{
+  "schemaVersion": 1,
+  "status": "web-and-backend-production-verified-native-pending",
+  "recordedAt": "2026-09-30T22:42:59.443Z",
+  "repository": "https://github.com/posetek/posetek_website",
+  "scope": "Separate user failure and manual problem-report alerts; existing workout workflow preserved.",
+  "frontend": {
+    "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+    "deployId": "6abd8f957e046e8059376091",
+    "previousDeployId": "6abb9f1e6c2c84772de67005",
+    "sourceCommit": "e8de8d755ba3e3fe85eca3f22b8fddcb8898e9f3",
+    "publishedAt": "2026-09-30T22:41:20.596Z",
+    "url": "https://posetek.net",
+    "draftUrl": "https://6abd8f957e046e8059376091--posetek.netlify.app",
+    "exactReviewedDraftPromoted": true,
+    "allArtifactFilesMatch": true,
+    "artifactFiles": 1389,
+    "protectedBaselineFiles": 1387,
+    "marketingExact": true,
+    "documents": [
+      {
+        "path": "/application.html",
+        "sha": "e54e55d35d0e30aa8fadb322c5399b0d8ed207c0",
+        "size": 15038
+      },
+      {
+        "path": "/coaches/index.html",
+        "sha": "167c6dd233a8bad39c09f49486d39595a7ea9cb6",
+        "size": 25969
+      },
+      {
+        "path": "/index.html",
+        "sha": "12b1b8ff0a9f0e33e3471b15b7bbd0696e3e86f1",
+        "size": 37505
+      }
+    ],
+    "routesVerified": 16,
+    "assetsVerified": 1253,
+    "hostedBrowser": {
+      "origin": "https://posetek.net",
+      "at": "2026-09-30T22:41:46.918Z",
+      "signedOutGuard": true,
+      "signInReturnToExactIssue": true,
+      "adminIncidents": true,
+      "deliveryVisible": true,
+      "screenshotProtected": true,
+      "reportForm": true,
+      "noOverflow": true,
+      "noRuntimeErrors": true
+    }
+  },
+  "activation": {
+    "at": "2026-09-30T22:42:51.312Z",
+    "enabled": true,
+    "sendEnabled": true,
+    "activatedAtMillis": 1790808171312,
+    "allUsers": true,
+    "historicalReplay": false
+  },
+  "backend": {
+    "project": "kickai-69dd0",
+    "functions": {
+      "submitUserIssue": {
+        "versionId": "2",
+        "sourceSha256": "4a6520bfa129263d478b1be89f5431d375b5bf160c5987fd21c86ce2d296145f",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "60s",
+          "availableMemoryMb": 256,
+          "maxInstances": 10,
+          "secrets": [],
+          "httpsTrigger": true,
+          "publicInvoker": true,
+          "ingressSettings": "ALLOW_ALL",
+          "callable": true
+        },
+        "iamSha256": "e6d3b33c675e91952197875328dd540c4d4d00f13e5fc31748288b7ebc7fdd37",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "getUserIssues": {
+        "versionId": "2",
+        "sourceSha256": "4a6520bfa129263d478b1be89f5431d375b5bf160c5987fd21c86ce2d296145f",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "60s",
+          "availableMemoryMb": 256,
+          "maxInstances": 10,
+          "secrets": [],
+          "httpsTrigger": true,
+          "publicInvoker": true,
+          "ingressSettings": "ALLOW_ALL",
+          "callable": true
+        },
+        "iamSha256": "fb40533670906e22ea7ef3c3ac23ce14b2059cc52f0462fd4c6144fbcc3dcac8",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "updateUserIssue": {
+        "versionId": "2",
+        "sourceSha256": "4a6520bfa129263d478b1be89f5431d375b5bf160c5987fd21c86ce2d296145f",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "60s",
+          "availableMemoryMb": 256,
+          "maxInstances": 10,
+          "secrets": [],
+          "httpsTrigger": true,
+          "publicInvoker": true,
+          "ingressSettings": "ALLOW_ALL",
+          "callable": true
+        },
+        "iamSha256": "23dcfc66d4802b200763619373b49d33dc1cb922a2b0beca66df2962082b5257",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "observeIssueAi": {
+        "versionId": "2",
+        "sourceSha256": "4a6520bfa129263d478b1be89f5431d375b5bf160c5987fd21c86ce2d296145f",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "120s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "secrets": [],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/databases/(default)/documents/aiIncidents/{id}",
+            "eventType": "providers/cloud.firestore/eventTypes/document.create",
+            "service": "firestore.googleapis.com",
+            "failurePolicy": {
+              "retry": {}
+            }
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "observeIssueReport": {
+        "versionId": "2",
+        "sourceSha256": "4a6520bfa129263d478b1be89f5431d375b5bf160c5987fd21c86ce2d296145f",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "120s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "secrets": [],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/databases/(default)/documents/fieldReports/{id}",
+            "eventType": "providers/cloud.firestore/eventTypes/document.create",
+            "service": "firestore.googleapis.com",
+            "failurePolicy": {
+              "retry": {}
+            }
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "observeIssueDiagnostic": {
+        "versionId": "2",
+        "sourceSha256": "4a6520bfa129263d478b1be89f5431d375b5bf160c5987fd21c86ce2d296145f",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "120s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "secrets": [],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/databases/(default)/documents/failureCases/{id}",
+            "eventType": "providers/cloud.firestore/eventTypes/document.create",
+            "service": "firestore.googleapis.com",
+            "failurePolicy": {
+              "retry": {}
+            }
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "observeIssueLog": {
+        "versionId": "2",
+        "sourceSha256": "4a6520bfa129263d478b1be89f5431d375b5bf160c5987fd21c86ce2d296145f",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "120s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "secrets": [],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/topics/posetek-user-issues",
+            "eventType": "google.pubsub.topic.publish",
+            "service": "pubsub.googleapis.com",
+            "failurePolicy": {
+              "retry": {}
+            }
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "dispatchUserIssue": {
+        "versionId": "2",
+        "sourceSha256": "4a6520bfa129263d478b1be89f5431d375b5bf160c5987fd21c86ce2d296145f",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "120s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "secrets": [
+            "RESEND_API_KEY"
+          ],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/databases/(default)/documents/userIssueOutbox/{id}",
+            "eventType": "providers/cloud.firestore/eventTypes/document.write",
+            "service": "firestore.googleapis.com",
+            "failurePolicy": {
+              "retry": {}
+            }
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "sweepUserIssues": {
+        "versionId": "2",
+        "sourceSha256": "4a6520bfa129263d478b1be89f5431d375b5bf160c5987fd21c86ce2d296145f",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "300s",
+          "availableMemoryMb": 256,
+          "maxInstances": 1,
+          "secrets": [
+            "RESEND_API_KEY"
+          ],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/topics/firebase-schedule-sweepUserIssues-us-central1",
+            "eventType": "google.pubsub.topic.publish",
+            "service": "pubsub.googleapis.com"
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "dailyUserIssues": {
+        "versionId": "2",
+        "sourceSha256": "4a6520bfa129263d478b1be89f5431d375b5bf160c5987fd21c86ce2d296145f",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "300s",
+          "availableMemoryMb": 256,
+          "maxInstances": 1,
+          "secrets": [
+            "RESEND_API_KEY"
+          ],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/topics/firebase-schedule-dailyUserIssues-us-central1",
+            "eventType": "google.pubsub.topic.publish",
+            "service": "pubsub.googleapis.com"
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      }
+    },
+    "unrelatedFunctionsPreserved": true,
+    "webhook": {
+      "function": "resendWorkoutNotificationWebhook",
+      "version": "2",
+      "sourceSha256": "2b2d33625516fdca968bd4d876807d0e4c9474d87f51cf553d4e48ea397771b6",
+      "signedIssueRouting": true
+    },
+    "rulesDeployed": false,
+    "gatewayDeployed": false,
+    "indexes": [
+      "userIssueOccurrences(issueId ASC, receivedAtMillis DESC)",
+      "userIssueActors(uid ASC, updatedAtMillis DESC)"
+    ],
+    "loggingSink": "projects/kickai-69dd0/sinks/posetek-user-issues",
+    "pubsubTopic": "projects/kickai-69dd0/topics/posetek-user-issues",
+    "monitoringPolicy": "projects/kickai-69dd0/alertPolicies/6520825830736261069",
+    "monitoringEmailChannel": "projects/kickai-69dd0/notificationChannels/17819036609163820276",
+    "monitoringDeliveryVerified": false
+  },
+  "notifications": {
+    "to": "dylank@posetek.net",
+    "from": "PoseTek Support <support@alerts.posetek.net>",
+    "daily": "0 9 * * *",
+    "timeZone": "America/Los_Angeles",
+    "sweep": "every 5 minutes",
+    "signedTestDeliveries": 8,
+    "incidentTests": 6,
+    "statusTests": 1,
+    "summaryTests": 1,
+    "inboxPlacementVerified": false
+  },
+  "verification": {
+    "backendTests": 45,
+    "frontendSuiteTests": 1367,
+    "postFixRoutingTests": 71,
+    "canonicalRulesAssertions": 300,
+    "releaseGuards": 29,
+    "scopedDeploymentAuditorTests": 14,
+    "firestoreSDKEmulatorPassed": true,
+    "localBrowserWidths": [
+      360,
+      390,
+      768,
+      1440
+    ],
+    "offlineReplayPassed": true,
+    "duplicateRetriesSuppressed": true,
+    "recurrenceReopened": true,
+    "productionDirectClientReadsDenied": true,
+    "privateScreenshotReadPassed": true,
+    "preservationBuild": {
+      "at": "2026-09-30T22:45:23.779Z",
+      "ordinaryBuildProtectedFiles": 1387,
+      "approvedMarketingRestored": true,
+      "composedArtifactFiles": 1389,
+      "exactPublishedArtifact": true,
+      "pathComparison": "Netlify canonical lowercase inventory paths"
+    }
+  },
+  "cleanup": {
+    "at": "2026-09-30T22:42:25.237Z",
+    "counts": {
+      "userIssues": 4,
+      "userIssueOccurrences": 6,
+      "userIssueOutbox": 8,
+      "userIssueDays": 2,
+      "userIssueActors": 5,
+      "userIssueLimits": 3
+    },
+    "syntheticUsersDeleted": 2,
+    "syntheticAdminProfilesRemoved": true,
+    "allIssueRootsEmpty": true,
+    "settingsDisabled": true
+  },
+  "native": {
+    "repository": "https://github.com/posetek/posetek-mobile-app",
+    "branch": "worktree-user-issue-alerts",
+    "commit": "0f0d876aa0686470e92829dc237af7a3c80b0344",
+    "sourcePushed": true,
+    "macBuildVerified": false,
+    "deviceVerified": false,
+    "testFlightReleased": false
+  },
+  "remaining": [
+    "Verify Firebase Crashlytics Cloud Logging integration for the iOS app and a real test-device crash after relaunch. The adapter test used a synthetic Pub/Sub payload.",
+    "Build and review native candidate on the owning Mac, iPhone and TestFlight before rollout.",
+    "Independent Cloud Monitoring email configuration is verified; its actual email delivery was not tested."
+  ],
+  "recovery": "Disable userIssueSettings/current enabled and sendEnabled to park issue alerts. Keep dedup/outbox evidence; do not replay delivered jobs. Restore predecessor website only after checking intervening releases. Existing workout settings are separate.",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/15"
+}

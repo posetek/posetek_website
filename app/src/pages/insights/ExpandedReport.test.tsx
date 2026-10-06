@@ -6,7 +6,7 @@ import { expandedRequest } from "./lib/expandedQuery";
 import { previewInsights } from "./lib/preview";
 import type { ExpandedRequest } from "./lib/expandedQuery";
 const base = expandedRequest("", new Date("2026-09-17T04:00:00Z"));
-const render = (request: ExpandedRequest = base, page = 0, state = "normal") => renderToStaticMarkup(<ExpandedReport data={previewInsights(request, page, state)} request={request} page={page} onChange={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={player => `/athlete?player=${player.id}&orgId=${player.organizationId}&teamId=${player.teamId || ""}`} />);
+const render = (request: ExpandedRequest = base, page = 0, state = "normal") => renderToStaticMarkup(<MemoryRouter><ExpandedReport data={previewInsights(request, page, state)} request={request} page={page} onChange={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={player => `/athlete?player=${player.id}&orgId=${player.organizationId}&teamId=${player.teamId || ""}`} /></MemoryRouter>);
 describe("four-view Insights report", () => {
   it("keeps totals independent of the displayed player page", () => {
     const first = previewInsights(base), next = previewInsights(base, 1);
@@ -53,13 +53,13 @@ describe("four-view Insights report", () => {
   it("flags undated attempts separately from dated coverage", () => {
     const data = previewInsights(base);
     data.players[0].testing = { ...data.players[0].testing, status: "noSuccessfulTests", hasDateUnknownAttempts: true, dateUnknownAttempts: 1 };
-    const html = renderToStaticMarkup(<ExpandedReport data={data} request={base} onChange={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "#player"} />);
+    const html = renderToStaticMarkup(<MemoryRouter><ExpandedReport data={data} request={base} onChange={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "#player"} /></MemoryRouter>);
     expect(html).toContain("Date unknown · needs review");
   });
   it("shows all workout outcomes with independent event and evidence coverage denominators", () => {
     const request = { ...base, view: "workouts" as const }, data = previewInsights(request);
     data.workouts = { ...data.workouts, started: 4, completed: 1, endedEarly: 1, inProgress: 3, abandoned: 0, unknownEnding: 0, outcomeEvents: 5, timerRecords: 1, estimatedRecords: 1, unknownDuration: 3, knownPrescription: 2, unknownPrescription: 3, allPrescribedSetsCompleted: 1 };
-    const html = renderToStaticMarkup(<ExpandedReport data={data} request={request} onChange={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "#player"} />);
+    const html = renderToStaticMarkup(<MemoryRouter><ExpandedReport data={data} request={request} onChange={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "#player"} /></MemoryRouter>);
     expect(html).toContain("Workout outcomes"); expect(html).toContain("5 distinct workout logs");
     expect(html).toContain("Completed as logged"); expect(html).toContain("1/5 logs with timers");
     expect(html).toContain("3/5 logs have unknown duration"); expect(html).toContain("2/5 logs have a known prescription");
@@ -73,7 +73,7 @@ describe("four-view Insights report", () => {
   });
   it("uses server-provided participation union and the requested product terminology", () => {
     const data = previewInsights(base); data.participation = { testingPlayers: 4, workoutPlayers: 3, anyPlayers: 5 };
-    const html = renderToStaticMarkup(<ExpandedReport data={data} request={base} onChange={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "#player"} />);
+    const html = renderToStaticMarkup(<MemoryRouter><ExpandedReport data={data} request={base} onChange={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "#player"} /></MemoryRouter>);
     expect(html).toContain("5/84 players"); expect(html).toContain("The combined count includes each player once");
     expect(html).toContain("Boys/Girls divisions"); expect(html).toContain("Estimated active use");
   });

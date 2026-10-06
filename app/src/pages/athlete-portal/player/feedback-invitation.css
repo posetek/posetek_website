@@ -1,0 +1,9 @@
+.pt-player {
+  .player-feedback-invitation { border-color: #b7f34455; background: #163429; }
+  .player-feedback-invitation h2 { font-size: 20px; text-wrap: balance; }
+  .player-feedback-invitation > p:not(.eyebrow) { font-size: 13px; color: var(--player-muted); }
+  .player-feedback-actions { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .player-feedback-actions .primary-cta { width: auto; min-width: 170px; border-radius: 12px; padding: 12px 18px; justify-content: space-between; }
+  .player-feedback-actions .text-button { padding-inline: 0; }
+  .player-feedback-results a { display: inline-flex; gap: 10px; align-items: center; min-height: 44px; color: var(--lime); font-size: 13px; font-weight: 600; text-underline-offset: 4px; }
+}

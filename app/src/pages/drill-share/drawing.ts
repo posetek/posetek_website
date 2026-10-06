@@ -200,18 +200,22 @@ export function drawShuttleOverlay(
   frameIndex: number,
   artifacts: Record<string, any>,
   rep: Rep,
+  // Body-centre track override: tracking.json COM for reps without pose.
+  centers?: ({ x: number; y: number } | null)[],
 ): void {
   if (!resultUsable(rep)) return;
   const meta = (artifacts["metadata.json"] || {}) as Record<string, any>;
   const bounds = resolveShuttleBounds(meta, rep);
   const start = asInteger(meta.startFrame) ?? 0;
+  const centerAt = (index: number) => centers ? centers[index] ?? null : hipCenter(frames[index]);
+  const available = centers ? centers.length : frames.length;
   (["outbound", "turn", "inbound"] as const).forEach(phaseKey => {
     context.beginPath();
     let started = false;
     let phaseColor = "#fff";
-    for (let index = start; index <= frameIndex && index < frames.length; index += 1) {
+    for (let index = start; index <= frameIndex && index < available; index += 1) {
       const phase = shuttlePhaseAt(index, bounds);
-      const center = hipCenter(frames[index]);
+      const center = centerAt(index);
       if (!phase || phase.key !== phaseKey || !center) { started = false; continue; }
       phaseColor = phase.color;
       const p = mapped(center, width, height);
@@ -227,7 +231,7 @@ export function drawShuttleOverlay(
       context.stroke();
     }
   });
-  const center = hipCenter(frames[frameIndex]);
+  const center = centerAt(frameIndex);
   if (center) {
     const phase = shuttlePhaseAt(frameIndex, bounds);
     const p = mapped(center, width, height);

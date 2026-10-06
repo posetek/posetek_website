@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "status": "sender-connected-activation-pending",
+  "recordedAt": "2026-09-28T22:00:37.859Z",
+  "repository": "https://github.com/posetek/posetek_website",
+  "branch": "codex/workout-email-alerts",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/11",
+  "sourceCommit": "de886aa02881a84afa99c31bdec231847c9146fb",
+  "previousCheckpoint": "deployment/WORKOUT_NOTIFICATIONS_PREVIEW.json",
+  "provider": {
+    "name": "Resend",
+    "recipient": "dylank@posetek.net",
+    "sender": "PoseTek Workouts <workouts@alerts.posetek.net>",
+    "keyPermission": "sending_access",
+    "keyRecognized": true,
+    "domainRestriction": "not-yet-verified",
+    "secretVersion": "projects/839600313930/secrets/RESEND_API_KEY/versions/1",
+    "secretState": "ENABLED",
+    "secretValuesOmitted": true,
+    "dashboardAccess": "pending",
+    "sendingDomainVerification": "pending",
+    "signedWebhook": "not-configured",
+    "webhookFunctionDeployed": false,
+    "mailboxAcceptance": false,
+    "workflowEmailsSent": 0
+  },
+  "delivery": {
+    "project": "kickai-69dd0",
+    "region": "us-central1",
+    "scope": "workout-notifications-delivery",
+    "functions": {
+      "dispatchWorkoutNotification": {
+        "versionId": "1",
+        "sourceSha256": "cd08fb5cfcd84bbc7c0bf5f72b16e50c64633e0f43b61e82beb9c6e67f553e80",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "120s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "secrets": [
+            "RESEND_API_KEY"
+          ],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/databases/(default)/documents/workoutNotificationOutbox/{notificationId}",
+            "eventType": "providers/cloud.firestore/eventTypes/document.write",
+            "service": "firestore.googleapis.com",
+            "failurePolicy": {
+              "retry": {}
+            }
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "sweepWorkoutNotifications": {
+        "versionId": "1",
+        "sourceSha256": "cd08fb5cfcd84bbc7c0bf5f72b16e50c64633e0f43b61e82beb9c6e67f553e80",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "300s",
+          "availableMemoryMb": 256,
+          "maxInstances": 1,
+          "secrets": [
+            "RESEND_API_KEY"
+          ],
+          "eventTrigger": {
+            "resource": "projects/kickai-69dd0/topics/firebase-schedule-sweepWorkoutNotifications-us-central1",
+            "eventType": "google.pubsub.topic.publish",
+            "service": "pubsub.googleapis.com"
+          }
+        },
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      }
+    },
+    "sourceAndConfigurationAndIamVerified": true,
+    "unrelatedFunctionsPreserved": true,
+    "secretAccessorVerified": true,
+    "scheduler": {
+      "name": "projects/kickai-69dd0/locations/us-central1/jobs/firebase-schedule-sweepWorkoutNotifications-us-central1",
+      "state": "ENABLED",
+      "schedule": "every 5 minutes",
+      "timeZone": "America/Los_Angeles",
+      "topic": "projects/kickai-69dd0/topics/firebase-schedule-sweepWorkoutNotifications-us-central1",
+      "attributes": {
+        "scheduled": "true"
+      }
+    }
+  },
+  "disabledState": {
+    "settingsAbsent": true,
+    "collectionEnabled": false,
+    "sendsEnabled": false,
+    "outboxDocumentCount": 0,
+    "activityDocumentCount": 0,
+    "checkedAt": "2026-09-28T21:59:33.359Z"
+  },
+  "dns": {
+    "authority": "Cloudflare",
+    "nameservers": [
+      "jeremy.ns.cloudflare.com",
+      "jo.ns.cloudflare.com"
+    ],
+    "senderRecordsObserved": false,
+    "queried": [
+      "TXT resend._domainkey.alerts.posetek.net",
+      "TXT send.alerts.posetek.net",
+      "MX send.alerts.posetek.net"
+    ],
+    "existingMailRoutingChanged": false
+  },
+  "frontend": {
+    "verifiedDraft": "6abadd8abff0a78fde2fbe28",
+    "sourceCommit": "d814225368976c97e8184eabb8953779d139bc1c",
+    "productionUnchanged": "6ab8679ccbfca079f8997124",
+    "driftCheckPassed": true,
+    "promoted": false
+  },
+  "remaining": [
+    "Sign into the Resend team and Cloudflare DNS administration.",
+    "Verify alerts.posetek.net with provider-generated DNS records, confirm sending-key domain restriction and disable open/click tracking.",
+    "Configure the signed delivery webhook and store its genuine signing secret; deploy and audit the webhook scope.",
+    "Run a synthetic-only live pilot with a fresh cutoff, saved outcomes, real 30-minute inactivity eligibility, resume cancellation, signed delivery and mailbox acceptance.",
+    "Promote the exact reviewed website draft, reconcile its baseline, and enable all players with a fresh cutoff."
+  ],
+  "validation": {
+    "notificationPublisherTestsPassed": 14,
+    "sharedPublisherTestsPassed": 19,
+    "liveSourceConfigurationIamAudit": true,
+    "settingsAndEmptyCollectionsReadback": true,
+    "secretRuntimeAccessorReadback": true,
+    "schedulerReadback": true
+  }
+}

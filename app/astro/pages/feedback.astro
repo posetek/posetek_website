@@ -1,0 +1,22 @@
+---
+import FeedbackPage from "../../src/pages/feedback/FeedbackPage";
+import WebsiteIcons from "../components/WebsiteIcons.astro";
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#103b2b" />
+    <title>Give feedback | PoseTek</title>
+    <WebsiteIcons />
+    <style is:global>html, body { margin: 0; background: #04130e; }</style>
+  </head>
+  <body>
+    <Fragment set:html={"<!-- posetek-feedback-entry -->"} />
+    <div id="root"><FeedbackPage client:only="react" /></div>
+    <noscript>Enable JavaScript to give optional feedback. Your PoseTek results and progress remain available.</noscript>
+  </body>
+</html>

@@ -73,9 +73,11 @@ function requirementsSatisfied(r, equipment, access) {
   const kit=new Set(equipment), space=access.space||{};
   if(!r.equipment.allOf.every(e=>kit.has(e)) || !r.equipment.anyOf.every(group=>group.some(e=>kit.has(e)))) return false;
   if(!(access.participantCount>=r.participantMin)) return false;
-  for(const [required,available] of [['minLengthMeters','lengthMeters'],['minWidthMeters','widthMeters']]) if(required in r.space && !(space[available]>=r.space[required])) return false;
+  for(const [required,available] of [['minLengthMeters','lengthMeters'],['minWidthMeters','widthMeters']]) {
+    if(required in r.space && (available in space ? !(space[available]>=r.space[required]) : space.assumedSufficient!==true)) return false;
+  }
   if(r.space.surfaces && !r.space.surfaces.includes(space.surface)) return false;
-  if(r.space.overheadClear && space.overheadClear!==true) return false;
+  if(r.space.overheadClear && ('overheadClear' in space ? space.overheadClear!==true : space.assumedSufficient!==true)) return false;
   if(r.space.requiresGoalArea && space.goalArea!==true) return false;
   return true;
 }

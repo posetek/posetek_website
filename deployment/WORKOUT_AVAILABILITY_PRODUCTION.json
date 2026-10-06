@@ -1,0 +1,348 @@
+{
+  "schemaVersion": 1,
+  "status": "production-verified",
+  "recordedAt": "2026-10-01T19:38:32Z",
+  "repository": "https://github.com/posetek/posetek_website",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/17",
+  "scope": "Personal workout availability recovery and accurate catalog age-limit diagnostics; no eligibility envelope or content approvals changed.",
+  "frontend": {
+    "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+    "deployId": "6abeaf5702a9c9983c7a41b9",
+    "previousDeployId": "6abe3e6fd97e6a691aa603fe",
+    "sourceCommit": "8956871d0ece5bf7c43e9830df60ab072eb3bd64",
+    "productionUrl": "https://posetek.net",
+    "deployUrl": "https://6abeaf5702a9c9983c7a41b9--posetek.netlify.app",
+    "publishedAt": "2026-10-01T19:18:33.723Z",
+    "exactReviewedDraftPromoted": true,
+    "rebuildDuringPromotion": false,
+    "framework": "astro",
+    "application": {
+      "path": "/application.html",
+      "sha1": "ff7ebffd4832b561a72d3094be962d3f0e388bd9",
+      "size": 15038
+    },
+    "marketing": {
+      "originalApprovedBytesRetained": true,
+      "playersSha1": "12b1b8ff0a9f0e33e3471b15b7bbd0696e3e86f1",
+      "coachesSha1": "167c6dd233a8bad39c09f49486d39595a7ea9cb6",
+      "homepageBookingHrefTransforms": 5,
+      "otherHomepageDomChanges": false
+    },
+    "artifactFiles": 1440,
+    "inventoryFiles": 1441,
+    "artifactMatchesProductionInventory": true,
+    "candidateAssets": {
+      "rawExact": 1388,
+      "knownProcessed": 52,
+      "total": 1440,
+      "unresolved": 0
+    },
+    "productionAssets": {
+      "rawExact": 1388,
+      "knownProcessed": 52,
+      "total": 1440,
+      "unresolved": 0
+    },
+    "candidateEntryPassed": true,
+    "productionEntryPassed": true,
+    "applicationRoutes": 25,
+    "marketingRoutes": 5,
+    "baseline": {
+      "deploymentId": "6abeaf5702a9c9983c7a41b9",
+      "sourceCommit": "8956871d0ece5bf7c43e9830df60ab072eb3bd64",
+      "files": 1438,
+      "bytes": 138284543,
+      "ordinaryPreservationBuildPassed": true
+    }
+  },
+  "gateway": {
+    "repository": "https://github.com/posetek/posetek-backend",
+    "sourceCommit": "a63f1b0b7e5dc2c8db696a21710345b227fa702b",
+    "sourcePullRequest": "https://github.com/posetek/posetek-backend/pull/7",
+    "stagedJournalPullRequest": "https://github.com/posetek/posetek-backend/pull/8",
+    "stagedJournalMain": "a3a284080a718d524ecfce4fce315ec6434b8d1f",
+    "productionJournalPullRequest": "https://github.com/posetek/posetek-backend/pull/9",
+    "confirmedJournalMain": "c81392d1eef7c02179bde515f7e3b3f3d8c96819",
+    "revision": "agent-gateway-sha-a63f1b0b7e5d",
+    "previousRevision": "agent-gateway-sha-cb575df84000",
+    "version": "sha-a63f1b0b7e5d",
+    "cloudBuild": "ad0afb65-0060-481a-aeb4-0c0ed6550b02",
+    "imageDigest": "sha256:20dfdb75475cd6140dd2d7686b6e6d68092a71a6397552c2359aeb56818350a9",
+    "tests": {
+      "passed": 2120,
+      "skipped": 2
+    },
+    "taggedHealthPassed": true,
+    "publicHealthPassed": true,
+    "trafficPercent": 100,
+    "trafficShiftAt": "2026-10-01T19:09:46Z",
+    "pendingAndRunningPlannerJobsBeforeShift": 0,
+    "historicalTagsPreserved": true,
+    "diagnosticFields": [
+      "publishedDrillCount",
+      "ageEligibleDrillCount",
+      "publishedAgeRanges"
+    ],
+    "eligibilityCompositionAndPublicationUnchanged": true
+  },
+  "diagnosis": {
+    "testingRequired": false,
+    "activePlanRequired": false,
+    "reportedResolvedAge": 21,
+    "reportedFocusDomains": [
+      "speed",
+      "agility"
+    ],
+    "cause": "Authored catalog age envelopes exclude age 21 for the selected focuses.",
+    "publishedPersonalSessionRows": 54,
+    "rowsWithMaxAge19OrYounger": 53,
+    "adultEligibleRow": {
+      "id": "STR-501",
+      "focus": "strength",
+      "ageRange": {
+        "min": 9,
+        "max": 25
+      },
+      "supportedRequestedMinutes": {
+        "min": 1,
+        "max": 10
+      },
+      "calculatedLegalDoseMinutes": 5
+    },
+    "ageEnvelopesChanged": false,
+    "clinicalUnsuitabilityInferred": false,
+    "adultCoverageRequiresSeparateContentUpdate": true,
+    "realAccountReadOnly": true,
+    "realAccountModified": false,
+    "providedRealPasswordUsed": false,
+    "generatedRealAccountDiagnosticRemoved": true
+  },
+  "interface": {
+    "states": [
+      "checking",
+      "available",
+      "unavailable",
+      "error",
+      "waiting"
+    ],
+    "completedEmptyResultNeverLabeledChecking": true,
+    "emptySliderAndInvalidCreateRemoved": true,
+    "requestedTimePreserved": true,
+    "setupErrorsSurviveBackAndNext": true,
+    "feasibleTimeRequiredForNext": true,
+    "assessmentTimeoutSeconds": 20,
+    "timeoutIncludesCreateAcknowledgement": true,
+    "retryRecoversStableAcceptedJob": true,
+    "lateAcknowledgementCannotAttachStaleOwnerObserver": true
+  },
+  "verification": {
+    "focusedFrontendTests": 24,
+    "newRegressionTests": 13,
+    "typescriptPassed": true,
+    "websiteTests": {
+      "total": 1409,
+      "fullRunPassed": 1408,
+      "fullRunTimeout": 1,
+      "timeoutRetest": {
+        "file": "app/src/pages/home/movement/framing.test.ts",
+        "passed": 7
+      }
+    },
+    "focusedBackendTests": 350,
+    "canonicalDeployedRulesChecks": {
+      "passed": 55,
+      "failed": 0
+    },
+    "localBrowser": {
+      "checks": 9,
+      "screenshots": 11,
+      "pageErrors": 0,
+      "widths": [
+        360,
+        390,
+        430,
+        1280
+      ]
+    },
+    "candidate": {
+      "young": {
+        "checks": 6,
+        "screenshots": 12,
+        "pageErrors": 0,
+        "widths": [
+          390,
+          1280
+        ],
+        "requestedMinutes": 30,
+        "actualMinutes": 30,
+        "noTestingResults": true,
+        "noPlans": true,
+        "unpublishedOnly": true,
+        "duplicateGeneration": false,
+        "refreshRecovery": true,
+        "communityRoundTrip": true
+      },
+      "ageGap": {
+        "widths": [
+          360,
+          390,
+          430,
+          1280
+        ],
+        "requestedMinutes": 30,
+        "age": 21,
+        "supportedMinutes": [],
+        "ageSpecificMessages": true,
+        "loadingCleared": true,
+        "emptySliderAbsent": true,
+        "changeFocus": true
+      },
+      "short": {
+        "widths": [
+          390,
+          1280
+        ],
+        "age": 21,
+        "explicitRecovery": "Speed/Agility → Strength; 30 unavailable → Use10 → slider5",
+        "sliderTargets": [
+          5,
+          10
+        ],
+        "requestedMinutes": 5,
+        "actualMinutes": 5,
+        "oneUnpublishedDraft": true,
+        "duplicateGeneration": false,
+        "checks": 8,
+        "screenshots": 14,
+        "pageErrors": 0
+      },
+      "staleReady": {
+        "checks": 1,
+        "screenshots": 1,
+        "widths": [
+          390
+        ],
+        "pageErrors": 0,
+        "createAbsentWhenUnavailable": true
+      },
+      "totalChecks": 19,
+      "totalScreenshots": 31,
+      "pageErrors": 0,
+      "generatedUnpublishedDrafts": 2
+    },
+    "production": {
+      "young": {
+        "checks": 6,
+        "screenshots": 12,
+        "pageErrors": 0,
+        "widths": [
+          390,
+          1280
+        ],
+        "exactCandidateJobRecovered": true,
+        "noNewGeneration": true,
+        "unpublishedOnly": true,
+        "refreshRecovery": true,
+        "communityControls": true,
+        "communityRoundTrip": true
+      },
+      "ageGap": {
+        "widths": [
+          360,
+          390,
+          430,
+          1280
+        ],
+        "checks": 4,
+        "screenshots": 4,
+        "pageErrors": 0
+      },
+      "short": {
+        "widths": [
+          390,
+          1280
+        ],
+        "checks": 8,
+        "screenshots": 14,
+        "pageErrors": 0,
+        "exactCandidateJobRecovered": true,
+        "noNewGeneration": true,
+        "requestedMinutes": 5,
+        "actualMinutes": 5
+      },
+      "staleReady": {
+        "checks": 1,
+        "screenshots": 1,
+        "widths": [
+          390
+        ],
+        "pageErrors": 0
+      },
+      "checks": 19,
+      "screenshots": 31,
+      "pageErrors": 0,
+      "newWorkouts": 0,
+      "contextsClosed": true
+    },
+    "publishStartEndActionsPerformed": false
+  },
+  "boundaries": {
+    "rulesSourceCommit": "44e4464f039cd58909cff71c49db05fb0a1cf7ae",
+    "firestoreSha256": "fde7bc815866e6a171674646de7aed301c301fe576ac66ddf69ea712502e5e64",
+    "storageSha256": "1da8799ec5f785c1a43330342f895fef76774622b32bbf48853b45bc3e4bf3eb",
+    "rulesPublishedInThisFollowup": false,
+    "catalogVersion": "1.0.93",
+    "catalogRecords": 208,
+    "catalogChangedInThisFollowup": false,
+    "heldWholeBodyDrills": 80,
+    "mobileAcceptance": false,
+    "nativeUiChanged": false,
+    "activePlansAndCoachAssignmentsModified": false,
+    "existingNavigationAndSocialPermissionsPreserved": true,
+    "alreadyLiveIssueAlertsPreserved": true
+  },
+  "cleanup": {
+    "reviewedSupplementalPlanSha256": "53d5d01445edd3d1c07f08814109c67ee37be20e096334e186eb7790520c1b9f",
+    "documents": 40,
+    "objects": 2,
+    "failed": 0,
+    "remainingDocuments": 0,
+    "remainingObjects": 0,
+    "verifiedAt": "2026-10-01T19:28:49.514Z",
+    "canonical": {
+      "status": "cleaned",
+      "deletedTargets": 8,
+      "failed": 0,
+      "syntheticAuthAccounts": 3,
+      "socialPreferencesAbsent": 3
+    },
+    "independent": {
+      "checkedAt": "2026-10-01T19:34:24.714Z",
+      "authByUid": 0,
+      "authByEmail": 0,
+      "fixtures": 0,
+      "nestedDocuments": 0,
+      "socialPreferences": 0,
+      "storageObjects": 0,
+      "supplementalDocuments": 0,
+      "supplementalObjects": 0,
+      "foreignTargets": 0
+    },
+    "credentials": {
+      "sanitizedFiles": 1,
+      "removedFields": 4,
+      "remainingFields": 0,
+      "exactSecretValues": 0,
+      "verifiedAt": "2026-10-01T19:34:48.341Z"
+    },
+    "emailsSent": 0,
+    "realRecipientsClaimed": 0,
+    "verificationDataOrCredentialsCommitted": false
+  },
+  "recovery": {
+    "website": "Restore reviewed predecessor 6abe3e6fd97e6a691aa603fe if required; reconcile its application baseline before another guarded release.",
+    "gateway": "Use the canonical release script from clean pushed main to shift-only to agent-gateway-sha-cb575df84000 if required.",
+    "athleteData": "Do not rewind real athlete data or delete legitimate workouts/conversations.",
+    "historicalReceiptPreserved": "deployment/RELIABLE_PLAYER_WORKOUTS_PRODUCTION.json"
+  }
+}

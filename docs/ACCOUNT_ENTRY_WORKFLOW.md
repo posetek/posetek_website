@@ -1,5 +1,15 @@
 # Account entry and staff activation
 
+**Current managed-account implementation:** read
+[Email-free account access](EMAIL_FREE_ACCOUNT_ACCESS.md). It replaces the
+website's email-dependent managed-staff setup with manually shared, UID-bound
+activation links and PoseTek-assisted recovery. Player and independent/legacy
+signup contracts remain as described below. The remainder of this document is
+the historical acceptance record for deployment `6ab788d1c138322f8f9b9911`, not
+evidence that the new activation flow has been published.
+
+## Historical September 26 account-entry release
+
 Updated September 26, 2026. Deployment and cleanup evidence are recorded in the
 [production receipt](../deployment/CONFIRMED_TRAINING_ACCESS_PRODUCTION.json).
 

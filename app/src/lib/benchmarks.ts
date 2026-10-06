@@ -1,9 +1,7 @@
 import { finiteNumber } from "./result-values";
+import profileSpec from "../../../functions/athlete-profile-spec.json";
 // Port of athlete-benchmarks.js (window.PoseTekBenchmarks). Pure data + math, no DOM.
 
-const MPH_TO_MS = 1 / 2.23694;
-const FEET_TO_M = 1 / 3.28084;
-const INCHES_TO_M = 1 / 39.37007874015748;
 
 export interface BenchmarkMetric {
   label: string;
@@ -18,32 +16,33 @@ function seconds(value: number): string {
 }
 
 function metric(
+  key: string,
   label: string,
-  reference: number | null,
-  direction: "higher" | "lower",
   format: (value: number) => string,
-  placeholder = false,
 ): BenchmarkMetric {
-  return Object.freeze({ label, reference, direction, format, placeholder });
+  const spec = profileSpec.metrics.find(metric => metric.key === key)!;
+  const reference = spec.reference === null ? null : spec.reference * (1 / (spec.divisor || 1));
+  const direction = spec.direction as "higher" | "lower";
+  return Object.freeze({ label, reference, direction, format, placeholder: spec.placeholder === true });
 }
 
 export const metrics = Object.freeze({
-  ballSpeed: metric("Ball Speed", 75 * MPH_TO_MS, "higher", value => `${(value * 2.23694).toFixed(1)} mph`),
-  shotAccuracy: metric("Accuracy", null, "higher", value => `${value.toFixed(0)}%`, true),
-  broadJumpDistance: metric("Broad Jump", 6 * FEET_TO_M, "higher", value => `${(value * 3.28084).toFixed(1)} ft`),
-  verticalJumpHeight: metric("Vertical Jump", 18 * INCHES_TO_M, "higher", value => `${(value * 39.37007874015748).toFixed(1)} in`),
-  sprintMaxAcceleration: metric("Acceleration", 6.2, "higher", value => `${value.toFixed(1)} m/s²`),
-  sprintMaxSpeed: metric("Max Speed", 14.2 * MPH_TO_MS, "higher", value => `${(value * 2.23694).toFixed(1)} mph`),
-  sprintCompletionTime: metric("Time to Complete", 1.84, "lower", seconds),
-  dribbleTotalTime: metric("Completion Time", 6.04, "lower", seconds),
-  dribbleBallControl: metric("Ball Proximity", 2.1 * FEET_TO_M, "lower", value => `${(value * 3.28084).toFixed(1)} ft`),
-  dribbleOutboundTime: metric("Outbound", 2.41, "lower", seconds),
-  dribbleTurnTime: metric("Turn", 2.25, "lower", seconds),
-  dribbleReturnTime: metric("Return", 1.38, "lower", seconds),
-  codTotalTime: metric("Total Time", 4.68, "lower", seconds),
-  codOutboundTime: metric("Outbound", 2.10, "lower", seconds),
-  codTurnTime: metric("Turn", 1.11, "lower", seconds),
-  codReturnTime: metric("Return", 1.72, "lower", seconds),
+  ballSpeed: metric("ballSpeed", "Ball Speed", value => `${(value * 2.23694).toFixed(1)} mph`),
+  shotAccuracy: metric("shotAccuracy", "Accuracy", value => `${value.toFixed(0)}%`),
+  broadJumpDistance: metric("broadJumpDistance", "Broad Jump", value => `${(value * 3.28084).toFixed(1)} ft`),
+  verticalJumpHeight: metric("verticalJumpHeight", "Vertical Jump", value => `${(value * 39.37007874015748).toFixed(1)} in`),
+  sprintMaxAcceleration: metric("sprintMaxAcceleration", "Acceleration", value => `${value.toFixed(1)} m/s²`),
+  sprintMaxSpeed: metric("sprintMaxSpeed", "Max Speed", value => `${(value * 2.23694).toFixed(1)} mph`),
+  sprintCompletionTime: metric("sprintCompletionTime", "Time to Complete", seconds),
+  dribbleTotalTime: metric("dribbleTotalTime", "Completion Time", seconds),
+  dribbleBallControl: metric("dribbleBallControl", "Ball Proximity", value => `${(value * 3.28084).toFixed(1)} ft`),
+  dribbleOutboundTime: metric("dribbleOutboundTime", "Outbound", seconds),
+  dribbleTurnTime: metric("dribbleTurnTime", "Turn", seconds),
+  dribbleReturnTime: metric("dribbleReturnTime", "Return", seconds),
+  codTotalTime: metric("codTotalTime", "Total Time", seconds),
+  codOutboundTime: metric("codOutboundTime", "Outbound", seconds),
+  codTurnTime: metric("codTurnTime", "Turn", seconds),
+  codReturnTime: metric("codReturnTime", "Return", seconds),
 } as const);
 
 export type BenchmarkKey = keyof typeof metrics;

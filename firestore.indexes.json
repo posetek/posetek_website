@@ -283,7 +283,196 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "partitionManifests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "installKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dayKey",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "partitionManifests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "executorInstalls",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "dayKey",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "partitionManifests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "installKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "maxReceiptMillis",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "partitionManifests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "executorInstalls",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "maxReceiptMillis",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "userIssueOccurrences",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "issueId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "receivedAtMillis",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "userIssueActors",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "uid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAtMillis",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "appFeedbackSessionsV1",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "opened",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "appFeedbackSessionsV1",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "started",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "appFeedbackSessionsV1",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "submitted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "devicePerformanceAttempts",
+      "fieldPath": "record",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "devicePerformanceRuns",
+      "fieldPath": "record",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "devicePerformanceUploadGroups",
+      "fieldPath": "record",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "devicePerformanceTransfers",
+      "fieldPath": "record",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "devicePerformanceDevices",
+      "fieldPath": "record",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "projectionPages",
+      "fieldPath": "rows",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "partitionManifests",
+      "fieldPath": "generation",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "partitionManifests",
+      "fieldPath": "retired",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "projectionDirty",
+      "fieldPath": "pending",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    }
+  ]
 }

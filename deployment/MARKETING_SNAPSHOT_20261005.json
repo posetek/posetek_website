@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-05",
+  "scope": "Verified current marketing snapshot and local release preparation; no upload or publication by this task",
+  "productionDeployment": "6ac3d1c930af650008d83718",
+  "productionSourceCommit": "b776c32e230a0817f40654af754b2efc03d29300",
+  "publishedAt": "2026-10-05T16:37:14.006Z",
+  "previousBaseline": "6ac395bfba35bceed566d26c",
+  "previousProtectedFiles": 1638,
+  "allPriorProtectedRecordsUnchanged": true,
+  "protectedFiles": 1697,
+  "addedProtectedFiles": 59,
+  "marketingSnapshot": {
+    "localManifest": ".netlify/approved-marketing/manifest.json",
+    "gitignored": true,
+    "files": [
+      {
+        "path": "/index.html",
+        "sha": "9e6e486665e3fdd1257c23fe8a69cf8e72e619e4",
+        "size": 37689
+      },
+      {
+        "path": "/coaches/index.html",
+        "sha": "829a6277b98f9f62b39908d1a3a39c230ae0efe1",
+        "size": 26209
+      }
+    ],
+    "served": [
+      {
+        "path": "/",
+        "sha": "4d5d447b24bce7b7c055df6b4981ff0b9e56cf94"
+      },
+      {
+        "path": "/index.html",
+        "sha": "4d5d447b24bce7b7c055df6b4981ff0b9e56cf94"
+      },
+      {
+        "path": "/coaches",
+        "sha": "829a6277b98f9f62b39908d1a3a39c230ae0efe1"
+      },
+      {
+        "path": "/coaches/",
+        "sha": "829a6277b98f9f62b39908d1a3a39c230ae0efe1"
+      },
+      {
+        "path": "/coaches/index.html",
+        "sha": "829a6277b98f9f62b39908d1a3a39c230ae0efe1"
+      }
+    ],
+    "source": "Original files from authenticated Netlify raw-file GET; full SHA1 and size match current provider inventory. Live served pages verified independently."
+  },
+  "validation": {
+    "liveInventoryFiles": 1700,
+    "allPriorProtectedFilesMatchLive": true,
+    "servedMarketingRoutes": 5,
+    "directRuntimeAssets": 12,
+    "releaseGuardTests": 55,
+    "localApplicationReleaseBuild": "passed",
+    "outputMarketingMatchesSnapshot": true,
+    "preservedNonEntryFiles": 1695
+  },
+  "limits": [
+    "The marketing snapshot and local artifact are not a hosted application release.",
+    "The existing live application and feedback remain the previously published attribution release.",
+    "The application-release builder intentionally composes application and feedback entries; exact hosted draft review and feature backend release gates remain outstanding."
+  ],
+  "commands": [
+    "node scripts/build-application-release.mjs --preserve-marketing .netlify/approved-marketing/manifest.json",
+    "node --test scripts/home-navigation.test.mjs scripts/production-baseline.test.mjs scripts/homepage-preview.test.mjs scripts/application-release.test.mjs scripts/astro-release.test.mjs scripts/icon-release.test.mjs"
+  ]
+}

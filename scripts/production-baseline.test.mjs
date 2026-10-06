@@ -6,13 +6,14 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { ICON_ASSETS, mergeWebsiteIcons } from './website-icons.mjs';
 
 const source = fileURLToPath(new URL('./', import.meta.url));
 const app = '<!doctype html><html><head><script type="module" crossorigin src="/assets/current.js"></script></head><body>Current application</body></html>';
 const bridgeBlock = '\n<!-- homepage-navigation:start -->\n<script src="/marketing/home-navigation.js" defer></script>\n<!-- homepage-navigation:end -->\n';
 const applicationWithBridge = app.replace('</body>', bridgeBlock + '</body>');
-const marketing = '<!doctype html><!-- posetek-marketing-entry --><script type="module" src="/marketing/assets/new.js"></script>';
-const coaches = '<!doctype html><!-- posetek-coaches-entry --><title>PoseTek for coaches</title><meta name="description" content="Team-by-team support"><link rel="canonical" href="https://posetek.net/coaches"><script type="module" src="/marketing/assets/coaches.js"></script>';
+const marketing = '<!doctype html><!-- posetek-marketing-entry --><script type="module" src="/_astro/new.12345678.js"></script>';
+const coaches = '<!doctype html><!-- posetek-coaches-entry --><title>PoseTek for coaches</title><meta name="description" content="Team-by-team support"><link rel="canonical" href="https://posetek.net/coaches"><script type="module" src="/_astro/coaches.12345678.js"></script>';
 const sha = bytes => createHash('sha1').update(bytes).digest('hex');
 
 async function fixture(mode, options, run) {
@@ -26,6 +27,7 @@ async function fixture(mode, options, run) {
       ['/bookperformancetest.html', '<!doctype html><form id="bookingForm"></form>'],
     ]);
     if (modern) files.set('/marketing/home-navigation.js', '// current published bridge\n');
+    if (options.lineEndings) files.set('/bookperformancetest.html', '<!doctype html>\n<form id="bookingForm"></form>\n'.replace(/\n/g, options.lineEndings.pinned));
     if (options.localAlias) files.set('/booking-copy.html', files.get('/bookperformancetest.html'));
     if (options.marketingAlias) {
       files.set('/index 2.html', '<html><noscript><a href="/bookPerformanceTest.html">Book</a></noscript></html>');
@@ -39,20 +41,29 @@ async function fixture(mode, options, run) {
     };
     if (options.localAlias) {
       manifest.files.find(file => file.path === '/bookperformancetest.html').localPath = 'booking-source.html';
-      await put('booking-source.html', options.badLocal ? 'incorrect original source' : files.get('/bookperformancetest.html'));
+      const original = files.get('/bookperformancetest.html');
+      const local = options.lineEndings ? original.replace(/\r\n|\n/g, options.lineEndings.checkout) : original;
+      await put('booking-source.html', options.badLocal ? 'incorrect original source' : local);
     }
     await put('deployment/homepage-baseline.json', JSON.stringify(manifest));
     await put('deployment/home-navigation.js', '// local legacy-only bridge\n');
-    await put('marketing-dist/index.html', marketing);
-    await put('marketing-dist/coaches/index.html', options.missingMarker ? coaches.replace('<!-- posetek-coaches-entry -->', '') : coaches);
-    await put('marketing-dist/assets/new.js', '/* new isolated homepage */');
-    await put('marketing-dist/assets/coaches.js', '/* new isolated coaches page */');
+    await put('app/astro-dist/index.html', marketing);
+    await put('app/astro-dist/coaches/index.html', options.missingMarker ? coaches.replace('<!-- posetek-coaches-entry -->', '') : coaches);
+    await put('app/astro-dist/_astro/new.12345678.js', '/* new isolated homepage */');
+    await put('app/astro-dist/_astro/coaches.12345678.js', '/* new isolated coaches page */');
+    for (const path of ICON_ASSETS) {
+      const bytes = 'fixture icon bytes ' + path;
+      await put('app/astro/public' + path, bytes);
+      await put('app/astro-dist' + path, bytes);
+    }
     await put('app/node_modules/typescript/bin/tsc', '// build tool fixture\n');
-    await put('app/node_modules/vite/bin/vite.js', '// build tool fixture\n');
+    await put('app/node_modules/astro/bin/astro.mjs', '// build tool fixture\n');
     await put('netlify.toml', '[build]\npublish = "production-dist"\n[[redirects]]\n  from = "/coaches"\n  to = "/coaches/index.html"\n  status = 200\n[[redirects]]\n  from = "/coaches/"\n  to = "/coaches/index.html"\n  status = 200\n[[redirects]]\nfrom = "/*"\nto = "/application.html"\nstatus = 200\n');
     await put('production-dist/guard-sentinel.txt', 'unchanged until guard passes');
     await mkdir(join(directory, 'scripts'), { recursive: true });
     await copyFile(join(source, 'build-production.mjs'), join(directory, 'scripts/build-production.mjs'));
+    await copyFile(join(source, 'astro-assets.mjs'), join(directory, 'scripts/astro-assets.mjs'));
+    await copyFile(join(source, 'website-icons.mjs'), join(directory, 'scripts/website-icons.mjs'));
     await copyFile(join(source, 'test-production-entry.cjs'), join(directory, 'scripts/test-production-entry.cjs'));
 
     const responses = Object.fromEntries([...files].map(([path, bytes]) => [new URL(path, 'https://pinned.example').href, bytes]));
@@ -98,6 +109,28 @@ test('legacy baseline still remaps the app index and adds one navigation bridge'
     assert.equal(await readFile(join(directory, 'production-dist/marketing/home-navigation.js'), 'utf8'), '// local legacy-only bridge\n');
     const checks = execute('test-production-entry.cjs', ['--http-only']);
     assert.equal(checks.status, 0, checks.stderr);
+  });
+});
+
+test('candidate verification accepts only the exact built entry from the current baseline', async () => {
+  await fixture('modern', {}, async ({ directory, execute, build }) => {
+    assert.equal(build.status, 0, build.stderr);
+    const next = applicationWithBridge.replace('Current application', 'Reviewed new application');
+    await writeFile(join(directory, 'production-dist/application.html'), next);
+    await mkdir(join(directory, '.netlify'), { recursive: true });
+    const receipt = { baselineDeploymentId: 'test-pinned-deployment', application: { path: '/application.html', sha: sha(next), size: Buffer.byteLength(next) } };
+    const save = () => writeFile(join(directory, '.netlify/application-release-build.json'), JSON.stringify(receipt));
+    await save();
+    assert.notEqual(execute('test-production-entry.cjs', ['--http-only']).status, 0, 'Ordinary preservation must still fail');
+    let result = execute('test-production-entry.cjs', ['--http-only', '--application-release']);
+    assert.equal(result.status, 0, result.stderr);
+    receipt.baselineDeploymentId = 'different-production'; await save();
+    result = execute('test-production-entry.cjs', ['--http-only', '--application-release']);
+    assert.notEqual(result.status, 0); assert.match(result.stderr, /another baseline/);
+    receipt.baselineDeploymentId = 'test-pinned-deployment'; await save();
+    await writeFile(join(directory, 'production-dist/application.html'), next + ' changed after build');
+    result = execute('test-production-entry.cjs', ['--http-only', '--application-release']);
+    assert.notEqual(result.status, 0); assert.match(result.stderr, /Verified file size changed/);
   });
 });
 
@@ -153,5 +186,50 @@ test('coaches output requires its isolated entry marker', async () => {
   await fixture('modern', { missingMarker: true }, async ({ build }) => {
     assert.notEqual(build.status, 0);
     assert.match(build.stderr, /Missing coaches entry marker/);
+  });
+});
+
+test('website icon merging retains exact pinned bytes and rejects collisions before copying any asset', async () => {
+  for (const state of ['unchanged', 'pinned-collision', 'output-collision']) await fixture('modern', {}, async ({ directory, files, build }) => {
+    assert.equal(build.status, 0, build.stderr);
+    const sourceDirectory = join(directory, 'app/astro-dist'), outputDirectory = join(directory, 'production-dist');
+    const pinned = ICON_ASSETS.map(path => ({ path, sha: sha('fixture icon bytes ' + path), size: Buffer.byteLength('fixture icon bytes ' + path) }));
+    if (state === 'unchanged') {
+      const merged = await mergeWebsiteIcons(sourceDirectory, outputDirectory, pinned);
+      assert.deepEqual(merged, pinned);
+      for (const path of ICON_ASSETS) assert.equal(await readFile(join(outputDirectory, path.slice(1)), 'utf8'), 'fixture icon bytes ' + path);
+    } else {
+      // A missing first target proves validation of a later collision completes
+      // before the helper begins copying otherwise valid earlier assets.
+      const first = join(outputDirectory, ICON_ASSETS[0].slice(1));
+      const lastPath = ICON_ASSETS.at(-1), last = join(outputDirectory, lastPath.slice(1));
+      await rm(first);
+      if (state === 'pinned-collision') await writeFile(join(sourceDirectory, lastPath.slice(1)), 'changed source icon');
+      else await writeFile(last, 'unrelated existing output icon');
+      await assert.rejects(mergeWebsiteIcons(sourceDirectory, outputDirectory, pinned), state === 'pinned-collision' ? /Website icon collision/ : /Website icon output collision/);
+      await assert.rejects(readFile(first), /ENOENT/);
+      assert.equal(await readFile(last, 'utf8'), state === 'pinned-collision' ? 'fixture icon bytes ' + lastPath : 'unrelated existing output icon');
+    }
+    for (const [path, bytes] of files) assert.equal(await readFile(join(outputDirectory, path.slice(1)), 'utf8'), bytes);
+  });
+});
+
+for (const [label, pinned, checkout] of [['Windows release / Unix checkout', '\r\n', '\n'], ['Unix release / Windows checkout', '\n', '\r\n']]) {
+  test(`line-ending recovery preserves exact pinned bytes: ${label}`, async () => {
+    await fixture('modern', { localAlias: true, lineEndings: { pinned, checkout } }, async ({ directory, files, build }) => {
+      assert.equal(build.status, 0, build.stderr);
+      for (const path of ['/bookperformancetest.html', '/booking-copy.html']) {
+        const bytes = await readFile(join(directory, 'production-dist', path.slice(1)));
+        assert.equal(sha(bytes), sha(files.get(path)));
+        assert.equal(bytes.length, Buffer.byteLength(files.get(path)));
+      }
+    });
+  });
+}
+
+test('line-ending recovery still rejects changed source content', async () => {
+  await fixture('modern', { localAlias: true, badLocal: true, lineEndings: { pinned: '\r\n', checkout: '\n' } }, async ({ build }) => {
+    assert.notEqual(build.status, 0);
+    assert.match(build.stderr, /Baseline checksum mismatch/);
   });
 });

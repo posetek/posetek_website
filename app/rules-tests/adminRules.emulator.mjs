@@ -250,7 +250,31 @@ await check("an unverified @posetek.net address cannot write a rep", () =>
 await check("an admin CAN read the athlete's records", () =>
   assertSucceeds(admin.doc(`players/${PLAYER_ID}/trainingPlans/${PLAN_ID}`).get()));
 
-// ---------------------------------------------------------------------------
+// Manual activation leaves staff Auth email verification unchanged. Authority
+// comes from the same canonical active membership and assigned team as before.
+await testEnv.withSecurityRulesDisabled(async context => {
+  const db = context.firestore();
+  await db.doc("organizations/manual-org").set({ schemaVersion: 2, status: "active" });
+  await db.doc("organizations/manual-org/members/manual-coach").set({ userUID: "manual-coach", status: "active", role: "coach", teamIds: ["manual-team"] });
+  await db.doc("organizations/manual-org/members/manual-manager").set({ userUID: "manual-manager", status: "active", role: "manager", teamIds: [] });
+  await db.doc("players/manual-player").set({ authenticationUID: "manual-athlete", userUID: "manual-athlete", organizationId: "manual-org", teamId: "manual-team" });
+  await db.doc("players/other-team-player").set({ authenticationUID: "other-athlete", userUID: "other-athlete", organizationId: "manual-org", teamId: "other-team" });
+});
+const manualCoach = testEnv.authenticatedContext("manual-coach", { email: "coach@example.test", email_verified: false }).firestore();
+const manualManager = testEnv.authenticatedContext("manual-manager", { email: "manager@example.test", email_verified: false }).firestore();
+await check("manually activated unverified coach reads assigned athlete", () => assertSucceeds(manualCoach.doc("players/manual-player").get()));
+await check("manually activated coach cannot read another team", () => assertFails(manualCoach.doc("players/other-team-player").get()));
+await check("manually activated organization admin reads organization athletes", () => assertSucceeds(manualManager.doc("players/other-team-player").get()));
+await check("manual organization admin cannot grant global access", () => assertFails(manualManager.doc("admins/manual-manager").set({ uid: "manual-manager" })));
+
+// Account setup and recovery secrets are callable-only even for global admins.
+for (const collection of ["accountAccessGrants", "accountAccessTargets", "accountAccessRateLimits", "accountAccessAudit"]) {
+  await testEnv.withSecurityRulesDisabled(context => context.firestore().doc(`${collection}/private-grant`).set({ targetUID: "staff", status: "pending" }));
+  for (const [name, client] of [["admin", admin], ["athlete", athlete], ["coach", manualCoach], ["organization admin", manualManager], ["unverified admin", unverified], ["anonymous", testEnv.unauthenticatedContext().firestore()]]) {
+    await check(`${name} cannot read ${collection}`, () => assertFails(client.doc(`${collection}/private-grant`).get()));
+    await check(`${name} cannot write ${collection}`, () => assertFails(client.doc(`${collection}/private-grant`).set({ status: "completed" })));
+  }
+}
 
 await testEnv.cleanup();
 

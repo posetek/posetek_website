@@ -160,6 +160,13 @@ const RETURN_TO_ALLOWED = new Set([
 // Clean SPA routes that alias the allowlisted legacy pages (see app/src/App.tsx).
 // Ported pages redirect signed-out visitors here with these as returnTo values.
 const RETURN_TO_ALLOWED_PATHS = new Set([
+  "/admin",
+  "/admin/access",
+  "/admin/user-issues",
+  "/admin/feedback",
+  "/feedback",
+  "/feedback/",
+  "/feedback.html",
   "/feed",
   "/athlete",
   "/roster",
@@ -182,9 +189,28 @@ export function getSafeReturnToUrl(
   try {
     const target = new URL(raw, baseHref);
     const fileName = target.pathname.split("/").pop() ?? "";
-    const allowed = RETURN_TO_ALLOWED.has(fileName) || RETURN_TO_ALLOWED_PATHS.has(target.pathname);
-    return target.origin === origin && !target.username && !target.password && allowed ? target.href : null;
+    const allowed = RETURN_TO_ALLOWED.has(fileName) || RETURN_TO_ALLOWED_PATHS.has(target.pathname) || isAdminPlayerReturnPath(target.pathname);
+    if (target.origin !== origin || target.username || target.password || !allowed) return null;
+    if (["/feedback", "/feedback/", "/feedback.html"].includes(target.pathname)) {
+      // Feedback return links carry only the broad invitation source.
+      const source = target.searchParams.get("source");
+      const clean = new URL("/feedback", origin);
+      if (["workout", "results", "qr", "message", "direct"].includes(source ?? "")) clean.searchParams.set("source", source!);
+      return clean.href;
+    }
+    return target.href;
   } catch {
     return null;
   }
+}
+
+/** Exact existing athlete-detail route for signed-out workout notification links. */
+export function isAdminPlayerReturnPath(path: string): boolean {
+  const match = /^\/admin\/accounts\/player\/([^/]+)$/.exec(path);
+  if (!match) return false;
+  try {
+    const id = decodeURIComponent(match[1]);
+    return Boolean(id) && id.length <= 1500 && id !== '.' && id !== '..' && !/[\\/]/.test(id)
+      && !Array.from(id).some(character => character.charCodeAt(0) < 32);
+  } catch { return false; }
 }

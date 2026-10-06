@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "projectId": "kickai-69dd0",
+  "region": "us-central1",
+  "deployedEmailSourceCommit": "335df50d0a8d81f0ef560fd8981d19e6f4873756",
+  "activationCutoffUtc": "2026-10-02T06:52:17.518Z",
+  "activationReadbackUtc": "2026-10-02T06:53:00.665Z",
+  "senderMailbox": "alerts@posetek.net",
+  "emailFlowId": "015cd141-794f-4592-a1e1-886fa2b2484f",
+  "newIssueRecipients": ["dylank@posetek.net", "nolanj@posetek.net", "taiyow@posetek.net"],
+  "workoutRecipients": ["dylank@posetek.net"],
+  "scopedReleases": [
+    {
+      "codebase": "workout-notifications-webhook",
+      "functionCount": 1,
+      "functionVersion": "4",
+      "deployedSourceSha256": "4a04a382c5f8d2a7b84ff1284e5c5addd171ba9adf2b8bde15d79c7bc26c8abd"
+    },
+    {
+      "codebase": "user-issues",
+      "functionCount": 10,
+      "functionVersion": "4",
+      "deployedSourceSha256": "b2e25b8c534df0089a64815ea1c759e843fb13772a21bc7b51b0a12cf0f8c7ac"
+    },
+    {
+      "codebase": "workout-notifications-delivery",
+      "functionCount": 2,
+      "functionVersion": "2",
+      "deployedSourceSha256": "7f727c009c16b9872f0c25317685cc05046a24ed6eeb369894bfef8dadcc9cf2"
+    },
+    {
+      "codebase": "microsoft-email",
+      "functionCount": 3,
+      "functionVersion": "1",
+      "deployedSourceSha256": "680ee1649e17d69c4458a1b6d66df132f4082ccb52a6270486e676b3dd3b4419"
+    }
+  ],
+  "validation": {
+    "exactDeployedSourcesVerified": true,
+    "preexistingFunctionIamPoliciesPreserved": 111,
+    "preexistingRegionalSchedulesPreserved": 4,
+    "newReconciliationSchedule": "every 5 minutes",
+    "fiveRuntimeSecretPoliciesVerified": true,
+    "savedFlowCallerConnectionCallbackRetryAndSecureDataVerified": true,
+    "missingAndInvalidCallbackCredentialsRejected": true,
+    "unauthenticatedEmailFlowRejected": true,
+    "setupMessagesIntended": 1,
+    "originalOutlookSendActions": 1,
+    "duplicateOutlookSendActions": 0,
+    "recipientsWithExchangeDeliveredEvidence": 3,
+    "deliveryObservedUtc": "2026-10-02T06:48:08.023Z",
+    "pilotVerifiedUtc": "2026-10-02T06:50:17.382Z",
+    "pilotFinishedUtc": "2026-10-02T06:50:34.930Z",
+    "liveAthleteEventTested": false,
+    "domainIntakeCutoffsAndOtherFieldsPreserved": true,
+    "historicalOutboxWritesDuringActivation": 0,
+    "pendingHistoricalResendJobsPreservedAtActivation": 489
+  },
+  "postActivationChecks": {
+    "checkedAtUtc": "2026-10-02T07:26:01.381Z",
+    "nonPilotIncidentAlertsWithDeliveryEvidence": 2,
+    "verifiedRecipientDeliveries": 6,
+    "allThreeIssueRecipientsVerifiedForEach": true,
+    "productionSettingsMatchActivationReceipt": true,
+    "trackerSettingsAbsent": true,
+    "workoutMicrosoftJobsObserved": 0,
+    "sourceCompletenessOrWorkbookCoverageClaimed": false
+  },
+  "limitsAtEmailActivation": {
+    "eventTrackerLive": false,
+    "sharedWorkbookChanged": false,
+    "hourlyCodexTrackerState": "PAUSED",
+    "mailIntakeImported": false,
+    "delegatedMailboxReaderImported": false,
+    "exchangeApplicationMailboxRbacVerified": false,
+    "historicalResendDeliveryRecovered": false,
+    "resendKeyAndWebhookRetained": true,
+    "subscriptionChangedOrPurchasedByAgent": false,
+    "websiteRulesTrainingAndPlannerChanged": false,
+    "privateExportsSecretsRunBodiesAndEvidenceOmitted": true
+  }
+}

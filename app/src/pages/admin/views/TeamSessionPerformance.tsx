@@ -1,0 +1,136 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { memory, phoneModel, PROCESSING_DRILLS, seconds, timingLabel } from "../lib/deviceProcessing";
+import { chartWindow, loadTeamReport, METRICS, metricValue, THERMAL, time } from "../lib/teamProcessing";
+import type { Metric, TeamEvent, TeamReport, TeamRun, TeamSession } from "../lib/teamProcessing";
+import PlayerStationTimings from "./PlayerStationTimings";
+import "../device-performance.scss";
+import "../team-performance.scss";
+const COLORS=["#7eddaf","#86b9f7","#edbf78"];
+const number=(n:number|null)=>n===null?"Unavailable":Math.round(n).toLocaleString();
+const status=(s:string)=>({interruptedUnknown:"Interrupted / unknown",running:"No terminal result yet",valid:"Successful",partial:"Partial result",failed:"Failed",cancelled:"Cancelled"}[s]||s);
+const minutes=(ms:number)=>`${(ms/60000).toFixed(1)} min`;
+
+export default function TeamSessionPerformance({preview=false}:{preview?:boolean}) {
+  const {eventId}=useParams(),location=useLocation(),navigate=useNavigate();
+  const [events,setEvents]=useState<TeamEvent[]>([]),[more,setMore]=useState(false),[listError,setListError]=useState<string|null>(null);
+  const [state,setState]=useState<{id:string|null;report:TeamReport|null;error:string|null;loading:boolean}>({id:null,report:null,error:null,loading:false});
+  const [refresh,setRefresh]=useState(0),[auto,setAuto]=useState(true);
+  const suffix=preview?"?preview=1":"";
+  useEffect(()=>{let active=true;loadTeamReport(null,preview).then(r=>{if(active){setEvents(r.events);setMore(r.hasMore);setListError(null);}}).catch(e=>{if(active)setListError(e.message);});return()=>{active=false;};},[preview,refresh]);
+  useEffect(()=>{
+    if(!eventId)return;
+    let active=true,timer:ReturnType<typeof setTimeout>|undefined;
+    async function read(){
+      if(!active)return;
+      setState(s=>({...s,loading:true}));
+      try {const report=await loadTeamReport(eventId!,preview);if(active)setState({id:eventId!,report,error:null,loading:false});}
+      catch(e){if(active)setState(s=>({id:eventId!,report:s.id===eventId?s.report:null,error:e instanceof Error?e.message:"Could not load this session.",loading:false}));}
+      if(active&&auto)schedule();
+    }
+    function schedule(){timer=setTimeout(()=>{if(document.visibilityState==="visible")void read();else if(active)schedule();},30000);}
+    void read();return()=>{active=false;if(timer)clearTimeout(timer);};
+  },[eventId,preview,refresh,auto]);
+  const report=state.id===eventId?state.report:null,session=report?.session;
+  return <section className="dp-page team-performance" aria-label="Team testing performance">
+    <div className="admin-heading dp-heading"><div><Link to={`/admin/device-performance${suffix}`}>← Device performance</Link><p className="eyebrow">Testing operations</p><h1>Team testing sessions</h1><p>Three stations. Every player. One shared timeline.</p></div>
+      <div className="dp-actions"><label className="team-auto"><input type="checkbox" checked={auto} onChange={e=>setAuto(e.target.checked)}/>Refresh every 30 seconds</label><button className="quiet-button" disabled={state.loading} onClick={()=>setRefresh(n=>n+1)}>{state.loading?"Refreshing…":"Refresh"}</button></div></div>
+    {preview&&<p className="admin-banner warn">Synthetic preview — invented phones, players and measurements for design review.</p>}
+    <div className="dp-filter-row team-session-picker"><label className="dp-field">Testing session<select value={eventId||""} onChange={e=>navigate(`/admin/device-performance/team-sessions${e.target.value?`/${e.target.value}`:""}${suffix}`)}><option value="">Choose a team session</option>{[...events,...(session&&!events.some(e=>e.id===session.id)?[session]:[])].map(e=><option value={e.id} key={e.id}>{e.name} · {e.createdAt===null?"Date unknown":new Date(e.createdAt).toLocaleDateString("en-US",{timeZone:"America/Los_Angeles"})} · {e.status} · {e.participantCount} players</option>)}</select></label>
+      {session&&<p className="dp-muted">{session.id}<br/>Last refresh {time(report!.generatedAt)} Pacific · Last upload {time(session.coverage.lastReceivedAt)}</p>}
+    </div>
+    {(listError||state.id===eventId&&state.error)&&<div className="dp-state dp-error" role="alert"><h2>Session data could not refresh</h2><p>{state.error||listError}</p>{session&&<p>Showing the last successful snapshot. Counts may be out of date.</p>}</div>}
+    {!eventId?<><div className="team-events">{events.map(e=><Link key={e.id} className="admin-card" to={`${location.pathname}/${e.id}${suffix}`}><span className="eyebrow">{e.status} · {e.participantCount} players</span><h2>{e.name}</h2><p>{e.createdAt===null?"Date not reported":new Date(e.createdAt).toLocaleDateString("en-US",{timeZone:"America/Los_Angeles",month:"short",day:"numeric",year:"numeric"})} →</p></Link>)}</div>{!events.length&&!listError&&<div className="dp-state">No testing sessions loaded yet. Create the session on a station phone, then refresh.</div>}{more&&<p className="dp-muted">Showing the 50 most recently created sessions. Older sessions remain accessible by their saved dashboard link.</p>}</>
+      :session?<TeamSessionDashboard key={session.id} session={session} preview={preview}/>:!state.error&&<div className="dp-state" role="status">Loading the full testing session…</div>}
+  </section>;
+}
+
+export function TeamSessionDashboard({session:s,preview=false}:{session:TeamSession;preview?:boolean}) {
+  const [metric,setMetric]=useState<Metric>("duration"),[drill,setDrill]=useState("all"),[source,setSource]=useState("all");
+  const [selected,setSelected]=useState<string|null>(null),[replays,setReplays]=useState(false);
+  const live=s.rows.filter(r=>r.mode==="liveCapture"),sources=[...new Set(s.rows.map(r=>r.sourceRevision||"unknown"))];
+  const measured=useMemo(()=>s.rows.filter(r=>(replays||r.mode==="liveCapture")&&(drill==="all"||r.drill===drill)&&(source==="all"||(r.sourceRevision||"unknown")===source)),[s.rows,replays,drill,source]);
+  const elapsed=Math.max(0,(s.window.end??0)-(s.window.start??s.window.end??0));
+  const totals=s.stations.reduce((a,st)=>({planned:a.planned+st.plannedReps,synced:a.synced+st.syncedReps,pending:a.pending+st.pendingReps}),{planned:0,synced:0,pending:0});
+  const select=(id:string)=>setSelected(id);
+  const selectedRun=s.rows.find(r=>r.runId===selected);
+  useEffect(()=>{if(selected){const panel=document.getElementById(`team-run-${selected}`);panel?.scrollIntoView({block:"center",behavior:"smooth"});panel?.focus({preventScroll:true});}},[selected]);
+  const reset=()=>setSelected(null);
+  return <>
+    <div className="team-session-title"><div><h2>{s.name}</h2><p className="dp-muted">{s.status} · {s.participants.length} players · Started {time(s.startedAt)} Pacific{s.closedAt!==null?` · Closed ${time(s.closedAt)}`:""}</p></div><span className="team-session-status">{s.status==="live"?"Session in progress":s.status}</span></div>
+    <div className="team-kpis"><div><small>Elapsed session</small><strong>{s.window.start===null?"Not started":minutes(elapsed)}</strong></div><div><small>Reps synced</small><strong>{totals.synced}<span> / {totals.planned}</span></strong></div><div><small>Awaiting sync</small><strong>{totals.pending}</strong></div><div><small>Failed / partial runs</small><strong>{live.filter(r=>r.outcome==="failed").length}<span> / {live.filter(r=>r.outcome==="partial").length}</span></strong></div></div>
+    {(s.coverage.missingSummaries+s.coverage.staleSummaries+s.coverage.missingCompletionTime+s.coverage.unassigned)>0&&<p className="admin-banner warn">Diagnostics are incomplete: {s.coverage.missingSummaries} summaries pending, {s.coverage.staleSummaries} awaiting updates, {s.coverage.missingCompletionTime} successes without completion times, and {s.coverage.unassigned} unmatched records. Charts and processing counts show only reported measurements; synced reps are tracked separately.</p>}
+    <p className="dp-muted">Phones below belong to this testing event. <Link to={`/admin/device-performance?phoneAlgorithm=all${preview?"&preview=1":""}`}>All phones and testing history →</Link></p>
+    <div className="team-stations">{s.stations.map((station,i)=><article className="admin-card team-station" key={station.id} style={{borderTopColor:COLORS[i]}}><p className="eyebrow">Station {station.order}</p><h3>{station.label}</h3>
+      {station.phones.length?station.phones.map(p=><Link key={p.installId} className="team-phone" to={`/admin/device-performance/${p.installId}?phoneAlgorithm=all${preview?"&preview=1":""}`}><strong>{phoneModel(p.machine)}</strong><code>{p.installId}</code><small>{p.current?"Currently assigned":"Used in this session"} · {p.runs} session runs · All phone history →</small></Link>):<p className="dp-muted">Waiting for a phone to claim this station.</p>}
+      <div className="team-station-count"><strong>{station.syncedReps}<span> / {station.plannedReps}</span></strong><span>reps synced</span></div><progress aria-label={`Station ${station.order} synced reps`} max={Math.max(1,station.plannedReps)} value={station.syncedReps}/>
+      <dl className="team-station-stats"><div><dt>Processing completed</dt><dd>{station.finishedRuns??station.processedReps}</dd></div><div><dt>Peak memory</dt><dd>{memory(station.peakBytes)}</dd></div><div><dt>Players complete</dt><dd>{station.completedPlayers} / {s.participants.length}</dd></div><div><dt>Failed / partial</dt><dd>{station.failed} / {station.partial}</dd></div></dl>
+      <div className="team-player-average"><span>Average time / player</span><strong>{station.playerTime?.mean==null?"Unavailable":minutes(station.playerTime.mean)}</strong><small>{station.playerTime?.count??0} / {s.participants.length} players with complete timing</small><small>{station.playerTime?.median==null?"":`Median ${minutes(station.playerTime.median)} · Range ${minutes(station.playerTime.min!)}–${minutes(station.playerTime.max!)}`}</small><small>First capture → final processing result; includes pauses between reps. Setup before capture is not recorded.</small></div>
+      <table className="team-drill-averages"><caption>Average processing by drill</caption><thead><tr><th>Drill</th><th>Average / runs</th></tr></thead><tbody>{station.drills.map(drill=>{const timing=station.drillTimings?.find(d=>d.drill===drill);return <tr key={drill}><th scope="row">{PROCESSING_DRILLS[drill]}</th><td>{timing?.groups.length?timing.groups.map(g=><div key={g.key}><strong>{seconds(g.duration.mean)}</strong><small>{g.duration.count} completed · {timingLabel(g.timingKind)}</small>{g.partial>0&&<small>Includes {g.partial} partial results</small>}{timing.groups.length>1&&<small>{g.installId?.slice(0,8)||"Unknown phone"} · {g.configuration||"Unknown config"} · {g.sourceRevision?.slice(0,7)||"Unknown source"}</small>}{g.failed>0&&<small>{g.failed} failed · avg {seconds(g.failedTiming.mean)}</small>}</div>):"Unavailable"}</td></tr>;})}</tbody></table>
+    </article>)}</div>
+    <section className="admin-card dp-section"><div className="team-section-heading"><div><p className="eyebrow">Compare every phone</p><h2>Performance over the session</h2><p className="dp-muted">Shared clock · Pacific time · Select a point to inspect its run.</p></div><div className="dp-filter-row"><label className="dp-field">Drill<select aria-label="Drill" value={drill} onChange={e=>{reset();setDrill(e.target.value);}}><option value="all">All drills</option>{Object.entries(PROCESSING_DRILLS).map(([id,name])=><option key={id} value={id}>{name}</option>)}</select></label><label className="dp-field">Source revision<select aria-label="Source revision" value={source} onChange={e=>{reset();setSource(e.target.value);}}><option value="all">All recorded versions</option>{sources.map(id=><option key={id} value={id}>{id.slice(0,10)}</option>)}</select></label><label className="team-auto"><input type="checkbox" checked={replays} onChange={e=>{reset();setReplays(e.target.checked);}}/>Include reprocessing</label></div></div>
+      <div className="team-tabs" role="group" aria-label="Chart metric">{(Object.keys(METRICS) as Metric[]).map(key=><button key={key} aria-pressed={metric===key} onClick={()=>setMetric(key)}>{METRICS[key].label}</button>)}</div>
+      <PerformanceTimeline session={s} rows={measured} metric={metric} onSelect={select}/>
+      <p className="dp-muted">Each dot is one run. Lines connect observations, not continuous monitoring. Missing readings break the line. {metric==="duration"?"Filled dots: processing duration. Hollow dots: older total-run timing including overhead.":metric==="thermal"?"Heat is iOS thermal state, not degrees; nominal is a real reading at level 0.":metric==="processing"?"Older builds with only total-run timing appear under Total run time.":metric==="memory"?"Memory is the sampled peak in each run, not a continuous memory trace.":""} Different drills and software versions have different workloads.</p>
+    </section>
+    {selectedRun&&<SelectedRunDetails session={s} run={selectedRun} onClose={()=>{setSelected(null);document.querySelector<HTMLAnchorElement>(`a[href="#team-run-${selectedRun.runId}"]`)?.focus();}}/>}
+    <section className="admin-card dp-section team-operations"><p className="eyebrow">Station activity</p><h2>Reps completed and interruptions</h2>
+      <StationTimeline session={s} onSelect={select}/>
+      <p className="dp-muted">Lines count accepted protocol reps, including partial results; retries count once. Markers sit on their station's line and do not add reps. Select a run marker to inspect it.</p>
+      <p className="dp-muted">All drills and versions; syncing is tracked separately above. Flat sections mean no new reported completions, not proven phone idle time. Markers use the terminal timestamp when reported, otherwise the labeled run-start time. Capture interruptions use capture-start time. No terminal result does not imply a crash.</p>
+    </section>
+    <details className="admin-card dp-section team-coverage"><summary>Reporting coverage and missing measurements</summary><p>{s.coverage.attempts} uploaded attempt indexes · {s.coverage.missingSummaries} awaiting diagnostic summaries · {s.coverage.staleSummaries} awaiting newer manifest versions · {s.coverage.oldSummaries} older summary versions · {s.coverage.unassigned} unmatched station/player records · {s.coverage.reprocessing} reprocessing runs</p><p>{s.coverage.unknownPhone} unknown phone identities · {s.coverage.missingProcessing} missing processing times · {s.coverage.missingMemory} missing memory readings · {s.coverage.missingThermal} missing heat readings · {s.coverage.missingCompletionTime} successes without completion timestamps · {s.coverage.missingRepIdentity} successes without a rep identity (excluded from throughput)</p><p>Phones upload asynchronously. An offline phone or a missing upload is not a zero or a confirmed failure. CPU utilization, battery temperature and queue-wait duration are not reported by these builds.</p>{s.unprocessed.length>0&&<div className="dp-table-wrap"><table className="dp-table"><caption>Attempts without a reported processing run, including capture interruptions</caption><thead><tr><th>Station</th><th>Player</th><th>Capture time</th><th>State / last stage</th></tr></thead><tbody>{s.unprocessed.map(a=><tr key={a.attemptId}><td>{a.stationId}</td><td>{s.participants.find(p=>p.id===a.playerDocumentID)?.name}</td><td>{time(a.at)}</td><td>{a.state} · {a.lastStage}{a.summaryMissing?" · summary pending":""}</td></tr>)}</tbody></table></div>}</details>
+    <PlayerStationTimings session={s}/>
+  </>;
+}
+
+export function SelectedRunDetails({session:s,run:r,onClose}:{session:TeamSession;run:TeamRun;onClose:()=>void}) {
+  return <section className="admin-card dp-section team-run-detail" id={`team-run-${r.runId}`} tabIndex={-1} aria-label="Selected processing run">
+    <div className="team-section-heading"><div><p className="eyebrow">Selected chart point</p><h2>{PROCESSING_DRILLS[r.drill]} · {status(r.outcome)}</h2><p className="dp-muted">{s.participants.find(p=>p.id===r.playerDocumentID)?.name||"Unknown player"} · Station {s.stations.find(st=>st.id===r.stationId)?.order??"?"} · {time(r.startedAt)} Pacific</p></div><button className="quiet-button" onClick={onClose}>Close run details</button></div>
+    <dl className="dp-fields"><dt>Phone</dt><dd>{phoneModel(r.machine)} · {r.installId||"Unknown identifier"}</dd><dt>Processing / total run</dt><dd>{seconds(r.processingMs)} / {seconds(r.wallMs)}</dd><dt>Peak memory</dt><dd>{memory(r.sampledPeakBytes)}</dd><dt>Frame reads / model calls</dt><dd>{number(r.framesDecoded)} / {number(r.modelCalls)}</dd><dt>Heat / Low Power Mode</dt><dd>{r.thermalStart||"Unknown"} → {r.thermalEnd||"Unknown"} · {r.lowPower===null?"Unknown":r.lowPower?"On":"Off"}</dd><dt>Source / build</dt><dd>{r.sourceRevision?.slice(0,7)||"Unknown source"} · {r.configuration||"Unknown"} · {r.appVersion} ({r.build||"?"})</dd><dt>Capture</dt><dd>{r.capture.durationSeconds??"?"} s · {r.capture.fps??"?"} fps · {r.capture.width??"?"} × {r.capture.height??"?"}</dd></dl>
+    {r.failureStage&&<p>Failed at {r.failureStage}</p>}<details><summary>Stage measurements</summary>{r.stages.map((stage,i)=><p key={i}>{stage.kind==="nestedOperation"?"↳ ":""}{stage.id}: {seconds(stage.ms)}</p>)}<p className="dp-muted">Nested stages overlap their parent. {r.sampling||"Sampling not reported"}</p><code>{r.runId}</code></details>
+  </section>;
+}
+
+export function PerformanceTimeline({session,rows,metric,onSelect}:{session:TeamSession;rows:TeamRun[];metric:Metric;onSelect:(id:string)=>void}) {
+  const [start,end]=chartWindow(session),sorted=[...rows].filter(r=>r.dateReliable&&r.startedAt!==null).sort((a,b)=>a.startedAt!-b.startedAt!);
+  const measured=sorted.filter(r=>metricValue(r,metric)!==null),top=metric==="thermal"?3:Math.max(1,...measured.map(r=>metricValue(r,metric)!))*1.15;
+  const x=(r:TeamRun)=>70+(r.startedAt!-start)/(end-start)*860,y=(r:TeamRun)=>235-metricValue(r,metric)!/top*190;
+  const groups=[...new Set(sorted.filter(r=>r.installId).map(r=>`${r.stationId}|${r.installId}`))];
+  const ticks=metric==="thermal"?[0,1,2,3]:[0,top/2,top];
+  return <div className="team-chart"><div className="team-legend">{session.stations.map((s,i)=><span key={s.id}><i style={{background:COLORS[i]}}/>Station {s.order} · {s.phones.map(p=>phoneModel(p.machine)).join(" / ")||"Unassigned"}</span>)}</div>
+    <svg viewBox="0 0 1000 285" role="img" aria-label={`${METRICS[metric].label} across all phones. ${measured.length} measured runs.`}>
+      {ticks.map(n=><g key={n}><line x1="70" x2="930" y1={235-n/top*190} y2={235-n/top*190} className="team-grid"/><text x="60" y={239-n/top*190} textAnchor="end">{metric==="thermal"?THERMAL[n]:n.toFixed(metric==="duration"||metric==="processing"||metric==="wall"?1:0)}</text></g>)}<text x="70" y="20">{METRICS[metric].unit}</text><TimeAxis start={start} end={end} y={260}/>
+      {groups.map(key=>{const group=sorted.filter(r=>`${r.stationId}|${r.installId}`===key),station=session.stations.findIndex(s=>s.id===group[0].stationId);let pen=false;const path=group.map(r=>{if(metricValue(r,metric)===null){pen=false;return "";}const segment=`${pen?"L":"M"}${x(r)},${y(r)}`;pen=true;return segment;}).join(" ");return <path key={key} d={path} fill="none" stroke={COLORS[station]||"#aaa"} strokeWidth="2" opacity=".55"/>;})}
+      {measured.map(r=>{const color=COLORS[session.stations.findIndex(s=>s.id===r.stationId)]||"#aaa";const title=`${time(r.startedAt)} · ${r.stationId} · ${PROCESSING_DRILLS[r.drill]} · ${status(r.outcome)} · ${metric==="thermal"?r.thermalEnd:metricValue(r,metric)!.toFixed(2)+" "+METRICS[metric].unit+(metric==="duration"?" · "+timingLabel(r.timingKind):"")} · ${r.installId||"unknown phone"}`;return <a key={r.runId} href={`#team-run-${r.runId}`} aria-label={title} onClick={e=>{e.preventDefault();onSelect(r.runId);}}><circle cx={x(r)} cy={y(r)} r="5" fill={metric==="duration"&&r.timingKind==="runWall"?"none":color} stroke={r.outcome==="valid"?color:"#ff8585"} strokeWidth={r.outcome==="valid"?1:3}><title>{title}</title></circle></a>;})}
+      {!measured.length&&<text x="500" y="140" textAnchor="middle">No reported measurements for this selection</text>}
+    </svg><p className="dp-muted">{measured.length} measured runs · {rows.length-measured.length} unavailable or undated · Red outline: failed or partial measurement outcome</p>
+  </div>;
+}
+function TimeAxis({start,end,y}:{start:number;end:number;y:number}) {return <>{[0,.25,.5,.75,1].map(f=><text key={f} x={70+f*860} y={y} textAnchor={f===0?"start":f===1?"end":"middle"}>{start===0?`${Math.round(f*(end-start)/60000)} min`:time(start+f*(end-start))}</text>)}</>;}
+export function StationTimeline({session:s,onSelect}:{session:TeamSession;onSelect:(id:string)=>void}) {
+  const [start,end]=chartWindow(s);
+  const stations=s.stations.map((station,i)=>({...station,color:COLORS[i],points:s.completions.filter(p=>p.stationId===station.id).sort((a,b)=>a.at-b.at)}));
+  const top=Math.max(1,...stations.map(st=>st.points.length));
+  const x=(at:number)=>70+(at-start)/(end-start)*860,y=(n:number)=>260-n/top*210;
+  const countAt=(stationId:string,at:number)=>stations.find(st=>st.id===stationId)?.points.filter(p=>p.at<=at).length??0;
+  const failures=s.rows.filter(r=>r.mode==="liveCapture"&&["failed","partial","cancelled","interruptedUnknown"].includes(r.outcome));
+  const points=failures.filter(r=>r.dateReliable&&(r.terminalAt!==null||r.startedAt!==null));
+  const captures=s.unprocessed.filter(a=>a.state==="interruptedUnknown");
+  const datedCaptures=captures.filter(a=>a.at!==null);
+  const symbols:Record<string,string>={failed:"×",partial:"◇",cancelled:"□",interruptedUnknown:"?"};
+  return <div className="team-chart team-activity-chart">
+    <div className="team-legend">{stations.map(st=><span key={st.id}><i style={{background:st.color}}/>Station {st.order}: {st.points.length} · {(st.points.length/((end-start)/60000)).toFixed(2)} reps/min</span>)}</div>
+    <div className="team-legend team-outcome-legend" aria-label="Interruption symbols"><span>× Failed</span><span>◇ Partial</span><span>□ Cancelled</span><span>? Interrupted / unknown</span><span>△ Capture interruption</span></div>
+    <svg viewBox="0 0 1000 315" role="img" aria-label={`Cumulative accepted protocol reps and interruptions over time, one line per station. ${failures.length} unsuccessful runs.`}>
+      {[0,.5,1].map(f=><g key={f}><line x1="70" x2="930" y1={y(top*f)} y2={y(top*f)} className="team-grid"/><text x="60" y={y(top*f)+4} textAnchor="end">{(top*f).toFixed(0)}</text></g>)}<text x="70" y="20">Accepted protocol reps</text><TimeAxis start={start} end={end} y={297}/>
+      {stations.map(st=>{const path=`M70,${y(0)} `+st.points.map((p,n)=>`H${x(p.at)}V${y(n+1)}`).join(" ")+" H930";return <path key={st.id} d={path} stroke={st.color} fill="none" strokeWidth="3"><title>{`Station ${st.order}: ${st.points.length} protocol reps`}</title></path>;})}
+      {points.map(r=>{const at=(r.terminalAt??r.startedAt)!,station=stations.find(st=>st.id===r.stationId),count=countAt(r.stationId,at),title=`${r.stationId} · ${status(r.outcome)} · ${time(at)} (${r.terminalAt===null?"run start; end unknown":"terminal time"}) · ${PROCESSING_DRILLS[r.drill]} · ${count} accepted reps at this time`;return <a key={r.runId} href={`#team-run-${r.runId}`} onClick={e=>{e.preventDefault();onSelect(r.runId);}} aria-label={title}>
+        <circle className="team-activity-marker" cx={x(at)} cy={y(count)} r="6" stroke={station?.color||"#aaa"}/>
+        <text className="team-failure-mark" x={x(at)} y={y(count)} textAnchor="middle" dominantBaseline="central">{symbols[r.outcome]}<title>{title}</title></text>
+      </a>;})}
+      {datedCaptures.map(a=>{const station=stations.find(st=>st.id===a.stationId);return <g key={a.attemptId}><circle className="team-activity-marker" cx={x(a.at!)} cy={y(countAt(a.stationId,a.at!))} r="6" stroke={station?.color||"#aaa"}/><text className="team-failure-mark" x={x(a.at!)} y={y(countAt(a.stationId,a.at!))} textAnchor="middle" dominantBaseline="central">△<title>{`${a.stationId} · Capture interruption · capture started ${time(a.at)}; interruption time not reported`}</title></text></g>;})}
+    </svg>
+    <p className="dp-muted">{failures.length} unsuccessful runs · {failures.length-points.length} without a usable timestamp · {captures.length} capture interruptions ({captures.length-datedCaptures.length} undated)</p>
+  </div>;
+}

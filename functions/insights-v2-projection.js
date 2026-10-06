@@ -1,13 +1,25 @@
 "use strict";
 
-const { randomUUID } = require("node:crypto");
+const { randomUUID, createHash } = require("node:crypto");
 const { playerSegment } = require("./athlete-storage-paths");
 const { millis, duplicateIds, qualifyRep, workoutEvents } = require("./insights-v2-qualification");
 const { createProcessingEvidenceReader, failureMatchesRep } = require("./processing-evidence");
-const PROJECTION_VERSION = 3;
+const { effectiveRep } = require("./effective-rep");
+const { measuredMetrics } = require("./insights-axis-scoring");
+const PROJECTION_VERSION = 4;
 const MAX_HISTORY = 20000;
 const MAX_WORKOUTS = 10000;
 const MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const REBUILD_LEASE_MS = 11 * 60000;
+const REBUILD_WORK_MS = 8 * 60000;
+const MAX_REBUILD_PASSES = 3;
+const SOURCE_KINDS = new Set(["player", "record", "revision", "failure", "artifact", "artifact_delete", "testing_event"]);
+function sourceEventHash(source) {
+  if (source == null) return null;
+  if (!SOURCE_KINDS.has(source.sourceKind) || typeof source.eventId !== "string" || !source.eventId
+      || source.eventId.length > 1024) throw new Error("Invalid Insights source event.");
+  return createHash("sha256").update(`${source.sourceKind}\0${source.eventId}`).digest("hex");
+}
 
 async function completeQuery(query, maximum, HttpsError, pageSize = 250, read = query => query.get()) {
   const result = [];
@@ -41,9 +53,28 @@ function createInsightProjection({ db, bucket, HttpsError, now = () => Date.now(
     || !Number.isInteger(maxWorkouts) || maxWorkouts < 1 || maxWorkouts > MAX_WORKOUTS) throw new Error("Invalid Insights history limits");
   const currentRef = id => db.collection("players").doc(id).collection("insightSummaries").doc("current");
   const stateRef = id => db.collection("players").doc(id).collection("insightSummaries").doc("state");
-  async function invalidateInsightPlayer(playerId) {
+  function rebuildError(reason, rebuildId, source, message) {
+    const details = { reason, rebuildId, sourceKind: source?.sourceKind || "direct",
+      sourceEventHash: sourceEventHash(source) };
+    const error = new HttpsError("aborted", message, details);
+    // Lightweight test adapters may not retain the HttpsError third argument.
+    if (!error.details) error.details = details;
+    return error;
+  }
+  async function invalidateInsightPlayer(playerId, source = null) {
     if (!playerSegment(playerId)) throw new HttpsError("invalid-argument", "Invalid player.");
-    await stateRef(playerId).set({ token: randomUUID(), dirtyAtMillis: now() });
+    const eventHash = sourceEventHash(source), token = randomUUID();
+    return db.runTransaction(async transaction => {
+      const eventRef = eventHash && db.collection("players").doc(playerId).collection("insightSummaries").doc(`event_${eventHash}`);
+      if (eventRef && (await transaction.get(eventRef)).exists) return { invalidated: false, sourceEventHash: eventHash };
+      // Preserve the active owner; a newly dirty token must be handled by that
+      // owner or by an existing retry-enabled source invocation.
+      transaction.set(stateRef(playerId), { token, dirtyAtMillis: now(),
+        dirtySourceKind: source?.sourceKind || "direct", dirtySourceEventHash: eventHash }, { merge: true });
+      if (eventRef) transaction.set(eventRef, { schemaVersion: 1, sourceKind: source.sourceKind,
+        sourceEventHash: eventHash, token, receivedAtMillis: now() });
+      return { invalidated: true, token, sourceEventHash: eventHash };
+    });
   }
   const { readEvidence } = createProcessingEvidenceReader({ db, bucket, HttpsError, readEvidence: injectedEvidence });
   async function cleanupPages(playerId, previous, published) {
@@ -63,7 +94,7 @@ function createInsightProjection({ db, bucket, HttpsError, now = () => Date.now(
       });
     }
   }
-  async function rebuildInsightPlayer(playerId) {
+  async function rebuildOnce(playerId, rebuildId, source) {
     if (!playerSegment(playerId)) throw new HttpsError("invalid-argument", "Invalid player.");
     const playerRef = db.collection("players").doc(playerId), startedAtMillis = now();
     const [profile, state, previous] = await Promise.all([playerRef.get(), stateRef(playerId).get(), currentRef(playerId).get()]);
@@ -89,7 +120,8 @@ function createInsightProjection({ db, bucket, HttpsError, now = () => Date.now(
     const testing = await mapBounded(reps, 8, async rep => {
       const evidence = duplicates.has(rep.id) ? {} : await readEvidence(playerId, rep, cache, failures);
       for (const failure of evidence.failures || []) linkedFailures.add(failure);
-      return qualifyRep(rep, evidence, duplicates.has(rep.id));
+      return { ...qualifyRep(rep, evidence, duplicates.has(rep.id)),
+        profileMetrics: measuredMetrics(effectiveRep(rep, evidence, duplicates.has(rep.id))) };
     });
     if (logDocs.length + personalLogs.length > maxWorkouts) throw new HttpsError("resource-exhausted", "The complete workout history exceeds the reporting bound. No partial total was returned.");
     const workouts = workoutEvents([...logDocs.map(doc => ({ ...doc.data(), id: doc.id })),
@@ -121,20 +153,80 @@ function createInsightProjection({ db, bucket, HttpsError, now = () => Date.now(
     // published. Concurrent invalidation prevents stale rebuild publication.
     await db.runTransaction(async transaction => {
       const [freshState, freshProfile] = await Promise.all([transaction.get(stateRef(playerId)), transaction.get(playerRef)]);
-      if (!freshProfile.exists || (freshState.data()?.token || null) !== token || now() - startedAtMillis > 10 * 60000) {
-        throw new HttpsError("aborted", "Player data changed during the rebuild. Retry to refresh the report.");
-      }
+      if (!freshProfile.exists) throw rebuildError("insights-player-deleted", rebuildId, source, "Player was deleted during the rebuild.");
+      if (freshState.data()?.rebuildLease?.id !== rebuildId || freshState.data().rebuildLease.expiresAtMillis <= now())
+        throw rebuildError("insights-rebuild-lease-lost", rebuildId, source, "The rebuild owner changed. Retry to refresh the report.");
+      if ((freshState.data()?.token || null) !== token)
+        throw rebuildError("insights-rebuild-superseded", rebuildId, source, "New player data is pending. Retry to refresh the report.");
+      if (now() - startedAtMillis > 10 * 60000)
+        throw rebuildError("insights-rebuild-deadline-exceeded", rebuildId, source, "The rebuild exceeded its publication deadline.");
       transaction.set(currentRef(playerId), summary);
     });
     await cleanupPages(playerId, previous.data(), summary);
     return summary;
+  }
+  async function rebuildInsightPlayer(playerId, source = null) {
+    if (!playerSegment(playerId)) throw new HttpsError("invalid-argument", "Invalid player.");
+    sourceEventHash(source);
+    const rebuildId = randomUUID(), startedAtMillis = now();
+    const claim = await db.runTransaction(async transaction => {
+      const snapshot = await transaction.get(stateRef(playerId)), state = snapshot.data() || {};
+      if (state.rebuildLease?.id && state.rebuildLease.expiresAtMillis > now()) return { acquired: false };
+      if (source) {
+        const [current, profile] = await Promise.all([transaction.get(currentRef(playerId)), transaction.get(db.collection("players").doc(playerId))]);
+        const summary = current.data();
+        if (profile.exists && summary?.complete && summary.version === PROJECTION_VERSION
+            && summary.token === (state.token || null) && summary.rebuiltAtMillis <= now()
+            && now() - summary.rebuiltAtMillis <= MAX_AGE_MS) return { current: summary };
+      }
+      transaction.set(stateRef(playerId), { rebuildLease: { id: rebuildId,
+        startedAtMillis, expiresAtMillis: startedAtMillis + REBUILD_LEASE_MS } }, { merge: true });
+      return { acquired: true };
+    });
+    if (claim.current) return claim.current;
+    // Returning success here would lose a dirty revision if its owner failed.
+    // The source trigger remains retryable until a complete latest manifest is
+    // published; callables never receive a stale healthy report.
+    if (!claim.acquired) throw rebuildError("insights-rebuild-busy", rebuildId, source, "Another rebuild owns this player. Retry to refresh the report.");
+    let originalFailure;
+    try {
+      for (let pass = 0; pass < MAX_REBUILD_PASSES && now() - startedAtMillis <= REBUILD_WORK_MS; pass++) {
+        let summary;
+        try { summary = await rebuildOnce(playerId, rebuildId, source); }
+        catch (error) {
+          if (error.details?.reason === "insights-rebuild-superseded") continue;
+          throw error;
+        }
+        if (summary.deleted) return summary;
+        const finished = await db.runTransaction(async transaction => {
+          const snapshot = await transaction.get(stateRef(playerId)), state = snapshot.data();
+          if (state?.rebuildLease?.id !== rebuildId || state.rebuildLease.expiresAtMillis <= now())
+            throw rebuildError("insights-rebuild-lease-lost", rebuildId, source, "The rebuild owner changed. Retry to refresh the report.");
+          if ((state.token || null) !== summary.token) return false;
+          transaction.set(stateRef(playerId), { rebuildLease: null }, { merge: true });
+          return true;
+        });
+        if (finished) return summary;
+      }
+      throw rebuildError("insights-rebuild-continuation-required", rebuildId, source, "Newer changes remain pending. Retry to refresh the complete report.");
+    } catch (error) {
+      originalFailure = error;
+      throw error;
+    } finally {
+      try {
+        await db.runTransaction(async transaction => {
+          const snapshot = await transaction.get(stateRef(playerId));
+          if (snapshot.data()?.rebuildLease?.id === rebuildId) transaction.set(stateRef(playerId), { rebuildLease: null }, { merge: true });
+        });
+      } catch (error) { if (!originalFailure) throw error; }
+    }
   }
   async function loadInsightPlayer(playerId, { allowRebuild = true, repairMissingPage = true } = {}) {
     let [snapshot, state] = await Promise.all([currentRef(playerId).get(), stateRef(playerId).get()]);
     let summary = snapshot.data();
     if (!summary?.complete || summary.version !== PROJECTION_VERSION || summary.token !== (state.data()?.token || null)
       || now() - summary.rebuiltAtMillis > MAX_AGE_MS || summary.rebuiltAtMillis > now()) {
-      if (!(typeof allowRebuild === "function" ? allowRebuild() : allowRebuild)) throw new HttpsError("failed-precondition", "Player summaries need rebuilding. Retry to refresh the complete report; each retry advances the rebuild.");
+      if (!(typeof allowRebuild === "function" ? allowRebuild() : allowRebuild)) throw new HttpsError("failed-precondition", "Player summaries need rebuilding. Retry to refresh the complete report; each retry advances the rebuild.", { reason: "insights-rebuild-required" });
       summary = await rebuildInsightPlayer(playerId);
     }
     if (summary.deleted) return null;
@@ -155,4 +247,4 @@ function createInsightProjection({ db, bucket, HttpsError, now = () => Date.now(
   }
   return { invalidateInsightPlayer, rebuildInsightPlayer, loadInsightPlayer };
 }
-module.exports = { createInsightProjection, completeQuery, mapBounded, failureMatchesRep, PROJECTION_VERSION, MAX_AGE_MS };
+module.exports = { createInsightProjection, completeQuery, mapBounded, failureMatchesRep, PROJECTION_VERSION, MAX_AGE_MS, sourceEventHash, REBUILD_LEASE_MS };
