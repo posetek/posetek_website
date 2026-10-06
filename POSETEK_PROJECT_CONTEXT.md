@@ -4,6 +4,17 @@ Reviewed on October 5, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
+## Admin Overview device-panel removal (2026-10-05)
+
+At the user's request, Admin Overview renders only the Insights workspace.
+The compact phone-processing panel and its fetch are removed in live and local
+preview modes. Device performance and Team testing sessions remain on their
+existing dedicated routes. The change passed 33 focused tests, scoped lint,
+TypeScript/Astro application-release build, and 1440/390 px browser checks with
+no panel fetch, overflow or page errors. The local `production-dist` artifact
+includes the change and preserves the approved marketing snapshot. It has not
+been uploaded or published by this task.
+
 ## Current hosting and marketing snapshot (2026-10-05)
 
 Netlify's ordinary Git build published merged source `b776c32` as

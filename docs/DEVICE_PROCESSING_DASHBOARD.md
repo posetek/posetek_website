@@ -2,9 +2,12 @@
 
 Status (2026-10-03): live callable reachability approved and enabled; authenticated requests succeed. Local dashboard completeness and station-timing follow-up verified with deployed callable v5. See the [verification receipt](../deployment/DEVICE_PROCESSING_COMPLETENESS.json). Older website drafts are superseded.
 
-The admin overview starts with one condensed table: installation UUID, phone type,
+The dedicated Device performance page (`/admin/device-performance`) starts with
+one condensed table: installation UUID, phone type,
 per-drill completed-processing average time, largest sampled memory footprint, total frame
-reads/model calls and outcomes. Selecting an installation opens a table below with
+reads/model calls and outcomes. The admin Overview contains the Insights workspace;
+phone-processing summaries are available on Device performance. Selecting an
+installation opens a table below with
 one row per drill. Detailed analytics opens that phone's session selector,
 chronological run/memory charts and expandable stage measurements. The phone table
 is not filtered by the shared organization/team selector. A reinstall can create
