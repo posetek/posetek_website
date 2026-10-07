@@ -244,3 +244,14 @@
     }
   }
 }
+
+// Keep phone dropdowns below the complete, wrapping header row.
+@media (max-width: 760px) {
+  .pt-admin {
+    .admin-account-menu { position: static; }
+    .admin-account-panel { position: absolute; top: 100%; }
+    .admin-account-menu > summary { width: 44px; height: 44px; }
+    .admin-primary-link, .admin-section-menu > summary,
+    .admin-account-panel a, .admin-account-panel button { min-height: 44px; }
+  }
+}

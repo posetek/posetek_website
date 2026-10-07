@@ -8,6 +8,7 @@ import type { StaffRole } from "../../lib/organization";
 import { accountContext, accountQuery } from "../admin/lib/accountHierarchy";
 import { organizationPlayerPath } from "../athlete-portal/lib/navigation";
 import { insightsLink } from "../insights/lib/navigation";
+import OrganizationHeader from "./OrganizationHeader";
 import SignupStatus from "../admin/views/SignupStatus";
 import AccessLinkCard from "../../components/AccessLinkCard";
 import { accessLinkText, accessStatusLabel, refreshAfterIssued } from "../../lib/access-link-issuer";
@@ -243,7 +244,7 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
     </>}
   </main>;
   if (admin) return <div className="pt-club">{body}</div>;
-  return <div className="pt-pose portal-body pt-club"><header className="portal-header"><Link className="quiet-button" to={`/feed?organizationId=${encodeURIComponent(organizationId)}`}>Community feed</Link><Link className="portal-brand" to="/organization"><span className="portal-brand-mark">P</span>POSETEK</Link><button className="quiet-button" onClick={() => { void auth.signOut().then(() => navigate("/signin")); }}>Sign out</button></header>{body}</div>;
+  return <div className="pt-pose portal-body pt-club"><OrganizationHeader ready={manager} orgId={organizationId || undefined} teamId={teamId || undefined} email={auth.currentUser?.email || undefined} onSignOut={() => { void auth.signOut().then(() => navigate("/signin")).catch(() => setError("Sign out failed. Try again.")); }} />{body}</div>;
 }
 export function StaffInvitationList({ invitations, busy, onReplace, onRevoke }: {
   invitations: ClubContext["invitations"]; busy: boolean;

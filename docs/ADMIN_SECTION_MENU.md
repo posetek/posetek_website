@@ -1,7 +1,17 @@
 # Admin section menu
 
+## Current organization manager navigation release
+
+Website `6ac6c5c6cebb1cb580004fae`, runtime `0a7fe6d`, was published October 7,
+2026 at 3:28:24 PM PDT. Kai's organization manager menu is now shared across
+Organization, Insights, Planner and Community, preserving current team scope.
+Planner selection changes update the header without resetting unsaved intake.
+Existing admin destinations and coach access are preserved. Read
+[the release handoff](ORGANIZATION_NAVIGATION_RELEASE.md) and
+[production evidence](../deployment/ORGANIZATION_NAVIGATION_PRODUCTION.json).
+
 <!-- coach-release-alignment-current:start -->
-## Current combined coach and admin-menu release
+## Historical combined coach and admin-menu release
 
 Website `6ac6a6bd448852167e52d189`, runtime source `69e51f5`, was published October 7, 2026 at 1:14:12 PM PDT from the exact reviewed candidate. Kai's always-visible coach roster and player summary now share authoritative cumulative D1 standing through the selected end, latest-two-local-test-date change and current fourteen-day plan progress. Missing summaries remain unavailable. Signup copying, scope/filter/history returns, player records and prescribing remain connected. The admin header groups Overview, Coaching hub and System & User Insights while retaining the existing tools and hierarchy.
 
@@ -65,3 +75,73 @@ Merge validation: all 1,847 frontend tests and TypeScript pass after integration
 with current main. The device contract parity check runs against a fresh temporary
 sparse checkout of canonical `posetek/posetek-mobile-app` main using
 `POSETEK_MOBILE_REPO`; it is no longer blocked by the absent sibling checkout.
+
+## Historical organization header candidate — October 7, 2026
+
+A shared `WorkspaceHeader` provides the same logo-row layout, grouped disclosures,
+account menu, keyboard dismissal and reduced-motion-aware animation for admin and
+organization pages. Each wrapper supplies its own destinations; the organization
+wrapper never uses admin navigation state or admin routes.
+
+Organization management and service-verified manager Insights show Overview
+and Coaching hub. Coaching hub contains People & teams,
+the existing staff Planner, and Community feed. Testing, Workouts, and Usage remain within Overview; their duplicate header
+dropdown was removed at the user’s request. The account menu retains
+Organization access (the existing team/staff management page), Community feed,
+and Sign out. Existing organization/team selection carries into links. No new
+technique, drill-editing, incident, device, user-issue or private-feedback access
+is granted. Staff Planner and standalone Community feed retain the organization header for
+verified managers, with the original headers as fallback for other roles.
+
+Membership loaders, coach redirects, mutation guards and server permissions are
+unchanged. Manager navigation appears only after role resolution; coaches keep
+their current Insights header. Development synthetic role switching supports
+previewing the organization header without real account changes.
+
+Validation: 114 focused navigation, organization and Insights tests pass, along
+with TypeScript. Source is prepared for the organization navigation PR; production is unchanged.
+
+Chrome synthetic checks pass for manager scope retention and report navigation,
+admin/coach separation, and header layout at 1440, 1024 and 390 px with no browser
+errors. The existing manager report table extends beyond the phone viewport;
+header bounds fit correctly. This pass does not change report-table layout.
+
+Planner/feed follow-up: a shared authenticated header wrapper resolves current
+manager membership through the existing organization service, rejects stale
+identity/scope responses, and only retains a team returned for that organization.
+Feed preview, player impersonation, embedded coach community and admin feed do
+not invoke the manager wrapper's membership lookup. Organization feed links now
+carry `teamId` for return navigation; feed audience/access behavior is unchanged.
+Validation: 71 focused organization/feed/navigation tests and TypeScript pass.
+
+Mobile verification follow-up (October 7): fixed the account panel positioning so
+it opens below the full wrapped header instead of obscuring Coaching hub. All
+shared dropdowns now close on outside taps, Escape or navigation, and opening
+one closes the others. Phone controls have at least 44 px touch targets.
+
+Fifteen touch-enabled Chrome emulation cases pass at widths 320, 360, 390, 430
+and 768 px using synthetic manager content and the actual organization, Planner
+and feed styles. Checks cover visible dropdown links, viewport bounds, touch
+targets, outside dismissal, organization access and reduced-motion behavior.
+169 focused tests, TypeScript and diff whitespace checks pass. Screenshots and
+the temporary visual harness stay under ignored artifacts/mobile-header. This
+is browser emulation, not a physical iPhone/Android acceptance test.
+
+Final PR validation: all 1,850 frontend tests and TypeScript pass. The canonical
+mobile device contract is verified via the temporary sparse checkout described
+above. Generated test artifacts remain excluded from Git.
+
+## Integrated organization navigation release preparation
+
+The organization navigation candidate includes the October 7 coach/admin release
+from `664b8fd`, preserving its authoritative summaries, private boundaries and
+current production baseline. The shared header refactor retains existing admin
+destinations and exposes organization tools only after verified manager access.
+
+The staff Planner now supplies its currently authorized organization/team scope
+to the header. Changing Planner selections updates navigation without changing
+the URL or remounting the Planner, preserving entered intake and draft state.
+Pending or denied organization scope clears the manager navigation; foreign team
+IDs are omitted. This addresses the older URL hints remaining in header links
+after a manager selected another team. No backend, rules, gateway, catalog or
+native publication is included in this website release.

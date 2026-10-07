@@ -32,7 +32,17 @@ const terminal = (status: string) => status === "complete" || status === "failed
 
 type PlannerProps = {
   role?: PlannerRole; playerId?: string; initialText?: string; onActivated?: () => void;
+  onScopeChange?: (scope: PlannerNavigationScope | null) => void;
 };
+
+export interface PlannerNavigationScope { orgId: string; teamId?: string }
+interface PlannerNavigationContext { requestedOrgId: string; orgId: string; teamIds: string[] }
+
+/** Publish only the currently authorized roster scope, never a pending URL hint. */
+export function currentPlannerNavigationScope(context: PlannerNavigationContext | null, requestedOrgId: string, teamId: string, authorized: boolean): PlannerNavigationScope | null {
+  if (!authorized || !context?.orgId || context.requestedOrgId !== requestedOrgId) return null;
+  return { orgId: context.orgId, ...(teamId && context.teamIds.includes(teamId) ? { teamId } : {}) };
+}
 
 export default function PersonalizedPrograms(props: PlannerProps) {
   const { search } = useLocation();
@@ -42,7 +52,7 @@ export default function PersonalizedPrograms(props: PlannerProps) {
   return <Planner key={JSON.stringify([props.role ?? "admin", props.playerId ?? "", uid, search])} {...props} uid={uid} />;
 }
 
-function Planner({ role = "admin", playerId = "", initialText = "", onActivated, uid }: PlannerProps & { uid: string }) {
+function Planner({ role = "admin", playerId = "", initialText = "", onActivated, onScopeChange, uid }: PlannerProps & { uid: string }) {
   const [query] = useSearchParams();
   const initial = useRef({ orgId: role === "athlete" ? "" : query.get("orgId") ?? "", ids: playerId ? [playerId] : (query.get("players") ?? "").split(",").filter(Boolean) });
   const [orgs, setOrgs] = useState<OrganizationRow[]>([]);
@@ -72,12 +82,14 @@ function Planner({ role = "admin", playerId = "", initialText = "", onActivated,
   const [limited, setLimited] = useState(false);
   const [retry, setRetry] = useState(0);
   const [accessReady, setAccessReady] = useState(false);
+  const [navigationContext, setNavigationContext] = useState<PlannerNavigationContext | null>(null);
   const mounted = useRef(true);
   const submitting = useRef(false);
   const access = useRef(createPlannerAccessGuard()).current;
   const isCurrent = useCallback((token: number) => mounted.current && auth.currentUser?.uid === uid && access.isCurrent(token), [access, uid]);
   const canOperate = useCallback((token = access.capture()) => isCurrent(token) && access.permits(token), [access, isCurrent]);
   const clearScope = useCallback(() => {
+    setNavigationContext(null);
     setPlayers([]); setSelected(new Set()); setFocused(""); setEvidence({}); setEvidenceErrors({});
     setJobs([]); setDrafts([]); setPlans([]); setDraftId(""); setReviewPlayerId(""); setReviewed(false);
   }, []);
@@ -105,6 +117,7 @@ function Planner({ role = "admin", playerId = "", initialText = "", onActivated,
       access.authorize(token); setAccessReady(true);
       const rows = scope.players;
       setOrgs(scope.organizations); setTeams(scope.teams); setLimited(scope.limited);
+      setNavigationContext({ requestedOrgId: orgId, orgId: scope.organizationId, teamIds: scope.teams.filter(team => team.organizationId === scope.organizationId).map(team => team.id) });
       // Do not trigger a second load while resolving the default organization.
       if (!orgId && scope.organizationId) initial.current.orgId = scope.organizationId;
       setPlayers(rows); setLoading(false);
@@ -113,6 +126,11 @@ function Planner({ role = "admin", playerId = "", initialText = "", onActivated,
     }).catch(e => { if (live && isCurrent(token)) failClosed(e); });
     return () => { live = false; };
   }, [orgId, role, playerId, retry, access, clearScope, failClosed, isCurrent]);
+
+  useEffect(() => {
+    onScopeChange?.(currentPlannerNavigationScope(navigationContext, orgId, teamId, accessReady && canOperate()));
+  }, [navigationContext, orgId, teamId, accessReady, canOperate, onScopeChange]);
+  useEffect(() => () => onScopeChange?.(null), [onScopeChange]);
 
   useEffect(() => {
     setJobs([]);

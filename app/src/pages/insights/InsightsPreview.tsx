@@ -13,6 +13,7 @@ import type { ExpandedRequest } from "./lib/expandedQuery";
 import { previewInsights, previewInsightPlayer, previewPlayerSummary } from "./lib/preview";
 import { EXERCISES } from "./lib/expanded";
 import type { InsightAccess } from "./lib/expanded";
+import OrganizationHeader from "../organization/OrganizationHeader";
 import AdminInsightsLayout from "./AdminInsightsLayout";
 import { adminPlayerLinkFromReport } from "../admin/lib/adminNavigation";
 
@@ -55,5 +56,6 @@ export default function InsightsPreview({ embedded = false }: { embedded?: boole
   </>;
   if (embedded) return <div className="pt-insights admin-insights">{content}</div>;
   if (role === "admin") return <AdminInsightsLayout uid="preview-admin" email="admin@posetek.test" preview onSignOut={() => {}}>{content}</AdminInsightsLayout>;
+  if (role === "manager") return <div className="pt-pose portal-body pt-insights"><OrganizationHeader ready orgId={request.orgId} teamId={request.teamId} email="manager@example.test" preview onSignOut={() => {}} /><main className="insights-shell">{content}</main></div>;
   return <div className="pt-pose portal-body pt-insights"><header className="portal-header"><span className="portal-brand"><span className="portal-brand-mark">P</span>POSETEK</span><span className="insights-note">Synthetic preview · no live data</span></header><main className="insights-shell">{content}</main></div>;
 }
