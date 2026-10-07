@@ -1,7 +1,17 @@
 # Admin section menu
 
+## Current organization manager navigation release
+
+Website `6ac6c5c6cebb1cb580004fae`, runtime `0a7fe6d`, was published October 7,
+2026 at 3:28:24 PM PDT. Kai's organization manager menu is now shared across
+Organization, Insights, Planner and Community, preserving current team scope.
+Planner selection changes update the header without resetting unsaved intake.
+Existing admin destinations and coach access are preserved. Read
+[the release handoff](ORGANIZATION_NAVIGATION_RELEASE.md) and
+[production evidence](../deployment/ORGANIZATION_NAVIGATION_PRODUCTION.json).
+
 <!-- coach-release-alignment-current:start -->
-## Current combined coach and admin-menu release
+## Historical combined coach and admin-menu release
 
 Website `6ac6a6bd448852167e52d189`, runtime source `69e51f5`, was published October 7, 2026 at 1:14:12 PM PDT from the exact reviewed candidate. Kai's always-visible coach roster and player summary now share authoritative cumulative D1 standing through the selected end, latest-two-local-test-date change and current fourteen-day plan progress. Missing summaries remain unavailable. Signup copying, scope/filter/history returns, player records and prescribing remain connected. The admin header groups Overview, Coaching hub and System & User Insights while retaining the existing tools and hierarchy.
 
@@ -66,7 +76,7 @@ with current main. The device contract parity check runs against a fresh tempora
 sparse checkout of canonical `posetek/posetek-mobile-app` main using
 `POSETEK_MOBILE_REPO`; it is no longer blocked by the absent sibling checkout.
 
-## Organization header candidate — October 7, 2026
+## Historical organization header candidate — October 7, 2026
 
 A shared `WorkspaceHeader` provides the same logo-row layout, grouped disclosures,
 account menu, keyboard dismissal and reduced-motion-aware animation for admin and

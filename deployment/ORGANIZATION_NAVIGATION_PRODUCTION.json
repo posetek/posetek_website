@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "status": "production-verified",
+  "recordedAt": "2026-10-07T22:36:48.483Z",
+  "deploymentId": "6ac6c5c6cebb1cb580004fae",
+  "previousDeploymentId": "6ac6a6bd448852167e52d189",
+  "runtimeSourceCommit": "0a7fe6dede3cb849f1653b87c3f90ba6f6f6f378",
+  "initialKaiHead": "9c219c95fdd432754a94c7f623c3b2a352d0cbfe",
+  "baseCommit": "664b8fdc50574dd3ffb3696b10f8521d903e4587",
+  "publishedAt": "2026-10-07T22:28:24.026Z",
+  "publishedPacific": "October 7, 2026 at 3:28:24 PM PDT",
+  "url": "https://posetek.net",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/39",
+  "deploymentScopes": [
+    "website"
+  ],
+  "exactReviewedCandidatePromoted": true,
+  "behavior": {
+    "managerWorkspaces": [
+      "organization",
+      "insights",
+      "programs",
+      "feed"
+    ],
+    "organizationNavigation": [
+      "Overview",
+      "Coaching hub",
+      "Organization access"
+    ],
+    "scopeRetention": true,
+    "plannerSelectionUpdatesHeader": true,
+    "plannerUnsavedIntakeRetained": true,
+    "verifiedMembershipRequired": true,
+    "adminAndCoachSeparationRetained": true
+  },
+  "artifact": {
+    "files": 1856,
+    "providerRecords": 1857,
+    "fullProviderInventoryVerified": true,
+    "applicationSha1": "51bb9977090c337df6546766aa01e77116fbe013",
+    "feedbackSha1": "039a6cb1c652002dcd7e556359e5fbd1974ce426",
+    "preservedPredecessorRecords": 1824,
+    "changedPredecessorRecords": [
+      "/application.html",
+      "/netlify.toml (generated metadata)"
+    ],
+    "addedRuntimeAssets": 31,
+    "approvedMarketing": [
+      {
+        "path": "/index.html",
+        "sha": "9e6e486665e3fdd1257c23fe8a69cf8e72e619e4",
+        "size": 37689
+      },
+      {
+        "path": "/coaches/index.html",
+        "sha": "829a6277b98f9f62b39908d1a3a39c230ae0efe1",
+        "size": 26209
+      }
+    ],
+    "originalFeedbackEntryRestoredBeforeUpload": true,
+    "stableIconsPreserved": true,
+    "feedbackIsolationVerified": true,
+    "servedApplicationRoutes": 13,
+    "servedMarketingRoutes": 5,
+    "servedFeedbackRoutes": 3
+  },
+  "validation": {
+    "frontendUniqueTests": 1870,
+    "initialFrontendFailureResolved": {
+      "passed": 1869,
+      "failed": 1,
+      "reason": "Canonical mobile checkout was not configured in this preview worktree."
+    },
+    "canonicalDeviceSuite": {
+      "passed": 68,
+      "canonicalMobileCommit": "a2928a0fc838e1f1dbf8787a9a359131c64f97d4",
+      "explicitCheckoutConfigured": true
+    },
+    "typeScript": true,
+    "releaseGuards": 55,
+    "guardedAstroBuild": true,
+    "plannerFocusedTests": 22,
+    "phoneViewportWidths": [
+      360,
+      390,
+      430
+    ],
+    "phoneMenusPassed": true,
+    "anonymousGuardRoutes": [
+      "/organization",
+      "/programs",
+      "/feed",
+      "/insights"
+    ],
+    "candidateManagerWorkspaceAcceptancePassed": true,
+    "postPublicationManagerAcceptancePassed": true,
+    "managerBrowserOrigin": "https://6ac6c5c6cebb1cb580004fae--posetek.netlify.app",
+    "primaryOriginArtifactAndServedRoutesVerified": "https://posetek.net",
+    "primaryOriginExistingAuthPreserved": true,
+    "adminCoachSeparationCheckedInLocalSyntheticPreview": true,
+    "initialTransientSignInConnectionFailureResolvedOnRetry": true,
+    "physicalDeviceAcceptanceVerified": false,
+    "existingManagerReportTablePhoneOverflowOutsideScope": true
+  },
+  "preservationGuard": {
+    "deploymentId": "6ac6c5c6cebb1cb580004fae",
+    "protectedFiles": 1854,
+    "ordinaryBuildPassed": true
+  },
+  "backend": {
+    "deployed": false,
+    "readOnlyFunctionInventoryCount": 124,
+    "allVersionAndConfigurationFingerprintsUnchanged": true
+  },
+  "cleanup": {
+    "temporaryAuthAccountsCreated": 1,
+    "initialOwnedDocumentsCreated": 5,
+    "ownedDocumentsRemaining": 0,
+    "authAccountsRemaining": 0,
+    "authDeletionTombstoneObservedAndRemoved": true,
+    "privateCredentialsRemoved": true,
+    "completedAt": "2026-10-07T22:31:12.903Z",
+    "independentDelayedAuditAt": "2026-10-07T22:32:15.993Z",
+    "independentAuditPassed": true,
+    "playersCreated": 0,
+    "workoutsCreated": 0,
+    "storageObjectsCreated": 0,
+    "notificationsCreated": 0
+  },
+  "exclusions": [
+    "backend deployment",
+    "Firebase rules",
+    "Firestore indexes",
+    "agent gateway",
+    "training catalog",
+    "native application",
+    "real athlete data or active plans",
+    "feedback submissions",
+    "notification delivery"
+  ]
+}

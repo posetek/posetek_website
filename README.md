@@ -1,7 +1,18 @@
 # PoseTek website
 
+<!-- organization-navigation-current:start -->
+## Current organization manager navigation release
+
+Website `6ac6c5c6cebb1cb580004fae`, runtime source `0a7fe6d`, was published October 7, 2026 at 3:28:24 PM PDT. Kai's PR #39 retains organization navigation across manager Organization, Insights, Planner and Community. Planner links follow the currently verified selection while preserving unsaved intake and draft state. Existing admin/coach access and the preceding coach release are retained.
+
+All 1,856 artifact files match 1,857 provider records; 1,824 predecessor records remain exact and 31 runtime assets are added. Approved marketing, isolated feedback and P icon bytes are preserved. The reconciled baseline protects 1,854 files. Frontend validation covers 1,870 unique tests, TypeScript, 55 release guards, hosted manager navigation and 360/390/430px menus. The temporary account, five owned documents and deletion tombstone are removed; independent delayed readback found zero residue and no credential file. All 124 function versions/configurations are unchanged. Backend, rules, indexes, gateway, catalog and native were not deployed.
+
+Read [the organization navigation handoff](docs/ORGANIZATION_NAVIGATION_RELEASE.md), [production evidence](deployment/ORGANIZATION_NAVIGATION_PRODUCTION.json) and [PR #39](https://github.com/posetek/posetek_website/pull/39). The earlier release records below remain historical checkpoints.
+<!-- organization-navigation-current:end -->
+
+
 <!-- coach-release-alignment-current:start -->
-## Current combined coach and admin-menu release
+## Historical combined coach and admin-menu release
 
 Website `6ac6a6bd448852167e52d189`, runtime source `69e51f5`, was published October 7, 2026 at 1:14:12 PM PDT from the exact reviewed candidate. Kai's always-visible coach roster and player summary now share authoritative cumulative D1 standing through the selected end, latest-two-local-test-date change and current fourteen-day plan progress. Missing summaries remain unavailable. Signup copying, scope/filter/history returns, player records and prescribing remain connected. The admin header groups Overview, Coaching hub and System & User Insights while retaining the existing tools and hierarchy.
 
