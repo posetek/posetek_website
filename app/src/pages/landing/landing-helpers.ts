@@ -161,6 +161,10 @@ const RETURN_TO_ALLOWED = new Set([
 // Ported pages redirect signed-out visitors here with these as returnTo values.
 const RETURN_TO_ALLOWED_PATHS = new Set([
   "/admin",
+  "/admin/accounts",
+  "/admin/organizations",
+  "/admin/programs",
+  "/admin/programs/personalized",
   "/admin/access",
   "/admin/user-issues",
   "/admin/feedback",
@@ -189,7 +193,7 @@ export function getSafeReturnToUrl(
   try {
     const target = new URL(raw, baseHref);
     const fileName = target.pathname.split("/").pop() ?? "";
-    const allowed = RETURN_TO_ALLOWED.has(fileName) || RETURN_TO_ALLOWED_PATHS.has(target.pathname) || isAdminPlayerReturnPath(target.pathname);
+    const allowed = RETURN_TO_ALLOWED.has(fileName) || RETURN_TO_ALLOWED_PATHS.has(target.pathname) || isAdminPlayerReturnPath(target.pathname) || isAdminCoachReturnPath(target.pathname);
     if (target.origin !== origin || target.username || target.password || !allowed) return null;
     if (["/feedback", "/feedback/", "/feedback.html"].includes(target.pathname)) {
       // Feedback return links carry only the broad invitation source.
@@ -204,13 +208,20 @@ export function getSafeReturnToUrl(
   }
 }
 
-/** Exact existing athlete-detail route for signed-out workout notification links. */
+/** Existing player evidence routes, including saved-workout and rep deep links. */
 export function isAdminPlayerReturnPath(path: string): boolean {
-  const match = /^\/admin\/accounts\/player\/([^/]+)$/.exec(path);
+  const match = /^\/admin\/accounts\/player\/([^/]+)(?:\/results(?:\/([^/]+)(?:\/([^/]+))?)?)?$/.exec(path);
   if (!match) return false;
+  return match.slice(1).filter(Boolean).every(validAdminReturnSegment);
+}
+function isAdminCoachReturnPath(path: string): boolean {
+  const match = /^\/admin\/accounts\/coach\/([^/]+)$/.exec(path);
+  return Boolean(match && validAdminReturnSegment(match[1]));
+}
+function validAdminReturnSegment(segment: string): boolean {
   try {
-    const id = decodeURIComponent(match[1]);
+    const id = decodeURIComponent(segment);
     return Boolean(id) && id.length <= 1500 && id !== '.' && id !== '..' && !/[\\/]/.test(id)
-      && !Array.from(id).some(character => character.charCodeAt(0) < 32);
+      && !Array.from(id).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
   } catch { return false; }
 }
