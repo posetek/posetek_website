@@ -120,3 +120,18 @@ is browser emulation, not a physical iPhone/Android acceptance test.
 Final PR validation: all 1,850 frontend tests and TypeScript pass. The canonical
 mobile device contract is verified via the temporary sparse checkout described
 above. Generated test artifacts remain excluded from Git.
+
+## Integrated organization navigation release preparation
+
+The organization navigation candidate includes the October 7 coach/admin release
+from `664b8fd`, preserving its authoritative summaries, private boundaries and
+current production baseline. The shared header refactor retains existing admin
+destinations and exposes organization tools only after verified manager access.
+
+The staff Planner now supplies its currently authorized organization/team scope
+to the header. Changing Planner selections updates navigation without changing
+the URL or remounting the Planner, preserving entered intake and draft state.
+Pending or denied organization scope clears the manager navigation; foreign team
+IDs are omitted. This addresses the older URL hints remaining in header links
+after a manager selected another team. No backend, rules, gateway, catalog or
+native publication is included in this website release.
