@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { adminAccountResetPath, adminDirectoryPath, adminPlayerPath, adminPlayerReturn, adminPlannerPath, adminPlayerLinkFromReport, adminToolKey, adminToolPath, legacyOrganizationsPath, legacyAdminWorkspacePath, parseAdminDirectoryState, supportsAdminScope, validatedAdminReturn, workspaceReportSearch, workspaceReportRequest, withWorkspaceReport } from "./adminNavigation";
+import { adminAccountResetPath, adminDirectoryPath, adminPlayerPath, adminPlayerReturn, adminPlannerPath, adminPlayerLinkFromReport, adminToolKey, adminToolPath, legacyOrganizationsPath, legacyAdminWorkspacePath, parseAdminDirectoryState, supportsAdminScope, validatedAdminReturn, workspaceReportSearch, workspaceReportRequest, withWorkspaceReport, directoryLevelOf, selectDirectoryScope } from "./adminNavigation";
 import { accountDestination } from "../../landing/account-entry";
 
 describe("admin directory navigation", () => {
   it("round trips scope, lookup, tab, search and page", () => {
-    const state = { orgId: "club", teamId: "u15", directoryTab: "staff" as const, search: "Ana & Jo", page: 3, directoryLookup: "unassigned" as const };
+    const state = { orgId: "club", teamId: "u15", directoryTab: "staff" as const, search: "Ana & Jo", page: 3, directoryLookup: "all" as const };
     expect(parseAdminDirectoryState(adminDirectoryPath(state).split("?")[1])).toEqual(state);
     expect(legacyOrganizationsPath("?orgId=club&teamId=u15")).toBe("/admin/accounts?orgId=club&teamId=u15&directoryTab=teams");
   });
@@ -135,4 +135,56 @@ describe("unified workspace reporting state", () => {
     expect(state.reportUsageStatus).toBe(""); expect(state.reportCursor).toHaveLength(2000);
     expect(legacyOrganizationsPath("?orgId=club&reportView=usage&reportStart=2026-09-01")).toContain("directoryTab=teams&reportView=usage&reportStart=2026-09-01");
   });
+});
+
+
+describe("organization team people navigation", () => {
+  it.each([
+    ["", "organizations"], ["?orgId=club", "teams"], ["?orgId=club&teamId=u15", "people"],
+    ["?orgId=club&directoryLevel=people", "people"], ["?orgId=club&directoryLookup=unassigned", "people"],
+    ["?reportMode=attention", "people"], ["?directoryLookup=all", "people"], ["?directoryLevel=bad", "organizations"],
+  ])("resolves the intended hierarchy for %s", (search, level) => {
+    expect(directoryLevelOf(parseAdminDirectoryState(search))).toBe(level);
+  });
+  it("round trips explicit All teams through player, planner and validated return", () => {
+    const state = parseAdminDirectoryState("?orgId=club&directoryLevel=people&reportView=usage&reportStart=2026-09-01&search=Ana&page=2");
+    const player = new URL(adminPlayerPath("ana", "profile", state), "https://posetek.net");
+    expect(player.searchParams.get("directoryLevel")).toBe("people");
+    const planner = new URL(adminPlannerPath("ana", player.search), "https://posetek.net");
+    const returnPlayer = new URL(planner.searchParams.get("returnTo")!, "https://posetek.net");
+    expect(adminPlayerReturn(returnPlayer.search)).toBe(adminDirectoryPath(state));
+  });
+  it("scope selection clears cohort/list filters while retaining reporting presentation", () => {
+    const state = parseAdminDirectoryState("?orgId=old&teamId=old&search=Ana&page=4&reportView=testing&reportStart=2026-09-01&reportEnd=2026-09-30&reportTimezone=UTC&reportTestingWindow=period&reportTestingStatus=fullyTested&reportUsageFeature=training&reportMode=attention&reportPage=2&reportCursor=opaque&reportSearch=Alex");
+    const next = selectDirectoryScope(state, { orgId: "club", teamId: "u15" });
+    expect(next).toMatchObject({ orgId: "club", teamId: "u15", search: "", page: 1, directoryLevel: "people", reportMode: "directory", reportView: "testing", reportStart: "2026-09-01", reportEnd: "2026-09-30", reportTimezone: "UTC", reportTestingWindow: "period" });
+    expect(next.reportTestingStatus).toBeUndefined(); expect(next.reportCursor).toBeUndefined(); expect(next.reportUsageFeature).toBeUndefined(); expect(next.reportSearch).toBeUndefined();
+    const global = selectDirectoryScope(next, { orgId: undefined, directoryLevel: "organizations" });
+    expect(global.orgId).toBeUndefined(); expect(global.teamId).toBeUndefined(); expect(directoryLevelOf(global)).toBe("organizations");
+  });
+  it("organization and team graph clicks update actual scope rather than only report filters", () => {
+    const state = parseAdminDirectoryState("?reportView=overview&reportTimezone=UTC&reportAgeBand=U16&reportMode=attention");
+    const org = withWorkspaceReport(state, { orgId: "club", teamId: undefined, coachId: undefined, teamAssignment: "" });
+    expect(org.orgId).toBe("club"); expect(directoryLevelOf(org)).toBe("teams"); expect(org.reportAgeBand).toBeUndefined();
+    const team = withWorkspaceReport(org, { orgId: "club", teamId: "u15", coachId: undefined, teamAssignment: "" });
+    expect(team.teamId).toBe("u15"); expect(directoryLevelOf(team)).toBe("people");
+    const unassigned = withWorkspaceReport(team, { orgId: "club", teamId: undefined, coachId: undefined, teamAssignment: "unassigned" });
+    expect(unassigned.teamId).toBeUndefined(); expect(unassigned.directoryLookup).toBe("unassigned"); expect(unassigned.reportTeamAssignment).toBe("unassigned");
+  });
+  it("category selection reveals the matching people without changing scope", () => {
+    const state = parseAdminDirectoryState("?orgId=club&reportView=overview");
+    const next = withWorkspaceReport(state, { testingStatus: "fullyTested" });
+    expect(next.orgId).toBe("club"); expect(next.reportTestingStatus).toBe("fullyTested"); expect(directoryLevelOf(next)).toBe("people");
+  });
+});
+
+
+it("restores legacy unassigned links with the matching report filter and normalizes a conflicting team", () => {
+  const unassigned = parseAdminDirectoryState("?orgId=club&directoryLookup=unassigned");
+  expect(unassigned.reportTeamAssignment).toBe("unassigned"); expect(directoryLevelOf(unassigned)).toBe("people");
+  expect(workspaceReportRequest(unassigned).teamAssignment).toBe("unassigned");
+  const team = parseAdminDirectoryState("?orgId=club&teamId=u15&directoryLookup=unassigned&reportTeamAssignment=unassigned");
+  expect(team.teamId).toBe("u15"); expect(team.directoryLookup).toBeUndefined();
+  expect(team.reportTeamAssignment).toBeUndefined(); expect(workspaceReportRequest(team).teamAssignment).toBe("");
+  expect(parseAdminDirectoryState("?orgId=club&teamId=u15&reportTeamAssignment=unassigned").reportTeamAssignment).toBe("unassigned");
 });

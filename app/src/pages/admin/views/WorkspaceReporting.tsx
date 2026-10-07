@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import ExpandedReport from "../../insights/ExpandedReport";
 import { minuteText, shortDate, TESTING_LABELS, WORKOUT_LABELS } from "../../insights/lib/expanded";
 import type { ExpandedInsights, ExpandedPlayer } from "../../insights/lib/expanded";
-import { dateInZone, shiftDate, TIMEZONES } from "../../insights/lib/expandedQuery";
+import { dateInZone, hasPlayerFilters, shiftDate, TIMEZONES } from "../../insights/lib/expandedQuery";
 import type { ExpandedRequest } from "../../insights/lib/expandedQuery";
 import type { WorkspaceReportView } from "../lib/adminNavigation";
 import "../../insights/insights.scss";
@@ -12,6 +12,7 @@ import "./workspace-report.scss";
 export type WorkspacePlayerMetric = { playerId: string; status: "included"; player: ExpandedPlayer } | { playerId: string; status: "excluded" };
 export type WorkspaceReport = ExpandedInsights & { rosterMetrics?: WorkspacePlayerMetric[] };
 export interface WorkspaceMetricState { data: WorkspaceReport | null; loading: boolean; error: string; rebuilding?: boolean; legacy?: boolean }
+export type WorkspaceSummaryProps = WorkspaceMetricState & { accountCount?: number; scopeLabel: string; request: ExpandedRequest };
 const views: [WorkspaceReportView, string][] = [["overview", "Overview"], ["testing", "Testing"], ["workouts", "Workouts"], ["usage", "Usage"]];
 
 /** Report views share one roster; tabs move focus before activating a reader. */
@@ -41,7 +42,24 @@ export function WorkspaceReportControls({ request, disabled = false, onChange }:
   </fieldset></section>;
 }
 
-export function WorkspaceSummary({ data, loading, error, legacy, accountCount, scopeLabel, request }: WorkspaceMetricState & { accountCount?: number; scopeLabel: string; request: ExpandedRequest }) {
+/** Account scope stays compact; the selected reporting view owns its metric cards. */
+export function WorkspaceScopeSummary({ data, loading, rebuilding, error, legacy, accountCount, scopeLabel, request }: WorkspaceSummaryProps) {
+  const ready = !legacy && !loading && !rebuilding && !error && Boolean(data);
+  const unavailable = legacy ? "Reporting unavailable for this legacy organization." : loading || rebuilding
+    ? rebuilding ? "Preparing complete reporting…" : "Loading reporting…" : "Complete reporting is unavailable.";
+  const accounts = accountCount ?? (ready ? data!.roster.total : null);
+  const qualifyScope = ready && (hasPlayerFilters(request) || accountCount !== undefined && accountCount !== data!.roster.total);
+  return <section className="workspace-scope-summary" aria-label="Current reporting scope" aria-busy={loading || rebuilding || false}>
+    <div className="workspace-scope-primary"><strong className="workspace-scope-label">{scopeLabel}</strong>
+      {accounts !== null && <span className="workspace-scope-accounts"><strong>{accounts.toLocaleString()}</strong> player {accounts === 1 ? "account" : "accounts"}</span>}
+    </div>
+    <p role={loading || rebuilding ? "status" : undefined}>{ready
+      ? <>{qualifyScope && <>Across {data!.scope.label}: </>}{data!.roster.included.toLocaleString()} included in reporting · {data!.roster.excluded.toLocaleString()} excluded</>
+      : unavailable}</p>
+  </section>;
+}
+
+export function WorkspaceSummary({ data, loading, error, legacy, accountCount, scopeLabel, request }: WorkspaceSummaryProps) {
   const period = `${shortDate(request.startDate)}–${shortDate(request.endDate)}`, unavailable = legacy ? "Unavailable" : loading ? "Loading…" : error || !data ? "Unavailable" : "";
   const fullyTested = data?.testing.statuses.find(row => row.key === "fullyTested")?.count || 0;
   return <section className="workspace-summary" aria-label="Roster and activity summary">
@@ -66,9 +84,7 @@ export function WorkspaceMetricCells({ metric, loading, error, legacy }: Workspa
     <td data-label="Estimated active use" className="directory-metric"><span>{unavailable || minuteText(player!.usage.activeMinutes, player!.usage.collected)}</span>{!unavailable && player!.usage.collected && <small>{player!.usage.activeDays} active {player!.usage.activeDays === 1 ? "day" : "days"}</small>}</td></>;
 }
 
-/** Detailed reporting renders no second player table or repeated summary. */
+/** Every graph, metric card and explanation is visible without an extra disclosure. */
 export function WorkspaceReportDetails({ data, request, onChange }: { data: ExpandedInsights; request: ExpandedRequest; onChange(patch: Partial<ExpandedRequest>): void }) {
-  const [open, setOpen] = useState(false);
-  const detail = <ExpandedReport data={data} request={request} onChange={onChange} hidePlayerTable hideSummary hidePlayerFilters onPrevious={() => {}} onNext={() => {}} playerLink={() => "#workspace-roster"} />;
-  return <div className="workspace-report-details pt-insights">{request.view === "overview" ? <details open={open} onToggle={event => setOpen(event.currentTarget.open)}><summary>Detailed overview</summary>{open && detail}</details> : detail}</div>;
+  return <div className="workspace-report-details pt-insights"><ExpandedReport data={data} request={request} onChange={onChange} hidePlayerTable hidePlayerFilters onPrevious={() => {}} onNext={() => {}} playerLink={() => "#workspace-roster"} /></div>;
 }

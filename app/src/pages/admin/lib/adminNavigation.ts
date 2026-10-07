@@ -5,6 +5,7 @@ import type { ExpandedRequest } from "../../insights/lib/expandedQuery";
 
 export const DIRECTORY_TABS = ["players", "staff", "teams", "settings"] as const;
 export type DirectoryTab = typeof DIRECTORY_TABS[number];
+export type DirectoryLevel = "organizations" | "teams" | "people";
 export type PlayerPanel = "results" | "workouts" | "profile" | "ai-incidents";
 export type WorkspaceReportView = "overview" | "testing" | "workouts" | "usage";
 export interface WorkspaceReportState {
@@ -17,6 +18,7 @@ export interface WorkspaceReportState {
 export interface AdminDirectoryState extends WorkspaceReportState {
   orgId?: string; teamId?: string; coachId?: string;
   directoryTab: DirectoryTab; search: string; page: number;
+  directoryLevel?: DirectoryLevel;
   returnTo?: string; preview?: boolean; directoryLookup?: "all" | "unassigned";
 }
 const queryOf = (search: string | URLSearchParams) => typeof search === "string" ? new URLSearchParams(search) : search;
@@ -45,11 +47,15 @@ function reportState(query: URLSearchParams): WorkspaceReportState {
 }
 export function parseAdminDirectoryState(search: string | URLSearchParams): AdminDirectoryState {
   const query = queryOf(search), tab = query.get("directoryTab");
-  return { ...accountContext(query), ...reportState(query), directoryTab: DIRECTORY_TABS.includes(tab as DirectoryTab) ? tab as DirectoryTab : "players",
+  const context = accountContext(query), unassigned = !context.teamId && query.get("directoryLookup") === "unassigned";
+  return { ...context, ...reportState(query), directoryTab: DIRECTORY_TABS.includes(tab as DirectoryTab) ? tab as DirectoryTab : "players",
     search: (query.get("search") || "").slice(0, 120), page: Math.min(1000, Math.max(0, Math.floor(Number(query.get("page")) || 0))),
     ...(validatedAdminReturn(query.get("returnTo")) ? { returnTo: validatedAdminReturn(query.get("returnTo")) } : {}),
     ...(query.get("preview") === "1" ? { preview: true } : {}),
-    ...(["all", "unassigned"].includes(query.get("directoryLookup") || "") ? { directoryLookup: query.get("directoryLookup") as "all" | "unassigned" } : {}) };
+    ...(["organizations", "teams", "people"].includes(query.get("directoryLevel") || "") ? { directoryLevel: query.get("directoryLevel") as DirectoryLevel } : {}),
+    ...(query.get("directoryLookup") === "all" || unassigned ? { directoryLookup: query.get("directoryLookup") as "all" | "unassigned" } : {}),
+    ...(context.orgId && unassigned ? { reportTeamAssignment: "unassigned", directoryLevel: "people" } : {}),
+    ...(context.teamId && query.get("directoryLookup") === "unassigned" && query.get("reportTeamAssignment") === "unassigned" ? { reportTeamAssignment: undefined } : {}) };
 }
 export function directoryQuery(state: Partial<AdminDirectoryState> = {}): URLSearchParams {
   const query = new URLSearchParams(accountQuery(state));
@@ -58,6 +64,7 @@ export function directoryQuery(state: Partial<AdminDirectoryState> = {}): URLSea
   if (state.page && Number.isFinite(state.page)) query.set("page", String(Math.min(1000, Math.max(0, Math.floor(state.page)))));
   if (state.preview) query.set("preview", "1");
   if (state.directoryLookup) query.set("directoryLookup", state.directoryLookup);
+  if (state.directoryLevel) query.set("directoryLevel", state.directoryLevel);
   for (const field of Object.keys(REPORT_FIELDS) as (keyof typeof REPORT_FIELDS)[]) {
     const value = state[field];
     if (value !== undefined && value !== "" && value !== 0) query.set(field, String(value));
@@ -67,6 +74,25 @@ export function directoryQuery(state: Partial<AdminDirectoryState> = {}): URLSea
 }
 const pathQuery = (path: string, query: URLSearchParams) => `${path}${query.size ? `?${query}` : ""}`;
 export function adminDirectoryPath(state: Partial<AdminDirectoryState> = {}): string { return pathQuery("/admin/accounts", directoryQuery(state)); }
+
+/** Organization-only links open their teams; selecting All teams is a deliberate people view. */
+export function directoryLevelOf(state: Partial<AdminDirectoryState>): DirectoryLevel {
+  if (state.teamId || state.directoryLevel === "people" || state.directoryLookup || state.search || state.reportMode === "attention") return "people";
+  return state.orgId ? "teams" : "organizations";
+}
+
+const COHORT_FIELDS = ["reportSearch", "reportCursor", "reportPage", "reportDivision", "reportAgeBand", "reportTestingStatus", "reportWorkoutStatus", "reportUsageStatus", "reportUsagePlatform", "reportUsageFeature", "reportTeamAssignment"] as const;
+export type DirectoryScopePatch = Pick<Partial<AdminDirectoryState>, "orgId" | "teamId" | "coachId" | "directoryLevel" | "directoryLookup">;
+/** A new hierarchy selection keeps the reporting period/view, but starts with its complete roster. */
+export function selectDirectoryScope(state: AdminDirectoryState, patch: DirectoryScopePatch): AdminDirectoryState {
+  const next = { ...state, orgId: patch.orgId ?? state.orgId, teamId: undefined, coachId: undefined,
+    directoryLookup: undefined, directoryLevel: undefined, directoryTab: "players" as const,
+    search: "", page: 1, reportMode: "directory" as const, ...patch };
+  for (const field of COHORT_FIELDS) next[field] = undefined;
+  if (next.teamId || next.directoryLookup) next.directoryLevel = "people";
+  if (next.orgId && next.directoryLookup === "unassigned") next.reportTeamAssignment = "unassigned";
+  return next;
+}
 
 /** Reporting has its own search and zero-based cursor pagination; directory inputs never leak into it. */
 export function workspaceReportSearch(state: Partial<AdminDirectoryState> | string): string {
@@ -81,13 +107,21 @@ export function workspaceReportRequest(state: Partial<AdminDirectoryState> | str
   return expandedRequest(workspaceReportSearch(state), now);
 }
 export function withWorkspaceReport(state: AdminDirectoryState, patch: Partial<ExpandedRequest>): AdminDirectoryState {
-  const next = { ...state };
+  const scopeIntent = "orgId" in patch || "teamId" in patch || "coachId" in patch;
+  const unassigned = scopeIntent && patch.teamAssignment === "unassigned";
+  const next = scopeIntent ? selectDirectoryScope(state, {
+    orgId: "orgId" in patch ? patch.orgId : state.orgId,
+    teamId: patch.teamId, coachId: patch.coachId,
+    directoryLookup: unassigned ? "unassigned" : undefined,
+    directoryLevel: patch.teamId || unassigned ? "people" : patch.orgId ? "teams" : "organizations",
+  }) : { ...state };
   for (const [field, name] of Object.entries(REPORT_FIELDS)) {
     const key = name === "start" ? "startDate" : name === "end" ? "endDate" : name;
     if (!(key in patch)) continue;
     const value = patch[key as keyof ExpandedRequest];
     Object.assign(next, { [field]: value || undefined });
   }
+  if (!scopeIntent && ["division", "ageBand", "testingStatus", "workoutStatus", "usageStatus", "usagePlatform", "usageFeature", "teamAssignment", "rosterSearch"].some(key => key in patch)) next.directoryLevel = "people";
   return next;
 }
 /** Compatible Overview links become the unified workspace without reusing report page/search as directory inputs. */
@@ -98,6 +132,7 @@ export function legacyAdminWorkspacePath(search: string): string {
     else if (legacy.has(field)) query.set(field, legacy.get(field)!);
   }
   if (legacy.get("preview") === "1") query.set("preview", "1");
+  if (["organizations", "teams", "people"].includes(legacy.get("directoryLevel") || "")) query.set("directoryLevel", legacy.get("directoryLevel")!);
   if (legacy.get("reportMode") === "attention" || Number(legacy.get("page")) > 0 || ["rosterSearch", "cursor", "division", "ageBand", "testingStatus", "workoutStatus", "usageStatus", "usagePlatform", "usageFeature", "teamAssignment"].some(key => legacy.get(key))) query.set("reportMode", "attention");
   return adminDirectoryPath(parseAdminDirectoryState(query));
 }
@@ -179,8 +214,8 @@ export function adminToolPath(destination: string, currentPath: string, search: 
     }
     const state = parseAdminDirectoryState(directorySearch);
     const changedScope = state.orgId !== context.orgId || state.teamId !== context.teamId;
-    return adminDirectoryPath({ ...state, orgId: context.orgId, teamId: context.teamId, coachId: context.coachId,
-      ...(changedScope ? { page: 0, reportPage: undefined, reportCursor: undefined } : {}), ...(new URLSearchParams(search).get("preview") === "1" ? { preview: true } : {}) });
+    const selected = changedScope ? selectDirectoryScope(state, context) : { ...state, ...context };
+    return adminDirectoryPath({ ...selected, ...(new URLSearchParams(search).get("preview") === "1" ? { preview: true } : {}) });
   }
   const allowed = key === "devices" ? PHONE_PARAMS : key === "device-facts" ? DEVICE_FACT_PARAMS : key === "programs" ? ["orgId", "teamId", "coachId"] : key === "ai-incidents" ? ["q", "incident"] : [];
   for (const name of allowed) if (source.has(name)) query.set(name, source.get(name)!);

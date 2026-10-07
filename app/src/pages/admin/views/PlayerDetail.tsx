@@ -43,6 +43,7 @@ import { parseWorkoutFocus, workoutFocusQuery } from "../lib/workoutNotification
 import AdminResults from "./AdminResults";
 import PlayerAiIncidents from "./PlayerAiIncidents";
 import PlayerSummary from "./PlayerSummary";
+import { PlayerHierarchyBreadcrumbs } from "./AdminBreadcrumbs";
 import { PlayerWorkoutHistoryContent } from "./PlayerWorkoutHistory";
 import "../player-detail.scss";
 
@@ -85,6 +86,7 @@ export function PlayerDetailContent({ player, panel, onProfileSaved, children, s
   if (player.organizationId) plannerQuery.set('orgId', player.organizationId); else plannerQuery.delete('orgId');
   if (player.teamId) plannerQuery.set('teamId', player.teamId); else plannerQuery.delete('teamId');
   return <>
+      <PlayerHierarchyBreadcrumbs player={player} />
       <section className="admin-heading">
         <Link className="icon-button" state={ADMIN_RETURN_STATE} to={adminPlayerReturn(location.search)} aria-label="Back to people and organizations">
           <span className="material-symbols-outlined">arrow_back</span>

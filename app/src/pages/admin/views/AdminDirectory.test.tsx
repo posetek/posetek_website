@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 vi.mock("../../../lib/firebase", () => ({ default: {}, auth: {}, db: {} }));
 vi.mock("../../../lib/organization-data", () => ({ getClubContext: vi.fn(), clubCall: vi.fn(), invalidateClubContext: vi.fn() }));
-import MonitorAccounts, { DirectoryPlayersTable, DirectoryTabs } from "./MonitorAccounts";
+import MonitorAccounts, { DirectoryPlayersTable, DirectoryTabs, PlayerReporting } from "./MonitorAccounts";
 import type { PlayerRow } from "../lib/accounts";
 import type { AdminDirectoryState } from "../lib/adminNavigation";
 const state: AdminDirectoryState = { orgId: "club", teamId: "team", directoryTab: "players", search: "Example", page: 1 };
@@ -13,8 +13,11 @@ describe("admin directory presentation", () => {
   it("renders the workspace and tabs before organizations or unrelated accounts finish loading", () => {
     const html = renderToStaticMarkup(<MemoryRouter><MonitorAccounts /></MemoryRouter>);
     expect(html).toContain("People &amp; organizations"); expect(html).toContain("Loading organizations…");
-    for (const label of ["Players", "Staff", "Teams", "Organization settings"]) expect(html).toContain(label);
+    for (const label of ["Players", "Staff", "Manage teams", "Organization settings"]) expect(html).toContain(label);
     expect(html).not.toContain("Loading accounts…");
+    expect(html).not.toContain('type="search"');
+    expect(html).not.toContain("Jump to people");
+    expect(html).not.toContain("directory-player-table");
   });
   it("has one selected keyboard tab and associates each tab with its panel", () => {
     const html = renderToStaticMarkup(<DirectoryTabs active="staff" onChange={() => {}} />);
@@ -31,5 +34,10 @@ describe("admin directory presentation", () => {
     const players = Array.from({ length: 45 }, (_, index) => ({ ...player, id: `p${index}`, name: `Player ${index}` }));
     const html = renderToStaticMarkup(<MemoryRouter><DirectoryPlayersTable players={players} state={{ ...state, search: "", page: 2 }} choose={() => {}} /></MemoryRouter>);
     expect(html).toContain("Player 20"); expect(html).toContain("Player 39"); expect(html).not.toContain("Player 40"); expect(html).not.toContain("Player 19"); expect(html).toContain("Page 2 of 3");
+  });
+  it("retains the known unassigned identity count while an attention queue loads", () => {
+    const html = renderToStaticMarkup(<MemoryRouter><PlayerReporting state={{ ...state, teamId: undefined, directoryLookup: "unassigned", reportTeamAssignment: "unassigned", reportMode: "attention" }} choose={() => {}} scope={{ kind: "organization", organizationId: "club" }} accountCount={2} scopeLabel="Unassigned / unavailable team · Club" accountRows={[]} enabled showPeople toolbar={null} /></MemoryRouter>);
+    expect(html).toContain('class="workspace-scope-accounts"><strong>2</strong> player accounts');
+    expect(html).toContain("Unassigned / unavailable team · Club");
   });
 });
