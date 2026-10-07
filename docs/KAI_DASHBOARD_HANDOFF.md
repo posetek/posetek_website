@@ -11,6 +11,10 @@ package now includes its required overview module and validates dependency closu
 Read [the readiness handoff](COACH_RELEASE_READINESS.md) for definitions, measured
 validation, preserved boundaries and backend-before-website rollout gates.
 Production remains the confirmed admin hierarchy release `6ac5ac30bb13dae95443c2b4`.
+The October 6 parity warning below was a receipt reference to the canonical
+mobile gateway document, not a website copy. October 7 review confirms only
+additive, gated voice documentation changed; benchmark/runtime hashes are intact.
+The narrowly reviewed parity receipt is current and its eleven-source check passes.
 
 
 ## October 6 local Overview presentation decision

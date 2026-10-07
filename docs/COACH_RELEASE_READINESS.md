@@ -108,9 +108,16 @@ optional private-history skips. The failure is in
 `legacy-upload-processor/repair-guard.test.cjs:164`: unchanged legacy upload routing
 also fails alone, with both source and test identical to baseline `571bdbd`.
 That processor is outside this nine-function publication. It is not represented
-as a passing check or included in the release scope. Standalone mobile parity
-matches the benchmark and runtime sources, but the pre-existing
-`docs/LLM_GATEWAY_CONTRACT.md` discrepancy remains under explicit contract review.
+as a passing check or included in the release scope.
+
+The standalone parity review is closed against canonical mobile `a2928a0`.
+All ten other source hashes and the web benchmark remain identical. The gateway
+contract document adds 310 voice-only lines: three changelog rows and section 17.
+Existing sections 1–16 are unchanged. Web/Insights source does not send the new
+voice route or voice-context fields; default-disabled gateway-first native voice
+gates remain intact. Only the reviewed document hash, mobile commit and review
+date in `mobile-parity.json` are updated following that semantic review. The
+eleven-source parity check now passes; this approves no native/voice release.
 
 Read-only preparation captured all 124 regional functions and the exact source,
 configuration and IAM of the nine scoped functions. Fifteen immutable source
