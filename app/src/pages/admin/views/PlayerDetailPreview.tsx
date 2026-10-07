@@ -6,6 +6,9 @@ import { PlayerAiIncidentsCard } from './PlayerAiIncidents';
 import { playerDetailPanel } from '../lib/playerDetailData';
 import { playerRow } from '../lib/accounts';
 import { DRILLS } from '../../athlete-portal/lib/drills';
+import { PlayerSummaryContent } from './PlayerSummary';
+import { previewInsights } from '../../insights/lib/preview';
+import { workspaceReportRequest } from '../lib/adminNavigation';
 
 export default function PlayerDetailPreview() {
   const { playerId = 'preview-player', drillKey = '' } = useParams();
@@ -16,12 +19,15 @@ export default function PlayerDetailPreview() {
     age: 16, ageRecordedAt: new Date(), position: 'CM', registered: true });
   const panel = playerDetailPanel(query, /\/results(?:\/|$)/.test(location.pathname));
   const results = { athlete: { ...player.raw, id: player.id }, reps: Object.fromEntries(DRILLS.map(drill => [drill.key, []])) };
+  const report = previewInsights(workspaceReportRequest(location.search));
+  const metric = report.players[1] || report.players[0];
   return <section className="admin-player-workspace">
     <p className="admin-note">Synthetic preview. Profile saves and service requests are disabled.</p>
-    <PlayerDetailContent player={player} panel={panel} onProfileSaved={async () => {}}>
+    <PlayerDetailContent player={player} panel={panel} onProfileSaved={async () => {}}
+      summary={<PlayerSummaryContent data={report} metric={metric} status={metric ? 'ready' : 'excluded'} />}>
       {panel === 'results' && <AdminResultsContent playerId={player.id} results={results} drillKey={drillKey} search={location.search} />}
       {panel === 'profile' && <PlayerProfileContent player={player} data={{ coach: null, note: null }} onSaved={async () => {}} readOnly />}
-      {panel === 'workouts' && <PlayerWorkoutsContent player={player} data={{ plan: null, plans: [], logs: [], adjustments: [], checkedAt: Date.now() }} onRefresh={() => {}} />}
+      {panel === 'workouts' && <PlayerWorkoutsContent player={player} data={{ plan: null, plans: [], logs: [], adjustments: [], checkedAt: report.generatedAtMillis }} onRefresh={() => {}} />}
       {panel === 'ai-incidents' && <PlayerAiIncidentsCard playerId={player.id} load={{ kind: 'ready', incidents: [] }} />}
     </PlayerDetailContent>
   </section>;

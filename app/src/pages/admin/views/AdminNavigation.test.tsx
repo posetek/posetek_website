@@ -9,8 +9,8 @@ describe("admin navigation", () => {
   it("combines the directory while retaining Device performance, User issues and the account menu", () => {
     const html = renderToStaticMarkup(<MemoryRouter><AdminHeader ready email="admin@example.test" onSignOut={() => {}} /></MemoryRouter>);
     for (const path of ["accounts", "programs", "analysis", "drills", "ai-incidents", "device-performance", "user-issues", "feedback"]) expect(html).toContain(`href="/admin/${path}"`);
-    expect(html).toContain('href="/admin"');
-    expect((html.match(/class="admin-nav-link/g) ?? []).length).toBe(9);
+    expect(html).not.toContain('href="/admin"');
+    expect((html.match(/class="admin-nav-link/g) ?? []).length).toBe(8);
     expect(html).toContain("People &amp; organizations");
     expect(html).toContain("Device performance");
     expect(html.indexOf("AI incidents")).toBeLessThan(html.indexOf("Device performance"));
@@ -40,7 +40,7 @@ describe("admin navigation", () => {
 
   it("carries organization and team only into tools that support their scope", () => {
     const html = renderToStaticMarkup(<MemoryRouter initialEntries={["/admin/accounts?orgId=club&teamId=team"]}><AdminHeader ready onSignOut={() => {}} /></MemoryRouter>);
-    expect(html).toContain('href="/admin?orgId=club&amp;teamId=team"');
+    expect(html).not.toContain('href="/admin?orgId=club&amp;teamId=team"');
     expect(html).toContain('href="/admin/accounts?orgId=club&amp;teamId=team"');
     expect(html).toContain('href="/admin/analysis"');
     expect(html).toContain('href="/admin/device-performance"');

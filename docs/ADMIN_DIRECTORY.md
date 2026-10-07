@@ -1,6 +1,8 @@
 # Admin directory and reporting
 
-This frontend pass addresses [Admin dashboard: fewer clicks, clear and concise #26](https://github.com/posetek/posetek_website/issues/26). Overview remains the reporting home; **People & organizations** is the account-management home. Both have direct header destinations. Existing green surfaces, lime selections and readable tables are retained.
+The current [metrics and roster workspace](ADMIN_WORKSPACE_METRICS.md) combines reporting and account management in People & organizations. Its [production receipt](../deployment/ADMIN_WORKSPACE_METRICS_PRODUCTION.json) supersedes the separate Overview entry described in this historical introduction. Invitation and management contracts below remain in effect.
+
+Historical introduction: this frontend pass addressed [Admin dashboard: fewer clicks, clear and concise #26](https://github.com/posetek/posetek_website/issues/26). At that release, Overview was the reporting home and **People & organizations** was the account-management home. Both had direct header destinations. Existing green surfaces, lime selections and readable tables are retained.
 
 ## Directory
 
@@ -20,7 +22,7 @@ Prescribe workouts is in the player header and carries the current player's ID a
 
 `adminNavigation.ts` owns typed directory query state, player panels, planner handoffs and validated local return destinations. Directory scope, search and pagination survive refresh and history. Reporting return links retain reporting dates, filters, search and opaque cursors; those fields are never interpreted as directory pagination or phone filters. Phone, team-event and advanced-device tools keep separate query namespaces. AI incidents retains its own `q`/`incident` meaning and does not claim organization filtering. Technique review links explicitly identify a general review rather than an unsupported exact queue.
 
-Directory and player tabs use manual keyboard activation: Arrow keys/Home/End move focus; Enter/Space opens the panel. Existing reporting tabs retain immediate Arrow/Home/End activation between already-loaded views. Explicit return links and browser history restore saved viewport and row focus. Only URL/viewport/focus state is stored in browser session storage, scoped to the signed-in identity; account changes discard retained destinations and private results. Authorization still comes from the existing verified, nonanonymous PoseTek-admin guard and canonical services.
+Directory and player tabs use manual keyboard activation: Arrow keys/Home/End move focus; Enter/Space opens the panel. Within the current Players workspace, reporting tabs also use manual activation and reuse loaded data. Other existing Insights tabs retain their established keyboard behavior. Explicit return links and browser history restore saved viewport and row focus. Only URL/viewport/focus state is stored in browser session storage, scoped to the signed-in identity; account changes discard retained destinations and private results. Authorization still comes from the existing verified, nonanonymous PoseTek-admin guard and canonical services.
 
 Identical concurrent organization-context calls share one in-flight request. Responses are not cached after settlement. Identity changes, denied access and explicit mutation invalidation discard pending results; successful management mutations also refresh header choices.
 

@@ -20,6 +20,11 @@ describe("admin account breadcrumbs", () => {
     expect(renderToStaticMarkup(<MemoryRouter initialEntries={["/admin/drills"]}><AdminBreadcrumbs /></MemoryRouter>)).toBe("");
     expect(renderToStaticMarkup(<MemoryRouter initialEntries={["/admin/device-performance?drill=jump"]}><AdminBreadcrumbs /></MemoryRouter>)).toBe("");
   });
+  it("names the unified workspace even for a compatible legacy report return", () => {
+    const html = renderToStaticMarkup(<MemoryRouter initialEntries={["/admin/accounts/player/player-1?returnTo=" + encodeURIComponent("/admin?view=workouts&start=2026-09-01")]}><AdminBreadcrumbs /></MemoryRouter>);
+    expect(html).toContain("People &amp; organizations"); expect(html).not.toContain(">Overview<");
+    expect(html).toContain('href="/admin?view=workouts&amp;start=2026-09-01"');
+  });
 });
 
 describe("device performance breadcrumbs", () => {
