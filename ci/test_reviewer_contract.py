@@ -1,6 +1,5 @@
 """Synthetic report checks; they never execute model content or publish findings."""
 
-from copy import deepcopy
 import unittest
 
 from reviewer_contract import validate_report
@@ -63,6 +62,10 @@ class ReviewerContractTests(unittest.TestCase):
 
     def test_malformed_or_oversized_model_output_fails_without_execution(self):
         for value in (None, [], {"status": ["complete"]}):
+            self.assertTrue(check(value))
+        for status in (["complete"], {"status": "complete"}, None, True):
+            value = report()
+            value["status"] = status
             self.assertTrue(check(value))
         value = report()
         value["findings"] = value["findings"] * 51

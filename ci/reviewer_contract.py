@@ -47,7 +47,7 @@ def validate_report(report, *, revisions, inspected_lines, scope_complete):
     findings = report.get("findings")
     if not isinstance(findings, list) or len(findings) > 50:
         return errors + ["findings: expected list of at most 50 findings"]
-    if status in {"unavailable", "not-run"} and findings:
+    if status in ("unavailable", "not-run") and findings:
         errors.append("unavailable or not-run outcomes cannot contain findings")
     for index, finding in enumerate(findings):
         prefix = f"findings[{index}]"
