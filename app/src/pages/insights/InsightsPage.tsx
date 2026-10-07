@@ -6,6 +6,7 @@ import { adminPlayerLinkFromReport } from "../admin/lib/adminNavigation";
 import { completeReport } from "./lib/completeReport";
 import { loadAuthorizedReport } from "./lib/loadReport";
 import ExpandedReport from "./ExpandedReport";
+import AdminInsightsLayout from "./AdminInsightsLayout";
 import CoachRoster from "./CoachRoster";
 import CoachOverviewSnapshot from "./CoachOverviewSnapshot";
 import PlayerFilters from "./PlayerFilters";
@@ -182,7 +183,7 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
       } catch (failure) {
         if (!isCurrent()) return;
         const code = String((failure as { code?: string })?.code || "").split("/").at(-1);
-        if (["unauthenticated", "permission-denied", "not-found"].includes(code || "")) { setChoices(null); setScope(null); setContext(null); }
+        if (["unauthenticated", "permission-denied", "not-found"].includes(code || "")) { setChoices(null); setScope(null); setContext(null); setRole(null); }
         setResponse(null); setError(expandedFailureMessage(failure));
       } finally { if (isCurrent()) setLoading(false); }
     })();
@@ -261,9 +262,13 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
     </div>}
   </>;
   if (embedded) return <div className="pt-insights admin-insights">{content}</div>;
+  if (role === "admin") return <AdminInsightsLayout uid={uid} email={auth.currentUser?.email || undefined} onSignOut={() => {
+    guard.cancel(); setResponse(null); setContext(null); setScope(null);
+    void auth.signOut().catch(() => setError("Sign out failed. Try again."));
+  }}>{content}</AdminInsightsLayout>;
   const back = insightsReturnLink(role || undefined, { orgId: request.orgId, teamId: request.teamId, coachId: request.coachId }, request.from);
   return <div className="pt-pose portal-body pt-insights">
-    <header className="portal-header"><Link className="portal-brand" to={coach ? `/insights?${expandedQuery(request, { view: "overview" })}` : back}><span className="portal-brand-mark">P</span>POSETEK</Link>{!coach && role && <Link className="quiet-button" to={back}>{role === "admin" ? "Accounts" : "Organization"}</Link>}<button className="quiet-button" onClick={() => { guard.cancel(); setResponse(null); setContext(null); setScope(null); void auth.signOut().catch(() => setError("Sign out failed. Try again.")); }}>Sign out</button></header>
+    <header className="portal-header"><Link className="portal-brand" to={coach ? `/insights?${expandedQuery(request, { view: "overview" })}` : back}><span className="portal-brand-mark">P</span>POSETEK</Link>{!coach && role && <Link className="quiet-button" to={back}>Organization</Link>}<button className="quiet-button" onClick={() => { guard.cancel(); setResponse(null); setContext(null); setScope(null); void auth.signOut().catch(() => setError("Sign out failed. Try again.")); }}>Sign out</button></header>
     <main className="insights-shell">{content}</main>
   </div>;
 }

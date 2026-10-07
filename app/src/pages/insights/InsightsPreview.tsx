@@ -15,6 +15,7 @@ import { expandedRequest, overviewReset } from "./lib/expandedQuery";
 import type { ExpandedRequest } from "./lib/expandedQuery";
 import { previewInsights } from "./lib/preview";
 import type { InsightAccess } from "./lib/expanded";
+import AdminInsightsLayout from "./AdminInsightsLayout";
 import { adminPlayerLinkFromReport } from "../admin/lib/adminNavigation";
 
 export default function InsightsPreview({ embedded = false }: { embedded?: boolean }) {
@@ -53,5 +54,6 @@ export default function InsightsPreview({ embedded = false }: { embedded?: boole
       : <ExpandedReport data={data} request={request} adminOverview={embedded && role === "admin"} onChange={change} page={page} onPrevious={() => change({ page: page - 1 })} onNext={() => change({ page: page + 1 })} playerLink={player => embedded ? adminPlayerLinkFromReport(player.id, "results", location.search, { orgId: player.organizationId, teamId: player.teamId || undefined }) : `/insights?preview=1&view=player&playerId=${player.id}`} playerActionLink={embedded ? (player, tab) => adminPlayerLinkFromReport(player.id, tab, location.search, { orgId: player.organizationId, teamId: player.teamId || undefined }) : undefined} />}</div>}
   </>;
   if (embedded) return <div className="pt-insights admin-insights">{content}</div>;
+  if (role === "admin") return <AdminInsightsLayout uid="preview-admin" email="admin@posetek.test" preview onSignOut={() => {}}>{content}</AdminInsightsLayout>;
   return <div className="pt-pose portal-body pt-insights"><header className="portal-header"><span className="portal-brand"><span className="portal-brand-mark">P</span>POSETEK</span><span className="insights-note">Synthetic preview · no live data</span></header><main className="insights-shell">{content}</main></div>;
 }

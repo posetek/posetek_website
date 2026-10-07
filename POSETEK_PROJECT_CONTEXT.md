@@ -1,5 +1,18 @@
 # PoseTek website project context
 
+## Admin logo-level menu candidate (2026-10-06)
+
+The header now groups its existing destinations into Overview, Coaching hub, and
+System & User Insights beside the logo. Overview opens the existing Insights
+page; Coaching hub offers People & organizations alongside
+Planner, Technique review and Drill library. System & User Insights contains AI
+incidents, Device performance, User issues and App feedback. Existing routes and
+remembered scope/return behavior are retained. Insights shows this header only
+for admins; header scope selectors are removed and dropdowns use reduced-motion-
+aware opening animations. This is a source-only change;
+production and the protected baseline are unchanged. See
+[the menu handoff](docs/ADMIN_SECTION_MENU.md).
+
 <!-- admin-hierarchy-current:start -->
 ## Admin hierarchy and complete reporting production release (2026-10-06)
 

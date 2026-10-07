@@ -4,12 +4,13 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("../../../lib/organization-data", () => ({ getClubContext: vi.fn(), subscribeClubContextInvalidation: vi.fn() }));
 import AdminHeader from "./AdminHeader";
 describe("single admin workspace header", () => {
-  it("has one People & organizations destination and no separate Overview destination", () => {
+  it("has one People & organizations destination and an Overview entry to Insights", () => {
     const html = renderToStaticMarkup(<MemoryRouter initialEntries={["/admin/accounts?orgId=club&reportView=usage"]}>
       <AdminHeader ready uid="fixture-admin" email="fixture@posetek.test" onSignOut={() => {}} />
     </MemoryRouter>);
     expect(html).toContain('aria-label="PoseTek people and organizations"');
-    expect(html).toContain("People &amp; organizations"); expect(html).not.toContain(">Overview<");
+    expect(html).toMatch(/href="\/insights\?from=organization&amp;view=overview"[^>]*>Overview<\/a>/);
+    expect(html).toContain("People &amp; organizations"); expect(html).toContain(">Overview<");
     expect(html).toContain('href="/admin/accounts?orgId=club&amp;reportView=usage"');
     expect(html).not.toContain('Admin organization scope');
   });

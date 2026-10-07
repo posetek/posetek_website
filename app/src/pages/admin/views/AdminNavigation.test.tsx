@@ -10,7 +10,7 @@ describe("admin navigation", () => {
     const html = renderToStaticMarkup(<MemoryRouter><AdminHeader ready email="admin@example.test" onSignOut={() => {}} /></MemoryRouter>);
     for (const path of ["accounts", "programs", "analysis", "drills", "ai-incidents", "device-performance", "user-issues", "feedback"]) expect(html).toContain(`href="/admin/${path}"`);
     expect(html).not.toContain('href="/admin"');
-    expect((html.match(/class="admin-nav-link/g) ?? []).length).toBe(8);
+    expect((html.match(/class="admin-section-link/g) ?? []).length).toBe(8);
     expect(html).toContain("People &amp; organizations");
     expect(html).toContain("Device performance");
     expect(html.indexOf("AI incidents")).toBeLessThan(html.indexOf("Device performance"));
@@ -19,14 +19,16 @@ describe("admin navigation", () => {
     expect(html).toContain('href="/admin/access"');
     expect(html).toContain("Account access");
     expect(html).toContain("Technique review");
-    expect(html).not.toContain('href="/insights');
-    expect(html).not.toContain("admin-nav-short");
+    expect(html).toMatch(/href="\/insights\?from=organization&amp;view=overview"[^>]*>Overview<\/a>/);
+    expect(html).toContain("Coaching hub");
+    expect(html).toContain("System &amp; User Insights");
+    expect(html).toContain(">Overview<");
   });
 
   it("marks Device performance active on its fleet and device routes", () => {
     for (const route of ["/admin/device-performance", "/admin/device-performance/0d5c9a1e-2b3f-4c6d-8e7f-a0b1c2d3e4f5"]) {
       const html = renderToStaticMarkup(<MemoryRouter initialEntries={[route]}><AdminHeader ready onSignOut={() => {}} /></MemoryRouter>);
-      expect(html, route).toMatch(/class="admin-nav-link active"[^>]*href="\/admin\/device-performance"/);
+      expect(html, route).toMatch(/class="admin-section-link active"[^>]*href="\/admin\/device-performance"/);
     }
   });
 
@@ -53,11 +55,11 @@ describe("admin navigation", () => {
     expect(html).not.toContain('aria-label="Admin organization scope"');
   });
 
-  it("labels the shared scope switcher and the account menu for assistive technology", () => {
+  it("omits header scope selectors while retaining the accessible account menu", () => {
     const html = renderToStaticMarkup(<MemoryRouter><AdminHeader ready preview email="admin@posetek.test" onSignOut={() => {}} /></MemoryRouter>);
-    expect(html).toContain('aria-label="Current scope: All organizations"');
-    expect(html).toContain('aria-label="Admin organization scope"');
-    expect(html).toContain('aria-label="Admin team scope"');
+    expect(html).not.toContain('aria-label="Current scope: All organizations"');
+    expect(html).not.toContain('aria-label="Admin organization scope"');
+    expect(html).not.toContain('aria-label="Admin team scope"');
     expect(html).toContain('aria-label="Admin account menu"');
   });
 });
