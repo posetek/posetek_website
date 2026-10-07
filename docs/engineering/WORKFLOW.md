@@ -129,7 +129,7 @@ critical synthetic journeys, and record the last successful deployment.
 Preserve existing canonical publishers until replacements are approved:
 
 - Website: reviewed `production-dist` from the guarded builders, Netlify draft
-  acceptance and promotion of the same artifact; preserve baseline reconciliation.
+  acceptance, promotion of that exact artifact, and baseline reconciliation.
 - Gateway: `Services/agent-gateway/scripts/release.sh` from pushed main; exact image
   tests, no-traffic candidate, verification, then explicit traffic shift.
 - Rules: mobile `firebase/operations.py publish`, exact-byte test receipt,
