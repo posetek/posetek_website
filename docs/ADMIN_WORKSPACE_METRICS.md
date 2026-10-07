@@ -1,6 +1,6 @@
 # Admin roster and reporting workspace
 
-This follow-up connects the approved People & organizations directory to the existing Insights metrics. It starts from main `eb67366` and website `6ac5905069994ecfbad5e391`; those are predecessor records, not a receipt for this implementation. Confirmed publication will be recorded separately after backend, candidate and production verification.
+This follow-up connects People & organizations to the existing Insights metrics. Website `6ac5a02e62dff64d89f511e0`, source `5907d44`, was published October 6, 2026 at 6:38:19 PM PDT from the exact reviewed candidate. It follows main `eb67366` and website `6ac5905069994ecfbad5e391`. See [the confirmed receipt](../deployment/ADMIN_WORKSPACE_METRICS_PRODUCTION.json) and [PR #34](https://github.com/posetek/posetek_website/pull/34).
 
 ## Experience
 
@@ -33,3 +33,11 @@ Typed navigation retains directory scope/search/page independently from reportin
 Verify canonical metric parity, partial/empty records, reporting exclusions, lookup bounds, denial and transfer races, legacy compatibility, invitation copying, request counts and keyboard/history/refresh recovery. Review 360/390/430px and desktop. Use owned synthetic accounts for live acceptance; no real athlete results, plans, access or invitation codes are modified.
 
 The reporting change follows the prescribed nine-function Expanded Insights preparation, source/configuration/IAM verification and acceptance workflow. Reconcile live source first and preserve unrelated behavior and its release gates. The deliberate Astro candidate preserves current marketing, feedback, icons, Kai's coach workspace and all protected assets. Promote only the exact verified candidate, verify production, remove all synthetic data and credentials, reconcile the preservation baseline and merge confirmed records into GitHub main. No rules, indexes, gateway, native or catalog publication belongs to this pass.
+
+## Confirmed acceptance
+
+All 1,803 frontend tests, 964 backend tests (three existing private-history skips), 19 backend preparation tests, 289 canonical rules assertions and 54 release guard checks passed. TypeScript, scoped lint and guarded Astro checks passed. Isolated synthetic UI review covered 56 workspace checks and six player-summary/navigation groups at 360/390/430/1440px with no page errors; 32 workspace screenshots covered four views at all widths. Selecting an organization combines summary and 20 visible metrics in one report call; switching report views adds zero calls. These are fixture measurements, not production latency claims.
+
+The exact candidate passed 32 live browser checks and production passed 32, with no page or console errors. The scoped nine-function release passed immutable source, trigger/runtime/configuration/IAM and full-region unrelated-function checks. 12 owned live backend checks verified admin parity, excluded minimal responses, filters/pagination independence and staff/ownership denials. Synthetic membership/team changes were restored before browser review; all three Auth accounts and owned descendants were removed, followed by delayed independent zero-residue readback. No emails, feedback submissions, workout generation or starts were performed.
+
+All 1,785 website artifact files match 1,786 provider records. Among predecessor records only application HTML and generated provider metadata change; 42 runtime assets are added. Feedback/marketing/icon bytes and coach defaults are preserved. The reconciled 1,783-file baseline passed the ordinary preservation build. Populated histories, transfer races and unavailable/legacy paths use controlled tests; live fixtures do not modify real athlete evidence.
