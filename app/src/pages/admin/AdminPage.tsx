@@ -21,7 +21,7 @@ import "./admin-surfaces.scss";
 import "../../styles/admin-theme.scss";
 import "./admin-dashboard.scss";
 import AdminHeader from "./views/AdminHeader";
-import AdminBreadcrumbs from "./views/AdminBreadcrumbs";
+import AdminBreadcrumbs, { isPlayerDetailRoute } from "./views/AdminBreadcrumbs";
 
 const DrillLibrary = lazy(() => import("./views/DrillLibrary"));
 const DrillDetail = lazy(() => import("./views/DrillDetail"));
@@ -163,7 +163,7 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
     <div className={`pt-pose portal-body pt-admin${session.kind === "ready" ? " admin-ready" : ""}`}>
       <AdminHeader key={uid} ready={session.kind === "ready"} preview={preview} uid={uid}
         email={session.kind === "ready" ? session.identity.email : undefined} onSignOut={() => void signOut()} />
-      <main className="admin-shell">{session.kind === "ready" && <AdminBreadcrumbs />}{body}</main>
+      <main className="admin-shell">{session.kind === "ready" && !isPlayerDetailRoute(location.pathname) && <AdminBreadcrumbs />}{body}</main>
     </div>
   );
 }

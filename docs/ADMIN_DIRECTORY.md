@@ -1,6 +1,10 @@
 # Admin directory and reporting
 
-The current [metrics and roster workspace](ADMIN_WORKSPACE_METRICS.md) combines reporting and account management in People & organizations. Its [production receipt](../deployment/ADMIN_WORKSPACE_METRICS_PRODUCTION.json) supersedes the separate Overview entry described in this historical introduction. Invitation and management contracts below remain in effect.
+<!-- admin-hierarchy-current:start -->
+The current [organization/team hierarchy and complete reporting workspace](ADMIN_HIERARCHY_REPORTING.md) is recorded in [its production receipt](../deployment/ADMIN_HIERARCHY_REPORTING_PRODUCTION.json). Organization selection now opens graphs and a team directory; people require a team, explicit All teams/Unassigned destination or supported review/lookup action. The experience below records the earlier release. Its metric, invitation and management contracts remain in force.
+<!-- admin-hierarchy-current:end -->
+
+The preceding [metrics and roster workspace](ADMIN_WORKSPACE_METRICS.md) combines reporting and account management in People & organizations. Its [production receipt](../deployment/ADMIN_WORKSPACE_METRICS_PRODUCTION.json) supersedes the separate Overview entry described in this historical introduction. Invitation and management contracts below remain in effect.
 
 Historical introduction: this frontend pass addressed [Admin dashboard: fewer clicks, clear and concise #26](https://github.com/posetek/posetek_website/issues/26). At that release, Overview was the reporting home and **People & organizations** was the account-management home. Both had direct header destinations. Existing green surfaces, lime selections and readable tables are retained.
 

@@ -1,0 +1,463 @@
+{
+  "scope": "admin_hierarchy_and_complete_reporting",
+  "frontendOnly": true,
+  "task": "https://github.com/posetek/posetek_website/issues/26",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/36",
+  "pullRequestNumber": 36,
+  "production": {
+    "deploymentId": "6ac5ac30bb13dae95443c2b4",
+    "previousDeploymentId": "6ac5a02e62dff64d89f511e0",
+    "sourceCommit": "3f03565b4929522d7ed48448253eacae0a3b3828",
+    "url": "https://posetek.net",
+    "publishedAtUtc": "2026-10-07T02:24:56.131Z",
+    "publishedAtPacific": "October 6, 2026 at 7:24:56 PM PDT",
+    "verifiedAtUtc": "2026-10-07T02:25:03.088Z",
+    "artifactFiles": 1810,
+    "providerInventoryFiles": 1811,
+    "fullInventoryVerified": true,
+    "exactReviewedCandidatePromoted": true,
+    "candidateVerifiedAtUtc": "2026-10-07T02:19:58.84Z",
+    "artifactManifestSha256": "e3d45de57123718245d344b39e271b25f14aea0babced6fb788592f880688a22",
+    "productionInventorySha256": "dc78525406c0a1bf827941d1feb07ebf89f87fa4c555ef6c419fcdece80c9388"
+  },
+  "source": {
+    "implementationBase": "cf6674a71060bd26ea2dbddc2ca8a68b7a335295",
+    "branch": "codex/admin-hierarchy-reporting",
+    "teammateCommitsPreserved": true,
+    "gitPublicationPolicy": "[skip netlify] source, release and merge commits; deliberate promotion of the exact guarded application candidate",
+    "unpublishedTeammateSource": {
+      "blockers": [
+        "Prescribed backend bundle must include insights-overview.js.",
+        "Additive summary contract and absent-data presentation need candidate/live acceptance against the separately released backend."
+      ],
+      "commit": "11cff549ec959487a9b3ff831976bc7be12af6a5",
+      "releaseHeld": true,
+      "published": false,
+      "preservedInGit": true,
+      "mergedAfterAdminPromotion": true,
+      "otherCandidateGatesPreserved": true,
+      "base": "cf6674a71060bd26ea2dbddc2ca8a68b7a335295",
+      "pullRequest": "https://github.com/posetek/posetek_website/pull/35",
+      "backendDeployed": false
+    }
+  },
+  "reconciliation": {
+    "actualPredecessor": "6ac5a02e62dff64d89f511e0",
+    "providerRecords": 1786,
+    "protectedFiles": 1783,
+    "allProtectedOriginalsVerified": true,
+    "originalMarketingVerified": true
+  },
+  "experience": {
+    "workspace": "/admin/accounts",
+    "hierarchy": [
+      "Organizations",
+      "Organization reporting and teams",
+      "Team reporting and people",
+      "Player evidence"
+    ],
+    "organizationSelectionDoesNotShowPeople": true,
+    "explicitPeopleDestinations": [
+      "Team",
+      "All teams",
+      "Unassigned / unavailable team",
+      "Bounded global lookup",
+      "Supported reporting queue"
+    ],
+    "directoryTabs": [
+      "Players",
+      "Staff",
+      "Manage teams",
+      "Organization settings"
+    ],
+    "reportingViews": [
+      "Overview",
+      "Testing",
+      "Workouts",
+      "Usage"
+    ],
+    "reportingAbovePeople": true,
+    "fullReportingCardsGraphsExplanationsAndTablesVisible": true,
+    "responsiveNativeDisclosureNavigator": true,
+    "inPageKeyboardScrollAndFocusWithoutHistoryChanges": true,
+    "invalidTeamsDoNotBroadenScope": true,
+    "staffOrganizationWideWithAssignments": true,
+    "signupCodeAndLinkActionsPreserved": true,
+    "explicitSavesAndEmailFreeActivationPreserved": true,
+    "playerCurrentOwnershipAndExplicitReturnsPreserved": true,
+    "rosterPageSize": 20,
+    "globalLookup": {
+      "indexLimit": 500,
+      "displayLimit": 40
+    },
+    "metricDefinitionsAndMissingDataSemanticsUnchanged": true
+  },
+  "measurements": {
+    "method": "Controlled synthetic composed UI. No production latency claim.",
+    "requestAssertions": {
+      "landingPlayerIndexReads": 0,
+      "landingRosterMetricsLookups": 0,
+      "invalidTeamReportingCalls": 0,
+      "externalLiveDataRequests": 0
+    },
+    "graphBeforeSingleRoster": true,
+    "hierarchyAndGraphActionsUseExistingAuthorizedReaders": true
+  },
+  "backendPreservation": {
+    "checkedAt": "2026-10-07T02:01:54.289Z",
+    "readOnly": true,
+    "priorWebsite": "6ac5a02e62dff64d89f511e0",
+    "priorSource": "5907d442289b1fda071ffd0f512ae98f68f9b729",
+    "functions": {
+      "getClubInsightsV2": {
+        "versionId": "6",
+        "status": "ACTIVE",
+        "sourceSha256": "3b2108be62c0a1c00ee6499f5afbb3197661ed3d800397aafa8fa6fd25998c9f",
+        "definitionUnchanged": true,
+        "iamUnchanged": true,
+        "priorIamSha256": "c0628979974b95221d9f75067946607266ef54393c11b476037744fc50f1bb6e"
+      },
+      "getCoachPlayerComparison": {
+        "versionId": "3",
+        "status": "ACTIVE",
+        "sourceSha256": "3b2108be62c0a1c00ee6499f5afbb3197661ed3d800397aafa8fa6fd25998c9f",
+        "definitionUnchanged": true,
+        "iamUnchanged": true,
+        "priorIamSha256": "a6b0c301a8aa2e2ae6f52311750f1674f642188ab8d62a66c109f8d5e8af5a7d"
+      },
+      "recordInsightUsage": {
+        "versionId": "5",
+        "status": "ACTIVE",
+        "sourceSha256": "3b2108be62c0a1c00ee6499f5afbb3197661ed3d800397aafa8fa6fd25998c9f",
+        "definitionUnchanged": true,
+        "iamUnchanged": true,
+        "priorIamSha256": "328f2c2c79c8bc205a61fa521a4da75c05896f467044662bc897a5182956ca91"
+      },
+      "projectInsightPlayer": {
+        "versionId": "6",
+        "status": "ACTIVE",
+        "sourceSha256": "3b2108be62c0a1c00ee6499f5afbb3197661ed3d800397aafa8fa6fd25998c9f",
+        "definitionUnchanged": true,
+        "iamUnchanged": true,
+        "priorIamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e"
+      },
+      "projectInsightRecords": {
+        "versionId": "6",
+        "status": "ACTIVE",
+        "sourceSha256": "3b2108be62c0a1c00ee6499f5afbb3197661ed3d800397aafa8fa6fd25998c9f",
+        "definitionUnchanged": true,
+        "iamUnchanged": true,
+        "priorIamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e"
+      },
+      "projectInsightRevisions": {
+        "versionId": "6",
+        "status": "ACTIVE",
+        "sourceSha256": "3b2108be62c0a1c00ee6499f5afbb3197661ed3d800397aafa8fa6fd25998c9f",
+        "definitionUnchanged": true,
+        "iamUnchanged": true,
+        "priorIamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e"
+      },
+      "projectInsightFailures": {
+        "versionId": "6",
+        "status": "ACTIVE",
+        "sourceSha256": "3b2108be62c0a1c00ee6499f5afbb3197661ed3d800397aafa8fa6fd25998c9f",
+        "definitionUnchanged": true,
+        "iamUnchanged": true,
+        "priorIamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e"
+      },
+      "projectInsightArtifacts": {
+        "versionId": "6",
+        "status": "ACTIVE",
+        "sourceSha256": "3b2108be62c0a1c00ee6499f5afbb3197661ed3d800397aafa8fa6fd25998c9f",
+        "definitionUnchanged": true,
+        "iamUnchanged": true,
+        "priorIamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e"
+      },
+      "projectInsightArtifactDeletes": {
+        "versionId": "6",
+        "status": "ACTIVE",
+        "sourceSha256": "3b2108be62c0a1c00ee6499f5afbb3197661ed3d800397aafa8fa6fd25998c9f",
+        "definitionUnchanged": true,
+        "iamUnchanged": true,
+        "priorIamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e"
+      }
+    },
+    "auditedFunctions": 9,
+    "inventoryFunctions": 124,
+    "allUnchanged": true,
+    "credentialsPersisted": false,
+    "auditSha256": "5125de92dd20da0a5fe044803a24a23e755a6d1e3c81b1a1163f9671864504b3",
+    "deployed": false,
+    "note": "Read-only comparison of the nine already-live Insights definitions and IAM against their predecessor release. No backend deployment or new backend-test claim belongs to this frontend pass."
+  },
+  "preservation": {
+    "predecessorFilesUnchanged": 1784,
+    "changedExistingFiles": [
+      "/application.html",
+      "/netlify.toml (generated provider metadata)"
+    ],
+    "newRuntimeAssets": 25,
+    "application": {
+      "path": "/application.html",
+      "sha1": "f62ba995e5e90b1341488aac265a4143da5214df",
+      "size": 15680
+    },
+    "feedbackDocument": {
+      "path": "/feedback.html",
+      "sha1": "039a6cb1c652002dcd7e556359e5fbd1974ce426",
+      "size": 5816
+    },
+    "marketingDocuments": [
+      {
+        "path": "/index.html",
+        "sha": "9e6e486665e3fdd1257c23fe8a69cf8e72e619e4",
+        "size": 37689
+      },
+      {
+        "path": "/coaches/index.html",
+        "sha": "829a6277b98f9f62b39908d1a3a39c230ae0efe1",
+        "size": 26209
+      }
+    ],
+    "marketingServedBytesPreserved": true,
+    "effectiveFeedbackSecurityHeadersPreserved": true,
+    "stablePIconsPreserved": true,
+    "kaiCoachWorkspacePreserved": true,
+    "deviceAndTeamSessionRoutesPreserved": true,
+    "activePlansCoachAssignmentsAndContentHoldsUnchanged": true,
+    "backendRulesIndexesGatewayCatalogAndNativeDeployment": false,
+    "separateNativeDiagnosticsAndReplayAcceptanceGatesUnchanged": true
+  },
+  "validation": {
+    "frontendTests": 1849,
+    "frontendTestFiles": 157,
+    "releaseGuardTests": 55,
+    "canonicalRulesAssertions": 289,
+    "canonicalRulesSuites": {
+      "admin": 73,
+      "insights": 216
+    },
+    "canonicalRulesPublished": false,
+    "typeScriptPassed": true,
+    "scopedLintPassedWithWarnings": true,
+    "guardedAstroBuildPassed": true,
+    "localHttpApplicationRoutes": 25,
+    "localHttpRuntimeAssets": 1638,
+    "localComposedBrowser": {
+      "passed": true,
+      "checks": [
+        "organization landing renders global full graphs without roster or player index reads",
+        "Overview exposes full canonical cards and graphs directly",
+        "organization graph legend changes organization scope and opens its teams",
+        "organization opens full scoped graphs and nested teams without identity roster lookup",
+        "team graph legend opens team-scoped graphs above the one identity roster",
+        "keyboard jump and return scroll to sections and restore focus without changing hierarchy history",
+        "testing graph filter opens the exact team reporting queue without broadening scope",
+        "Testing shows full populated canonical graphs before one identity roster",
+        "Workouts shows full populated canonical graphs before one identity roster",
+        "Usage shows full populated canonical graphs before one identity roster",
+        "Overview shows full populated canonical graphs before one identity roster",
+        "six exercise performance series, testing mode and hierarchy survive refresh",
+        "explicit All teams opens organization identity roster",
+        "Unassigned keeps organization scope and explicit reporting filter",
+        "Back and Forward restore hierarchy plus report filter state",
+        "deleted team emits no reporting request and never broadens to organization metrics",
+        "Staff stays organization-wide without player graphs",
+        "Manage teams remains separate from team graph navigation",
+        "mobile Browse starts collapsed, opens by keyboard and collapses after team selection",
+        "360px composed full graph and roster layout has no horizontal overflow",
+        "390px composed full graph and roster layout has no horizontal overflow",
+        "430px composed full graph and roster layout has no horizontal overflow",
+        "1440px composed full graph and roster layout has no horizontal overflow",
+        "uncollected synthetic usage renders missing data rather than zero",
+        "empty reporting scope preserves full graph shell and truthful empty labels"
+      ],
+      "count": 25,
+      "acceptedCaptures": [
+        "local-organization-1440.png",
+        "local-team-testing-1440.png",
+        "local-team-workouts-1440.png",
+        "local-team-usage-1440.png",
+        "local-team-overview-1440.png",
+        "local-team-360.png",
+        "local-team-360-viewport.png",
+        "local-team-390.png",
+        "local-team-390-viewport.png",
+        "local-team-430.png",
+        "local-team-430-viewport.png",
+        "local-team-1440.png",
+        "local-team-1440-viewport.png"
+      ],
+      "captureCount": 13,
+      "pageErrors": 0,
+      "consoleErrors": 0,
+      "externalLiveDataRequests": 0,
+      "viewports": [
+        360,
+        390,
+        430,
+        1440
+      ],
+      "evidenceSha256": "93600bd86ff566c0f95dfcd0da5029a3592344ea1bf3d5eb56f822aaf46e369c"
+    },
+    "candidateBrowser": {
+      "checks": [
+        "live admin roster RPC agrees with ordinary owned report and preserves exclusion",
+        "signed-out admin guard",
+        "verified admin sign-in opens organization graphs and teams without an athlete roster",
+        "team chooser accurately counts assigned and empty teams",
+        "all four full reporting views are available at organization level without roster expansion",
+        "nested team shows exact one assigned athlete and full graphs above the roster",
+        "keyboard section jumps move focus and scroll without disrupting history",
+        "report period and testing mode persist through refresh",
+        "empty owned team keeps its own reporting scope and empty roster",
+        "unavailable team makes no report call and never substitutes broader metrics",
+        "Unassigned shows only the owned unassigned account and copies its unchanged signup code",
+        "explicit All teams retains two identities with correct organization metrics",
+        "excluded identity row retains signup controls without invented metrics",
+        "signup link/code copy preserves existing invitation",
+        "excluded player header is distinct from missing metrics and zero activity",
+        "URL-backed owned roster search",
+        "player header retains workspace period and testing mode",
+        "one-action Workouts with empty evidence",
+        "one-action Profile",
+        "selected AI incidents only",
+        "Results default and empty evidence",
+        "root, results and drill routes expose one canonical current-profile breadcrumb despite stale team context",
+        "prescription opens preselected owned athlete and scope",
+        "planner return preserves player directory origin",
+        "admin athlete preview has no enabled workout execution",
+        "read-only preview returns to player",
+        "explicit return restores roster search and scope",
+        "inactive player reporting stays unmounted on Staff",
+        "explicit staff access save and inactive staff retained",
+        "requested email-free staff activation form and cancellation",
+        "refresh restores scope, search and directory tab",
+        "legacy admin entry translates reporting period and view",
+        "legacy organizations entry opens owned Manage teams",
+        "owned full graph directory 360px layout",
+        "owned full graph directory 390px layout",
+        "owned full graph directory 430px layout",
+        "owned full graph directory 1440px layout",
+        "owned player 360px layout",
+        "owned player 390px layout",
+        "owned player 430px layout",
+        "owned player 1440px layout",
+        "admin sign-out",
+        "player account cannot access admin workspace after account switch"
+      ],
+      "count": 43,
+      "pageErrors": 0,
+      "consoleErrors": 0,
+      "passed": true
+    },
+    "productionBrowser": {
+      "checks": [
+        "live admin roster RPC agrees with ordinary owned report and preserves exclusion",
+        "signed-out admin guard",
+        "verified admin sign-in opens organization graphs and teams without an athlete roster",
+        "team chooser accurately counts assigned and empty teams",
+        "all four full reporting views are available at organization level without roster expansion",
+        "nested team shows exact one assigned athlete and full graphs above the roster",
+        "keyboard section jumps move focus and scroll without disrupting history",
+        "report period and testing mode persist through refresh",
+        "empty owned team keeps its own reporting scope and empty roster",
+        "unavailable team makes no report call and never substitutes broader metrics",
+        "Unassigned shows only the owned unassigned account and copies its unchanged signup code",
+        "explicit All teams retains two identities with correct organization metrics",
+        "excluded identity row retains signup controls without invented metrics",
+        "signup link/code copy preserves existing invitation",
+        "excluded player header is distinct from missing metrics and zero activity",
+        "URL-backed owned roster search",
+        "player header retains workspace period and testing mode",
+        "one-action Workouts with empty evidence",
+        "one-action Profile",
+        "selected AI incidents only",
+        "Results default and empty evidence",
+        "root, results and drill routes expose one canonical current-profile breadcrumb despite stale team context",
+        "prescription opens preselected owned athlete and scope",
+        "planner return preserves player directory origin",
+        "admin athlete preview has no enabled workout execution",
+        "read-only preview returns to player",
+        "explicit return restores roster search and scope",
+        "inactive player reporting stays unmounted on Staff",
+        "explicit staff access save and inactive staff retained",
+        "requested email-free staff activation form and cancellation",
+        "refresh restores scope, search and directory tab",
+        "legacy admin entry translates reporting period and view",
+        "legacy organizations entry opens owned Manage teams",
+        "owned full graph directory 360px layout",
+        "owned full graph directory 390px layout",
+        "owned full graph directory 430px layout",
+        "owned full graph directory 1440px layout",
+        "owned player 360px layout",
+        "owned player 390px layout",
+        "owned player 430px layout",
+        "owned player 1440px layout",
+        "admin sign-out",
+        "player account cannot access admin workspace after account switch"
+      ],
+      "count": 43,
+      "pageErrors": 0,
+      "consoleErrors": 0,
+      "passed": true
+    },
+    "productionHttp": {
+      "applicationRoutes": 17,
+      "feedbackRoutes": 3,
+      "marketingRoutes": 5,
+      "newRuntimeAssets": 25
+    },
+    "feedbackSubmissions": 0,
+    "workoutGenerationOrStarts": 0,
+    "activationEmails": 0,
+    "limitations": "Live acceptance uses run-owned synthetic accounts and records. Populated graphs, qualification, unavailable/legacy scope and navigation use composed synthetic fixtures and tests. No real athlete evidence or access was modified.",
+    "postPublicationSourceIntegration": {
+      "ordinaryPreservationBuildPassed": true,
+      "frontendTests": 1847,
+      "typeScriptPassed": true,
+      "coachReleaseHoldPreserved": true,
+      "teammateMain": "11cff549ec959487a9b3ff831976bc7be12af6a5",
+      "frontendFiles": 157,
+      "protectedFiles": 1808,
+      "newApplicationOrBackendPublished": false,
+      "backendTests": {
+        "total": 973,
+        "passed": 970,
+        "existingPrivateFixtureSkips": 3,
+        "failed": 0
+      },
+      "teammateFilesBytePreserved": true
+    }
+  },
+  "cleanup": {
+    "syntheticAuthAccountsRemoved": 3,
+    "cleanupPassDocumentCounts": [
+      20,
+      4,
+      0,
+      0
+    ],
+    "independentAuditAtUtc": "2026-10-07T02:28:04.23Z",
+    "delayedAuditMilliseconds": 42073,
+    "remainingOwnedDocuments": 0,
+    "remainingAuthAccounts": 0,
+    "privateCredentialsRemoved": true,
+    "exactOwnedAuthBatchDeletion": true,
+    "independentAuditPassed": true,
+    "noStorageObjectsCreated": true,
+    "auditSha256": "c141bfc2fa4135acb3e90fa8b38d622d45adebcc28dfe21a2335ed5733e87b66"
+  },
+  "baseline": {
+    "deploymentId": "6ac5ac30bb13dae95443c2b4",
+    "sourceCommit": "3f03565b4929522d7ed48448253eacae0a3b3828",
+    "protectedFiles": 1808,
+    "preservedBytes": 151639702,
+    "exactOriginalBytesCached": true,
+    "ordinaryPreservationBuildPassed": true
+  },
+  "recovery": {
+    "method": "Prepare a fresh forward correction from current main, preserve unrelated protected files, review a new hosted candidate and promote its exact artifact. Do not restore a historical Netlify draft.",
+    "historicalPredecessorForComparison": "6ac5a02e62dff64d89f511e0"
+  }
+}

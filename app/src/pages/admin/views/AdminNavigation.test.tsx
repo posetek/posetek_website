@@ -48,7 +48,7 @@ describe("admin navigation", () => {
 
   it("keeps the admin scope when leaving Device performance, whose own filters stay behind", () => {
     const html = renderToStaticMarkup(<MemoryRouter initialEntries={["/admin/device-performance?orgId=club&teamId=team&drill=sprint&cursor=p2"]}><AdminHeader ready onSignOut={() => {}} /></MemoryRouter>);
-    expect(html).toContain('href="/admin/accounts?orgId=club&amp;teamId=team"');
+    expect(html).toContain('href="/admin/accounts?orgId=club&amp;teamId=team&amp;page=1&amp;directoryLevel=people"');
     expect(html).not.toContain("drill=sprint");
     expect(html).not.toContain('aria-label="Admin organization scope"');
   });

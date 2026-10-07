@@ -1,5 +1,15 @@
 # PoseTek website project context
 
+<!-- admin-hierarchy-current:start -->
+## Admin hierarchy and complete reporting production release (2026-10-06)
+
+Website `6ac5ac30bb13dae95443c2b4`, source `3f03565`, was published October 6, 2026 at 7:24:56 PM PDT from the exact reviewed candidate. People & organizations now follows Organizations → Team → People. Selecting an organization shows its aggregate graphs and team directory; a team, explicit All teams or Unassigned destination opens people. Overview, Testing, Workouts and Usage keep their complete cards, graphs, explanations and evidence tables above the roster. Read [the hierarchy handoff](docs/ADMIN_HIERARCHY_REPORTING.md) and [production evidence](deployment/ADMIN_HIERARCHY_REPORTING_PRODUCTION.json).
+
+The exact candidate and production passed 43 and 43 live synthetic browser checks. All 1,810 artifact files match 1,811 provider records. The nine already-live Insights function definitions and IAM were checked read-only and remain unchanged; this pass deployed no backend. All owned accounts and records were removed, with delayed independent zero-residue readback. The reconciled baseline protects 1,808 files and passed the ordinary preservation build. Marketing, isolated feedback, P icons, Kai's coach workspace, signup codes, Device/team routes and separate native/content/replay/diagnostics gates are preserved. No rules, indexes, gateway, catalog or native deployment is included. Source and confirmed records are in [PR #36](https://github.com/posetek/posetek_website/pull/36).
+
+The later GitHub main commit `11cff549ec959487a9b3ff831976bc7be12af6a5` merged PR #35 after this admin artifact was promoted. Its separate coach/frontend/backend source is preserved but remains unpublished. Production continues to use the verified admin runtime `3f03565`; no combined application or backend release is implied by the source merge. A future combined release must first include `insights-overview.js` in the prescribed backend bundle and verify the additive summary contract, so absent summaries cannot be displayed as zero or no follow-up. Preserve the coach candidate's remaining rules/parity and production acceptance gates. The ordinary build still preserves the 1,808-file live baseline.
+<!-- admin-hierarchy-current:end -->
+
 ## Coach Overview follow-up candidate (2026-10-06)
 
 The current branch updates the coach Overview presentation: the “Worth reviewing”
