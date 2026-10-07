@@ -19,6 +19,15 @@ coordinated with “Preview Kai's recent website PRs”; production remains
 `6ac5ac30bb13dae95443c2b4` and its 1,808-file preservation baseline. No rules,
 gateway, catalog or native deployment is part of this alignment.
 
+Candidate `6ac689898fa88638f4bfc99f`, runtime source `9a9124a`, is verified in
+[PR #38](https://github.com/posetek/posetek_website/pull/38). Independent local/public
+preview review and 24 signed-in hosted checks passed; all temporary accounts and
+records were removed, with delayed independent zero-residue readback. Read
+[the candidate evidence](deployment/COACH_RELEASE_READINESS_CANDIDATE.json).
+The prepared nine-function backend remains undeployed. Hosted acceptance verifies
+legacy-response unavailable states; new additive live acceptance and Dylan's
+preview review remain release steps before promoting this exact artifact.
+
 ## Admin logo-level menu candidate (2026-10-06)
 
 The header now groups its existing destinations into Overview, Coaching hub, and

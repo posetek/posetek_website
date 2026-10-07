@@ -8,6 +8,34 @@ admin hierarchy release. Read [its handoff](ADMIN_HIERARCHY_REPORTING.md) and
 The integrated coach follow-up and current alignment work are source candidates;
 this document does not claim a new website or backend deployment.
 
+The exact reviewed candidate is
+[`6ac689898fa88638f4bfc99f`](https://6ac689898fa88638f4bfc99f--posetek.netlify.app/insights),
+runtime source `9a9124abaf4f3faa61bbae695b83123d076aec93`, in
+[PR #38](https://github.com/posetek/posetek_website/pull/38). Read
+[the candidate evidence](../deployment/COACH_RELEASE_READINESS_CANDIDATE.json).
+Its complete 1,825-file artifact matches 1,826 provider records; 1,809 unrelated
+predecessor provider records remain exact. Only the application document and
+generated provider metadata change among predecessor records, with fifteen
+runtime assets added. The protected production baseline is unchanged.
+
+The open preview chat independently accepted this exact source, phone/desktop
+layouts, roster/player agreement, keyboard interaction and filter/history returns.
+Its public hosted review verified sign-in return destinations, marketing, stable
+icons and isolated feedback bytes/dependencies without submissions. Owned signed-in
+hosted acceptance passed 24 checks with thirteen captures and no unexpected or
+console errors or application writes. It verifies assigned-coach UI sign-in,
+independent/player authenticated sessions, scope denials, existing signup copying,
+prescription selection/return and settled Activity/People/Sharing panels. Both
+delayed cleanup audits found zero owned documents or Auth accounts; private
+verification credentials were removed.
+
+These hosted checks used the current legacy backend. Its absent new summaries
+correctly display unavailable states; this is not live acceptance of the new
+additive contract. The nine-function package is prepared and its actual SDK
+discovery passes. Fresh final readback preserved all 124 regional function records
+and all nine scoped IAM policies. Dylan's preview review, scoped backend deployment
+and live additive-response acceptance precede exact-artifact website promotion.
+
 The coach workspace continues to use Team Insights as its reporting home, with
 Overview, Testing, Workouts and Community in the shared shell. The follow-up keeps
 the Overview roster open, removes its separate Worth reviewing section, omits Age
