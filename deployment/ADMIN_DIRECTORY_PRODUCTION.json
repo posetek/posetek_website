@@ -1,0 +1,304 @@
+{
+  "scope": "admin_directory_and_navigation",
+  "task": "https://github.com/posetek/posetek_website/issues/26",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/33",
+  "production": {
+    "deploymentId": "6ac5905069994ecfbad5e391",
+    "previousDeploymentId": "6ac5324b4ab5d8f3d69e6fdc",
+    "sourceCommit": "afb52a0d36ef32c44622ac1afc3926d9b5c86e25",
+    "url": "https://posetek.net",
+    "publishedAtUtc": "2026-10-07T00:26:55.733Z",
+    "publishedAtPacific": "October 6, 2026 at 5:26:55 PM PDT",
+    "verifiedAtUtc": "2026-10-07T00:27:03.038Z",
+    "artifactFiles": 1743,
+    "providerInventoryFiles": 1744,
+    "fullInventoryVerified": true,
+    "exactReviewedCandidatePromoted": true,
+    "candidateVerifiedAtUtc": "2026-10-07T00:21:23.158Z",
+    "artifactManifestSha256": "9bd6353858c0d32e3dbb536a102b656790f1f8cfb1e756ebc08d84acc1398fb2",
+    "productionInventorySha256": "0e86ca7663f7acc12f188716118919276537ad79d30f243ccbfc8769724c8062"
+  },
+  "source": {
+    "implementationBase": "879324a74b3a0f5fb51f5e5f4ae518035df6904a",
+    "sourceCommits": [
+      "a3358e28d4f73590b45e4fa096a4b4a25721c1e9",
+      "afb52a0d36ef32c44622ac1afc3926d9b5c86e25"
+    ],
+    "branch": "codex/admin-directory",
+    "teammateCommitsPreserved": true,
+    "integratedRoutesRetained": [
+      "Device performance",
+      "Team testing sessions"
+    ],
+    "gitPublicationPolicy": "[skip netlify] source, release and merge commits; deliberate guarded application publication"
+  },
+  "reconciliation": {
+    "actualPredecessor": "6ac5324b4ab5d8f3d69e6fdc",
+    "earlierDocumentedDeployment": "6ac3d1c930af650008d83718",
+    "providerRecords": 1704,
+    "protectedFiles": 1701,
+    "removedProtectedFiles": [],
+    "changedProtectedFiles": [
+      "/feedback.html",
+      "/application.html"
+    ],
+    "providerSourceCommit": null,
+    "originalMarketingHashesVerified": true,
+    "note": "The predecessor API deployment supplied no source commit. Compiled runtime comparisons normalized generated chunk references and Svelte scope IDs; exact original-byte provider inventory verification was separate."
+  },
+  "experience": {
+    "directory": "/admin/accounts",
+    "compatibleOrganizationsEntry": "/admin/organizations -> Teams",
+    "directoryTabs": [
+      "Players",
+      "Staff",
+      "Teams",
+      "Organization settings"
+    ],
+    "flatOrganizationRoster": true,
+    "requestOnlyManagementForms": true,
+    "playerTabs": [
+      "Results",
+      "Workouts",
+      "Profile",
+      "AI incidents"
+    ],
+    "defaultPlayerTab": "Results",
+    "directRowActions": [
+      "Results",
+      "Workouts",
+      "Profile"
+    ],
+    "scopedPreselectedPrescription": true,
+    "overviewOrder": [
+      "summary",
+      "attention",
+      "players",
+      "detailed breakdowns"
+    ],
+    "reportingDefinitionsUnchanged": true,
+    "lazyGlobalLookup": {
+      "indexedProfiles": 500,
+      "displayedMatches": 40,
+      "rosterPageSize": 20
+    },
+    "inflightContextSharing": true,
+    "inactivePlayerTabsDoNotFetch": true,
+    "retainedNavigation": [
+      "scope",
+      "search",
+      "pagination",
+      "validated return destination",
+      "scroll",
+      "focus"
+    ],
+    "toolQueryNamespacesSeparated": true,
+    "explicitMutationsAndConfirmationsPreserved": true
+  },
+  "measurements": {
+    "method": "Equivalent controlled fixture: 500 lookup profiles, 65 organization players, three organizations; 40ms request floor plus 700 bytes/ms simulated transfer. Shared header reads excluded. These are not production latency measurements.",
+    "directoryInitialRequests": {
+      "before": 3,
+      "after": 1
+    },
+    "directoryResponseBytes": {
+      "before": 94442,
+      "after": 213
+    },
+    "directoryOpeningMilliseconds": {
+      "before": 544,
+      "after": 438
+    },
+    "directoryRequestWindowMilliseconds": {
+      "before": 177.2,
+      "after": 41.4
+    },
+    "organizationToResultsActions": {
+      "before": 3,
+      "after": 2
+    },
+    "visiblePlayerActionCount": {
+      "Results": 1,
+      "Workouts": 1,
+      "Profile": 1
+    },
+    "overviewPlayerListTopPixels": {
+      "desktop": {
+        "before": 1474,
+        "after": 396
+      },
+      "width390": {
+        "before": 2919,
+        "after": 646
+      }
+    },
+    "layoutNote": "Overview offsets compare isolated report components; whole-page headers and filters add their own height."
+  },
+  "preservation": {
+    "predecessorFilesUnchanged": 1702,
+    "changedExistingFiles": [
+      "/application.html",
+      "/netlify.toml (generated provider metadata)"
+    ],
+    "newRuntimeAssets": 40,
+    "application": {
+      "path": "/application.html",
+      "sha1": "ec2ca54f65a891d21f6ada09bdc9eae98e7ea222",
+      "size": 15620
+    },
+    "marketingDocuments": [
+      {
+        "path": "/index.html",
+        "sha": "9e6e486665e3fdd1257c23fe8a69cf8e72e619e4",
+        "size": 37689
+      },
+      {
+        "path": "/coaches/index.html",
+        "sha": "829a6277b98f9f62b39908d1a3a39c230ae0efe1",
+        "size": 26209
+      }
+    ],
+    "marketingServedBytesPreserved": true,
+    "feedbackDocument": {
+      "path": "/feedback.html",
+      "sha1": "039a6cb1c652002dcd7e556359e5fbd1974ce426",
+      "size": 5816
+    },
+    "effectiveFeedbackSecurityHeadersPreserved": true,
+    "stablePIconsPreserved": true,
+    "kaiCoachWorkspacePreserved": true,
+    "backendFunctionsRulesIndexesGatewaySchemaCatalogAndNativeDeployment": false,
+    "activePlansCoachAssignmentsAndContentHoldsUnchanged": true,
+    "independentBackendNativeDiagnosticsAndReplayAcceptanceGatesUnchanged": true
+  },
+  "validation": {
+    "frontendTests": 1747,
+    "frontendTestFiles": 150,
+    "typeScriptPassed": true,
+    "scopedLintPassed": true,
+    "releaseGuardTests": 54,
+    "canonicalRulesAssertions": 289,
+    "canonicalRulesSuites": {
+      "admin": 73,
+      "insights": 216
+    },
+    "canonicalRulesPublished": false,
+    "localHttpApplicationRoutes": 25,
+    "localHttpRuntimeAssets": 1571,
+    "localBrowserChecks": {
+      "directory": 42,
+      "playerPanels": 76,
+      "overviewAndNavigation": 13
+    },
+    "viewports": [
+      360,
+      390,
+      430,
+      1440
+    ],
+    "candidateBrowser": {
+      "checks": [
+        "signed-out admin guard",
+        "verified admin real sign-in and owned roster",
+        "organization selection opens all two players",
+        "signup link/code copy preserves existing invitation",
+        "URL-backed owned roster search",
+        "one-action Workouts with empty evidence",
+        "one-action Profile",
+        "selected AI incidents only",
+        "Results default and empty evidence",
+        "prescription opens preselected owned athlete and scope",
+        "planner return preserves player directory origin",
+        "admin athlete preview has no enabled workout execution",
+        "read-only preview returns to player",
+        "explicit return restores roster search and scope",
+        "explicit staff access save and inactive staff retained",
+        "requested email-free staff activation form and cancellation",
+        "refresh restores scope, search and directory tab",
+        "owned player 360px layout",
+        "owned player 390px layout",
+        "owned player 430px layout",
+        "owned player 1440px layout",
+        "admin sign-out",
+        "player account cannot access admin workspace after account switch"
+      ],
+      "count": 23,
+      "pageErrors": 0,
+      "consoleErrors": 0,
+      "passed": true
+    },
+    "productionBrowser": {
+      "checks": [
+        "signed-out admin guard",
+        "verified admin real sign-in and owned roster",
+        "organization selection opens all two players",
+        "signup link/code copy preserves existing invitation",
+        "URL-backed owned roster search",
+        "one-action Workouts with empty evidence",
+        "one-action Profile",
+        "selected AI incidents only",
+        "Results default and empty evidence",
+        "prescription opens preselected owned athlete and scope",
+        "planner return preserves player directory origin",
+        "admin athlete preview has no enabled workout execution",
+        "read-only preview returns to player",
+        "explicit return restores roster search and scope",
+        "explicit staff access save and inactive staff retained",
+        "requested email-free staff activation form and cancellation",
+        "refresh restores scope, search and directory tab",
+        "owned player 360px layout",
+        "owned player 390px layout",
+        "owned player 430px layout",
+        "owned player 1440px layout",
+        "admin sign-out",
+        "player account cannot access admin workspace after account switch"
+      ],
+      "count": 23,
+      "pageErrors": 0,
+      "consoleErrors": 0,
+      "passed": true
+    },
+    "productionHttp": {
+      "applicationRoutes": 17,
+      "feedbackRoutes": 3,
+      "marketingRoutes": 5,
+      "newRuntimeAssets": 40
+    },
+    "liveMutations": "Only run-owned synthetic staff access was saved active and returned inactive: two explicit saves per stage. Activation form was opened and cancelled.",
+    "feedbackSubmissions": 0,
+    "workoutGenerationOrStarts": 0,
+    "activationEmails": 0,
+    "limitations": "Live evidence uses owned empty synthetic athlete records; populated evidence, transfers, legacy paths, keyboard/history/focus and request-count assertions use controlled fixtures. No real athlete measurements, plans or staff accounts were modified."
+  },
+  "cleanup": {
+    "syntheticAuthAccountsRemoved": 3,
+    "initialOwnedDocumentCount": 18,
+    "cleanupPassDocumentCounts": [
+      18,
+      2,
+      1,
+      0
+    ],
+    "independentAuditAtUtc": "2026-10-07T00:29:11Z",
+    "delayedAuditMilliseconds": 20000,
+    "remainingOwnedDocuments": 0,
+    "remainingAuthAccounts": 0,
+    "privateCredentialsRemoved": true,
+    "exactOwnedAuthBatchDeletion": true,
+    "independentAuditPassed": true,
+    "noStorageObjectsCreated": true,
+    "cleanupAuditSha256": "74ca4d4f82190af9997f9fb7ecdf524e8b6b077def5e82240f419e0e30b76ac2"
+  },
+  "baseline": {
+    "deploymentId": "6ac5905069994ecfbad5e391",
+    "sourceCommit": "afb52a0d36ef32c44622ac1afc3926d9b5c86e25",
+    "protectedFiles": 1741,
+    "preservedBytes": 149719804,
+    "exactOriginalBytesCached": true,
+    "ordinaryPreservationBuildPassed": true
+  },
+  "recovery": {
+    "method": "Prepare a new forward correction from current main, retain unrelated protected files, review the fresh hosted candidate and promote that exact artifact. Do not restore a historical Netlify draft.",
+    "historicalPredecessorForComparison": "6ac5324b4ab5d8f3d69e6fdc"
+  }
+}

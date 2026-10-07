@@ -48,20 +48,47 @@ default to a sibling `../PoseTek-mobile-app` checkout, and `RULES_PATH` /
 `deployment/*.json`, including the composed `whole-body-firestore.rules`
 (deleted), are historical records of past publishes, not instructions.
 
-## Current hosting and marketing snapshot
+## Historical hosting and marketing snapshot (2026-10-05)
 
 The ordinary Git build published `b776c32` as `6ac3d1c930af650008d83718` on
-October 5, 2026 at 9:37:14 AM PDT. Application and feedback bytes still match the
-attribution release below. The reconciled baseline protects 1,697 files; all
+October 5, 2026 at 9:37:14 AM PDT. Application and feedback bytes then matched the
+attribution release below. That checkpoint's reconciled baseline protected 1,697 files; all
 1,638 predecessor records are unchanged. The ignored local marketing snapshot
 passed the application-release builder and preserves the current Players/Coaches
 HTML exactly. See [the snapshot receipt](deployment/MARKETING_SNAPSHOT_20261005.json).
 No new application draft or production release was uploaded by that preparation.
 Keep the reviewed-draft workflow and protected baseline enforced.
 
-## Current feedback attribution release
+## Current admin directory release
 
-The latest application-changing release is `6ac395bfba35bceed566d26c`, source `5792b63`, published
+The current website is `6ac5905069994ecfbad5e391`, source `afb52a0`, published
+October 6, 2026 at 5:26:55 PM PDT. Read [the admin handoff](docs/ADMIN_DIRECTORY.md)
+and [production evidence](deployment/ADMIN_DIRECTORY_PRODUCTION.json).
+People & organizations combines the old Accounts and Organizations entry points;
+flat organization selection opens its roster, player names default to Results,
+and Workouts/Profile are direct actions. Only selected player panels load. Scope,
+search, pagination, validated returns, scroll and focus survive supported navigation.
+Overview keeps its reporting definitions and leads with summary, attention and players.
+
+Implementation preserves newer main `879324a`, including Device performance and
+team-session routes. Actual predecessor production `6ac5324b4ab5d8f3d69e6fdc`
+was reconciled before release. All 1,743 artifact files match 1,744 provider records;
+1,702 predecessor files are unchanged, with only the application entry and generated
+provider metadata changed and 40 runtime assets added. The candidate and production
+each passed 23 live synthetic checks with zero browser errors. The baseline protects
+1,741 files. Keep the ordinary byte-preservation guard enforced.
+
+This pass changes frontend navigation and loading only. Canonical functions, rules,
+indexes, gateway, persisted schemas, catalog and native configuration were not
+deployed. Preserve Kai's coach workspace, isolated feedback/attribution, approved
+marketing, stable P icons, email-free staff access, signup codes, read-only admin
+previews and training/content gates. Separate backend/native diagnostics and replay
+acceptance remain governed by their original release records; this release does
+not accept or enable them. Historical receipts below remain records of their dates.
+
+## Feedback attribution release preserved by current admin update
+
+The feedback attribution website was `6ac395bfba35bceed566d26c`, source `5792b63`, published
 October 5, 2026 at 5:23:26 AM PDT. Read [the feedback handoff](docs/APP_FEEDBACK.md)
 and [production evidence](deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json).
 New signed-in feedback includes a server-verified Auth account snapshot after a

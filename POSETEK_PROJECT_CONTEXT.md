@@ -1,24 +1,31 @@
 # PoseTek website project context
 
-## Admin directory implementation (2026-10-06)
+## Admin directory production release (2026-10-06)
 
-The approved admin pass combines Accounts and Organizations into People &
-organizations. Read [the admin handoff](docs/ADMIN_DIRECTORY.md). It adds flat
+Website `6ac5905069994ecfbad5e391`, source `afb52a0`, was published October 6
+at 5:26:55 PM PDT. It combines Accounts and Organizations into People &
+organizations. Read [the admin handoff](docs/ADMIN_DIRECTORY.md) and
+[production evidence](deployment/ADMIN_DIRECTORY_PRODUCTION.json). It adds flat
 organization rosters, request-only management forms, full-width player tabs,
 typed return state and lazy frontend reads while preserving canonical services.
 Implementation is based on newer GitHub main `879324a`, including Device and
-team-session routes. Publication is recorded only after candidate and production
-verification in the admin release receipt.
+team-session routes. The exact candidate and production each passed 23 live
+synthetic checks without browser errors. All 1,743 artifact files match the
+1,744-record provider inventory. Only the application entry and generated
+provider metadata change among predecessor records; 40 runtime assets are added.
+The reconciled guard protects 1,741 files and preserves the current feedback,
+marketing and icon bytes. Source and confirmed release records are included in
+[PR #33](https://github.com/posetek/posetek_website/pull/33).
 
 Fresh readback found production `6ac5324b4ab5d8f3d69e6fdc`, published October 6
 at 10:43:17 AM PDT, ahead of earlier notes. Its 1,704 provider records retain all
-1,697 predecessor protected files; application/feedback documents and four added
-runtime assets account for the change. The reconciled guard protects 1,701 files.
+1,697 predecessor protected paths; application/feedback documents and four added
+runtime assets account for the change. That reconciliation protected 1,701 files.
 Original marketing documents and current feedback are retained for this pass;
 the provider does not supply a source commit for that deployment. Existing native,
 diagnostic, replay-backend and training-content acceptance gates remain separate.
 
-Reviewed on October 5, 2026. This guide summarizes the available repository and
+Reviewed on October 6, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
 
@@ -33,13 +40,13 @@ no panel fetch, overflow or page errors. The local `production-dist` artifact
 includes the change and preserves the approved marketing snapshot. It has not
 been uploaded or published by this task.
 
-## Current hosting and marketing snapshot (2026-10-05)
+## Historical hosting and marketing snapshot (2026-10-05)
 
 Netlify's ordinary Git build published merged source `b776c32` as
 `6ac3d1c930af650008d83718` at 9:37:14 AM PDT. The application and feedback entries
 retain the preceding attribution release bytes; this publication updates marketing
 and adds runtime assets. All 1,638 prior protected file records are unchanged.
-The reconciled baseline now protects 1,697 files, including the 59 added assets.
+That reconciled baseline protected 1,697 files, including the 59 added assets.
 
 A local, ignored `.netlify/approved-marketing/manifest.json` captures the exact
 original Players/Coaches documents, their provider hashes and five live route
@@ -54,8 +61,9 @@ hosted draft and complete its backend/feature acceptance before publication.
 The source integration preserves fetched main `0ad845e`, all local feature
 history, the published feedback-attribution branch `1dca2a5` and issue-alert
 branch `0005f12`. It also includes tracking-only replay and compressed diagnostic
-journals. The latest live application remains the feedback release recorded below;
-this integration does not publish a new website or backend revision.
+journals. At that integration checkpoint, the latest application release was the
+feedback release recorded below. The integration itself did not publish a new
+website or backend revision; later hosting releases are recorded above.
 
 The combined source passed 1,660 frontend tests, 948 backend tests (three existing
 private-history skips), lint, TypeScript/Astro, 55 release guards and 60 diagnostic
@@ -67,7 +75,7 @@ All 27 pre-existing untracked duplicate files are preserved outside the commits.
 
 ## Prospective feedback account attribution (2026-10-05)
 
-The latest application-changing release is `6ac395bfba35bceed566d26c`, source `5792b63`, published
+The feedback attribution release was `6ac395bfba35bceed566d26c`, source `5792b63`, published
 October 5, 2026 at 5:23:26 AM PDT. It preserves the concurrently published Kai
 Overview release by merging `0ad845e` before rebuilding. The exact reviewed
 artifact matched all 1,640 files in the 1,641-record provider inventory. Hosted
