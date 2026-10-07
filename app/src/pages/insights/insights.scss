@@ -207,7 +207,8 @@
   .coach-snapshot-list-label.is-warning { color: var(--status-warning, #e8b85f); }
   .coach-snapshot-list-label.is-warning b { background: rgba(232,184,95,.16); color: var(--status-warning, #e8b85f); }
   .coach-snapshot-names { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
-  .coach-snapshot-names a { display: inline-flex; align-items: center; min-height: 26px; padding: 0 11px; border: 1px solid var(--surface-border); border-radius: 999px; background: var(--surface-2, rgba(255,255,255,.03)); color: var(--text-primary); font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap; transition: border-color .15s ease, background-color .15s ease; }
+  .coach-snapshot-names li { min-width: 0; max-width: 100%; }
+  .coach-snapshot-names a { display: inline-flex; align-items: center; max-width: 100%; min-height: 26px; padding: 3px 11px; border: 1px solid var(--surface-border); border-radius: 999px; background: var(--surface-2, rgba(255,255,255,.03)); color: var(--text-primary); font-size: 12px; font-weight: 600; text-decoration: none; white-space: normal; overflow-wrap: anywhere; transition: border-color .15s ease, background-color .15s ease; }
   .coach-snapshot-names a:hover, .coach-snapshot-names a:focus-visible { border-color: var(--text-muted); background: rgba(255,255,255,.06); }
   .coach-snapshot-names.is-warning a { border-color: rgba(232,184,95,.35); background: rgba(232,184,95,.08); color: var(--status-warning, #e8b85f); }
   .coach-snapshot-names.is-warning a:hover, .coach-snapshot-names.is-warning a:focus-visible { border-color: var(--status-warning, #e8b85f); background: rgba(232,184,95,.14); }
