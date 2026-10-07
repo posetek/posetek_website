@@ -1,0 +1,43 @@
+# Inactive candidate only: this file is outside .github/workflows and is not a CI job.
+# Add this job to the pull_request workflow and its required aggregate only after
+# a reviewed source artifact exists and the merge-commit/fork behavior is verified.
+# The PR job receives no App credential or environment secret. Missing source
+# evidence fails; it never skips parity or reports a successful fallback.
+mobile-contract:
+  runs-on: ubuntu-24.04
+  timeout-minutes: 10
+  permissions:
+    contents: read
+    actions: read
+  steps:
+    - name: Checkout pull request merge commit
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      with:
+        persist-credentials: false
+    - name: Select completed trusted source run
+      id: source
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python3 ci/mobile_contract_artifact.py
+    - name: Download exact source artifact
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      with:
+        artifact-ids: ${{ steps.source.outputs.artifact-id }}
+        repository: posetek/posetek_website
+        run-id: ${{ steps.source.outputs.run-id }}
+        github-token: ${{ github.token }}
+        path: ${{ runner.temp }}/mobile-contract-source
+    - name: Set up Node
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      with:
+        node-version: '22.23.3'
+    - name: Verify source revision and exact contract bytes
+      env:
+        MOBILE_CONTRACT_ARTIFACT: ${{ runner.temp }}/mobile-contract-source
+      run: node ci/verify-mobile-contract-artifact.cjs
+    - name: Install server test dependencies
+      run: npm --prefix functions ci --ignore-scripts --no-audit --no-fund
+    - name: Check mobile parity against the verified source
+      env:
+        POSETEK_MOBILE_REPO: ${{ runner.temp }}/mobile-contract-source
+      run: node --test functions/device-performance-contract.test.js
