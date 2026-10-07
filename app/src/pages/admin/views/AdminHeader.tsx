@@ -7,7 +7,6 @@ import { useAdminToolLinks } from "../lib/useAdminNavigation";
 import type { InsightChoices } from "../../insights/lib/expanded";
 
 const SECTIONS = [
-  { path: "/admin", icon: "space_dashboard", label: "Overview", end: true },
   { path: "/admin/accounts", icon: "supervisor_account", label: "People & organizations" },
   { path: "/admin/programs", icon: "tune", label: "Planner" },
   { path: "/admin/analysis", icon: "edit_note", label: "Technique review" },
@@ -88,7 +87,7 @@ export default function AdminHeader({ ready, email, uid = "", preview = false, o
   return (
     <header className="admin-header">
       <div className="admin-topbar">
-        <Link className="portal-brand" to={toolPath("/admin")} aria-label="PoseTek admin overview">
+        <Link className="portal-brand" to={toolPath("/admin/accounts")} aria-label="PoseTek people and organizations">
           <span className="portal-brand-mark">P</span>
           <span className="admin-wordmark">POSETEK</span>
           <span className="admin-badge">Admin</span>
@@ -128,7 +127,7 @@ export default function AdminHeader({ ready, email, uid = "", preview = false, o
         </details>}
       </div>
       {ready && <nav ref={nav} className="admin-nav" aria-label="Admin sections">
-        {SECTIONS.map(section => <NavLink key={section.path} end={section.end} className={({ isActive }) => `admin-nav-link${isActive ? " active" : ""}`} to={toolPath(section.path)}>
+        {SECTIONS.map(section => <NavLink key={section.path} className={({ isActive }) => `admin-nav-link${isActive ? " active" : ""}`} to={toolPath(section.path)}>
           <span className="material-symbols-outlined" aria-hidden="true">{section.icon}</span>
           <span>{section.label}</span>
         </NavLink>)}

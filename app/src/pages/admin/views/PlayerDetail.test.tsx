@@ -30,7 +30,8 @@ describe('full-width player workspace', () => {
   it.each(['results', 'workouts', 'profile', 'ai-incidents'] as const)('mounts only the selected %s panel', panel => {
     const html = render(panel);
     expect(f.panels).toEqual(panel === 'profile' ? [] : [panel]);
-    expect(f.loads).toBe(['profile', 'workouts'].includes(panel) ? 1 : 0);
+    // The summary has one common bounded organization validation; only the active evidence panel adds a reader.
+    expect(f.loads).toBe(['profile', 'workouts'].includes(panel) ? 2 : 1);
     expect(html.match(/role="tabpanel"/g)).toHaveLength(1);
     expect(html).toContain(`id="admin-player-panel-${panel}"`);
     expect(html).toContain(`aria-labelledby="admin-player-tab-${panel}"`);

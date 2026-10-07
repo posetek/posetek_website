@@ -3,15 +3,13 @@
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
-The current website deployment is `6ac5905069994ecfbad5e391`, source `afb52a0`,
-published October 6, 2026 at 5:26:55 PM PDT. The admin workspace combines Accounts
-and Organizations into **People & organizations**, with direct player tabs and
-scoped planner returns. See [the admin handoff](docs/ADMIN_DIRECTORY.md) and
-[production receipt](deployment/ADMIN_DIRECTORY_PRODUCTION.json). The exact
-candidate and production each passed 23 live synthetic browser checks. The
-reconciled preservation baseline protects 1,741 files.
+Website `6ac5a02e62dff64d89f511e0`, source `5907d44`, was published October 6, 2026 at 6:38:19 PM PDT. People & organizations now combines scoped reporting with the account roster. Summary cards and each player show testing, completed workouts and estimated active use alongside existing signup code/link actions. Players retains Overview, Testing, Workouts and Usage within the same workspace; player details retain the selected reporting period. Read [the workspace handoff](docs/ADMIN_WORKSPACE_METRICS.md) and [production evidence](deployment/ADMIN_WORKSPACE_METRICS_PRODUCTION.json).
 
-Before this release, actual production was `6ac5324b4ab5d8f3d69e6fdc`, ahead of
+The exact candidate and production passed 32 and 32 live synthetic browser checks respectively. All 1,785 artifact files match 1,786 provider records. The nine website-owned Expanded Insights functions passed source/configuration/IAM and unrelated-function preservation checks, plus 12 live access/lookup checks. Temporary accounts and records were removed; delayed independent readback found zero residue. The reconciled baseline protects 1,783 files. Marketing, feedback isolation, stable P icons, Kai's coach workspace, invitation codes, Device/team routes and separate native/content/replay/diagnostics gates are preserved. No rules, gateway, catalog or native deployment is included. Source and confirmed records are in [PR #34](https://github.com/posetek/posetek_website/pull/34).
+
+The preceding admin directory release was `6ac5905069994ecfbad5e391`, source `afb52a0`, on October 6 at 5:26:55 PM PDT. Its [receipt](deployment/ADMIN_DIRECTORY_PRODUCTION.json) remains historical evidence.
+
+Before the preceding directory release, actual production was `6ac5324b4ab5d8f3d69e6fdc`, ahead of
 the supplied notes. Its original marketing and isolated feedback documents,
 stable icons and unrelated assets are preserved. The earlier ordinary Git build
 `6ac3d1c930af650008d83718` and [marketing snapshot receipt](deployment/MARKETING_SNAPSHOT_20261005.json)
@@ -55,7 +53,7 @@ The exact candidate passed 20 hosted browser checks across nine screenshots with
 zero feedback writes before promotion. See [the feedback handoff](docs/APP_FEEDBACK.md)
 and [attribution production evidence](deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json) for feedback behavior,
 backend evidence and integrity checks. Current website publication is recorded in
-[the admin release receipt](deployment/ADMIN_DIRECTORY_PRODUCTION.json). The website owns the two scoped feedback
+[the workspace metrics receipt](deployment/ADMIN_WORKSPACE_METRICS_PRODUCTION.json). The website owns the two scoped feedback
 functions; the canonical mobile repository owns and publishes their client-denial
 rules. The [12-player comprehension pilot](docs/APP_FEEDBACK_PILOT.md) remains outstanding, and native
 invitations require a separate mobile release.

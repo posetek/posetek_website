@@ -11,7 +11,7 @@ import { Suspense, lazy } from "react";
 import type { ReactNode } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { auth } from "../../lib/firebase";
-import { legacyOrganizationsPath } from "./lib/adminNavigation";
+import { legacyAdminWorkspacePath, legacyOrganizationsPath } from "./lib/adminNavigation";
 import { useAdminScrollRestoration } from "./lib/useAdminNavigation";
 import { useAdminSession } from "./lib/session";
 import type { AdminSession } from "./lib/session";
@@ -23,7 +23,6 @@ import "./admin-dashboard.scss";
 import AdminHeader from "./views/AdminHeader";
 import AdminBreadcrumbs from "./views/AdminBreadcrumbs";
 
-const AdminOverview = lazy(() => import("./views/AdminOverview"));
 const DrillLibrary = lazy(() => import("./views/DrillLibrary"));
 const DrillDetail = lazy(() => import("./views/DrillDetail"));
 const DrillForm = lazy(() => import("./views/DrillForm"));
@@ -114,7 +113,7 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
     body = (
       <Suspense key={uid} fallback={<div className="portal-loading"><span className="spinner" /><p>Loading…</p></div>}>
         <Routes>
-          <Route index element={<AdminOverview uid={session.identity.uid} preview={preview} />} />
+          <Route index element={<Navigate to={legacyAdminWorkspacePath(location.search)} state={location.state} replace />} />
           <Route path="feeds" element={<Navigate to="/feed" replace />} />
           <Route path="drills" element={<DrillLibrary />} />
           <Route path="drills/new" element={<DrillForm mode="create" />} />
@@ -151,7 +150,7 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
                 icon="help"
                 title="No such admin page"
                 body="That address is not part of the admin console."
-                action={<Link className="primary-cta" to="/admin">Admin home</Link>}
+                action={<Link className="primary-cta" to="/admin/accounts">Admin home</Link>}
               />
             }
           />

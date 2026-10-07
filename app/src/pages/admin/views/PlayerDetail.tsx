@@ -42,6 +42,7 @@ import { ADMIN_RETURN_STATE } from '../lib/useAdminNavigation';
 import { parseWorkoutFocus, workoutFocusQuery } from "../lib/workoutNotifications";
 import AdminResults from "./AdminResults";
 import PlayerAiIncidents from "./PlayerAiIncidents";
+import PlayerSummary from "./PlayerSummary";
 import { PlayerWorkoutHistoryContent } from "./PlayerWorkoutHistory";
 import "../player-detail.scss";
 
@@ -75,7 +76,7 @@ function LivePlayerDetail() {
   </section>;
 }
 
-export function PlayerDetailContent({ player, panel, onProfileSaved, children }: { player: PlayerRow; panel: PlayerDetailPanel; onProfileSaved: () => Promise<void>; children?: ReactNode }) {
+export function PlayerDetailContent({ player, panel, onProfileSaved, children, summary }: { player: PlayerRow; panel: PlayerDetailPanel; onProfileSaved: () => Promise<void>; children?: ReactNode; summary?: ReactNode }) {
   const location = useLocation();
   const resolvedAge = resolvePlayerAge(player.raw);
   const athlete = useMemo(() => ({ ...player.raw, id: player.id }), [player]);
@@ -106,6 +107,7 @@ export function PlayerDetailContent({ player, panel, onProfileSaved, children }:
         </div>
       </section>
 
+      {summary ?? <PlayerSummary player={player} />}
       <PlayerDetailTabs playerId={player.id} selected={panel} />
       <div role="tabpanel" id={`admin-player-panel-${panel}`} aria-labelledby={`admin-player-tab-${panel}`} tabIndex={0} className="admin-player-panel">
         {children ?? <>

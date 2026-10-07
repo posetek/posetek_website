@@ -34,7 +34,7 @@ export default function AdminBreadcrumbs() {
   const playerPath = `/admin/accounts/player/${playerId}`;
   const resultsPath = `${playerPath}/results`;
   const crumbs: Crumb[] = [
-    { label: /^\/admin(?:\?|$)/.test(adminPlayerReturn(location.search)) ? "Overview" : "People & organizations", path: adminPlayerReturn(location.search) },
+    { label: "People & organizations", path: adminPlayerReturn(location.search) },
     { label: "Player", path: `${playerPath}${query}` },
     ...(location.pathname.includes("/results") ? [{ label: "Results", path: `${resultsPath}${query}` }] : []),
     ...(drillKey ? [{ label: decodeURIComponent(drillKey).replaceAll("-", " "), path: `${resultsPath}/${drillKey}${query}` }] : []),

@@ -40,6 +40,23 @@
   .admin-grid-two { align-items: start; }
   .admin-drill-tabs { overflow-x: auto; }
 }
+.pt-admin .admin-player-summary {
+  padding: 18px 0;
+  border-block: 1px solid var(--admin-line);
+  margin-top: 20px;
+  .admin-player-summary-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 20px; }
+  h2 { margin: 0; font-size: 16px; font-weight: 650; }
+  .admin-player-summary-heading p, .admin-player-summary-scope, .admin-player-summary-note { margin: 0; color: var(--admin-dim); font-size: 13px; }
+  .admin-player-summary-scope { margin-top: 8px; }
+  .admin-player-summary-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin: 16px 0 10px; }
+  .admin-player-summary-metrics > div { min-width: 0; padding-left: 18px; border-left: 1px solid var(--admin-line); }
+  .admin-player-summary-metrics > div:first-child { padding-left: 0; border-left: 0; }
+  dt { color: var(--admin-dim); font-size: 13px; margin-bottom: 4px; }
+  dd { margin: 0; font-size: 25px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  dd span { font-size: 14px; font-weight: 400; color: var(--admin-dim); }
+  dd.missing { font-size: 20px; }
+  dd.admin-player-summary-detail { font-size: 13px; font-weight: 400; margin: 4px 0 0; color: var(--admin-dim); }
+}
 @media (max-width: 600px) {
   .pt-admin .admin-player-workspace .admin-heading {
     align-items: start;
@@ -48,4 +65,14 @@
   }
   .pt-admin .admin-player-tabs button { flex: 1 1 0; min-width: 0; padding-inline: 6px; font-size: 13px; white-space: nowrap; }
   .pt-admin .admin-player-panel .admin-grid-two { grid-template-columns: 1fr; }
+  .pt-admin .admin-player-summary {
+    .admin-player-summary-metrics { gap: 10px; }
+    .admin-player-summary-metrics > div { padding-left: 10px; }
+    .admin-player-summary-metrics > div:first-child { padding-left: 0; }
+    dt { min-height: 36px; font-size: 12px; line-height: 1.4; }
+    dd { min-height: 52px; font-size: 22px; }
+    dd span { display: block; font-size: 12px; }
+    dd.missing { font-size: 16px; }
+    dd.admin-player-summary-detail { min-height: 0; font-size: 12px; }
+  }
 }

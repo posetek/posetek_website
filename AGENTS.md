@@ -48,6 +48,12 @@ default to a sibling `../PoseTek-mobile-app` checkout, and `RULES_PATH` /
 `deployment/*.json`, including the composed `whole-body-firestore.rules`
 (deleted), are historical records of past publishes, not instructions.
 
+## Current admin metrics and roster release
+
+Website `6ac5a02e62dff64d89f511e0`, source `5907d44`, was published October 6, 2026 at 6:38:19 PM PDT. People & organizations now combines scoped reporting with the account roster. Summary cards and each player show testing, completed workouts and estimated active use alongside existing signup code/link actions. Players retains Overview, Testing, Workouts and Usage within the same workspace; player details retain the selected reporting period. Read [the workspace handoff](docs/ADMIN_WORKSPACE_METRICS.md) and [production evidence](deployment/ADMIN_WORKSPACE_METRICS_PRODUCTION.json).
+
+The exact candidate and production passed 32 and 32 live synthetic browser checks respectively. All 1,785 artifact files match 1,786 provider records. The nine website-owned Expanded Insights functions passed source/configuration/IAM and unrelated-function preservation checks, plus 12 live access/lookup checks. Temporary accounts and records were removed; delayed independent readback found zero residue. The reconciled baseline protects 1,783 files. Marketing, feedback isolation, stable P icons, Kai's coach workspace, invitation codes, Device/team routes and separate native/content/replay/diagnostics gates are preserved. No rules, gateway, catalog or native deployment is included. Source and confirmed records are in [PR #34](https://github.com/posetek/posetek_website/pull/34).
+
 ## Historical hosting and marketing snapshot (2026-10-05)
 
 The ordinary Git build published `b776c32` as `6ac3d1c930af650008d83718` on
@@ -59,9 +65,9 @@ HTML exactly. See [the snapshot receipt](deployment/MARKETING_SNAPSHOT_20261005.
 No new application draft or production release was uploaded by that preparation.
 Keep the reviewed-draft workflow and protected baseline enforced.
 
-## Current admin directory release
+## Historical admin directory release
 
-The current website is `6ac5905069994ecfbad5e391`, source `afb52a0`, published
+The preceding admin directory website was `6ac5905069994ecfbad5e391`, source `afb52a0`, published
 October 6, 2026 at 5:26:55 PM PDT. Read [the admin handoff](docs/ADMIN_DIRECTORY.md)
 and [production evidence](deployment/ADMIN_DIRECTORY_PRODUCTION.json).
 People & organizations combines the old Accounts and Organizations entry points;

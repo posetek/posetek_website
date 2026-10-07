@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { useLocation, useNavigate, useNavigationType } from "react-router-dom";
-import { adminAccountResetPath, adminToolKey, adminToolPath, supportsAdminScope, validatedAdminReturn } from "./adminNavigation";
+import { adminAccountResetPath, adminToolKey, adminToolPath, legacyAdminWorkspacePath, supportsAdminScope, validatedAdminReturn } from "./adminNavigation";
 import { accountContext, accountQuery } from "./accountHierarchy";
 
 function read(key: string): Record<string, string> {
@@ -23,13 +23,14 @@ export function useAdminToolLinks(uid: string) {
     // A record's returnTo is the directory/report origin, not a replacement
     // for its remembered filters. Reporting pagination is never directory state.
     if (!record) history[tool] = location.search;
-    else if (back && adminToolKey(back.split("?")[0]) === "directory") history.directory = back.split("?")[1] || "";
+    else if (back && adminToolKey(back.split("?")[0]) === "directory") history.directory = back.split("?")[0] === "/admin" ? legacyAdminWorkspacePath(back.split("?")[1] || "").split("?")[1] || "" : back.split("?")[1] || "";
     if (supportsAdminScope(location.pathname)) history.scope = accountQuery(accountContext(location.search));
     try { sessionStorage.setItem(key, JSON.stringify(history)); } catch { /* navigation works without browser storage */ }
   }, [uid, key, location.pathname, location.search]);
   return (destination: string) => {
     const retainedScope = accountContext(stored.scope !== undefined ? stored.scope : stored.directory || stored.report || location.search);
-    return adminToolPath(destination, location.pathname, location.search, stored[adminToolKey(destination)] || "", retainedScope);
+    const retained = stored[adminToolKey(destination)] ?? (adminToolKey(destination) === "directory" && stored.report ? legacyAdminWorkspacePath(stored.report).split("?")[1] || "" : "");
+    return adminToolPath(destination, location.pathname, location.search, retained, retainedScope);
   };
 }
 

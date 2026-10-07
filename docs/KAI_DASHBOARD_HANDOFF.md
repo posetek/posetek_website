@@ -14,16 +14,21 @@ search, pagination, signup actions and Add player remain available. The label
 sentence from the snapshot. The category still does not prove no workout occurred.
 This supersedes the candidate's review-action and collapsed-roster presentation;
 October 5 production receipts remain historical evidence, not changed releases.
-The source candidate is on `codex/kai-work` after rebasing onto current `main`;
-the production release and preservation baseline are unchanged. Review and merge
-status are tracked in the pull request.
+The source candidate on `codex/kai-work` now includes current website `main` at
+`cf6674a` (PR #34) alongside this follow-up. Its admin-only `getClubInsightsV2`
+roster lookup returns allowlisted player metrics or a minimal excluded result;
+it remains read-only and additive, preserving existing fields and pagination.
+See [the admin metrics handoff](ADMIN_WORKSPACE_METRICS.md). The production
+release and preservation baseline are unchanged. PR #35 is open in Chrome; no
+commit or push of this local integration has been made.
 
-Post-rebase validation: frontend 1,745/1,745; backend 954 passed with three
-existing private-history skips; script suites 55/55; all 12 canonical Firestore
-and Storage rules suites passed. Svelte reported zero errors or warnings;
-TypeScript, Astro marketing build and repository lint with warnings suppressed
-completed successfully. The contract parity tests used a temporary read-only
-checkout of the canonical mobile repository. No mobile files were changed.
+Local revalidation on October 6: frontend 1,801/1,801; backend 970 passed with
+three existing private-history skips; script suites 55/55; TypeScript build,
+Svelte check (zero errors/warnings), Astro marketing build and quiet repository
+lint passed. The canonical rules suite could not start because the Firebase CLI
+is unavailable in this environment. The standalone mobile parity check reports
+`docs/LLM_GATEWAY_CONTRACT.md` as changed in the supplied mobile checkout; that
+website file is unchanged from current `main`, and no mobile files were changed.
 
 Prepared for Kai by Dylan Keller. Original current-state review dated October 3, 2026.
 

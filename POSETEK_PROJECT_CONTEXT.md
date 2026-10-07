@@ -1,6 +1,6 @@
 # PoseTek website project context
 
-## Coach Overview local candidate (2026-10-06)
+## Coach Overview follow-up candidate (2026-10-06)
 
 The current branch updates the coach Overview presentation: the “Worth reviewing”
 section and snapshot explanation sentence are removed, the roster stays open,
@@ -13,13 +13,21 @@ below it. This is a source change only; the current website and release baseline
 are unchanged. See [Kai's handoff](docs/KAI_DASHBOARD_HANDOFF.md) and
 [the unified coach workspace handoff](docs/UNIFIED_COACH_WORKSPACE.md).
 
-The branch is rebased onto current GitHub `main` to preserve newer teammate work.
-Post-rebase validation passed: 1,745 frontend tests; 954 backend tests with three
-existing private-history skips; all 55 root script tests; Svelte, TypeScript, Astro
-and scoped lint checks; and all 12 canonical Firestore/Storage rules suites. The
-canonical rules and device-performance contract were read from a temporary mobile
-checkout without modification. No production release or contract change is part
-of this dashboard update.
+This source-only follow-up is integrated locally with current website `main` at
+`cf6674a` (the admin metrics release below). Frontend tests (1,801), backend
+tests (970 plus three existing skips), all 55 website release-guard tests,
+TypeScript, Svelte, Astro marketing build and quiet lint pass. Canonical rules
+tests could not start because Firebase CLI is unavailable; the separate mobile
+parity check flags an unchanged website copy of `docs/LLM_GATEWAY_CONTRACT.md`.
+The current website and release baseline remain unchanged. No production release
+or gateway, rules or native change is part of this update. See the updated
+[dashboard handoff](docs/KAI_DASHBOARD_HANDOFF.md) for full validation details.
+
+## Admin metrics and roster production release (2026-10-06)
+
+Website `6ac5a02e62dff64d89f511e0`, source `5907d44`, was published October 6, 2026 at 6:38:19 PM PDT. People & organizations now combines scoped reporting with the account roster. Summary cards and each player show testing, completed workouts and estimated active use alongside existing signup code/link actions. Players retains Overview, Testing, Workouts and Usage within the same workspace; player details retain the selected reporting period. Read [the workspace handoff](docs/ADMIN_WORKSPACE_METRICS.md) and [production evidence](deployment/ADMIN_WORKSPACE_METRICS_PRODUCTION.json).
+
+The exact candidate and production passed 32 and 32 live synthetic browser checks respectively. All 1,785 artifact files match 1,786 provider records. The nine website-owned Expanded Insights functions passed source/configuration/IAM and unrelated-function preservation checks, plus 12 live access/lookup checks. Temporary accounts and records were removed; delayed independent readback found zero residue. The reconciled baseline protects 1,783 files. Marketing, feedback isolation, stable P icons, Kai's coach workspace, invitation codes, Device/team routes and separate native/content/replay/diagnostics gates are preserved. No rules, gateway, catalog or native deployment is included. Source and confirmed records are in [PR #34](https://github.com/posetek/posetek_website/pull/34).
 
 ## Admin directory production release (2026-10-06)
 

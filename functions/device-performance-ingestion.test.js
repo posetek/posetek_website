@@ -656,7 +656,7 @@ test("the callable is an explicit 1st-gen export: 512MB, 120 s, default region, 
   const response = await exported.handler(batch, { auth: { uid: STAFF } });
   assert.deepEqual(statuses(response.results), [["accepted", null]]);
   const index = fs.readFileSync(path.join(__dirname, "index.js"), "utf8");
-  const wiring = index.split("\n").filter((line) => line.includes("device-performance-ingestion"));
+  const wiring = index.split(/\r?\n/).filter((line) => line.includes("device-performance-ingestion"));
   assert.deepEqual(wiring, ["exports.ingestDevicePerformanceV1 = require(\"./device-performance-ingestion\").createIngestDevicePerformanceV1(functions, admin, requireCaller);"]);
   assert.doesNotMatch(fs.readFileSync(path.join(__dirname, "device-performance-ingestion.js"), "utf8"), /enforceAppCheck|consumeAppCheckToken/);
 });
