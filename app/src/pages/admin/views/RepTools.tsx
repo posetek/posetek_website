@@ -57,7 +57,7 @@ import {
 } from "../lib/repTools";
 import type { FrameRange, Mark, Point, ShuttleFrames, StartingSide } from "../lib/repTools";
 import { resultsPath } from "../lib/results";
-import { accountContext, accountQuery } from "../lib/accountHierarchy";
+import { ADMIN_RETURN_STATE } from '../lib/useAdminNavigation';
 
 type AnnotationTarget = "com" | "ball";
 type ComSource = "annotated" | "pose" | "none";
@@ -110,7 +110,7 @@ export default function RepTools() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerId, repId, drill.key, generation]);
 
-  const back = resultsPath(playerId, drill.key) + accountQuery(accountContext(search));
+  const back = resultsPath(playerId, drill.key) + (search.size ? `?${search}` : '');
   const sessionParam = search.get("session");
 
   if (loadError) {
@@ -150,7 +150,7 @@ export default function RepTools() {
 function Heading({ back, title, subtitle, actions }: { back: string; title: string; subtitle: string; actions?: React.ReactNode }) {
   return (
     <section className="admin-heading">
-      <Link className="icon-button" to={back} aria-label="Back to the results">
+      <Link className="icon-button" state={ADMIN_RETURN_STATE} to={back} aria-label="Back to the results">
         <span className="material-symbols-outlined">arrow_back</span>
       </Link>
       <div>

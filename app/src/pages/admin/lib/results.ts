@@ -19,9 +19,14 @@ export interface AdminResults {
 
 export const RESULT_DRILLS: Drill[] = DRILLS.filter(drill => drill.key !== "freeRecord");
 
-export async function loadAdminResults(playerId: string): Promise<AdminResults> {
-  const playerDoc = await db.collection("players").doc(playerId).get();
-  if (!playerDoc.exists) throw new Error("That athlete could not be found.");
+export async function loadAdminResults(playerId: string, knownAthlete?: any): Promise<AdminResults> {
+  if (knownAthlete && knownAthlete.id !== playerId) throw new Error('The selected athlete changed. Open their results again.');
+  let athlete = knownAthlete;
+  if (!athlete) {
+    const playerDoc = await db.collection("players").doc(playerId).get();
+    if (!playerDoc.exists) throw new Error("That athlete could not be found.");
+    athlete = { ...(playerDoc.data() || {}), id: playerDoc.id };
+  }
   const response = await cloud.httpsCallable("getAthleteEffectiveResults")({ playerId });
   const all = visibleAttempts(((response.data as any).reps || []).map(normalizeRep), { includeFailedAttempts: true });
   const reps: Record<string, any[]> = Object.fromEntries(DRILLS.map(drill => [drill.key, []]));
@@ -32,7 +37,7 @@ export async function loadAdminResults(playerId: string): Promise<AdminResults> 
   } catch (error) {
     console.warn("[admin results] Free Record listing unavailable", error);
   }
-  return { athlete: { id: playerDoc.id, ...(playerDoc.data() || {}) }, reps };
+  return { athlete, reps };
 }
 
 export function resultsPath(playerId: string, drillKey?: string, repId?: string): string {

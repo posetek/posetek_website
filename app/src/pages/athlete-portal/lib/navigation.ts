@@ -1,5 +1,6 @@
 import { accountContext, accountPlayerPath, accountQuery, accountReturnPath } from "../../admin/lib/accountHierarchy";
 import type { Access } from "./loaders";
+import { validatedAdminReturn } from "../../admin/lib/adminNavigation";
 
 type AthleteNavigationFields = { id?: string; organizationId?: unknown; teamId?: unknown };
 
@@ -20,6 +21,8 @@ export function organizationPlayerPath(player: AthleteNavigationFields & { id: s
 export function athleteRosterNavigation(access: Access | null, athlete: AthleteNavigationFields | null, search = "") {
   const context = currentContext(athlete);
   if (access === "admin") {
+    const back = validatedAdminReturn(new URLSearchParams(search).get("returnTo"));
+    if (back) return { to: back, label: "Back to player" };
     const prior = accountContext(search);
     const coachId = (prior.orgId ?? "") === (context.orgId ?? "") ? prior.coachId : undefined;
     return { to: accountReturnPath({ ...context, coachId }), label: "Accounts" };

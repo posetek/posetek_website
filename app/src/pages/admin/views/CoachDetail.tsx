@@ -3,7 +3,9 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { auth } from "../../../lib/firebase";
 import { loadCoachAccount, saveCoachRating } from "../lib/accounts";
 import { accountContext, accountQuery } from "../lib/accountHierarchy";
+import { adminDirectoryPath, adminPlayerReturn, parseAdminDirectoryState } from "../lib/adminNavigation";
 import { useAccountLoad } from "../lib/useAccountLoad";
+import { ADMIN_RETURN_STATE } from "../lib/useAdminNavigation";
 import PlayerRosterRow from "./PlayerRosterRow";
 import { LoadError, TeamRoster } from "./MonitorAccounts";
 
@@ -35,18 +37,18 @@ export default function CoachDetail() {
     } catch (error) { if (current()) setMessage(error instanceof Error ? error.message : "That rating could not be saved."); }
     finally { if (current()) setSaving(false); }
   }
-  const back = `/admin/accounts${accountQuery({ orgId, teamId: requested.teamId })}`;
+  const back = adminPlayerReturn(query.toString());
   if (state.kind === "loading") return <p role="status">Loading the staff account…</p>;
-  if (state.kind === "error") return <><Link className="quiet-button" to={back}>Back to accounts</Link><LoadError message={state.message} retry={refresh} /></>;
+  if (state.kind === "error") return <><Link className="quiet-button" state={ADMIN_RETURN_STATE} to={back}>Back to people and organizations</Link><LoadError message={state.message} retry={refresh} /></>;
   const { coach, organization, roster, teams, limits, ratingEditable } = state.data;
   const role = coach.organizationRole === "manager" ? "Organization manager" : "Coach";
   const context = { orgId: organization?.id || orgId, coachId, teamId: requested.teamId };
   const unassigned = roster.filter(player => !teams.some(row => row.team.id === player.teamId));
   return <>
-    <section className="admin-heading"><Link className="icon-button" to={back} aria-label="Back to accounts"><span className="material-symbols-outlined">arrow_back</span></Link>
+    <section className="admin-heading"><Link className="icon-button" state={ADMIN_RETURN_STATE} to={back} aria-label="Back to people and organizations"><span className="material-symbols-outlined">arrow_back</span></Link>
       <div><p className="eyebrow">{role}{organization ? ` · ${organization.name}` : " · legacy roster"}</p><h1>{coach.name}</h1>
         <p>{coach.email || "No email on file"} · {roster.length} athletes{coach.organizationStatus && ` · ${coach.organizationStatus}`}</p></div>
-      <div className="admin-heading-actions"><button className="quiet-button" onClick={refresh}>Refresh</button>{organization && <Link className="quiet-button" to={`/admin/organizations${accountQuery({ orgId: organization.id })}`}>Manage staff access</Link>}</div></section>
+      <div className="admin-heading-actions"><button className="quiet-button" onClick={refresh}>Refresh</button>{organization && <Link className="quiet-button" to={adminDirectoryPath({ ...parseAdminDirectoryState(query), orgId: organization.id, directoryTab: "staff" })}>Manage staff access</Link>}</div></section>
     {message && <p className="form-message" role="status">{message}</p>}
     {limits.map(limit => <p className="form-message" role="status" key={limit}>{limit}</p>)}
     {ratingEditable && <section className="admin-card"><h2>Coach difficulty limit</h2><p className="admin-note">Sets drill eligibility for athletes who inherit this coach’s limit. Their individual limits take priority.</p>

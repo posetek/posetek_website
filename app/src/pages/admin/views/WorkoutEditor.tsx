@@ -26,7 +26,8 @@ import { domainLabel, isPosition } from "../../../lib/contracts/types";
 import type { BlockV3 } from "../../../lib/contracts/types";
 import { eligibilityFor, loadCoachOfPlayer, loadPlayer, loadWorkoutLogs, resolvePlayerAge } from "../lib/accounts";
 import type { PlayerRow } from "../lib/accounts";
-import { accountContext, accountPlayerPath } from "../lib/accountHierarchy";
+import { adminPlayerPath } from "../lib/adminNavigation";
+import { ADMIN_RETURN_STATE } from '../lib/useAdminNavigation';
 import { loadCatalog } from "../lib/catalog";
 import {
   MAX_BLOCKS,
@@ -71,7 +72,7 @@ export default function WorkoutEditor() {
   const { playerId = "", planId = "", workoutId = "" } = useParams();
   const navigate = useNavigate();
   const [query] = useSearchParams();
-  const playerPath = accountPlayerPath(playerId, accountContext(query));
+  const playerPath = adminPlayerPath(playerId, 'workouts', query.toString());
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [draft, setDraft] = useState<WorkoutDraft | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -216,7 +217,7 @@ export default function WorkoutEditor() {
       setConfirming(false);
       navigate(playerPath, {
         replace: true,
-        state: { saved: result.adjustmentId },
+        state: { ...ADMIN_RETURN_STATE, saved: result.adjustmentId },
       });
     } catch (error: any) {
       if (error instanceof SaveError && (error.code === "workoutChanged" || error.code === "scheduleMoved")) {
@@ -233,7 +234,7 @@ export default function WorkoutEditor() {
     return (
       <div className="admin-banner danger">
         <span className="material-symbols-outlined">error</span>
-        <p>{loadError} <Link to={playerPath}>Back to the athlete</Link>.</p>
+        <p>{loadError} <Link state={ADMIN_RETURN_STATE} to={playerPath}>Back to the athlete</Link>.</p>
       </div>
     );
   }
@@ -247,7 +248,7 @@ export default function WorkoutEditor() {
   return (
     <>
       <section className="admin-heading">
-        <Link className="icon-button" to={playerPath} aria-label="Back to the athlete">
+        <Link className="icon-button" state={ADMIN_RETURN_STATE} to={playerPath} aria-label="Back to the athlete">
           <span className="material-symbols-outlined">arrow_back</span>
         </Link>
         <div>

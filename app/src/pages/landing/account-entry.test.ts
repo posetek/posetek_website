@@ -35,6 +35,13 @@ describe("account entry destinations", () => {
     expect(route("player", "/programs?player=canonical-player")).toBe(origin + "/programs?player=canonical-player");
     expect(route("player", "/feed.html?activity=123")).toBe(origin + "/feed.html?activity=123");
   });
+  it.each(["/admin/accounts?orgId=club&directoryTab=staff&search=Ana&page=2", "/admin/organizations?orgId=club&teamId=u15", "/admin/programs?players=ana&orgId=club&teamId=u15", "/admin/programs/personalized?players=ana", "/admin/accounts/coach/coach-1?directoryTab=staff", "/admin/accounts/player/ana/results/sprint?orgId=club", "/admin/accounts/player/ana/results/sprint/rep-1?session=s"]) ("restores workspace/evidence sign-in intent only for admins: %s", target => {
+    expect(route("admin", target)).toBe(origin + target);
+    for (const role of ["coach", "manager", "independent", "player", "pending"] as const) expect(route(role, target)).toBe(route(role));
+  });
+  it.each(["/admin/accounts/coach/%00", "/admin/accounts/coach/a%2Fb", "/admin/accounts/player/ana/results/sprint/%7f", "/admin/accounts/player/ana/results/%E0%A4%A", "/admin/programs/unknown"]) ("rejects malformed admin return IDs/routes: %s", target => {
+    expect(getSafeReturnToUrl("?returnTo=" + encodeURIComponent(target), base, origin)).toBeNull();
+  });
   it.each(["/organization", "/insights", "/roster", "/coachesview.html"]) ("does not route a player to staff-only surface %s", target => {
     expect(route("player", target)).toBe("/feed?player=canonical-player&userType=player");
   });
