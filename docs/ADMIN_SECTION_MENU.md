@@ -46,7 +46,7 @@ The header organization/team selector and its context fetch are removed. Scope
 selection remains within the relevant pages, and navigation still retains existing
 scope parameters.
 
-Merge validation: 749 of 750 admin/Insights tests pass. The remaining device
-contract parity check requires the unavailable sibling mobile checkout at
-`PoseTek-mobile-app/tools/contracts/device-performance-v1`; it is unrelated to
-this navigation change. TypeScript passes after integration with current main.
+Merge validation: all 1,847 frontend tests and TypeScript pass after integration
+with current main. The device contract parity check runs against a fresh temporary
+sparse checkout of canonical `posetek/posetek-mobile-app` main using
+`POSETEK_MOBILE_REPO`; it is no longer blocked by the absent sibling checkout.
