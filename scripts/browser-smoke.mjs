@@ -2,24 +2,28 @@
 // This is deliberately not authenticated Firebase or production smoke coverage.
 import assert from 'node:assert/strict';
 import { test, before, after } from 'node:test';
+import { stat } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { once } from 'node:events';
 import { chromium } from '../app/node_modules/playwright/index.mjs';
-import { preview } from '../app/node_modules/vite/dist/node/index.js';
+import { createHomepagePreviewServer } from './serve-homepage-preview.mjs';
 
 let server, browser, origin;
 before(async () => {
-  server = await preview({
-    configFile: false,
-    root: fileURLToPath(new URL('../app/', import.meta.url)),
-    build: { outDir: fileURLToPath(new URL('../dist/', import.meta.url)) },
-    preview: { host: '127.0.0.1', port: 0, open: false },
-  });
-  origin = `http://127.0.0.1:${server.httpServer.address().port}`;
+  const outputUrl = new URL('../app/astro-dist/', import.meta.url);
+  const output = fileURLToPath(outputUrl);
+  for (const entry of ['index.html', 'coaches/index.html', 'feedback.html', 'application.html']) {
+    await stat(new URL(entry, outputUrl));
+  }
+  server = createHomepagePreviewServer({ marketingRoot: output, referenceRoot: output });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  origin = `http://127.0.0.1:${server.address().port}`;
   browser = await chromium.launch(); // Missing browser is a failure, never a skip.
 });
 after(async () => {
   await browser?.close();
-  await server?.close();
+  if (server) await new Promise(resolve => server.close(resolve));
 });
 
 async function pageFor(t) {
@@ -44,6 +48,19 @@ async function pageFor(t) {
     assert.deepEqual(errors, [], 'guest flow raised an uncaught browser error');
   });
   return page;
+}
+
+for (const [route, title] of [
+  ['/', 'PoseTek | Start with evidence. Train what’s next.'],
+  ['/coaches', 'PoseTek for Coaches & Clubs | Start with every player.'],
+  ['/feedback', 'Give feedback | PoseTek'],
+]) {
+  test(`compiled Astro ${route} serves its own public entry`, { timeout: 30_000 }, async t => {
+    const page = await pageFor(t);
+    const response = await page.goto(origin + route);
+    assert.equal(response.status(), 200);
+    assert.equal(await page.title(), title);
+  });
 }
 
 for (const route of ['/signin', '/kickai.html']) {
