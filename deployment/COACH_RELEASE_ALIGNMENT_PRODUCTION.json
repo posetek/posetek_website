@@ -1,0 +1,293 @@
+{
+  "schemaVersion": 1,
+  "status": "production-verified",
+  "recordedAt": "2026-10-07T20:22:11.861Z",
+  "deploymentId": "6ac6a6bd448852167e52d189",
+  "previousDeploymentId": "6ac5ac30bb13dae95443c2b4",
+  "runtimeSourceCommit": "69e51f58ed5abf22f345f94913122195b654d3ba",
+  "backendSourceCommit": "4ceba7062c9a4abc7ac8eb2bd1d258af0bb8ea16",
+  "baseCommit": "571bdbd17d0426dc575f51855d9b7009148292b3",
+  "publishedAt": "2026-10-07T20:14:12.904Z",
+  "publishedPacific": "October 7, 2026 at 1:14:12 PM PDT",
+  "url": "https://posetek.net",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/38",
+  "task": "https://github.com/posetek/posetek_website/issues/26",
+  "deploymentScopes": [
+    "website",
+    "functions:expanded-insights"
+  ],
+  "exactReviewedCandidatePromoted": true,
+  "artifact": {
+    "files": 1825,
+    "providerRecords": 1826,
+    "applicationSha1": "df19c5d593b587da946c487188b1c474cbabff4a",
+    "feedbackSha1": "039a6cb1c652002dcd7e556359e5fbd1974ce426",
+    "addedRuntimeAssets": 15,
+    "preservedPredecessorProviderRecords": 1809,
+    "fullInventoryVerified": true,
+    "changedPredecessorFiles": [
+      "/application.html",
+      "/netlify.toml (generated provider metadata)"
+    ],
+    "artifactManifestSha256": "c2dee1d504c8fa20fbb7f929ec6791a3878e326df14191bd916f096011bbb024",
+    "inventorySha256": "76a68acd0551b1b1e33ef8167eea4e2468523d402b36da8ab011ed7913545b65",
+    "applicationRoutes": 17,
+    "feedbackRoutes": 3,
+    "marketingRoutes": 5,
+    "effectiveFeedbackHeadersPreserved": true
+  },
+  "backend": {
+    "scope": "functions:expanded-insights",
+    "nineFunctionsVerified": true,
+    "unrelatedFunctionsPreserved": 115,
+    "regionalInventory": 124,
+    "configurationAndIamPreserved": true,
+    "functions": {
+      "getClubInsightsV2": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceSha256": "695c79919aa42c426768ae9b6fe0d073dcf609a089fe5e94e0708dbbe5e7976d",
+        "iamSha256": "c0628979974b95221d9f75067946607266ef54393c11b476037744fc50f1bb6e",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true
+      },
+      "getCoachPlayerComparison": {
+        "versionId": "4",
+        "status": "ACTIVE",
+        "sourceSha256": "695c79919aa42c426768ae9b6fe0d073dcf609a089fe5e94e0708dbbe5e7976d",
+        "iamSha256": "a6b0c301a8aa2e2ae6f52311750f1674f642188ab8d62a66c109f8d5e8af5a7d",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true
+      },
+      "recordInsightUsage": {
+        "versionId": "6",
+        "status": "ACTIVE",
+        "sourceSha256": "695c79919aa42c426768ae9b6fe0d073dcf609a089fe5e94e0708dbbe5e7976d",
+        "iamSha256": "328f2c2c79c8bc205a61fa521a4da75c05896f467044662bc897a5182956ca91",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true
+      },
+      "projectInsightPlayer": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceSha256": "695c79919aa42c426768ae9b6fe0d073dcf609a089fe5e94e0708dbbe5e7976d",
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true
+      },
+      "projectInsightRecords": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceSha256": "695c79919aa42c426768ae9b6fe0d073dcf609a089fe5e94e0708dbbe5e7976d",
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true
+      },
+      "projectInsightRevisions": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceSha256": "695c79919aa42c426768ae9b6fe0d073dcf609a089fe5e94e0708dbbe5e7976d",
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true
+      },
+      "projectInsightFailures": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceSha256": "695c79919aa42c426768ae9b6fe0d073dcf609a089fe5e94e0708dbbe5e7976d",
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true
+      },
+      "projectInsightArtifacts": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceSha256": "695c79919aa42c426768ae9b6fe0d073dcf609a089fe5e94e0708dbbe5e7976d",
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true
+      },
+      "projectInsightArtifactDeletes": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceSha256": "695c79919aa42c426768ae9b6fe0d073dcf609a089fe5e94e0708dbbe5e7976d",
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true
+      }
+    },
+    "verifiedAt": "2026-10-07T19:55:22.410Z",
+    "runtimeModuleClosureVerified": true,
+    "sourceFiles": 15,
+    "actualSdkDiscoveryAndPinnedDefinitionsVerified": true,
+    "immutableReceiptSha256": "35d7db5ca7c321504bded8ec1151fedd690d31885fdc2f1e1ed7bedd2b75db28",
+    "preservationProofSha256": "cd7810dcc7b40ee8d9cc371e4510ccde77d0c4e0af288e298ae63ce53fd8dfd2",
+    "credentialsRemoved": true
+  },
+  "experience": {
+    "coachRosterAndPlayerPerformanceAgree": true,
+    "cumulativeQualifiedD1StandingThroughReportEnd": true,
+    "latestTestAndLatestTwoLocalDateChangeSeparate": true,
+    "currentFourteenDayActivePlanTraining": true,
+    "explicitNullTimezoneTargetUnavailable": true,
+    "absentAdditiveSummariesUnavailable": true,
+    "canonicalAliasesAndSessionEndingsValidated": true,
+    "previewSelectedPlayerIsolation": true,
+    "coachRosterActionsAndSignupCodesPreserved": true,
+    "adminGroupedNavigationLive": true,
+    "adminHierarchyAndCompleteGraphsPreserved": true
+  },
+  "browser": {
+    "candidate": {
+      "passed": true,
+      "checks": 35,
+      "captures": 13,
+      "additiveContractVerified": true,
+      "scopeBoundaryChecksPassed": true,
+      "completedAt": "2026-10-07T20:13:01.697Z",
+      "unexpectedErrors": 0,
+      "consoleErrors": 0,
+      "applicationWrites": 0,
+      "viewports": [
+        360,
+        390,
+        430,
+        1440
+      ]
+    },
+    "production": {
+      "passed": true,
+      "checks": 35,
+      "captures": 13,
+      "additiveContractVerified": true,
+      "scopeBoundaryChecksPassed": true,
+      "completedAt": "2026-10-07T20:15:54.192Z",
+      "unexpectedErrors": 0,
+      "consoleErrors": 0,
+      "applicationWrites": 0,
+      "viewports": [
+        360,
+        390,
+        430,
+        1440
+      ]
+    },
+    "independentLocalAndCandidateReviewPassed": true,
+    "independentPublicReviewPassed": true,
+    "independentLiveReviewPassed": true,
+    "candidateProofSha256": "551312c54382eb5c9bdfbe2f38afb09f2f96c520ec914508cc846470ae4d3259",
+    "productionProofSha256": "e003329a3edd03ef21649ae82338c7daa54fcef2a1ea9433c1c72043bab8e538",
+    "independentProofSha256": "3b239fd4731f71fbcfa0aea6de2f4a59b4590fa654318a1e06fd0b2a8e397e3f",
+    "publicProofSha256": "bacdb354f69361b585dbb4e2eb088aaa1c992e33fe488e449ba5c176593c6b39",
+    "fixtures": "Run-owned synthetic Auth/memberships/profiles/qualified JSON evidence and canonical historical workout log. No real athlete or staff account was modified.",
+    "assignedCoachActualUiSignIn": true,
+    "independentAndPlayerAuthSessions": true,
+    "qualificationActualDeployedProjectionVerified": true,
+    "checkCounting": "Each stage has 35 unique checks: 10 live contract checks and 25 browser/navigation/layout checks; separate contract files contain those same ten checks.",
+    "anonymousProductionGuards": {
+      "passed": true,
+      "checks": 4,
+      "freshBrowserContext": true,
+      "exactSignInReturns": true,
+      "noRosterExposure": true,
+      "noCallableRequestsOrWrites": true,
+      "evidenceSha256": "ea7c9ec2099a86ff416cbcb17edfa938bc6d8c535b6213bc7cf7f3c22c1d367b"
+    },
+    "independentPublicReviewLimitations": "Independent public browser retained an existing administrator session and did not claim signed-out browser guards. Those guards were verified separately in the fresh anonymous production context."
+  },
+  "validation": {
+    "frontend": {
+      "files": 159,
+      "passed": 1863,
+      "failed": 0,
+      "sourceCommit": "69e51f58ed5abf22f345f94913122195b654d3ba",
+      "exactSourceProofSha256": "f9819e51bcc2f40d30c3acdc5eb5a0ac1355bfa9c4ea564b5c26206276920826"
+    },
+    "focusedInsights": {
+      "passed": 67
+    },
+    "releaseGuards": {
+      "passed": 55
+    },
+    "canonicalRules": {
+      "suites": 5,
+      "assertions": 1043
+    },
+    "mobileParitySources": 11,
+    "typescript": "passed",
+    "svelte": "zero errors/warnings",
+    "scopedLint": "passed",
+    "guardedAstro": "passed",
+    "fullFunctions": {
+      "total": 995,
+      "passed": 991,
+      "failed": 1,
+      "skipped": 3,
+      "unchangedFailure": "legacy-upload-processor/repair-guard.test.cjs:164; outside scoped Insights package; baseline reproduction confirmed"
+    },
+    "longPlayerNames": {
+      "wrappedWithoutTruncation": true,
+      "candidateAndProductionNoDocumentOverflow": true,
+      "viewports": [
+        360,
+        390,
+        430,
+        1440
+      ],
+      "candidateLayoutProofSha256": "db3e8cfd98f8657abcb4fd8f8ddb958422fbd71dac4f8bc97f94e2a2438acaa8",
+      "productionLayoutProofSha256": "7d33a850f78ca856be03cc795d61601ab8f533c3815fe07df2be9afb09c1a869"
+    },
+    "earlierConcurrentMarketingTimeouts": {
+      "count": 2,
+      "isolatedChecksPassed": 17,
+      "fullBoundedRerunPassed": true,
+      "testsAndTimeoutsUnchanged": true
+    },
+    "backendAndRulesSourceUnchangedFromValidatedCheckpoint": true
+  },
+  "cleanup": {
+    "verified": true,
+    "removedAuthAccounts": 5,
+    "activeAccountsAndDocuments": 0,
+    "currentAndNoncurrentStorageObjects": 0,
+    "zeroNotificationOutboxes": true,
+    "credentialsRemoved": true,
+    "delayedIndependentAuditPassed": true,
+    "auditedAt": "2026-10-07T20:19:17.325Z",
+    "delayAfterCleanupMilliseconds": 47829,
+    "storageSoftDeleteRetentionSeconds": 604800,
+    "softDeletedSyntheticJsonGenerations": 12,
+    "softDeletedSyntheticJsonNote": "Deleted run-owned synthetic JSON generations remain recoverable under the unchanged seven-day bucket soft-delete policy until automatic expiry; zero active/current/noncurrent objects is verified, not physical erasure of retained soft-deleted generations.",
+    "noProviderSends": true,
+    "cleanupProofSha256": "12ccee47ef196c0571254360ecd09713f44892a259378b199ba696ab9348bcdc"
+  },
+  "baseline": {
+    "deploymentId": "6ac6a6bd448852167e52d189",
+    "sourceCommit": "69e51f58ed5abf22f345f94913122195b654d3ba",
+    "files": 1823,
+    "bytes": 152359273,
+    "originalBytesCached": true,
+    "ordinaryPreservationBuildPassed": true
+  },
+  "preservedGates": [
+    "canonical rules and indexes unchanged",
+    "canonical gateway unchanged",
+    "catalog, eighty held whole-body drafts and native/content acceptance unchanged",
+    "native voice release gates unchanged",
+    "diagnostic and replay gates unchanged",
+    "marketing, isolated feedback and stable P icons byte-preserved",
+    "active plans and coach assignments preserved",
+    "existing Device performance and team-session routes preserved"
+  ],
+  "recovery": "Prepare a forward correction from current main, preserve protected unrelated bytes, review a new hosted candidate and promote that exact artifact; historical release IDs remain comparison records.",
+  "gitPublicationPolicy": "[skip netlify] source, confirmed-release and merge commits; deliberate promotion of the reviewed artifact"
+}

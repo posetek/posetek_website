@@ -1,6 +1,19 @@
 # PoseTek website project context
 
-## Coach release alignment candidate (2026-10-07)
+<!-- coach-release-alignment-current:start -->
+## Current combined coach and admin-menu release
+
+Website `6ac6a6bd448852167e52d189`, runtime source `69e51f5`, was published October 7, 2026 at 1:14:12 PM PDT from the exact reviewed candidate. Kai's always-visible coach roster and player summary now share authoritative cumulative D1 standing through the selected end, latest-two-local-test-date change and current fourteen-day plan progress. Missing summaries remain unavailable. Signup copying, scope/filter/history returns, player records and prescribing remain connected. The admin header groups Overview, Coaching hub and System & User Insights while retaining the existing tools and hierarchy.
+
+All 1,825 artifact files match 1,826 provider records; 1,809 predecessor provider records remain exact and 15 runtime assets are added. The nine scoped Expanded Insights functions from `4ceba70` passed immutable source, configuration, IAM and dependency-closure verification; all 115 unrelated functions remain unchanged. Verified versions are getClubInsightsV2 version 7, getCoachPlayerComparison version 4, recordInsightUsage version 6, all six projectInsight writers version 7. Owned additive candidate and production acceptance passed 35 and 35 checks, with 13 and 13 captures. The reconciled baseline protects 1,823 files and passed the ordinary preservation build.
+
+Owned active accounts/documents, current and noncurrent storage objects and notification outboxes are absent after delayed independent cleanup; verification credentials were removed. Deleted run-owned synthetic JSON generations remain recoverable under the unchanged seven-day bucket soft-delete policy until automatic expiry; zero active/current/noncurrent objects is verified, not physical erasure of retained soft-deleted generations.
+
+Marketing, isolated feedback, stable P icons, real athlete evidence, active plans, coach assignments and private drafts/conversations are preserved. Rules, indexes, gateway, catalog and native were not deployed. The eighty held drills and their device/content acceptance hold, default-disabled gateway-first native voice, diagnostics, historical replay and other native release gates remain unchanged. Read [the coach handoff](docs/COACH_RELEASE_READINESS.md), [menu handoff](docs/ADMIN_SECTION_MENU.md), [production evidence](deployment/COACH_RELEASE_ALIGNMENT_PRODUCTION.json) and [PR #38](https://github.com/posetek/posetek_website/pull/38). The earlier admin hierarchy release and candidate receipts below remain historical checkpoints.
+<!-- coach-release-alignment-current:end -->
+
+
+## Historical coach readiness candidate (2026-10-07)
 
 The integrated coach source now uses the same authoritative D1 standing,
 current fourteen-day training totals and follow-up reasons in the roster and
@@ -28,7 +41,7 @@ The prepared nine-function backend remains undeployed. Hosted acceptance verifie
 legacy-response unavailable states; new additive live acceptance and Dylan's
 preview review remain release steps before promoting this exact artifact.
 
-## Admin logo-level menu candidate (2026-10-06)
+## Historical admin logo-level menu candidate (2026-10-06)
 
 The header now groups its existing destinations into Overview, Coaching hub, and
 System & User Insights beside the logo. Overview opens the existing Insights
@@ -42,7 +55,7 @@ production and the protected baseline are unchanged. See
 [the menu handoff](docs/ADMIN_SECTION_MENU.md).
 
 <!-- admin-hierarchy-current:start -->
-## Admin hierarchy and complete reporting production release (2026-10-06)
+## Historical admin hierarchy and complete reporting production release (2026-10-06)
 
 Website `6ac5ac30bb13dae95443c2b4`, source `3f03565`, was published October 6, 2026 at 7:24:56 PM PDT from the exact reviewed candidate. People & organizations now follows Organizations → Team → People. Selecting an organization shows its aggregate graphs and team directory; a team, explicit All teams or Unassigned destination opens people. Overview, Testing, Workouts and Usage keep their complete cards, graphs, explanations and evidence tables above the roster. Read [the hierarchy handoff](docs/ADMIN_HIERARCHY_REPORTING.md) and [production evidence](deployment/ADMIN_HIERARCHY_REPORTING_PRODUCTION.json).
 
