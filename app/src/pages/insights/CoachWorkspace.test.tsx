@@ -51,6 +51,34 @@ describe("unified coach workspace", () => {
     expect(html).not.toContain(">Team</th>"); expect(html).not.toContain("Division · age");
     expect(html).toContain("view=player");
   });
+  it("does not describe missing additive performance as no plan or insufficient testing", () => {
+    const player = { ...data.players[0] };
+    delete player.performance;
+    const html = renderToStaticMarkup(<MemoryRouter><CoachRoster preview data={{ ...data, players: [player] }} search="" page={0} onSearch={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "#player"} /></MemoryRouter>);
+    for (const message of ["Standing unavailable", "Change unavailable", "Training unavailable", "Follow-up unavailable"]) expect(html).toContain(message);
+    expect(html).not.toContain("No active plan");
+    expect(html).not.toContain("Not enough qualified testing");
+    expect(html).not.toContain("Not enough tests");
+    expect(html).toContain(`data-label="Workouts completed">${player.workouts.completed}`);
+    expect(html).toContain("Preview · invitation actions disabled");
+    expect(html).not.toContain("<details");
+  });
+  it("preserves observed false, null and zero performance values", () => {
+    const observed = { d1: null, change: null, lastTestDate: null, previousTestDate: null, sessionsDone: null, sessionsPlanned: null, activePlan: false, planAgeDays: null, needsYouReasons: [] };
+    const render = (performance: typeof observed | NonNullable<typeof data.players[number]["performance"]>) => renderToStaticMarkup(<MemoryRouter><CoachRoster preview data={{ ...data, players: [{ ...data.players[0], performance }] }} search="" page={0} onSearch={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "#player"} /></MemoryRouter>);
+    const noPlan = render(observed);
+    expect(noPlan).toContain("No active plan");
+    expect(noPlan).toContain("Not enough qualified testing");
+    expect(noPlan).toContain("Not enough tests");
+    expect(noPlan).not.toContain("Follow-up unavailable");
+    const zeros = render({ ...observed, d1: 0, change: 0, activePlan: true, sessionsDone: 0, sessionsPlanned: 0 });
+    expect(zeros).toContain("0% of D1");
+    expect(zeros).toContain("Within 2 points");
+    expect(zeros).toContain('data-label="Training · 14 days">0 of 0');
+    expect(zeros).not.toContain("unavailable");
+    expect(render({ ...observed, activePlan: true })).toContain("Schedule unavailable");
+    expect(render({ ...observed, activePlan: true, sessionsPlanned: 2 })).toContain("Completion unavailable");
+  });
   it("keeps the roster visible when replacement or searched data is rendered", () => {
     const searched = previewInsights({ ...request, rosterSearch: "Alex" }, 0, "normal", "coach");
     for (const rows of [data, searched]) {

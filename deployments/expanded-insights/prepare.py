@@ -6,6 +6,7 @@ import hashlib
 import io
 import json
 from pathlib import Path
+import re
 import subprocess
 import time
 from urllib.request import Request, urlopen
@@ -17,7 +18,7 @@ PROJECT = 'kickai-69dd0'
 REGION = 'us-central1'
 ENDPOINTS = ('getClubInsightsV2', 'getCoachPlayerComparison', 'recordInsightUsage', 'projectInsightPlayer', 'projectInsightRecords',
              'projectInsightRevisions', 'projectInsightFailures', 'projectInsightArtifacts', 'projectInsightArtifactDeletes')
-FILES = ('insights-entrypoints.js', 'insights-v2.js', 'insights-v2-projection.js', 'insights-v2-qualification.js',
+FILES = ('insights-entrypoints.js', 'insights-v2.js', 'insights-overview.js', 'insights-v2-projection.js', 'insights-v2-qualification.js',
          'processing-evidence.js', 'insight-usage.js', 'club-access.js', 'athlete-storage-paths.js',
          'effective-rep.js', 'insights-axis-scoring.js', 'athlete-profile-spec.json', 'package.json', 'package-lock.json')
 API = 'https://cloudfunctions.googleapis.com/v1/'
@@ -59,6 +60,63 @@ def read(path): return json.loads(Path(path).read_text(encoding='utf-8-sig'))
 def write(path, data): Path(path).write_text(json.dumps(data, indent=2) + '\n', encoding='utf-8')
 def require(ok, message):
     if not ok: raise RuntimeError(message)
+
+def runtime_module_closure(source, files):
+    """Check the scoped, static CommonJS graph before dependencies are installed.
+
+    Every local import must resolve within the immutable source manifest. Node
+    builtins and declared production dependencies are the only external imports.
+    Computed imports need a reviewed resolver rather than escaping this check.
+    """
+    source = source.resolve()
+    package = read(source / 'package.json')
+    require(package.get('main') == 'index.js', 'Unexpected runtime entry point')
+    dependencies = set(package.get('dependencies', {}))
+    literal = re.compile(r"\brequire\s*\(\s*(['\"])([^'\"\r\n]+)\1\s*\)")
+    calls = re.compile(r'\brequire\s*\(')
+    graph, external = {}, set()
+    for name in sorted(files):
+        if not name.endswith('.js'): continue
+        text = (source / name).read_text(encoding='utf-8')
+        matches = list(literal.finditer(text))
+        require({match.start() for match in calls.finditer(text)} == {match.start() for match in matches},
+                'Computed runtime import requires review: ' + name)
+        imports = set()
+        for match in matches:
+            request = match.group(2)
+            if request.startswith('.'):
+                target = (source / name).parent / request
+                candidates = [target, Path(str(target) + '.js'), Path(str(target) + '.json'),
+                              target / 'index.js', target / 'index.json']
+                require(all(path.resolve().is_relative_to(source) for path in candidates),
+                        'Runtime import escapes prepared source: ' + name + ' -> ' + request)
+                resolved = next((path for path in candidates if path.is_file()), None)
+                require(resolved is not None, 'Required runtime module missing: ' + name + ' -> ' + request)
+                relative = resolved.relative_to(source).as_posix()
+                require(relative in files, 'Required runtime module absent from manifest: ' + relative)
+                imports.add(relative)
+            else:
+                dependency = '/'.join(request.split('/')[:2]) if request.startswith('@') else request.split('/')[0]
+                require(request in ('node:crypto', 'node:util') or dependency in dependencies,
+                        'Undeclared runtime dependency: ' + name + ' -> ' + request)
+                external.add(request)
+        graph[name] = sorted(imports)
+    reached, pending = set(), ['index.js']
+    while pending:
+        name = pending.pop()
+        if name in reached: continue
+        require(name in files, 'Runtime entry module absent from manifest: ' + name)
+        reached.add(name)
+        pending.extend(graph.get(name, []))
+    require(set(graph).issubset(reached), 'Prepared runtime has unreachable JavaScript modules')
+    return {'entryPoint': 'index.js', 'localModules': sorted(reached), 'externalImports': sorted(external), 'imports': graph}
+
+def scoped_runtime_module_closure(source, files):
+    # Other independently reviewed publishers reuse this auditor and keep their
+    # own dynamic module and source contracts. This gate belongs to this bundle.
+    if FIREBASE_CONFIG['functions']['codebase'] == 'expanded-insights':
+        return runtime_module_closure(source, files)
+    return None
 def validate_runtime_config(data):
     """Allow only the non-secret Firebase config appended by the CLI upload."""
     require(len(data) <= 4096, 'Deployed runtime configuration exceeds its bound')
@@ -144,6 +202,7 @@ def prepare(run, api):
         original = HERE / name if name == 'index.js' else ROOT / 'functions' / name
         data = original.read_bytes(); (source / name).write_bytes(data)
         manifest[name] = {'sha256': sha(data), 'bytes': len(data)}
+    closure = scoped_runtime_module_closure(source, manifest)
     require(api.inventory() == before, 'Function inventory changed during preparation')
     rollback, before_iam = {}, {}
     for endpoint in ENDPOINTS:
@@ -160,7 +219,8 @@ def prepare(run, api):
     write(run / 'before.json', before)
     write(run / 'before-iam.json', before_iam)
     write(run / 'manifest.json', {'schemaVersion': 2, 'project': PROJECT, 'endpoints': ENDPOINTS, 'files': manifest,
-                                  'definitions': expected_definitions(), 'rollback': rollback, 'preparedAt': time.time()})
+                                  'definitions': expected_definitions(), 'rollback': rollback, 'preparedAt': time.time(),
+                                  **({'moduleClosure': closure} if closure is not None else {})})
     write(run / 'firebase.json', FIREBASE_CONFIG)
     (source / '.firebaseignore').write_bytes(FIREBASE_IGNORE)
     print(json.dumps({'prepared': True, 'endpoints': list(ENDPOINTS), 'sourceFiles': len(manifest)}))
@@ -174,6 +234,9 @@ def verify(run, api):
     for name, expected in manifest['files'].items():
         data = (run / 'source' / name).read_bytes()
         require(sha(data) == expected['sha256'] and len(data) == expected['bytes'], 'Prepared source changed')
+    closure = scoped_runtime_module_closure(run / 'source', manifest['files'])
+    if closure is not None:
+        require(manifest.get('moduleClosure') == closure, 'Prepared runtime module closure changed; prepare a fresh run')
     owned = {PARENT + '/functions/' + name for name in ENDPOINTS}
     require({k: v for k, v in before.items() if k not in owned} == {k: v for k, v in after.items() if k not in owned}, 'Unrelated function inventory changed')
     results, after_iam = {}, {}
@@ -202,7 +265,8 @@ def verify(run, api):
     require(all(api.iam(endpoint) == policy for endpoint, policy in after_iam.items()), 'Function IAM changed during verification')
     write(run / 'after.json', after)
     write(run / 'after-iam.json', after_iam)
-    write(run / 'verified.json', {'verifiedAt': time.time(), 'functions': results, 'unrelatedFunctionsPreserved': True, 'triggerRuntimeAndTransportVerified': True})
+    write(run / 'verified.json', {'verifiedAt': time.time(), 'functions': results, 'unrelatedFunctionsPreserved': True, 'triggerRuntimeAndTransportVerified': True,
+                                 **({'runtimeModuleClosureVerified': True} if closure is not None else {})})
     print(json.dumps({'verified': True, 'functions': results, 'unrelatedFunctionsPreserved': True}))
 
 if __name__ == '__main__':

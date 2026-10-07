@@ -12,16 +12,22 @@ function activePlan(plans) {
 function planProgress(planRow, logs, now) {
   if (!planRow) return { sessionsDone: null, sessionsPlanned: null, activePlan: false, planAgeDays: null };
   const plan = planRow.data, context = plan.intake?.trainingContext || plan.trainingContext || {};
-  const timezone = typeof plan.timezone === "string" ? plan.timezone : "UTC";
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(now));
-  const recentStart = new Date(Date.parse(`${today}T12:00:00Z`) - 13 * DAY).toISOString().slice(0, 10);
+  let today = null;
+  try {
+    // Absence retains the legacy UTC default. An explicit unusable timezone
+    // cannot supply calendar targets and must not take the whole roster down.
+    const timezone = Object.hasOwn(plan, "timezone") ? plan.timezone : "UTC";
+    if (typeof timezone === "string" && timezone.length) today = new Intl.DateTimeFormat("en-CA", {
+      timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(now));
+  } catch { /* Calendar targets remain unavailable; absolute log times are usable. */ }
+  const recentStart = today ? new Date(Date.parse(`${today}T12:00:00Z`) - 13 * DAY).toISOString().slice(0, 10) : null;
   const startDate = validDate(context.startDate) ? context.startDate : validDate(plan.startDate) ? plan.startDate : null;
   const intervalStart = startDate && startDate > recentStart ? startDate : recentStart;
-  const activeDays = startDate && intervalStart <= today ? Math.floor((Date.parse(`${today}T12:00:00Z`) - Date.parse(`${intervalStart}T12:00:00Z`)) / DAY) + 1 : 0;
+  const activeDays = today && startDate && intervalStart <= today ? Math.floor((Date.parse(`${today}T12:00:00Z`) - Date.parse(`${intervalStart}T12:00:00Z`)) / DAY) + 1 : 0;
   let sessionsPlanned = null;
   const weekdays = Array.isArray(context.sessionDays) ? [...new Set(context.sessionDays.filter(day => Number.isInteger(day) && day >= 0 && day <= 6))] : [];
   const perWeek = Number(plan.sessionsPerWeek ?? plan.intake?.sessionsPerWeek);
-  if (context.scheduleConfirmed === true && weekdays.length && weekdays.length === perWeek && startDate) {
+  if (today && context.scheduleConfirmed === true && weekdays.length && weekdays.length === perWeek && startDate) {
     sessionsPlanned = 0;
     for (let date = intervalStart; activeDays > 0 && date <= today; date = new Date(Date.parse(`${date}T12:00:00Z`) + DAY).toISOString().slice(0, 10)) {
       if (weekdays.includes(new Date(`${date}T12:00:00Z`).getUTCDay())) sessionsPlanned++;
@@ -37,12 +43,12 @@ function planProgress(planRow, logs, now) {
     if (log.id && log.id !== `${log.planId}_${log.workoutId}`) continue;
     if (log.endReason === "completed" && millis(log.endedAt) !== null && millis(log.endedAt) >= now - 14 * DAY && millis(log.endedAt) <= now) done.add(log.workoutId);
   }
-  const activatedAt = millis(plan.activatedAt ?? plan.generatedAt) ?? (startDate ? Date.parse(`${startDate}T00:00:00Z`) : null);
+  const activatedAt = millis(plan.activatedAt ?? plan.generatedAt) ?? (today && startDate ? Date.parse(`${startDate}T00:00:00Z`) : null);
   return { sessionsDone: done.size, sessionsPlanned, activePlan: true,
     planAgeDays: activatedAt === null ? null : Math.max(0, Math.floor((now - activatedAt) / DAY)) };
 }
 function playerPerformance({ testing, profile, training, now, endMillis, timeZone }) {
-  const tests = testing.filter(event => event.at !== null && event.at < endMillis);
+  const tests = testing.filter(event => Number.isFinite(event.at) && event.at < endMillis);
   const change = recentD1Change(tests, timeZone);
   const progress = planProgress(training?.plan || null, training?.logs || [], now);
   const reasons = [];
