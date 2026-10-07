@@ -53,8 +53,9 @@ results feedback remains optional and available separately. The verified feedbac
 introduction release was `6ac17bc21377cbeaea114800`, published October 3, 2026 at 3:12:14 PM PDT.
 The exact candidate passed 20 hosted browser checks across nine screenshots with
 zero feedback writes before promotion. See [the feedback handoff](docs/APP_FEEDBACK.md)
-and [attribution production evidence](deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json) for current publication
-and integrity checks. The website owns the two scoped feedback
+and [attribution production evidence](deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json) for feedback behavior,
+backend evidence and integrity checks. Current website publication is recorded in
+[the admin release receipt](deployment/ADMIN_DIRECTORY_PRODUCTION.json). The website owns the two scoped feedback
 functions; the canonical mobile repository owns and publishes their client-denial
 rules. The [12-player comprehension pilot](docs/APP_FEEDBACK_PILOT.md) remains outstanding, and native
 invitations require a separate mobile release.

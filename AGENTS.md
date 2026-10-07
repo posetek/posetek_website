@@ -170,7 +170,8 @@ The original anonymous feedback release was `6ac17bc21377cbeaea114800`, publishe
 at 3:12:14 PM PDT. The exact candidate passed 20 hosted browser checks and nine
 screenshots with zero feedback writes before promotion; production inventory and
 artifact verification passed. Its receipt remains historical v1 acceptance evidence;
-use `deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json` and `deployment/homepage-baseline.json`
+use `deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json` for feedback behavior/backend evidence,
+and `deployment/ADMIN_DIRECTORY_PRODUCTION.json` with `deployment/homepage-baseline.json`
 for current website publication and protected-file evidence. The preceding coverage release `6ac06e0d420f2b6b34129fb5` and its
 1,482-file baseline are historical checkpoints; its notification behavior is
 preserved. Scoped functions are deployed and
