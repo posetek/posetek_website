@@ -1,5 +1,30 @@
 # PoseTek Coach and Admin Dashboard Handoff
 
+
+## October 6 local Overview presentation decision
+
+Kai requested removal of the **Worth reviewing** section and an always-visible
+Coach Overview roster. The local source and synthetic preview show the roster
+without a disclosure control. Kai also removed the Age and Estimated active use
+columns from this roster; the underlying reporting data and other views retain
+their existing contracts. Every roster row opens its player detail view; links, buttons and form controls
+inside the row keep their own actions. Snapshot player links, visible reporting filters,
+search, pagination, signup actions and Add player remain available. The label
+**No workout status** is retained; Kai requested removal of the explanatory
+sentence from the snapshot. The category still does not prove no workout occurred.
+This supersedes the candidate's review-action and collapsed-roster presentation;
+October 5 production receipts remain historical evidence, not changed releases.
+The source candidate is on `codex/kai-work` after rebasing onto current `main`;
+the production release and preservation baseline are unchanged. Review and merge
+status are tracked in the pull request.
+
+Post-rebase validation: frontend 1,745/1,745; backend 954 passed with three
+existing private-history skips; script suites 55/55; all 12 canonical Firestore
+and Storage rules suites passed. Svelte reported zero errors or warnings;
+TypeScript, Astro marketing build and repository lint with warnings suppressed
+completed successfully. The contract parity tests used a temporary read-only
+checkout of the canonical mobile repository. No mobile files were changed.
+
 Prepared for Kai by Dylan Keller. Original current-state review dated October 3, 2026.
 
 ## Coach Overview follow-up (October 5, 2026)

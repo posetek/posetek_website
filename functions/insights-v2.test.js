@@ -263,3 +263,17 @@ test("recent participation counts full filtered scope and unions testing with ac
   const filtered = await service.getClubInsightsV2({ ...orgRequest, filters: { division: "girls" } }, admin);
   assert.deepEqual(filtered.participation, { testingPlayers: 1, workoutPlayers: 1, anyPlayers: 1 });
 });
+
+
+test("roster cursors reject changed training targets and follow-up ordering", async () => {
+  const planPath = "players/a/trainingPlans/plan";
+  const plan = { status: "active", startDate: "2026-09-01", activatedAt: NOW - 10 * 86400000, sessionsPerWeek: 2 };
+  const service = setup({ [planPath]: plan });
+  const first = await service.getClubInsightsV2({ ...orgRequest, pageSize: 1 }, admin);
+  assert.ok(first.pagination.nextCursor);
+  service.db.docs.set(planPath, { ...plan, sessionsPerWeek: 3 });
+  await assert.rejects(service.getClubInsightsV2({ ...orgRequest, pageSize: 1, cursor: first.pagination.nextCursor }, admin), { code: "failed-precondition" });
+  const next = await service.getClubInsightsV2({ ...orgRequest, pageSize: 1 }, admin);
+  service.db.docs.set("players/a", { ...seed["players/a"], lastLogin: NOW });
+  await assert.rejects(service.getClubInsightsV2({ ...orgRequest, pageSize: 1, cursor: next.pagination.nextCursor }, admin), { code: "failed-precondition" });
+});

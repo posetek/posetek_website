@@ -53,5 +53,7 @@ export function expandedQuery(request: ExpandedRequest, patch: Partial<ExpandedR
 }
 export function hasPlayerFilters(request: ExpandedRequest) { return !!(request.division || request.ageBand || request.testingStatus || request.workoutStatus || request.usageStatus || request.usagePlatform || request.usageFeature || request.teamAssignment); }
 export function clearPlayerFilters(): Partial<ExpandedRequest> { return { division: "", ageBand: "", testingStatus: "", workoutStatus: "", usageStatus: "", usagePlatform: "", usageFeature: "", teamAssignment: "" }; }
+/** Returning to Overview starts from the whole roster: report filters and name search are cleared; dates and scope stay. */
+export function overviewReset(): Partial<ExpandedRequest> { return { ...clearPlayerFilters(), rosterSearch: "", cursor: "", page: 0 }; }
 export const ageLabel = (key: string) => ({ under10: "Under 10", "10-12": "10–12", "13-15": "13–15", "16-18": "16–18", "19+": "19+", unknown: "Unknown" }[key] || key);
 export const divisionLabel = (key: string) => ({ boys: "Boys", girls: "Girls", unknown: "Unknown" }[key] || key);

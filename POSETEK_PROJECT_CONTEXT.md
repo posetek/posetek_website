@@ -1,5 +1,26 @@
 # PoseTek website project context
 
+## Coach Overview local candidate (2026-10-06)
+
+The current branch updates the coach Overview presentation: the “Worth reviewing”
+section and snapshot explanation sentence are removed, the roster stays open,
+Age and Estimated active use are omitted from roster columns, “Training / 14 days”
+uses a two-line heading, and each player row opens that player's page while its
+links, buttons and form controls keep their own actions. Coach-specific snapshot,
+roster filters, access and reporting definitions remain intact. The player page
+puts the requested concise summary first and keeps comparison and full records
+below it. This is a source change only; the current website and release baseline
+are unchanged. See [Kai's handoff](docs/KAI_DASHBOARD_HANDOFF.md) and
+[the unified coach workspace handoff](docs/UNIFIED_COACH_WORKSPACE.md).
+
+The branch is rebased onto current GitHub `main` to preserve newer teammate work.
+Post-rebase validation passed: 1,745 frontend tests; 954 backend tests with three
+existing private-history skips; all 55 root script tests; Svelte, TypeScript, Astro
+and scoped lint checks; and all 12 canonical Firestore/Storage rules suites. The
+canonical rules and device-performance contract were read from a temporary mobile
+checkout without modification. No production release or contract change is part
+of this dashboard update.
+
 ## Admin directory production release (2026-10-06)
 
 Website `6ac5905069994ecfbad5e391`, source `afb52a0`, was published October 6
