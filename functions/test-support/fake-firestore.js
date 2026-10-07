@@ -94,10 +94,11 @@ class Query {
       const actual = field.split(".").reduce((node, key) => (node && typeof node === "object" ? node[key] : undefined), data);
       if (op === "==") return actual === value;
       if (op === "in") return value.includes(actual);
-      if (op === ">=") return actual >= value;
-      if (op === ">") return actual > value;
-      if (op === "<=") return actual <= value;
-      if (op === "<") return actual < value;
+      const comparable = item => item instanceof FakeTimestamp ? item.toMillis() : item instanceof Date ? item.getTime() : item;
+      if (op === ">=") return comparable(actual) >= comparable(value);
+      if (op === ">") return comparable(actual) > comparable(value);
+      if (op === "<=") return comparable(actual) <= comparable(value);
+      if (op === "<") return comparable(actual) < comparable(value);
       if (op === "array-contains-any") return Array.isArray(actual) && value.some(v => actual.includes(v));
       if (op === "array-contains") return Array.isArray(actual) && actual.includes(value);
       throw new Error(`Unsupported operator ${op}`);

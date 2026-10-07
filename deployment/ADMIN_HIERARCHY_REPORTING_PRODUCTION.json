@@ -411,7 +411,24 @@
     "feedbackSubmissions": 0,
     "workoutGenerationOrStarts": 0,
     "activationEmails": 0,
-    "limitations": "Live acceptance uses run-owned synthetic accounts and records. Populated graphs, qualification, unavailable/legacy scope and navigation use composed synthetic fixtures and tests. No real athlete evidence or access was modified."
+    "limitations": "Live acceptance uses run-owned synthetic accounts and records. Populated graphs, qualification, unavailable/legacy scope and navigation use composed synthetic fixtures and tests. No real athlete evidence or access was modified.",
+    "postPublicationSourceIntegration": {
+      "ordinaryPreservationBuildPassed": true,
+      "frontendTests": 1847,
+      "typeScriptPassed": true,
+      "coachReleaseHoldPreserved": true,
+      "teammateMain": "11cff549ec959487a9b3ff831976bc7be12af6a5",
+      "frontendFiles": 157,
+      "protectedFiles": 1808,
+      "newApplicationOrBackendPublished": false,
+      "backendTests": {
+        "total": 973,
+        "passed": 970,
+        "existingPrivateFixtureSkips": 3,
+        "failed": 0
+      },
+      "teammateFilesBytePreserved": true
+    }
   },
   "cleanup": {
     "syntheticAuthAccountsRemoved": 3,

@@ -33,6 +33,9 @@ describe("shared Insights player filters", () => {
     expect(html).toContain('aria-label="Active player filters"');
     expect(html).toContain("No recorded tests"); expect(html).toContain("No workout status");
     expect(html).toContain("Clear all filters"); expect(html).toContain('aria-label="Team snapshot"');
+    expect(html).not.toContain("Worth reviewing");
+    expect(html).not.toContain("coach-roster-disclosure");
+    expect(html).toContain("coach-roster-search");
     expect(html).not.toContain("Testing coverage by exercise");
     expect(html).not.toContain("Players by team");
   });

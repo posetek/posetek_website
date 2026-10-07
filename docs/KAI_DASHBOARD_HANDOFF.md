@@ -1,5 +1,35 @@
 # PoseTek Coach and Admin Dashboard Handoff
 
+
+## October 6 local Overview presentation decision
+
+Kai requested removal of the **Worth reviewing** section and an always-visible
+Coach Overview roster. The local source and synthetic preview show the roster
+without a disclosure control. Kai also removed the Age and Estimated active use
+columns from this roster; the underlying reporting data and other views retain
+their existing contracts. Every roster row opens its player detail view; links, buttons and form controls
+inside the row keep their own actions. Snapshot player links, visible reporting filters,
+search, pagination, signup actions and Add player remain available. The label
+**No workout status** is retained; Kai requested removal of the explanatory
+sentence from the snapshot. The category still does not prove no workout occurred.
+This supersedes the candidate's review-action and collapsed-roster presentation;
+October 5 production receipts remain historical evidence, not changed releases.
+The source candidate on `codex/kai-work` now includes current website `main` at
+`cf6674a` (PR #34) alongside this follow-up. Its admin-only `getClubInsightsV2`
+roster lookup returns allowlisted player metrics or a minimal excluded result;
+it remains read-only and additive, preserving existing fields and pagination.
+See [the admin metrics handoff](ADMIN_WORKSPACE_METRICS.md). The production
+release and preservation baseline are unchanged. PR #35 is open in Chrome; no
+commit or push of this local integration has been made.
+
+Local revalidation on October 6: frontend 1,801/1,801; backend 970 passed with
+three existing private-history skips; script suites 55/55; TypeScript build,
+Svelte check (zero errors/warnings), Astro marketing build and quiet repository
+lint passed. The canonical rules suite could not start because the Firebase CLI
+is unavailable in this environment. The standalone mobile parity check reports
+`docs/LLM_GATEWAY_CONTRACT.md` as changed in the supplied mobile checkout; that
+website file is unchanged from current `main`, and no mobile files were changed.
+
 Prepared for Kai by Dylan Keller. Original current-state review dated October 3, 2026.
 
 ## Coach Overview follow-up (October 5, 2026)
