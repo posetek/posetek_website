@@ -1,5 +1,13 @@
 # Pipeline decisions — September 26, 2026
 
+October 7 update: this is the preserved original decision register. The user has
+since reviewed all 42 components individually; see
+[the approved plan and conditions](APPROVED_PLAN_20261007.md) and
+[implementation status](IMPLEMENTATION_STATUS.md). The original "pending" labels
+below describe the initial proposal, not a request to repeat those approvals.
+Specific older-material replacements, new security changes, and activation still
+follow the recorded user checkpoints. Deferred ideas remain in the future register.
+
 Status: implementation candidate, not an enabled production pipeline. This is the
 decision register for all adaptations and omissions from the supplied 12-file
 `agentic-engineering-playbook`. The playbook is reference material, not policy.

@@ -1,8 +1,11 @@
 # PoseTek engineering workflow
 
-Status: candidate configuration under review. Nothing here enables a cloud
-deployment, paid reviewer or GitHub ruleset. See [DECISIONS.md](DECISIONS.md) for
-user-approved choices and every proposed adaptation of the supplied playbook.
+Status: implementation in progress under the user's
+[approved 42-component plan](APPROVED_PLAN_20261007.md). See
+[implementation status](IMPLEMENTATION_STATUS.md) for completed checks and gaps.
+Nothing here enables a cloud deployment, paid reviewer or GitHub ruleset.
+[DECISIONS.md](DECISIONS.md) preserves the original playbook adaptations and concerns;
+the approved plan records their subsequent decisions and future implementation scope.
 
 ## Daily development
 
@@ -30,7 +33,7 @@ coverage-count tests. Source-text assertions alone do not prove runtime behavior
 
 | Repository | PR lanes in this candidate | Important limit |
 | --- | --- | --- |
-| Website | Vitest; all Functions/tooling Node tests; TypeScript/application build; Svelte check; marketing build; guest Chromium smoke; workflow contract tests | Ordinary builds do not prove the protected production artifact. Three existing private-fixture tests skip on clean clones. Lint decision pending. |
+| Website | Vitest and lint; Functions/tooling Node tests; TypeScript/Astro build; Svelte check; marketing build; guest Chromium smoke; workflow contract tests | Ordinary builds do not prove the protected production artifact. Three existing private-fixture tests skip. Hosted server tests still need partner-source delivery for the existing mobile contract assertion. |
 | Backend | Gateway pytest with live-network guard; authored replay evaluation; legacy processor syntax; workflow contract tests | Replay is not model-quality evidence. Processor syntax is not video/biomechanics coverage. Python dependencies need Linux lock work. |
 | Mobile | Canonical Firestore/Storage emulator suites and hash receipt; publishing-tool unit tests; all tracked app Swift syntax; workflow contract tests | No full native build, simulator XCTest, signing or camera acceptance is claimed. |
 
@@ -39,7 +42,7 @@ They are **not yet a required hosted lane**: private cross-repo source retrieval
 must be wired without exposing its token to PR code (D23). Do not copy rule files
 into this repository to remove that dependency.
 
-All three workflows have PR, main-push, merge-group and manual triggers, no path
+All three main CI workflows have PR, main-push, merge-group and manual triggers, no path
 filters, per-job read permissions, timeouts and immutable action SHAs. The gate
 tests exercise its actual shell script against success, failure, cancellation,
 skip and malformed/empty evidence. They also reject dangerous workflow mutations.
@@ -54,6 +57,7 @@ Use Node 22.23.3, Python 3.12 for policy checks, and the committed lockfiles:
 npm --prefix app ci --ignore-scripts --no-audit --no-fund
 npm --prefix functions ci --ignore-scripts --no-audit --no-fund
 npm --prefix app test
+npm --prefix app run lint
 node --test functions/*.test.js scripts/*.test.cjs scripts/*.test.mjs
 npm --prefix app run check:svelte
 npm --prefix app run build
@@ -66,9 +70,15 @@ python -m unittest discover -s ci -p 'test_*.py'
 ```
 
 Browser smoke starts a disposable loopback server on an available port, exercises
-the compiled checkout, uses separate guest contexts and blocks external HTTP and
+the current `app/astro-dist` output, uses separate guest contexts and blocks external HTTP and
 WebSocket requests before navigation. It does not log in, seed data, send email,
 call a model or claim authenticated end-to-end coverage.
+
+The Node contract-parity test also requires `POSETEK_MOBILE_REPO` to point to a
+reviewed canonical mobile checkout when it is not located at the historical sibling
+path. Record that checkout's exact SHA. A local override does not complete hosted
+cross-repository source delivery; the manually dispatched source workflow is only
+a preparation candidate until its trusted handoff and PR gate are verified.
 
 Rules integration, when a reviewed mobile checkout is available:
 
