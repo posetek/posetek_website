@@ -33,13 +33,13 @@ the classification is not a blanket waiver.
 | Website `@grpc/grpc-js@1.9.16`, high ([GHSA-m9gg-hp2v-232j](https://github.com/advisories/GHSA-m9gg-hp2v-232j), [GHSA-f596-whhp-79r4](https://github.com/advisories/GHSA-f596-whhp-79r4)) | `app` → `firebase@12.18.0` → `@firebase/firestore@4.17.1` → `@grpc/grpc-js@1.9.16` | `app/src/lib/firebase.ts` creates a Firestore client. This is a production *package-tree* path; the browser bundle's inclusion of the Node gRPC transport and the advisories' preconditions remain unverified. |
 | Functions `protobufjs@7.5.4`, critical ([GHSA-xq3m-2v4x-88gg](https://github.com/advisories/GHSA-xq3m-2v4x-88gg)) | `functions` → `firebase-functions@4.9.0` → `protobufjs@7.5.4`; also `firebase-admin@12.7.0` → optional `@google-cloud/firestore@7.11.6` → `protobufjs@7.5.4` | `functions/index.js` loads Firebase Functions and Admin SDKs. Vulnerable package is installed in the server runtime tree; no crafted-protobuf call path was proven. |
 | Functions `proxy-addr@2.0.7`, critical ([GHSA-jqcg-44mw-7w3h](https://github.com/advisories/GHSA-jqcg-44mw-7w3h)) | `functions` → `firebase-functions@4.9.0` → `express@4.22.1` → `proxy-addr@2.0.7` | Server HTTP framework path. Whether the vulnerable IPv4-mapped IPv6 trust-subnet configuration is used needs targeted review. |
-| Functions `websocket-driver@0.7.4`, critical ([GHSA-mp7j-qc5w-4988](https://github.com/advisories/GHSA-mp7j-qc5w-4988)) | `functions` → `firebase-admin@12.7.0` → `@firebase/database-compat@1.0.8` → `@firebase/database@1.0.8` → `faye-websocket@0.11.4` → `websocket-driver@0.7.4` | Runtime package tree includes Realtime Database compatibility. Whether these handlers use that client or accept websocket data is unverified. |
+| Functions `websocket-driver@0.7.4`, critical ([GHSA-xv26-6w52-cph6](https://github.com/advisories/GHSA-xv26-6w52-cph6), [GHSA-mp7j-qc5w-4988](https://github.com/advisories/GHSA-mp7j-qc5w-4988)) | `functions` → `firebase-admin@12.7.0` → `@firebase/database-compat@1.0.8` → `@firebase/database@1.0.8` → `faye-websocket@0.11.4` → `websocket-driver@0.7.4` | Runtime package tree includes Realtime Database compatibility. Whether these handlers use that client or accept websocket data is unverified. |
 | Legacy `axios@1.9.0`, high (multiple npm advisories) | `functions/legacy-upload-processor` → `axios@1.9.0` | Directly imported in `functions/legacy-upload-processor/index.js:3` and used for outbound processor POSTs at lines 75 and 103. This is a concrete execution path; review request URL construction, redirects and response handling for the applicable advisories. |
 | Legacy `fast-xml-parser@4.5.3`, critical ([GHSA-m7jm-9gc2-mpf2](https://github.com/advisories/GHSA-m7jm-9gc2-mpf2)) | `functions/legacy-upload-processor` → `@google-cloud/storage@7.16.0` → `fast-xml-parser@4.5.3` | Storage SDK is directly instantiated in `functions/legacy-upload-processor/index.js:8`. XML parser invocation and attacker-controlled XML exposure are unverified. |
 | Legacy `form-data@4.0.2`, critical ([GHSA-fjxv-7rqg-78g4](https://github.com/advisories/GHSA-fjxv-7rqg-78g4), [GHSA-hmw2-7cc7-3qxx](https://github.com/advisories/GHSA-hmw2-7cc7-3qxx)) | `functions/legacy-upload-processor` → `axios@1.9.0` → `form-data@4.0.2` | Axios is called with JSON objects in the visible processor POSTs. Multipart construction through this path was not shown. |
 | Legacy `protobufjs@7.5.0`, critical ([GHSA-xq3m-2v4x-88gg](https://github.com/advisories/GHSA-xq3m-2v4x-88gg)) | `functions/legacy-upload-processor` → `firebase-functions@6.3.2` → `protobufjs@7.5.0` | Runtime SDK tree; exploit-relevant parser input remains to be traced. |
 | Legacy `proxy-addr@2.0.7`, critical ([GHSA-jqcg-44mw-7w3h](https://github.com/advisories/GHSA-jqcg-44mw-7w3h)) | `functions/legacy-upload-processor` → `firebase-functions@6.3.2` → `express@4.21.2` → `proxy-addr@2.0.7` | HTTP framework path; trust-subnet configuration remains to be traced. |
-| Legacy `websocket-driver@0.7.4`, critical ([GHSA-mp7j-qc5w-4988](https://github.com/advisories/GHSA-mp7j-qc5w-4988)) | `functions/legacy-upload-processor` → `firebase-admin@13.3.0` → `@firebase/database-compat@2.0.5` → `@firebase/database@1.0.14` → `faye-websocket@0.11.4` → `websocket-driver@0.7.4` | Installed runtime chain; handler reachability is unverified. |
+| Legacy `websocket-driver@0.7.4`, critical ([GHSA-xv26-6w52-cph6](https://github.com/advisories/GHSA-xv26-6w52-cph6), [GHSA-mp7j-qc5w-4988](https://github.com/advisories/GHSA-mp7j-qc5w-4988)) | `functions/legacy-upload-processor` → `firebase-admin@13.3.0` → `@firebase/database-compat@2.0.5` → `@firebase/database@1.0.14` → `faye-websocket@0.11.4` → `websocket-driver@0.7.4` | Installed runtime chain; handler reachability is unverified. |
 
 The table prioritizes critical findings and direct execution paths. Other
 production high findings include Functions `@fastify/busboy`, gRPC, `fast-xml-*`,
@@ -71,3 +71,60 @@ is installed, not that a particular malicious input reaches the affected API.
 The two Functions lockfiles describe different Node engines (22 and 20) and
 different Firebase SDK versions. They require separate remediation and runtime
 validation; one package update does not prove the other service safe.
+
+## Bounded dependency update proposal — separate approval required
+
+The root `firebase.json` selects `functions/` at Node 22, and `functions/index.js`
+loads both Firebase SDKs. Treat this as the active Functions dependency surface.
+The separate `functions/legacy-upload-processor/index.js` exports a Storage
+finalize trigger, imports Axios and Storage directly, and is absent from that
+root deploy configuration. Historical release notes say this processor was
+active. Its present deployed status must be verified before anyone calls it
+retired or excludes it from remediation.
+
+For active Functions, propose a **separate reviewed lockfile-only change** to
+`functions/package-lock.json`, leaving `functions/package.json` and runtime
+semantics unchanged if the existing semver ranges permit resolution. At minimum:
+
+- Resolve `protobufjs@7.5.4` to **7.6.5 or newer within major 7**. The official
+  [code-execution advisory](https://github.com/advisories/GHSA-xq3m-2v4x-88gg)
+  fixes at 7.5.5, but npm reports other advisories through 7.6.4. This case
+  requires an attacker-controlled protobuf schema/JSON descriptor; none is
+  shown in website handlers, so installed status does not establish exposure.
+- Resolve `proxy-addr@2.0.7` to **2.0.8 or newer within major 2**. The
+  [advisory](https://github.com/advisories/GHSA-jqcg-44mw-7w3h) requires a
+  misconfigured IPv4-mapped IPv6 trusted-proxy subnet; no such application
+  configuration was found in this pass. The Express transitive path remains
+  deployed and should be patched rather than silently exempted.
+- Resolve `websocket-driver@0.7.4` to **0.7.5 or newer within 0.7**. The
+  [critical length-header advisory](https://github.com/advisories/GHSA-xv26-6w52-cph6)
+  affects pre-0.7.5, but direct Realtime Database/WebSocket use by these
+  handlers was not demonstrated. `faye-websocket` currently allows `>=0.5.1`.
+
+The locked parent specs `firebase-functions → protobufjs ^7.2.2`, `express →
+proxy-addr ~2.0.7`, and `faye-websocket → websocket-driver >=0.5.1` appear to
+allow these targets. That is a resolution proposal, not a tested lockfile. After
+approval, regenerate only this lockfile, review **every transitive change**,
+run `npm ci --ignore-scripts`, the full Functions Node suite, targeted HTTP/auth
+and retry tests, emulator transactions where available, then rerun both audit
+modes. Verify Firebase SDK/Node 22 compatibility before any deployment review.
+
+For the legacy processor, make a **different reviewed change** to
+`functions/legacy-upload-processor/package-lock.json` only if the exact semver
+ranges can resolve all affected versions. Its five critical nodes include the
+three above plus `fast-xml-parser@4.5.3` through direct
+`@google-cloud/storage@7.16.0` and `form-data@4.0.2` through direct
+`axios@1.9.0`. The [XML advisory](https://github.com/advisories/GHSA-m7jm-9gc2-mpf2)
+fixes that specific 4.x flaw at 4.5.4; the full npm advisory set must be clear
+at the selected 4.x version. The [multipart-header advisory](https://github.com/advisories/GHSA-hmw2-7cc7-3qxx)
+fixes 4.x at 4.0.6. The visible Axios calls send JSON objects to fixed URLs;
+they do not establish a multipart-input path. Separate tests should cover
+the Storage finalize guard, unmarked MOV and body-scan routing, signed-URL
+lifetimes, request body/timeout/error behavior, and Node 20 load compatibility,
+without calling processors or production Storage. Recheck the direct Axios
+high-severity advisories and all remaining criticals before a release decision.
+
+Both proposals change material that predates this pipeline iteration, so obtain
+the user's specific approval before editing either package or lockfile. Do not
+use `npm audit fix` as an unreviewed blanket mutation or make the present
+critical findings a permanent green baseline exception.
