@@ -96,9 +96,10 @@ integration, with exact partner SHAs logged.
 
 ## GitHub rollout, in order
 
-1. Authenticate an administrator and inspect repository visibility, Actions policy,
-   existing rulesets and hosting integrations. This session has no authenticated
-   `gh`; remote policy has not been inspected or changed.
+1. Review the [read-only GitHub audit](GITHUB_CONTROLS_AUDIT.md): website is public,
+   backend/mobile private, and private protection requires a plan decision.
+   Repository controls were inspected; no remote settings were changed. Hosting
+   integration behavior still needs explicit review before any push.
 2. Review/merge these separate CI PRs. Resolve recorded baseline failures first.
    Run each workflow on GitHub; local results are not hosted-run evidence.
 3. Only after green hosted runs, protect main: require a PR, one human approval,
@@ -189,10 +190,14 @@ partial reporting or human review, not a fabricated clean verdict.
    compatibility, actor/target distinction, SSE completion/error recovery.
 3. Native: curated XCTest suites plus fixture assets and an explicitly provisioned
    isolated Mac runner. Real-device capture memory/thermal tests remain separate.
-4. Legacy processors: known video fixtures, expected metrics, model checksums,
-   malformed media, resource bounds and idempotent upload behavior.
+4. Client-side processing: inventory existing native video/golden tests and asset
+   hashes first, then review missing malformed-media, cancellation and resource
+   behavior. Do not expand retired server processing solely for this pipeline.
 5. Operational: staged rollback rehearsal, alert delivery, backup/restore drill,
    service latency/error targets and release recovery time.
 
 Track fast-lane duration, flake/skip rate, escaped regressions, change-failure rate
 and recovery time. Expand based on observed risks; test count alone is not readiness.
+
+Known missing-input skips and unresolved evidence are tracked in
+[EXCEPTIONS.md](EXCEPTIONS.md); registration does not waive a check.

@@ -42,16 +42,16 @@ between assignments or that archived future scope is being implemented.
 | 17 Rules | Baseline verified | 1,232 emulator tests across 11 suites and 40 publisher tests pass locally. |
 | 18 Cross-repo | In progress | Trusted manual source candidate; active PR handoff/required gate still incomplete. |
 | 19 Compatibility | Partial | Backend matrix and existing tests mapped; cross-client release checks remain. |
-| 20 Native CI | Preparation in progress | Runner/fixture/model prerequisites documented; no native CI build evidence. |
+| 20 Native CI | Preparation verified locally | Runner handoff and five prerequisite tests; missing models/clips/Pods prevent native evidence. |
 | 21 Device acceptance | Existing protocol retained | Protocol mapped; new device acceptance not performed. |
 | 22 Live evaluations | Pending preparation | No paid model runs enabled. |
-| 23 Exceptions | Partial | Known skips and environment failures visible; owned resolution register remains. |
-| 24 Merge protections | Pending remote review | No server-side ruleset activation. |
+| 23 Exceptions | Register prepared | EXCEPTIONS.md records exact gaps and closure evidence; permanent maintainer assignments remain. |
+| 24 Merge protections | Remote audit complete | Public website unprotected; private repository APIs require paid plan. No settings activated. |
 | 25 Code owners | Pending names | No placeholder or invented owners installed. |
 | 26 Scanning | Pending preparation | Tool support/cost/blocking policy not yet established. |
-| 27 Reviewer | Specification only | Advisory policy exists; runnable reviewer not yet implemented. |
-| 28 Reviewer limits | Specification only | Provider/model/budget unselected; offline contract tests remain. |
-| 29 Staging | Preparation in progress | Gateway configuration guard approved; no project provisioned. |
+| 27 Reviewer | Offline validation implemented | Seven structured report tests pass; trusted resolver/provider/publisher still pending. |
+| 28 Reviewer limits | Partial | Bounds/stale revision/scope checks tested; provider/model/budget and enforceable spend control outstanding. |
+| 29 Staging | Guard implemented locally | Explicit environment/project/buckets and startup preflight tested; migration inputs required before release. No project provisioned. |
 | 30 Deployment identity | Design only | OIDC/IAM configuration and activation still require reviewed specifics. |
 | 31 Website release | Partial | Guarded publisher retained; full hosted publishing configuration review remains. |
 | 32 Gateway release | Retained and documented | Canonical script preserved; Linux evidence outstanding. |
@@ -64,7 +64,7 @@ between assignments or that archived future scope is being implemented.
 | 39 Queue/previews | Deferred | Archived in future register. |
 | 40 Autonomous work | Deferred | Archived, including personalized account-specific skills. |
 | 41 Extra mechanisms | Deferred | Archived with concerns and reconsideration conditions. |
-| 42 Documentation | Partial | Approval/future register saved; stray-brace repair committed; final reconciliation remains. |
+| 42 Documentation | Partial | Full 12-file mobile adoption audit and future register committed; integration reconciliation ongoing. |
 
 ## Evidence checkpoints
 
@@ -92,3 +92,29 @@ The original parity-test move (`67c04c0`) was corrected by `68be703` before
 activation of the replacement lane. The older assertion remains in the server
 suite; a clean hosted checkout still needs partner-source delivery to pass it.
 Local success with a reviewed partner-path override is not hosted CI evidence.
+
+## Subsequent implementation checkpoints
+
+- Website `e1ad09f` hardens source staging against ancestor symlinks and non-main
+  dispatch; `d198b2f` verifies immutable source receipts and exact contract bytes.
+  `8afa16b` resolves successful trusted artifacts; `8d45aaa` prepares an inactive
+  PR job. Twenty offline policy tests passed before the subsequent tooling batch.
+  This payload covers device schema/fixtures, not canonical Firestore/Storage rules.
+- Website `b5c8e9c`: three offline rules-runner regression tests pass, covering
+  invalid inputs, loopback demo invocation, suite failures and changed rule bytes.
+- Website `bb6e865` and `d382a10`: advisory report shape/revision/scope validator
+  and seven tests. No actual provider call or review publication exists.
+- Website `d7d7f6d`: read-only remote control audit. New source environment absent;
+  private protections require plan support. No live controls changed.
+- Backend `776bcb9`, `6ff6746`, `425108a`, `268c19f`: approved explicit staging
+  guard, production-resource checks, migration handoff and 24 passing startup tests.
+  Deployment cannot proceed until required live configuration is reviewed.
+- Backend `991075f`: additive Functions/index/data/operations handoff.
+- Mobile `17b692c`: second approved rule-discovery README correction.
+- Mobile `82234b0`: complete original-playbook adoption/future audit.
+- Mobile `1c67ff2`: fail-closed multiline Xcode/model-package prerequisite scanner;
+  five synthetic tests pass, actual app/harness inputs remain incomplete.
+
+Local Linux ARM production-image build and SciPy imports succeeded at backend
+`268c19fd7bed5563dcf22f1f2280993a211fb4c6`; full test/replay runs are underway.
+This is neither production AMD64 evidence nor a deployed service.
