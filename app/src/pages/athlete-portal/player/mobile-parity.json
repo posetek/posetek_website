@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "reviewedMobileCommit": "b980de46047f5dc6d7938b9eddd7faea75aa4518",
-  "reviewedAt": "2026-09-25",
+  "reviewedMobileCommit": "a2928a0fc838e1f1dbf8787a9a359131c64f97d4",
+  "reviewedAt": "2026-10-07",
   "sources": {
     "KickAI/Stats/Benchmarks/D1Benchmarks.json": "684e62d2168656a37ccbd3deed1b1a820110781543fbccecab7a2e2c53dd9990",
     "KickAI/Stats/AthleteStatsModels.swift": "4743014cf4026bbbbbec1ed901d2081cb429fe095515c51c04ab766e3a298e75",
@@ -13,7 +13,7 @@
     "KickAI/TrainingPlans/WorkoutSessionClock.swift": "4bfe43489a2995a02cbf6f7cd6c88b42afea974440f774dad15d2b5257235781",
     "docs/PLAYER_PROFILE_INPUTS_CONTRACT.md": "b395dc8cc5ba2f70f24bbf472b3875924623ccec4fbe5e33a7b54d48bb5fe7ec",
     "docs/TRAINING_PROGRAM_V3_CONTRACT.md": "916ea0c37a6985d536cf222b758a7e28530003a49846ba2e193ae81d6eeff76b",
-    "docs/LLM_GATEWAY_CONTRACT.md": "6b86b1234429e51dbff540fbe09cfe6ca57a40c3abc7134432a2c32d70e10aaa"
+    "docs/LLM_GATEWAY_CONTRACT.md": "214a5f51911e4ecd5ee85602f53fa5bc6d882159d25951fd9e3879969b06fcb1"
   },
   "sourceNormalization": "utf8-lf"
 }

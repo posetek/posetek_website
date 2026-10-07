@@ -1,7 +1,8 @@
 import type { ExpandedRequest } from "./expandedQuery";
-import { AGE_BANDS, shiftDate } from "./expandedQuery";
+import { AGE_BANDS, shiftDate, clearPlayerFilters } from "./expandedQuery";
 import { EXERCISES, scopeFor } from "./expanded";
 import type { ExpandedInsights, ExpandedPlayer, InsightAccess, InsightChoices, QualifiedProgress } from "./expanded";
+import { athleteSummary } from "../../coach-dashboard/lib/logic";
 
 export const PREVIEW_CHOICES: InsightChoices = { global: true, organizations: [
   { id: "northfield", name: "Northfield FC", role: "admin", teams: [{ id: "harbor", name: "Harbor U15" }, { id: "summit", name: "Summit U17" }] },
@@ -38,9 +39,9 @@ export function previewInsights(request: ExpandedRequest, page = 0, state = "nor
     const row: ExpandedPlayer = { id: `synthetic-${i}`, firstName: FIRST[i % FIRST.length], lastName: LAST[Math.floor(i / FIRST.length)], organizationId: org.id, organizationName: org.name, teamId: team?.id || null, teamName: team?.name || null,
       division: i % 11 === 0 ? "unknown" : i % 2 ? "girls" : "boys", age, ageBand: age === null ? "unknown" : AGE_BANDS[[9,11,14,17,21].indexOf(age)],
       testing: { status: complete === 6 ? "fullyTested" : complete ? "partiallyTested" : recordedDocuments ? "noSuccessfulTests" : "noRecordedTests", exercisesComplete: complete, exerciseKeys: EXERCISES.slice(0, complete), recordedDocuments, distinctAttempts: Math.max(0, recordedDocuments - 1), qualifyingTests: complete ? complete + i % 3 : 0 },
-      performance: { d1: complete ? 62 + i % 42 : null, change: complete > 0 && i % 3 !== 0 ? d1Change : null,
-        lastTestDate: complete > 0 ? shiftDate(request.endDate, -(i % 10)) : null,
-        previousTestDate: complete > 0 && i % 3 !== 0 ? shiftDate(request.endDate, -(18 + (i % 6))) : null,
+      performance: { d1: exercisesComplete ? 62 + i % 42 : null, change: exercisesComplete > 0 && i % 3 !== 0 ? d1Change : null,
+        lastTestDate: exercisesComplete > 0 ? shiftDate(request.endDate, -(i % 10)) : null,
+        previousTestDate: exercisesComplete > 0 && i % 3 !== 0 ? shiftDate(request.endDate, -(18 + (i % 6))) : null,
         sessionsDone, sessionsPlanned, activePlan: planActive, planAgeDays, needsYouReasons },
       workouts: { status: workoutStatus, started: workoutStatus === "none" ? 0 : 1 + i % 4, completed: workoutStatus === "completed" ? 1 + i % 3 : 0, timerMinutes: workoutStatus === "completed" ? 30 + i % 25 : 0, estimatedMinutes: workoutStatus === "endedEarly" ? 12 + i % 12 : 0, allPrescribedSetsCompleted: workoutStatus === "completed" && i % 2 === 0 && i % 11 !== 0 ? 1 : 0, unknownPrescription: i % 11 === 0 ? outcomeEvents : 0, outcomeEvents, timerRecords: workoutStatus === "completed" ? outcomeEvents : 0, estimatedRecords: workoutStatus === "endedEarly" ? outcomeEvents : 0 },
       usage: { status: usageStatus, collected: usageStatus !== "notCollected", webCollected: usageStatus !== "notCollected", iosCollected, activeMinutes, webMinutes: activeMinutes * (iosCollected ? .7 : 1), iosMinutes: iosCollected ? activeMinutes * .45 : 0, activeDays } };
@@ -98,4 +99,21 @@ export function previewInsights(request: ExpandedRequest, page = 0, state = "nor
       noTestingPlayers: rows.filter(row => row.testing.status === "noRecordedTests").map(row => ({ id: row.id, name: `${row.firstName} ${row.lastName}`.trim() })).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),
       noWorkoutPlayers: rows.filter(row => row.workouts.status === "none").map(row => ({ id: row.id, name: `${row.firstName} ${row.lastName}`.trim() })).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)) },
     players: visible.slice(page * 25, (page + 1) * 25), pagination: { total: visible.length, pageSize: 25, nextCursor: (page + 1) * 25 < visible.length ? `synthetic-page-${page + 1}` : null } };
+}
+
+/** A player selection is scoped independently of roster filters and its visible page. */
+export function previewInsightPlayer(request: ExpandedRequest, playerId: string, state: string, role: InsightAccess) {
+  const unfiltered = { ...request, ...clearPlayerFilters(), rosterSearch: "", cursor: "", page: 0 };
+  let page = 0, data = previewInsights(unfiltered, page, state, role);
+  while (true) {
+    const player = data.players.find(row => row.id === playerId);
+    if (player || !data.pagination.nextCursor) return player;
+    data = previewInsights(unfiltered, ++page, state, role);
+  }
+}
+
+/** These fixtures contain aggregate data, not another sample athlete's private records. */
+export function previewPlayerSummary(player: ExpandedPlayer) {
+  return athleteSummary({ id: player.id, firstName: player.firstName, lastName: player.lastName,
+    age: player.age, organizationId: player.organizationId, teamId: player.teamId }, [], [], []);
 }

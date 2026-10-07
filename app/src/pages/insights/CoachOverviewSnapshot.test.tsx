@@ -8,6 +8,44 @@ import { previewInsights } from "./lib/preview";
 
 const request = expandedRequest("orgId=northfield&teamId=harbor&division=boys&usageStatus=returning&rosterSearch=Alex", new Date("2026-09-29T12:00:00Z"));
 describe("coach snapshot", () => {
+  it("keeps legacy responses without additive summaries truthful", () => {
+    const data = previewInsights(request, 0, "normal", "coach");
+    delete data.overview;
+    delete data.participation;
+    const html = renderToStaticMarkup(<MemoryRouter><CoachOverviewSnapshot data={data} /></MemoryRouter>);
+    for (const message of ["Participation summary unavailable", "Standing summary unavailable", "Change summary unavailable", "Training summary unavailable", "Follow-up summary unavailable", "Player names unavailable"]) expect(html).toContain(message);
+    expect(html).not.toContain("no follow-up needed");
+    expect(html).not.toContain("team average · 0");
+    expect(html).not.toContain('coach-snapshot-value">0');
+    expect(html).not.toContain('coach-snapshot-none">None');
+    // Legacy testing/workout status totals remain usable independently of overview.
+    expect(html).toContain("Not tested");
+    expect(html).toContain("No workout status");
+  });
+
+  it("preserves observed zero summaries and empty player lists", () => {
+    const data = previewInsights(request, 0, "normal", "coach");
+    data.participation = { testingPlayers: 0, workoutPlayers: 0, anyPlayers: 0 };
+    data.overview = { playersWithD1: 0, averageD1: null, playersWithChange: 0, improved: 0, planPlayers: 0, keepingUp: 0, coachFollowUp: 0, needsYouPlayers: [], noTestingPlayers: [], noWorkoutPlayers: [] };
+    const html = renderToStaticMarkup(<MemoryRouter><CoachOverviewSnapshot data={data} /></MemoryRouter>);
+    expect(html).toContain("no follow-up needed");
+    expect(html).toContain("team average · 0 of");
+    expect(html).toContain('coach-snapshot-value">0<small> of 0</small>');
+    expect(html.match(/coach-snapshot-none">None/g)).toHaveLength(2);
+    expect(html).not.toContain("unavailable");
+  });
+
+  it("does not infer no follow-up from missing optional player-name arrays", () => {
+    const data = previewInsights(request, 0, "normal", "coach");
+    data.overview = { playersWithD1: 0, averageD1: null, playersWithChange: 0, improved: 0, planPlayers: 0, keepingUp: 0, coachFollowUp: 2 };
+    const html = renderToStaticMarkup(<MemoryRouter><CoachOverviewSnapshot data={data} /></MemoryRouter>);
+    expect(html).toContain('coach-snapshot-value">2</dd>');
+    expect(html).toContain("reasons in the roster");
+    expect(html.match(/Player names unavailable/g)).toHaveLength(3);
+    expect(html).not.toContain("no follow-up needed");
+    expect(html).not.toContain('coach-snapshot-none">None');
+  });
+
   it("keeps the snapshot player links without the removed review section", () => {
     const data = previewInsights(request, 0, "normal", "coach");
     const html = renderToStaticMarkup(<MemoryRouter><CoachOverviewSnapshot data={data} /></MemoryRouter>);

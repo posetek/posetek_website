@@ -6,7 +6,7 @@ const { isClubAdmin, activeMember } = require("./club-access");
 const { EXERCISES, testingStatus, demographics } = require("./insights-v2-qualification");
 const { createInsightProjection, completeQuery, mapBounded, PROJECTION_VERSION } = require("./insights-v2-projection");
 const { readPlayerUsage, FEATURES } = require("./insight-usage");
-const { comparePlayer } = require("./insights-axis-scoring");
+const { comparePlayer, recentDrillScores } = require("./insights-axis-scoring");
 const { activePlan, playerPerformance } = require("./insights-overview");
 const DAY = 86400000;
 const FILTERS = Object.freeze({ division: ["boys", "girls", "unknown"], ageBand: ["under10", "10-12", "13-15", "16-18", "19+", "unknown"],
@@ -258,7 +258,7 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
       if (reporting.include === false) return { id: doc.id, excluded: true };
       const [history, usage, training] = await Promise.all([projection.loadInsightPlayer(doc.id, { allowRebuild: () => rebuilds++ < maxRebuilds }),
         usageReader(db, doc.id, period.startMillis, Math.min(period.endMillis, generatedAtMillis), period.timeZone),
-        comparison ? Promise.resolve(null) : loadTrainingOverview(doc.id, generatedAtMillis)]);
+        comparison && doc.id !== data.playerId ? Promise.resolve(null) : loadTrainingOverview(doc.id, generatedAtMillis)]);
       if (!history) {
         if (hasRosterLookup && rosterPlayerIds.includes(doc.id)) fail("permission-denied", "Roster metrics are unavailable in the selected scope.");
         fail("aborted", "A player changed during loading. Retry to refresh the complete roster.");
@@ -328,7 +328,8 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
           newestRebuiltAtMillis: rebuilt.length ? Math.max(...rebuilt) : null, qualification: "verified-artifacts", historicalOwnership: "current" },
         player: { id: player.id, firstName: player.firstName, lastName: player.lastName, age: player.age },
         roster: { total: fresh.rows.length, included: allRows.length, excluded: fresh.rows.filter(row => row.excluded).length },
-        axes: comparePlayer(allRows, data.playerId) };
+        axes: comparePlayer(allRows, data.playerId), performance: player.performance,
+        testScores: recentDrillScores(player.history.testing.filter(event => Number.isFinite(event.at) && event.at < validEnd), period.timeZone) };
     }
     const rows = allRows.filter(row => Object.entries(filters).every(([key, value]) => {
       if (key === "division" || key === "ageBand") return row[key] === value;

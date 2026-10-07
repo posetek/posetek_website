@@ -10,7 +10,7 @@ import { blockDoseLine } from "../../lib/contracts/drillV2";
 import { completeReport } from "./lib/completeReport";
 import { sameScope, scopePayload, expandedFailureMessage } from "./lib/expanded";
 import CoachPlayerOneScreen from "./CoachPlayerOneScreen";
-import type { InsightScope } from "./lib/expanded";
+import type { InsightScope, ExpandedPlayer, CoachTestScore } from "./lib/expanded";
 import type { ExpandedRequest } from "./lib/expandedQuery";
 import "../coach-dashboard/coach-dashboard.scss";
 
@@ -19,6 +19,7 @@ export interface CoachComparison {
   period: { startDate: string; endDate: string; timeZone: string }; testingMode: "cumulative" | "period";
   generatedAtMillis: number; freshness: { complete: boolean }; roster: { total: number; included: number; excluded: number };
   axes: { key: string; label: string; percentile: number | null; measuredScore: number | null; sampleCount: number; status: "measured" | "unmeasured" | "insufficientComparison" }[];
+  performance?: ExpandedPlayer["performance"]; testScores?: CoachTestScore[];
 }
 export function assertCoachComparison(data: CoachComparison, scope: InsightScope, request: ExpandedRequest) {
   if (data.schemaVersion !== 1 || !sameScope(data.scope, scope) || data.player.id !== request.playerId || data.period.startDate !== request.startDate || data.period.endDate !== request.endDate || data.period.timeZone !== request.timezone || data.testingMode !== request.testingWindow || data.freshness.complete !== true) throw Object.assign(new Error("Player comparison no longer matches the current selection."), { code: "failed-precondition" });
@@ -86,7 +87,8 @@ export default function CoachPlayer({ uid, scope, request, onName, onPrescribe, 
   const ready = result?.key === key ? result : null;
   if (!ready) return failure?.key === key ? <section className="insights-card" role="alert"><h2>Player could not be loaded</h2><p>{failure.message}</p><button className="quiet-button" onClick={() => setRetry(value => value + 1)}>Retry player</button><button className="quiet-button" onClick={onClose}>Back to roster</button></section> : <p role="status">Loading player and current access…</p>;
   return <div className="coach-player-panel">
-    <CoachPlayerOneScreen summary={ready.summary} onPrescribe={onPrescribe} />
+    <CoachPlayerOneScreen summary={ready.summary} performance={ready.comparison.performance} testScores={ready.comparison.testScores}
+      period={ready.comparison.period} generatedAtMillis={ready.comparison.generatedAtMillis} onPrescribe={onPrescribe} />
       <section className="coach-player-more" aria-label="Team comparison and full player records">
         <header className="coach-player-more-header"><h2>Team comparison and full player records</h2><span>Age {ready.comparison.player.age ?? "not recorded"} · current roster</span></header>
         <CoachPercentile data={ready.comparison} />

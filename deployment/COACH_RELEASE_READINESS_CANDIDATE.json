@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "status": "candidate-verified-not-published",
+  "recordedAt": "2026-10-07T18:18:36.334Z",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/38",
+  "runtimeSourceCommit": "9a9124abaf4f3faa61bbae695b83123d076aec93",
+  "baseCommit": "571bdbd17d0426dc575f51855d9b7009148292b3",
+  "productionDeploymentUnchanged": "6ac5ac30bb13dae95443c2b4",
+  "candidate": {
+    "deploymentId": "6ac689898fa88638f4bfc99f",
+    "url": "https://6ac689898fa88638f4bfc99f--posetek.netlify.app",
+    "artifactFiles": 1825,
+    "providerRecords": 1826,
+    "applicationSha1": "d1f65dcde0116fecbf49eaedf71fb55f7333cdc7",
+    "fullInventoryVerified": true,
+    "preservedPredecessorProviderRecords": 1809,
+    "protectedBaselineFiles": 1808,
+    "preservedUnchangedProtectedFiles": 1807,
+    "addedAssets": 15,
+    "changedPredecessorFiles": [
+      "/application.html",
+      "/netlify.toml (generated provider metadata)"
+    ],
+    "marketingFeedbackIconsPreserved": true,
+    "applicationRoutesVerified": 17,
+    "feedbackRoutesVerified": 3,
+    "marketingRoutesVerified": 5,
+    "effectiveFeedbackIsolationHeadersPreserved": true,
+    "feedbackSha1": "039a6cb1c652002dcd7e556359e5fbd1974ce426",
+    "verifiedAt": "2026-10-07T18:05:26.989Z"
+  },
+  "validation": {
+    "frontend": {
+      "files": 159,
+      "passed": 1863,
+      "failed": 0
+    },
+    "focusedInsights": {
+      "passed": 67
+    },
+    "releaseGuards": {
+      "passed": 55
+    },
+    "canonicalRules": {
+      "suites": 5,
+      "assertions": 1043
+    },
+    "mobileParitySources": 11,
+    "typescript": "passed",
+    "svelte": "zero errors/warnings",
+    "scopedLint": "passed",
+    "guardedAstro": "passed",
+    "fullFunctions": {
+      "total": 995,
+      "passed": 991,
+      "failed": 1,
+      "skipped": 3,
+      "unchangedFailure": "legacy-upload-processor/repair-guard.test.cjs:164; outside scoped Insights package; baseline reproduction confirmed"
+    }
+  },
+  "backend": {
+    "scope": "functions:expanded-insights",
+    "preparedNotDeployed": true,
+    "sourceFiles": 15,
+    "completeModuleClosure": true,
+    "actualSdkDiscoveryAndPinnedDefinitionsVerified": true,
+    "rollbackSourceConfigurationAndIamCaptured": true,
+    "regionalInventoryPreserved": 124,
+    "scopedIamPreserved": 9,
+    "finalPreservationCheckedAt": "2026-10-07T18:09:05.251Z",
+    "operatorCredentialRemoved": true,
+    "runtimeSourceBound": true
+  },
+  "browser": {
+    "independentLocalPreviewChat": "Preview Kai's recent website PRs",
+    "localPreviewAccepted": true,
+    "independentPublicHostedReviewAccepted": true,
+    "ownedSignedInChecks": 24,
+    "captures": 13,
+    "unexpectedErrors": 0,
+    "consoleErrors": 0,
+    "blockedApplicationWrites": 0,
+    "viewports": [
+      360,
+      390,
+      430,
+      1440
+    ],
+    "assignedCoachUiSignInVerified": true,
+    "independentAndPlayerAuthenticatedSessionsVerified": true,
+    "existingSignupLinkAndCodeCopyVerified": true,
+    "scopeDenialsVerified": true,
+    "settledCommunityPanelsVerified": true,
+    "legacyBackendMissingSummaryStatesVerified": true,
+    "newAdditiveServerContractLiveAcceptance": false,
+    "completedAt": "2026-10-07T18:15:14.922Z"
+  },
+  "cleanup": {
+    "remainingOwnedDocuments": 0,
+    "remainingAuthAccounts": 0,
+    "privateCredentialsRemoved": true,
+    "delayedIndependentReadbackAt": "2026-10-07T18:18:36.207Z"
+  },
+  "remainingReleaseSteps": [
+    "Dylan preview review",
+    "Fresh inventory/IAM and source checks; scoped nine-function deployment",
+    "New additive contract live synthetic acceptance and cleanup",
+    "Exact reviewed website artifact promotion and production acceptance",
+    "Reconcile preservation baseline and merge source plus confirmed production records"
+  ],
+  "boundaries": {
+    "productionPromoted": false,
+    "rulesGatewayCatalogNativeDeployed": false,
+    "existingNativeContentReplayDiagnosticsGatesPreserved": true
+  }
+}

@@ -8,6 +8,8 @@ export interface QualifiedProgress {
   weeks: { weekStart: string; best: number | null; samples: number; players: number }[];
 }
 export interface InsightChoices { coachRoster?: { label: string; coachId: string } | null; global: boolean; organizations: { id: string; name: string; role: InsightAccess; teams: { id: string; name: string }[] }[] }
+/** Qualified latest per-test dates through the selected report end; never raw reps. */
+export interface CoachTestScore { drill: string; score: number | null; change: number | null; lastTestDate: string | null; previousTestDate: string | null }
 export interface ExpandedPlayer {
   id: string; firstName: string; lastName: string; organizationId: string; organizationName: string; teamId: string | null; teamName: string | null;
   division: string; age: number | null; ageBand: string; registered?: boolean; signupInvitationReady?: boolean;

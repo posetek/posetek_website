@@ -36,3 +36,32 @@ test("follow-up reports threshold reasons while future tests do not contribute",
   assert.deepEqual(result.needsYouReasons, ["D1 down at least 5 points", "No sign-in recorded", "Behind on training"]);
   assert.ok(Math.abs(result.d1 - 92) < 1e-10);
 });
+test("unusable explicit plan timezones retain absolute completions without inventing calendar targets", () => {
+  const log = { id: "plan_one", planId: "plan", workoutId: "one", endedAt: NOW - DAY, endReason: "completed" };
+  for (const timezone of ["not-a-timezone", "", null, 42]) {
+    const invalid = { ...plan, data: { ...plan.data, timezone } };
+    const progress = planProgress(invalid, [log], NOW);
+    assert.equal(progress.sessionsDone, 1); assert.equal(progress.sessionsPlanned, null);
+    assert.equal(progress.planAgeDays, 10); assert.equal(progress.activePlan, true);
+    const performance = playerPerformance({ testing: [], profile: { lastLogin: NOW }, training: { plan: invalid, logs: [log] },
+      now: NOW, endMillis: NOW + 1, timeZone: "UTC" });
+    assert.deepEqual(performance.needsYouReasons, []);
+  }
+  const { timezone: _timezone, ...withoutTimezone } = plan.data;
+  assert.equal(planProgress({ ...plan, data: withoutTimezone }, [], NOW).sessionsPlanned, 3);
+  assert.equal(planProgress({ ...plan, data: { status: "active", startDate: "2026-09-27", sessionsPerWeek: 2, timezone: "invalid" } }, [], NOW).planAgeDays, null);
+});
+test("rolling training targets use the plan timezone, confirmed start, and exact absolute ending bounds", () => {
+  const at = Date.UTC(2026, 9, 7, 1); // Still Tuesday in Los Angeles, Wednesday in UTC.
+  const scheduled = timezone => ({ id: "plan", data: { ...plan.data, timezone,
+    intake: { trainingContext: { startDate: "2026-09-30", scheduleConfirmed: true, sessionDays: [3, 6] } } } });
+  const ending = (id, time) => ({ id: `plan_${id}`, planId: "plan", workoutId: id, endedAt: time, endReason: "completed" });
+  const logs = [ending("one", at - 14 * DAY), ending("two", at), ending("unknown", at),
+    { ...ending("one", at - 1), id: "mirror" }, ending("two", at + 1)];
+  assert.equal(planProgress(scheduled("America/Los_Angeles"), logs, at).sessionsPlanned, 2);
+  assert.equal(planProgress(scheduled("UTC"), logs, at).sessionsPlanned, 3);
+  assert.equal(planProgress(scheduled("America/Los_Angeles"), logs, at).sessionsDone, 2);
+  assert.equal(planProgress(scheduled("UTC"), [ending("one", at - 14 * DAY - 1)], at).sessionsDone, 0);
+  const future = scheduled("UTC"); future.data.intake.trainingContext.startDate = "2026-10-08";
+  assert.equal(planProgress(future, [], at).sessionsPlanned, 0);
+});
