@@ -176,3 +176,102 @@ test("complete comparison bounds fail without silently ranking a partial cohort"
   await assert.rejects(service.getCoachPlayerComparison({ scope, playerId: "one" }, coach), { code: "failed-precondition" });
   assert.equal(speed(await service.getCoachPlayerComparison({ scope, playerId: "one" }, coach)).sampleCount, 3);
 });
+
+test("comparison performance exactly matches the roster and adds only safe selected-player test summaries", async () => {
+  const day = 86400000;
+  const service = setup({
+    "players/one/reps/r": { repType: "sprint", max_velocity: 8, createdAt: NOW - 3 * day },
+    "players/one/reps/later": { repType: "sprint", max_velocity: 4, createdAt: NOW - day },
+    "players/one/reps/after-end": { repType: "sprint", max_velocity: 20, createdAt: NOW - 1000 },
+    "players/one/trainingPlans/private-plan": { status: "active", startDate: "2026-09-20", sessionsPerWeek: 2,
+      activatedAt: NOW - 9 * day, timezone: "UTC", coachNote: "PRIVATE-NOTE", intake: { private: "PRIVATE-INTAKE" },
+      weeks: [{ workouts: [{ workoutId: "private-workout", title: "PRIVATE-WORKOUT" }] }] },
+    "players/one/workoutLogs/private-plan_private-workout": { planId: "private-plan", workoutId: "private-workout",
+      startedAt: NOW - day - 60000, endedAt: NOW - day, endReason: "completed", private: "PRIVATE-LOG" },
+  });
+  const input = { scope, startDate: "2026-09-28", endDate: "2026-09-28", timeZone: "UTC", testingMode: "period" };
+  const report = await service.getClubInsightsV2(input, coach);
+  const result = await service.getCoachPlayerComparison({ ...input, playerId: "one" }, coach);
+  assert.deepEqual(result.performance, report.players.find(player => player.id === "one").performance);
+  assert.equal(result.schemaVersion, 1);
+  const score = result.testScores.find(value => value.drill === "sprint");
+  assert.equal(result.performance.d1, 2 * score.score); // Earlier better score remains standing.
+  assert.equal(result.performance.change, score.change);
+  assert.equal(score.lastTestDate, "2026-09-28"); assert.equal(score.previousTestDate, "2026-09-26");
+  assert.equal(speed(result).measuredScore, score.score); // Percentile obeys selected period.
+  assert.equal(result.performance.sessionsDone, 1); assert.equal(result.performance.sessionsPlanned, 3);
+  assert.deepEqual(result.testScores.map(value => value.drill), ["shooting", "sprint", "jump", "broadJump", "changeOfDirection", "dribbling"]);
+  const text = JSON.stringify(result);
+  for (const secret of ["PRIVATE-NOTE", "PRIVATE-INTAKE", "PRIVATE-WORKOUT", "PRIVATE-LOG", "private-plan", "private-workout",
+    "history", "profileMetrics", "fingerprint", "plansQuery", "logsQuery"]) assert.ok(!text.includes(secret), secret);
+  assert.deepEqual(Object.keys(score).sort(), ["drill", "score", "change", "lastTestDate", "previousTestDate"].sort());
+});
+
+test("comparison loads and rechecks training only for its selected player", async () => {
+  const service = setup({
+    "players/one/trainingPlans/active": { status: "active", activatedAt: NOW - 86400000, startDate: "2026-09-28", sessionsPerWeek: 2 },
+    "players/two/trainingPlans/other": { status: "active", timezone: "broken", coachNote: "OTHER-PRIVATE-PLAN" },
+  });
+  await service.getCoachPlayerComparison({ scope, playerId: "one" }, coach);
+  const planReads = service.db.queries.filter(query => query.path.endsWith("/trainingPlans"));
+  assert.equal(planReads.length, 2); // Initial snapshot and response transaction.
+  assert.ok(planReads.every(query => query.path === "players/one/trainingPlans"));
+  const trainingLogReads = service.db.queries.filter(query => query.path.endsWith("/workoutLogs") && query.filters.some(([field, operator]) => field === "endedAt" && operator === ">="));
+  assert.equal(trainingLogReads.length, 2);
+  assert.ok(trainingLogReads.every(query => query.path === "players/one/workoutLogs"));
+});
+
+test("comparison test summaries honor report-local midnight and exclude future, undated, unqualified and reviewed duplicates", async () => {
+  const service = setup({
+    "players/one/reps/r": { repType: "sprint", max_velocity: 8, createdAt: Date.UTC(2026, 8, 28, 6, 59) },
+    "players/one/reps/midnight": { repType: "sprint", max_velocity: 4, createdAt: Date.UTC(2026, 8, 28, 7) },
+    "players/one/reps/future": { repType: "sprint", max_velocity: 100, createdAt: NOW + 1 },
+    "players/one/reps/undated": { repType: "sprint", max_velocity: 100 },
+    "players/one/reps/unqualified": { repType: "sprint", max_velocity: 100, createdAt: NOW - 1, resultsValid: false },
+    "players/one/reps/jump-original": { repType: "jump", jumpHeight: 0.2, createdAt: NOW - 1000,
+      sessionNumber: 1, repNumber: 1, storagePath: "players/one/jump.mp4" },
+    "players/one/reps/jump-mirror": { repType: "jump", jumpHeight: 10, createdAt: NOW - 1, sessionNumber: 1, repNumber: 1 },
+  });
+  const local = await service.getCoachPlayerComparison({ scope, playerId: "one", timeZone: "America/Los_Angeles" }, coach);
+  const sprintScore = local.testScores.find(row => row.drill === "sprint");
+  assert.equal(sprintScore.previousTestDate, "2026-09-27"); assert.equal(sprintScore.lastTestDate, "2026-09-28");
+  assert.ok(sprintScore.change < 0);
+  assert.ok(local.testScores.find(row => row.drill === "jump").score < 50);
+  const utc = await service.getCoachPlayerComparison({ scope, playerId: "one", timeZone: "UTC" }, coach);
+  assert.equal(utc.testScores.find(row => row.drill === "sprint").change, null);
+  assert.equal(utc.testScores.find(row => row.drill === "sprint").previousTestDate, null);
+  const historical = await service.getCoachPlayerComparison({ scope, playerId: "one", timeZone: "America/Los_Angeles", endDate: "2026-09-27" }, coach);
+  assert.equal(historical.testScores.find(row => row.drill === "sprint").lastTestDate, "2026-09-27");
+  assert.equal(historical.testScores.find(row => row.drill === "sprint").change, null);
+});
+
+test("invalid plan timezone preserves complete comparison and roster with unavailable training targets", async () => {
+  const service = setup({
+    "players/one/trainingPlans/active": { status: "active", activatedAt: NOW - 10 * 86400000,
+      startDate: "2026-09-20", sessionsPerWeek: 2, timezone: "unusable", weeks: [{ workouts: [{ workoutId: "slot" }] }] },
+    "players/one/workoutLogs/active_slot": { planId: "active", workoutId: "slot", endedAt: NOW - 1000, endReason: "completed" },
+  });
+  const comparison = await service.getCoachPlayerComparison({ scope, playerId: "one" }, coach);
+  const report = await service.getClubInsightsV2({ scope }, coach);
+  assert.deepEqual(comparison.performance, report.players.find(player => player.id === "one").performance);
+  assert.equal(comparison.performance.sessionsPlanned, null); assert.equal(comparison.performance.sessionsDone, 1);
+  assert.ok(!comparison.performance.needsYouReasons.includes("Behind on training"));
+  assert.equal(report.freshness.complete, true); assert.equal(report.overview.planPlayers, 0);
+});
+
+test("comparison rejects current training changes and ownership changes before returning its new summary", async () => {
+  const planPath = "players/one/trainingPlans/active", logPath = "players/one/workoutLogs/active_slot";
+  const plan = { status: "active", startDate: "2026-09-20", sessionsPerWeek: 2, activatedAt: NOW - 9 * 86400000 };
+  for (const mutate of [
+    db => db.docs.set(planPath, { ...plan, sessionsPerWeek: 3 }),
+    db => db.docs.set(logPath, { planId: "active", workoutId: "slot", endedAt: NOW - 1000, endReason: "completed" }),
+    db => db.docs.set("players/one", { organizationId: "club", teamId: "b" }),
+  ]) {
+    const service = setup({ [planPath]: plan }), original = service.db.runTransaction.bind(service.db);
+    service.db.runTransaction = (handler, options) => {
+      if (options?.readOnly) mutate(service.db);
+      return original(handler, options);
+    };
+    await assert.rejects(service.getCoachPlayerComparison({ scope, playerId: "one" }, coach), { code: "aborted" });
+  }
+});

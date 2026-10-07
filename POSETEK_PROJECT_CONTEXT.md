@@ -1,5 +1,24 @@
 # PoseTek website project context
 
+## Coach release alignment candidate (2026-10-07)
+
+The integrated coach source now uses the same authoritative D1 standing,
+current fourteen-day training totals and follow-up reasons in the roster and
+player summary. Best qualified standing through the selected reporting end is
+distinct from latest-test scores and latest-two-local-date change. Missing
+additive backend summaries display unavailable states. Session evidence respects
+plan/report timezones, confirmed schedules, canonical plan aliases and log IDs;
+no coach note or retest date is inferred. Synthetic preview selections never
+borrow another player's records.
+
+The scoped Expanded Insights bundle includes `insights-overview.js` and rejects
+incomplete local dependencies. Its nine functions must be published and verified
+before promoting the matching website artifact. Read
+[the readiness handoff](docs/COACH_RELEASE_READINESS.md). This is a candidate,
+coordinated with “Preview Kai's recent website PRs”; production remains
+`6ac5ac30bb13dae95443c2b4` and its 1,808-file preservation baseline. No rules,
+gateway, catalog or native deployment is part of this alignment.
+
 ## Admin logo-level menu candidate (2026-10-06)
 
 The header now groups its existing destinations into Overview, Coaching hub, and

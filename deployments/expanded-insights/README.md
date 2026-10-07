@@ -17,6 +17,13 @@ all nine functions together so event writers retain the new measured-axis projec
 processors may still write version 3; the report rebuilds those snapshots on demand.
 No athlete source record or canonical rule changes.
 
+The coach Overview follow-up also requires `insights-overview.js`, imported by
+`insights-v2.js`. Its additive `overview` and per-player `performance` summaries
+must be verified in the scoped backend before promoting the matching website.
+An older backend response without these fields is unavailable information, not
+zero training, zero change or proof that no player needs follow-up. See
+[coach release readiness](../../docs/COACH_RELEASE_READINESS.md).
+
 ## Prepare, deploy and verify
 
 Run the offline tests first:
@@ -24,10 +31,19 @@ Run the offline tests first:
 ```powershell
 python -B deployments/expanded-insights/test_prepare.py
 node functions/insights-entrypoints.test.js
+node functions/insights-overview.test.js
 node functions/insights-v2-qualification.test.js
 node functions/insights-v2-projection.test.js
 node functions/insights-v2.test.js
 ```
+
+With Node and the installed `functions` dependencies, the Python suite also loads
+the immutable prepared bundle from outside the source checkout. It discovers
+exactly the nine SDK functions and checks their runtime limits, callable labels
+and event resources/types/services/retry definitions. It checks that the Overview
+module is actually loaded and that discovery changes no prepared source hash or
+manifest byte. A skipped discovery test means dependencies must be installed and
+that check rerun; it is not release acceptance.
 
 Choose a fresh ignored directory for each attempt. The credential file is the
 existing short-lived owner session prepared by the operator, with `access_token`
@@ -64,6 +80,16 @@ or the inventory/IAM changes while capturing backups, preparation refuses to
 produce a valid release. Schema 1 manifests must be replaced by a fresh schema 2
 preparation; they lack the complete definition and IAM checks.
 
+This codebase now prepares fifteen source files, including `insights-overview.js`.
+Preparation validates the complete static CommonJS dependency graph rooted at
+`index.js` against those copied files and records it as `moduleClosure` in the
+manifest. Local imports must resolve inside the immutable manifest; external
+imports must be reviewed builtins or declared production dependencies. Missing,
+escaping, computed or undeclared imports fail preparation. The check deliberately
+belongs to `expanded-insights`; the other scoped publishers that reuse this
+auditor retain their own separately reviewed source contracts. An earlier schema
+2 manifest without the closure record also requires fresh preparation.
+
 Verification downloads each deployed version and checks every bundled source byte,
 the absence of unexpected files, and the unchanged prepared Firebase configuration.
 The Firebase CLI may append `.runtimeconfig.json` during upload. The verifier
@@ -71,8 +97,13 @@ accepts it only when its complete JSON is exactly `firebase.projectId` and
 `firebase.storageBucket` with this release's expected project and bucket. Extra
 fields, duplicate keys, differing values and oversized content fail verification.
 Its SHA-256 and byte count are recorded without copying configuration values into
-the sanitized verification metadata. All fourteen prepared source-file hashes remain
+the sanitized verification metadata. All fifteen prepared source-file hashes remain
 unchanged.
+The verifier recomputes the prepared module closure, matches its recorded graph,
+and records `runtimeModuleClosureVerified` only after successful source/runtime/
+IAM verification. Every deployed archive must contain the complete prepared
+module set, including Overview. Do not repair a prepared directory in place;
+prepare a fresh immutable release if source or its dependency graph changes.
 It checks ACTIVE Node 22 endpoints, execution timeouts, memory and maximum instance
 counts, exact event resource/type/service/retry policy, callable labels, expected
 HTTPS URLs, public ingress and unconditional `allUsers` invoker access. Public

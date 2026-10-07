@@ -1,5 +1,17 @@
 # PoseTek Coach and Admin Dashboard Handoff
 
+## October 7 release alignment
+
+PR #35 is merged into GitHub main; its coach follow-up is still unpublished.
+The current release-alignment candidate coordinates with the open “Preview Kai's
+recent website PRs” chat. It preserves Kai's roster and player layout while
+aligning the player summary with authoritative roster scoring/training, separating
+latest test trends, and making missing summaries truthful. The scoped backend
+package now includes its required overview module and validates dependency closure.
+Read [the readiness handoff](COACH_RELEASE_READINESS.md) for definitions, measured
+validation, preserved boundaries and backend-before-website rollout gates.
+Production remains the confirmed admin hierarchy release `6ac5ac30bb13dae95443c2b4`.
+
 
 ## October 6 local Overview presentation decision
 
