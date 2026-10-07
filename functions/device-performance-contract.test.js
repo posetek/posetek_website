@@ -21,6 +21,13 @@ function listFiles(root, prefix = "") {
 function readmeDigests(readme) {
   return new Map([...readme.matchAll(/^\| `([^`]+)` \| `([0-9a-f]{64})` \|$/gm)].map(([, file, hash]) => [file, hash]));
 }
+// The sibling-checkout convention of app/rules-tests (RULES_PATH): default
+// ../PoseTek-mobile-app, overridable.
+function canonicalDirectory() {
+  const repo = process.env.POSETEK_MOBILE_REPO || path.resolve(__dirname, "..", "..", "PoseTek-mobile-app");
+  return path.join(repo, "tools", "contracts", "device-performance-v1");
+}
+
 // The error code each invalid fixture must produce through the ingestion
 // validator, and the rule (the manifest's `violates`) every reported error must
 // name, so a fixture can never pass by failing for an unrelated reason.
@@ -53,6 +60,28 @@ test("the pinned schema and fixtures match the contract's digest table", () => {
   const contractFiles = listFiles(PINNED).filter((file) => file !== "README.md" && file !== path.join("fixtures", "index.json"));
   assert.deepEqual([...digests.keys()].sort(), contractFiles, "every pinned contract file has exactly one README digest");
   for (const [file, hash] of digests) assert.equal(sha256File(path.join(PINNED, file)), hash, file);
+});
+
+// The pin covers the executable contract only: schema.json and fixtures/**.
+// README.md is refreshed by copy but never hashed, so a prose-only change on
+// mobile never fails this repository (decision D-2026-09-29-24, as D-20 F2).
+function pinnedContractFiles(root) {
+  return listFiles(root).filter((file) => file === "schema.json" || file.startsWith(`fixtures${path.sep}`));
+}
+
+test("the pinned copy is byte-identical to the canonical mobile contract (schema.json and fixtures only)", () => {
+  const canonical = canonicalDirectory();
+  if (!fs.existsSync(path.join(canonical, "schema.json"))) {
+    assert.fail(`Canonical device-performance contract not found at ${canonical}. Check out PoseTek-mobile-app beside `
+      + "this repository or set POSETEK_MOBILE_REPO. The pinned copy cannot be verified without it, so this test fails rather than skips.");
+  }
+  const pinned = pinnedContractFiles(PINNED);
+  assert.ok(pinned.includes("schema.json") && pinned.some((file) => file.startsWith(`fixtures${path.sep}`)), "the pin covers the schema and fixtures");
+  assert.ok(!pinned.includes("README.md"), "README.md is never hashed");
+  assert.deepEqual(pinned, pinnedContractFiles(canonical), "the pinned and canonical directories hold the same schema and fixtures");
+  for (const file of pinned) {
+    assert.equal(sha256File(path.join(PINNED, file)), sha256File(path.join(canonical, file)), `${file} differs from the canonical copy`);
+  }
 });
 
 test("every fixture meets its manifest expectation through the ingestion validator", () => {
