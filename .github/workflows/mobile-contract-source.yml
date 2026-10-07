@@ -1,14 +1,11 @@
 name: Mobile contract source candidate
 
 # Trusted source preparation only. No pull request code is checked out or run.
-# This manual workflow is not a required PR gate until artifact handoff is reviewed.
+# Configure the mobile-contract-source environment to allow protected main only,
+# with a required reviewer and its App key stored as an environment secret.
+# This workflow is not a required PR gate until artifact handoff is reviewed.
 on:
   workflow_dispatch:
-    inputs:
-      mobile_sha:
-        description: Full reviewed posetek-mobile-app commit SHA
-        required: true
-        type: string
 
 permissions: {}
 
@@ -16,21 +13,29 @@ jobs:
   source:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    environment: mobile-contract-source
     permissions:
       contents: read
     steps:
-      - name: Validate immutable revision
+      - name: Checkout trusted website policy
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Validate default branch and immutable revision
         id: revision
         shell: bash
-        env:
-          MOBILE_SHA: ${{ inputs.mobile_sha }}
         run: |
           set -euo pipefail
-          if [[ ! "$MOBILE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
-            echo 'mobile_sha must be a full lowercase commit SHA' >&2
+          if [[ "$GITHUB_EVENT_NAME" != workflow_dispatch || "$GITHUB_REF" != refs/heads/main ]]; then
+            echo 'Trusted source preparation runs only from main' >&2
             exit 1
           fi
-          printf 'sha=%s\n' "$MOBILE_SHA" >> "$GITHUB_OUTPUT"
+          mobile_sha="$(python3 -c 'import json; d=json.load(open("ci/mobile-contract-source.json")); assert set(d)=={"repository","sha"} and d["repository"]=="posetek/posetek-mobile-app"; print(d["sha"])')"
+          if [[ ! "$mobile_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo 'Pinned mobile revision must be a full lowercase commit SHA' >&2
+            exit 1
+          fi
+          printf 'sha=%s\n' "$mobile_sha" >> "$GITHUB_OUTPUT"
       - name: Create mobile contents token
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -51,22 +56,12 @@ jobs:
       - name: Verify and stage contract data
         shell: bash
         env:
+          MOBILE_DIR: mobile
           EXPECTED_SHA: ${{ steps.revision.outputs.sha }}
           ARTIFACT_ROOT: ${{ runner.temp }}/mobile-contract-artifact
         run: |
           set -euo pipefail
-          actual_sha="$(git -C mobile rev-parse HEAD)"
-          test "$actual_sha" = "$EXPECTED_SHA"
-          source=mobile/tools/contracts/device-performance-v1
-          test -f "$source/schema.json"
-          test -d "$source/fixtures"
-          if [[ -n "$(find "$source" -type l -print -quit)" ]]; then
-            echo 'Mobile contract contains a symlink' >&2
-            exit 1
-          fi
-          mkdir -p "$ARTIFACT_ROOT/tools/contracts"
-          cp -R "$source" "$ARTIFACT_ROOT/tools/contracts/device-performance-v1"
-          printf '%s\n' "$actual_sha" > "$ARTIFACT_ROOT/source-sha.txt"
+          bash ci/stage-mobile-contract.sh
       - name: Save contract data only
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
