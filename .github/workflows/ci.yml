@@ -42,6 +42,7 @@ jobs:
           node-version: '22.23.3'
       - run: npm --prefix app ci --ignore-scripts --no-audit --no-fund
       - run: npm --prefix app test
+      - run: npm --prefix app run lint
   server:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
