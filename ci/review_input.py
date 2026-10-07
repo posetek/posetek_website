@@ -17,15 +17,22 @@ def added_lines(patch):
     result = set()
     remaining_old = remaining_new = None
     line_number = 0
+    previous_old_end = previous_new_end = -1
     for line in patch.splitlines():
         hunk = HUNK.fullmatch(line)
         if hunk:
             if remaining_old not in (None, 0) or remaining_new not in (None, 0):
                 raise ValueError("truncated hunk")
-            _, old_count, start, new_count = hunk.groups()
+            old_start, old_count, start, new_count = hunk.groups()
             remaining_old = int(old_count) if old_count is not None else 1
             remaining_new = int(new_count) if new_count is not None else 1
-            line_number = int(start)
+            old_start, line_number = int(old_start), int(start)
+            old_boundary = old_start if remaining_old == 0 else old_start - 1
+            new_boundary = line_number if remaining_new == 0 else line_number - 1
+            if old_boundary < previous_old_end or new_boundary < previous_new_end:
+                raise ValueError("overlapping or unordered hunks")
+            previous_old_end = old_boundary + remaining_old
+            previous_new_end = new_boundary + remaining_new
             if remaining_new and line_number < 1:
                 raise ValueError("invalid new-side line")
         elif line == "\\ No newline at end of file" and remaining_old is not None:
@@ -53,6 +60,9 @@ def prepare_files(records, *, expected_files, source_complete,
 
     Returned patch text is untrusted data, never system policy. Limits include
     filename bytes. Callers must separately limit provider prompt/output tokens.
+    patch_scope_complete covers patch text only. A full-review claim ALSO requires
+    trusted rename/copy/status/mode metadata and all other intended review inputs;
+    never feed this flag directly into validate_report(scope_complete=...).
     """
     if (type(expected_files) is not int or expected_files < 0
             or type(source_complete) is not bool
@@ -92,5 +102,5 @@ def prepare_files(records, *, expected_files, source_complete,
         used += len(path.encode("utf-8")) + len(patch.encode("utf-8"))
     complete = source_complete and len(records) == expected_files and not omitted
     return {"files": selected, "omitted": omitted, "inspected_lines": inspected,
-            "scope_complete": complete, "bytes": used,
+            "patch_scope_complete": complete, "bytes": used,
             "expected_files": expected_files, "received_files": len(records)}
