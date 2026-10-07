@@ -1,5 +1,14 @@
 # PoseTek website project context
 
+## Organization header candidate (2026-10-07)
+
+Organization management and manager Insights now share the admin-style logo-row
+menu. Links retain organization/team scope and expose only existing organization
+capabilities. Organization access remains in the account menu; admin diagnostics
+and private feedback are not exposed. Coach Insights keeps its existing header.
+This local source change does not alter memberships, callables, rules or production.
+See [the navigation handoff](docs/ADMIN_SECTION_MENU.md).
+
 ## Admin logo-level menu candidate (2026-10-06)
 
 The header now groups its existing destinations into Overview, Coaching hub, and

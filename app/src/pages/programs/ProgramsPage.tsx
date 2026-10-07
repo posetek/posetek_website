@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { auth } from "../../lib/firebase";
 import { staffPlannerReturn } from "../../lib/coach-navigation";
+import AuthenticatedOrganizationHeader from "../organization/AuthenticatedOrganizationHeader";
 import PersonalizedPrograms from "../admin/views/PersonalizedPrograms";
 import "../../styles/pose-portal.css";
 
@@ -17,7 +18,8 @@ export default function ProgramsPage() {
     else setUid(user.uid);
   }), [navigate, location.pathname, location.search, location.hash]);
   return <div className="pt-pose portal-body pt-personalized">
-    <header className="portal-header"><Link className="portal-brand" to={returnPath}>POSETEK</Link><nav><Link className="quiet-button" to={returnPath}>Organization</Link><button className="quiet-button" onClick={() => { void auth.signOut().then(() => navigate("/signin", { replace: true })).catch(() => setError("Sign out failed. Try again.")); }}>Sign out</button></nav></header>
+    <AuthenticatedOrganizationHeader orgId={new URLSearchParams(location.search).get("orgId") || undefined} teamId={new URLSearchParams(location.search).get("teamId") || undefined} onSignOut={() => { void auth.signOut().then(() => navigate("/signin", { replace: true })).catch(() => setError("Sign out failed. Try again.")); }}>
+    <header className="portal-header"><Link className="portal-brand" to={returnPath}>POSETEK</Link><nav><Link className="quiet-button" to={returnPath}>Organization</Link><button className="quiet-button" onClick={() => { void auth.signOut().then(() => navigate("/signin", { replace: true })).catch(() => setError("Sign out failed. Try again.")); }}>Sign out</button></nav></header></AuthenticatedOrganizationHeader>
     <main className="personalized-shell">{error && <p role="alert">{error}</p>}{uid ? <PersonalizedPrograms key={uid} role="staff" /> : <p role="status">Checking your sign-in…</p>}</main>
   </div>;
 }

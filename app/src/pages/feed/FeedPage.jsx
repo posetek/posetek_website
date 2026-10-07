@@ -8,6 +8,7 @@ import PlayerShell, { playerTabPath } from "../athlete-portal/player/PlayerShell
 import { communityPanel, communityPanelPath, communityPersonPath } from "./navigation";
 import { coachWorkspacePath } from "../../lib/coach-navigation";
 import { loadAccountAccess } from "../../lib/account-access";
+import AuthenticatedOrganizationHeader from "../organization/AuthenticatedOrganizationHeader";
 import { getClubContext } from "../../lib/organization-data";
 import "./feed.css";
 import "../../styles/pose-portal.css";
@@ -381,7 +382,7 @@ function FeedPage({ embedded = false, organizationId: workspaceOrganizationId, o
     ]
   ];
   let content = <div className={embedded ? `social-app social-embedded social-coach` : sharedPlayerShell ? `social-app social-embedded` : `pt-pose social-app`}>
-    {!sharedChrome && <header className={`social-header`}>
+    {!sharedChrome && <AuthenticatedOrganizationHeader enabled={!preview && !athletePreview && !!context?.staff && !context?.admin} orgId={organizationId || context?.organizationId} teamId={query.get(`teamId`) || undefined} onSignOut={() => { void auth.signOut().then(() => navigate(`/signin`)).catch(() => setError(`Sign out failed. Try again.`)); }}><header className={`social-header`}>
       <Link className={`social-brand`} to={feedUrl}>
         {`POSETEK`}
         <span>
@@ -402,7 +403,7 @@ function FeedPage({ embedded = false, organizationId: workspaceOrganizationId, o
           {initials(context?.name || `You`)}
         </Link>
       </div>
-    </header>}
+    </header></AuthenticatedOrganizationHeader>}
     <div className={`social-layout`}>
       {!sharedChrome && <aside className={`social-sidebar`}>
         <div className={`social-club-mark`}>

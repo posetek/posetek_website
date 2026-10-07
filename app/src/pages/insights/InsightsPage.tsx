@@ -6,6 +6,7 @@ import { adminPlayerLinkFromReport } from "../admin/lib/adminNavigation";
 import { completeReport } from "./lib/completeReport";
 import { loadAuthorizedReport } from "./lib/loadReport";
 import ExpandedReport from "./ExpandedReport";
+import OrganizationHeader from "../organization/OrganizationHeader";
 import AdminInsightsLayout from "./AdminInsightsLayout";
 import CoachRoster from "./CoachRoster";
 import CoachOverviewSnapshot from "./CoachOverviewSnapshot";
@@ -268,7 +269,10 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
   }}>{content}</AdminInsightsLayout>;
   const back = insightsReturnLink(role || undefined, { orgId: request.orgId, teamId: request.teamId, coachId: request.coachId }, request.from);
   return <div className="pt-pose portal-body pt-insights">
-    <header className="portal-header"><Link className="portal-brand" to={coach ? `/insights?${expandedQuery(request, { view: "overview" })}` : back}><span className="portal-brand-mark">P</span>POSETEK</Link>{!coach && role && <Link className="quiet-button" to={back}>Organization</Link>}<button className="quiet-button" onClick={() => { guard.cancel(); setResponse(null); setContext(null); setScope(null); void auth.signOut().catch(() => setError("Sign out failed. Try again.")); }}>Sign out</button></header>
+    {role === "manager" ? <OrganizationHeader ready orgId={currentScope && currentScope.kind !== "global" && currentScope.kind !== "coachRoster" ? currentScope.organizationId : request.orgId} teamId={currentScope?.kind === "team" ? currentScope.teamId : request.teamId} email={auth.currentUser?.email || undefined} onSignOut={() => {
+      guard.cancel(); setResponse(null); setContext(null); setScope(null);
+      void auth.signOut().catch(() => setError("Sign out failed. Try again."));
+    }} /> : <header className="portal-header"><Link className="portal-brand" to={coach ? `/insights?${expandedQuery(request, { view: "overview" })}` : back}><span className="portal-brand-mark">P</span>POSETEK</Link>{!coach && role && <Link className="quiet-button" to={back}>Organization</Link>}<button className="quiet-button" onClick={() => { guard.cancel(); setResponse(null); setContext(null); setScope(null); void auth.signOut().catch(() => setError("Sign out failed. Try again.")); }}>Sign out</button></header>}
     <main className="insights-shell">{content}</main>
   </div>;
 }
