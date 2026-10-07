@@ -255,7 +255,7 @@ export default function AthletePortalPage() {
         </a>
         <div className="portal-current-view" id="currentViewLabel">{VIEW_LABELS[view] || "Athlete Home"}</div>
         <div className="portal-header-actions">
-          <Link className="quiet-button" id="rosterLink" to={rosterNavigation.to} hidden={!access || !["coach", "manager", "admin"].includes(access)}>
+          <Link className="quiet-button" id="rosterLink" to={rosterNavigation.to} state={access === "admin" ? { adminRestore: true } : undefined} hidden={!access || !["coach", "manager", "admin"].includes(access)}>
             <span className="material-symbols-outlined">groups</span><span>{rosterNavigation.label}</span>
           </Link>
           <button

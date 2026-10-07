@@ -1,12 +1,12 @@
 {
-  "deploymentId": "6ac3d1c930af650008d83718",
-  "sourceCommit": "b776c32e230a0817f40654af754b2efc03d29300",
-  "url": "https://6ac3d1c930af650008d83718--posetek.netlify.app",
+  "deploymentId": "6ac5324b4ab5d8f3d69e6fdc",
+  "sourceCommit": null,
+  "url": "https://6ac5324b4ab5d8f3d69e6fdc--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
-    "sha": "921661b8a93ec8c633abdb00569b6ebd6913966c",
-    "size": 3476,
+    "sha": "22c58444e5ed39235c25af7a620208e9d7a11b16",
+    "size": 2836,
     "note": "Protected Netlify CLI-generated metadata. Effective redirects and headers must be verified before release; this is not a served application asset."
   },
   "files": [
@@ -206,6 +206,11 @@
       "size": 263
     },
     {
+      "path": "/_astro/adminoverview.dpfua6is.js",
+      "sha": "11b7f63b646656f6a164bc745ae9a110804deec8",
+      "size": 263
+    },
+    {
       "path": "/_astro/adminoverview.dyphffr6.js",
       "sha": "e24f4fe6e4da99f18baac2109b5100aac190d9e7",
       "size": 950
@@ -239,6 +244,11 @@
       "path": "/_astro/adminpage.c7jfv4n2.js",
       "sha": "0a9a7835d8f56d56773d5e38c7f9c51ad24e896f",
       "size": 15374
+    },
+    {
+      "path": "/_astro/adminpage.co2-run5.js",
+      "sha": "f459a627da21ea4d8411ca5e17450fa1f6e8830e",
+      "size": 17691
     },
     {
       "path": "/_astro/adminpage.dmdfa7pg.js",
@@ -479,6 +489,11 @@
       "path": "/_astro/applicationroot.bfl3iujr.js",
       "sha": "778ae2a2db508064af0d118d6f64f66fbee8c069",
       "size": 17370
+    },
+    {
+      "path": "/_astro/applicationroot.blu55lez.js",
+      "sha": "30c22eabac68e788038ecd32de4f99fba85342d3",
+      "size": 17439
     },
     {
       "path": "/_astro/applicationroot.bwegdi2m.js",
@@ -2121,6 +2136,11 @@
       "size": 10366
     },
     {
+      "path": "/_astro/supportpage.xqhgs--h.js",
+      "sha": "6bc75b49abd13e7fd386b4d3b8dafa2ec312bf9d",
+      "size": 10366
+    },
+    {
       "path": "/_astro/tacticalicon.dlbsvteq.js",
       "sha": "4462fd6e0a40e9729ce082263278b2a5ba0317ea",
       "size": 2010
@@ -2447,8 +2467,8 @@
     },
     {
       "path": "/application.html",
-      "sha": "d82e42111074ac4c1ec7e08e5617317aea74c276",
-      "size": 15342
+      "sha": "ea65e1c499d27bb4d6fe3fc6fe089477aa118b1f",
+      "size": 15554
     },
     {
       "path": "/assets/accesslinkcard-bwk4cx6k.css",
@@ -7935,8 +7955,8 @@
     },
     {
       "path": "/feedback.html",
-      "sha": "66488a3e418e4e4d128f634bed3289085a133ff8",
-      "size": 5817
+      "sha": "039a6cb1c652002dcd7e556359e5fbd1974ce426",
+      "size": 5816
     },
     {
       "path": "/feedbackform 2.html",

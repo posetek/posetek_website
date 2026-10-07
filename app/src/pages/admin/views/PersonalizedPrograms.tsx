@@ -23,6 +23,8 @@ import TrainingContextFields from "./TrainingContextFields";
 import TrainingReadinessPanel from "./TrainingReadinessPanel";
 import { emptyTrainingContext, trainingContextIssues, type TrainingContext } from "../lib/wholeBodyTraining";
 import TrainingLoadInstructions from "../../../components/TrainingLoadInstructions";
+import { validatedAdminReturn } from "../lib/adminNavigation";
+import { ADMIN_RETURN_STATE } from "../lib/useAdminNavigation";
 
 const label = (value: string) => value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, c => c.toUpperCase());
 const millis = (value: any) => value?.toMillis?.() ?? (typeof value === "string" ? Date.parse(value) : 0);
@@ -239,6 +241,7 @@ function Planner({ role = "admin", playerId = "", initialText = "", onActivated,
   }
 
   return <div className="personalized-planner">
+    {role === "admin" && validatedAdminReturn(query.get("returnTo")) && <Link className="quiet-button" state={ADMIN_RETURN_STATE} to={validatedAdminReturn(query.get("returnTo"))!}>Return to player</Link>}
     <header className="personalized-heading"><span className="eyebrow">Personalized training</span><h1>{role === "athlete" ? "Your next training plan" : "Plans shaped by each player"}</h1>
       <p>Turn testing and training goals into a practical schedule. Review why each exercise is included and how to check progress, then choose <strong>Use this plan</strong> to make it active.</p></header>
     <nav className="personalized-steps" aria-label="Plan building steps"><ol>

@@ -2,7 +2,9 @@ import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent } from 
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { auth } from "../../lib/firebase";
 import { clubCall, getClubContext, type ClubContext } from "../../lib/organization-data";
+import { adminPlayerLinkFromReport } from "../admin/lib/adminNavigation";
 import { completeReport } from "./lib/completeReport";
+import { loadAuthorizedReport } from "./lib/loadReport";
 import ExpandedReport from "./ExpandedReport";
 import CoachRoster from "./CoachRoster";
 import CoachOverviewSnapshot from "./CoachOverviewSnapshot";
@@ -143,35 +145,42 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
     setResponse(null); setContext(null); setError(""); setLoading(true); setRebuilding(false); setAccessDenied(false); setChoices(null); setScope(null);
     void (async () => {
       try {
-        const club = await getClubContext(request.orgId);
-        if (!isCurrent()) return;
-        if (!isInsightsStaff(club.role) && club.role !== "none") { setAccessDenied(true); return; }
-        const access: InsightAccess = club.role === "none" ? "coach" : club.role as InsightAccess;
-        const canonical = club.organization?.schemaVersion === 2 ? club.organization : null;
-        if (request.orgId && canonical?.id !== request.orgId) throw Object.assign(new Error("Organization access changed"), { code: "permission-denied" });
         let selected: InsightScope;
-        if (access === "coach" && !canonical) {
-          if (request.orgId || request.teamId) throw Object.assign(new Error("Team access changed"), { code: "permission-denied" });
-          selected = { kind: "coachRoster" };
-        } else selected = scopeFor(request, access, access === "admin" ? undefined : canonical?.id);
-        const available: InsightChoices = { global: access === "admin", organizations: club.organizations.filter(org => org.schemaVersion === 2).map(org => ({ id: org.id, name: org.name, role: access, teams: club.teams.filter(team => team.organizationId === org.id).map(team => ({ id: team.id, name: team.name })) })) };
-        setChoices(available); setRole(access); setContext(club);
-        if (access === "coach" && canonical) {
-          const teams = club.teams.filter(team => team.organizationId === canonical.id);
-          if (request.teamId && !teams.some(team => team.id === request.teamId)) throw Object.assign(new Error("Team access changed"), { code: "permission-denied" });
-          let remembered = "";
-          try { remembered = localStorage.getItem(`posetek:insights-team:${uid}:${canonical.id}`) || ""; } catch { /* Storage is optional. */ }
-          const teamId = request.teamId || teams.find(team => team.id === remembered)?.id || teams[0]?.id;
-          if (!teamId) { setAccessDenied(true); return; }
-          selected = { kind: "team", organizationId: canonical.id, teamId };
-          try { localStorage.setItem(`posetek:insights-team:${uid}:${canonical.id}`, teamId); } catch { /* Storage is optional. */ }
-          if (!request.orgId || !request.teamId) { queryWriter.current(current => expandedQuery(expandedRequest(current.toString()), { orgId: canonical.id, teamId }), { replace: true }); return; }
+        if (embedded) {
+          // AdminPage already verifies this account. The report callable checks
+          // current authority and returns its own choices, so a second full
+          // organization context adds no reporting data or access protection.
+          selected = scopeFor(request, "admin");
+          setRole("admin");
+        } else {
+          const club = await getClubContext(request.orgId);
+          if (!isCurrent()) return;
+          if (!isInsightsStaff(club.role) && club.role !== "none") { setAccessDenied(true); return; }
+          const access: InsightAccess = club.role === "none" ? "coach" : club.role as InsightAccess;
+          const canonical = club.organization?.schemaVersion === 2 ? club.organization : null;
+          if (request.orgId && canonical?.id !== request.orgId) throw Object.assign(new Error("Organization access changed"), { code: "permission-denied" });
+          if (access === "coach" && !canonical) {
+            if (request.orgId || request.teamId) throw Object.assign(new Error("Team access changed"), { code: "permission-denied" });
+            selected = { kind: "coachRoster" };
+          } else selected = scopeFor(request, access, access === "admin" ? undefined : canonical?.id);
+          const available: InsightChoices = { global: access === "admin", organizations: club.organizations.filter(org => org.schemaVersion === 2).map(org => ({ id: org.id, name: org.name, role: access, teams: club.teams.filter(team => team.organizationId === org.id).map(team => ({ id: team.id, name: team.name })) })) };
+          setChoices(available); setRole(access); setContext(club);
+          if (access === "coach" && canonical) {
+            const teams = club.teams.filter(team => team.organizationId === canonical.id);
+            if (request.teamId && !teams.some(team => team.id === request.teamId)) throw Object.assign(new Error("Team access changed"), { code: "permission-denied" });
+            let remembered = "";
+            try { remembered = localStorage.getItem(`posetek:insights-team:${uid}:${canonical.id}`) || ""; } catch { /* Storage is optional. */ }
+            const teamId = request.teamId || teams.find(team => team.id === remembered)?.id || teams[0]?.id;
+            if (!teamId) { setAccessDenied(true); return; }
+            selected = { kind: "team", organizationId: canonical.id, teamId };
+            try { localStorage.setItem(`posetek:insights-team:${uid}:${canonical.id}`, teamId); } catch { /* Storage is optional. */ }
+            if (!request.orgId || !request.teamId) { queryWriter.current(current => expandedQuery(expandedRequest(current.toString()), { orgId: canonical.id, teamId }), { replace: true }); return; }
+          }
         }
         setScope(selected);
         if (selected.kind !== "global" && selected.kind !== "coachRoster" && !request.orgId) { queryWriter.current(current => expandedQuery(expandedRequest(current.toString()), { orgId: selected.organizationId }), { replace: true }); return; }
-        const result = await completeReport(() => clubCall<ExpandedInsights>("getClubInsightsV2", reportPayload(request, selected, request.cursor)), isCurrent, () => setRebuilding(true));
+        const result = await loadAuthorizedReport(request, selected, payload => clubCall<ExpandedInsights>("getClubInsightsV2", payload), isCurrent, { adminOnly: embedded, onRebuild: () => setRebuilding(true) });
         if (!result || !isCurrent()) return;
-        assertReportScope(result, selected, request);
         setChoices(result.choices); setScope(result.scope); setRole(result.scope.access); setResponse({ key: requestKey, data: result });
         cursorHistory.current[request.page] = request.cursor;
         if (result.pagination.nextCursor) cursorHistory.current[request.page + 1] = result.pagination.nextCursor;
@@ -252,7 +261,7 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
           {coach && activeView === "overview" && <PlayerFilters data={report} request={request} onChange={change} />}
           {snapshot}
           {coach && activeView === "overview" && <><CoachRoster collapsible disclosureOpen={rosterOpen} onDisclosureChange={open => setRosterDisclosure({ context: rosterContext, open })} data={report} search={request.rosterSearch} page={request.page} onSearch={rosterSearch => change({ rosterSearch })} onPrevious={previousPage} onNext={nextPage} playerLink={playerLink} /><EmbeddedRosterManagement context={context || undefined} teamId={report.scope.kind === "team" ? report.scope.teamId : undefined} onRefresh={refresh} /></>}
-          {!(coach && activeView === "overview") && <ExpandedReport data={report} request={{ ...request, view: activeView === "community" ? "overview" : activeView }} onChange={change} hidePlayerTable={coach && activeView === "overview"} adminOverview={embedded && role === "admin"} page={request.page} onPrevious={previousPage} onNext={nextPage} playerLink={player => coach ? playerLink(player) : insightsPlayerLink(role || undefined, player.id, { orgId: player.organizationId, teamId: player.teamId || undefined, coachId: request.coachId })} />}
+          {!(coach && activeView === "overview") && <ExpandedReport data={report} request={{ ...request, view: activeView === "community" ? "overview" : activeView }} onChange={change} hidePlayerTable={coach && activeView === "overview"} adminOverview={embedded && role === "admin"} page={request.page} onPrevious={previousPage} onNext={nextPage} playerLink={player => coach ? playerLink(player) : embedded ? adminPlayerLinkFromReport(player.id, "results", location.search, { orgId: player.organizationId, teamId: player.teamId || undefined, coachId: request.coachId }) : insightsPlayerLink(role || undefined, player.id, { orgId: player.organizationId, teamId: player.teamId || undefined, coachId: request.coachId })} playerActionLink={embedded ? (player, tab) => adminPlayerLinkFromReport(player.id, tab, location.search, { orgId: player.organizationId, teamId: player.teamId || undefined, coachId: request.coachId }) : undefined} />}
         </> : !request.playerId ? <section className="insights-card"><h2>Select a player</h2><button type="button" className="quiet-button" onClick={closePlayer}>Open roster</button></section> : null}
     </div>}
   </>;

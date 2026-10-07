@@ -5,27 +5,27 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useEffect, useState } from "react";
+import { useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   PLAYER_INCIDENT_LIMIT, TRIAGE_LABELS, incidentPath, loadPlayerIncidents, pacificShort, playerIncidentsPath,
   readError, whenOf,
 } from "../lib/aiIncidents";
 import type { AiIncident } from "../lib/aiIncidents";
+import { useAccountLoad } from "../lib/useAccountLoad";
 import "../ai-incidents.scss";
 
 type Load = { kind: "loading" } | { kind: "ready"; incidents: AiIncident[] } | { kind: "error"; message: string };
 
 export default function PlayerAiIncidents({ playerId }: { playerId: string }) {
-  const [load, setLoad] = useState<Load>({ kind: "loading" });
-  useEffect(() => {
-    let live = true;
-    loadPlayerIncidents(playerId)
-      .then(incidents => { if (live) setLoad({ kind: "ready", incidents }); })
-      .catch((error: any) => { if (live) setLoad({ kind: "error", message: readError(error, "This athlete's AI incidents") }); });
-    return () => { live = false; };
-  }, [playerId]);
-  return <PlayerAiIncidentsCard playerId={playerId} load={load} />;
+  const loader = useCallback(() => loadPlayerIncidents(playerId).catch(error => {
+    throw new Error(readError(error, "This athlete's AI incidents"));
+  }), [playerId]);
+  const { state, refresh } = useAccountLoad(loader);
+  const load: Load = state.kind === 'ready' ? { kind: 'ready', incidents: state.data }
+    : state.kind === 'error' ? { kind: 'error', message: state.message } : state;
+  return <><PlayerAiIncidentsCard playerId={playerId} load={load} />
+    {state.kind === 'error' && <button type="button" className="quiet-button" onClick={refresh}>Try again</button>}</>;
 }
 
 export function PlayerAiIncidentsCard({ playerId, load }: { playerId: string; load: Load }) {

@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { getClubContext } from "../../../lib/organization-data";
+import { getClubContext, subscribeClubContextInvalidation } from "../../../lib/organization-data";
 import { accountContext } from "../lib/accountHierarchy";
+import { adminDirectoryPath, parseAdminDirectoryState, supportsAdminScope } from "../lib/adminNavigation";
+import { useAdminToolLinks } from "../lib/useAdminNavigation";
 import type { InsightChoices } from "../../insights/lib/expanded";
 
 const SECTIONS = [
   { path: "/admin", icon: "space_dashboard", label: "Overview", end: true },
-  { path: "/admin/accounts", icon: "supervisor_account", label: "Accounts" },
-  { path: "/admin/organizations", icon: "groups", label: "Organizations" },
+  { path: "/admin/accounts", icon: "supervisor_account", label: "People & organizations" },
   { path: "/admin/programs", icon: "tune", label: "Planner" },
   { path: "/admin/analysis", icon: "edit_note", label: "Technique review" },
   { path: "/admin/drills", icon: "library_books", label: "Drill library" },
@@ -17,18 +18,26 @@ const SECTIONS = [
   { path: "/admin/feedback", icon: "feedback", label: "App feedback" },
 ];
 
-export default function AdminHeader({ ready, email, preview = false, onSignOut }: {
+export default function AdminHeader({ ready, email, uid = "", preview = false, onSignOut }: {
   ready: boolean;
   email?: string;
+  uid?: string;
   preview?: boolean;
   onSignOut: () => void;
 }) {
   const location = useLocation(), navigate = useNavigate();
   const context = accountContext(location.search);
+  const toolPath = useAdminToolLinks(uid);
+  // The directory owns its flat organization selector, including legacy rows.
+  // A second canonical-only selector would show a conflicting scope there.
+  const scopedTool = supportsAdminScope(location.pathname) && !location.pathname.startsWith("/admin/accounts") && location.pathname !== "/admin/organizations";
   const [choices, setChoices] = useState<InsightChoices | null>(null);
+  const [contextRevision, setContextRevision] = useState(0);
+  useEffect(() => subscribeClubContextInvalidation(() => setContextRevision(value => value + 1)), []);
 
   useEffect(() => {
-    if (!ready) return;
+    setChoices(null);
+    if (!ready || !scopedTool) return;
     let active = true;
     if (preview) {
       if (import.meta.env.DEV) void import("../../insights/lib/preview").then(module => { if (active) setChoices(module.PREVIEW_CHOICES); });
@@ -47,7 +56,7 @@ export default function AdminHeader({ ready, email, preview = false, onSignOut }
       });
     }).catch(() => { if (active) setChoices(null); });
     return () => { active = false; };
-  }, [ready, preview, context.orgId]);
+  }, [ready, preview, context.orgId, scopedTool, uid, contextRevision]);
 
   // On phones the tabs scroll sideways; keep the active one (for example the
   // eighth, Device performance) in view instead of leaving it off-screen.
@@ -62,17 +71,15 @@ export default function AdminHeader({ ready, email, preview = false, onSignOut }
   const organization = choices?.organizations.find(row => row.id === context.orgId);
   const team = organization?.teams.find(row => row.id === context.teamId);
   const scopeLabel = team ? `${organization?.name} · ${team.name}` : organization?.name || "All organizations";
-  const scopedSearch = useMemo(() => {
-    const query = new URLSearchParams();
-    if (context.orgId) query.set("orgId", context.orgId);
-    if (context.teamId) query.set("teamId", context.teamId);
-    if (preview) query.set("preview", "1");
-    return query.toString() ? `?${query}` : "";
-  }, [context.orgId, context.teamId, preview]);
 
   function changeScope(orgId?: string, teamId?: string) {
+    if (/^\/admin\/accounts\/(?:player|coach)\//.test(location.pathname)) {
+      navigate(adminDirectoryPath({ ...parseAdminDirectoryState(location.search), orgId, teamId, coachId: undefined, directoryTab: "players", page: 0, search: "", returnTo: undefined }));
+      return;
+    }
     const query = new URLSearchParams(location.search);
     for (const key of ["orgId", "teamId", "coachId"]) query.delete(key);
+    for (const key of ["page", "cursor", "search", "returnTo"]) query.delete(key);
     if (orgId) query.set("orgId", orgId);
     if (teamId) query.set("teamId", teamId);
     navigate({ pathname: location.pathname, search: query.toString() ? `?${query}` : "" });
@@ -81,12 +88,12 @@ export default function AdminHeader({ ready, email, preview = false, onSignOut }
   return (
     <header className="admin-header">
       <div className="admin-topbar">
-        <Link className="portal-brand" to={`/admin${scopedSearch}`} aria-label="PoseTek admin overview">
+        <Link className="portal-brand" to={toolPath("/admin")} aria-label="PoseTek admin overview">
           <span className="portal-brand-mark">P</span>
           <span className="admin-wordmark">POSETEK</span>
           <span className="admin-badge">Admin</span>
         </Link>
-        {ready && <details className="admin-scope-menu">
+        {ready && scopedTool && <details className="admin-scope-menu">
           <summary aria-label={`Current scope: ${scopeLabel}`}>
             <span className="material-symbols-outlined" aria-hidden="true">domain</span>
             <span>{scopeLabel}</span>
@@ -121,7 +128,7 @@ export default function AdminHeader({ ready, email, preview = false, onSignOut }
         </details>}
       </div>
       {ready && <nav ref={nav} className="admin-nav" aria-label="Admin sections">
-        {SECTIONS.map(section => <NavLink key={section.path} end={section.end} className={({ isActive }) => `admin-nav-link${isActive ? " active" : ""}`} to={`${section.path}${scopedSearch}`}>
+        {SECTIONS.map(section => <NavLink key={section.path} end={section.end} className={({ isActive }) => `admin-nav-link${isActive ? " active" : ""}`} to={toolPath(section.path)}>
           <span className="material-symbols-outlined" aria-hidden="true">{section.icon}</span>
           <span>{section.label}</span>
         </NavLink>)}

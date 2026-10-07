@@ -15,7 +15,7 @@ const uniquePlayers = (rows: PlayerRow[]) => [...new Map(rows.map(row => [row.id
 const referenceId = (value: any) => typeof value === "string" ? value : value?.id;
 const PLANNER_ROSTER_LIMIT = 2000;
 
-async function legacyOrganizationPlayers(org: OrganizationRow, organizations: OrganizationRow[]) {
+export async function legacyOrganizationPlayers(org: OrganizationRow, organizations: OrganizationRow[]) {
   const players = db.collection("players");
   const queryRows = (field: string, value: any) => players.where(field, "==", value).limit(PLANNER_ROSTER_LIMIT + 1).get();
   const directQueries = [queryRows("organizationId", org.id), queryRows("organization", db.collection("organizations").doc(org.id)), queryRows("organization", org.id)];

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { cloud, db } from "./firebase";
+import { auth, cloud, db } from "./firebase";
+import { inFlightRequests } from "./inflightRequests";
 import { membershipFrom, strings, visibleTeams } from "./organization";
 import type { ClubAccess, ClubMembership, ClubOrganization, ClubTeam } from "./organization";
 export async function clubCall<T = any>(name: string, data: Record<string, unknown>): Promise<T> {
@@ -59,5 +60,31 @@ export interface ClubContext {
   players: { id: string; firstName: string; lastName: string; organizationId: string; teamId: string; canIssueSignupCode: boolean }[];
 }
 export function getClubContext(organizationId?: string): Promise<ClubContext> {
-  return clubCall("getClubContext", organizationId ? { organizationId } : {});
+  // Auth can be restored before this module's first reader subscribes. Treat
+  // the subscription's initial callback as the current identity, not a switch.
+  const currentUid = auth.currentUser?.uid || null;
+  if (currentUid !== contextUid) { contextUid = currentUid; contexts.clear(); }
+  observeContextIdentity();
+  const uid = auth.currentUser?.uid || "signed-out";
+  return contexts.run(JSON.stringify([uid, organizationId || ""]), () => clubCall<ClubContext>("getClubContext", organizationId ? { organizationId } : {})).catch(error => {
+    if (/permission-denied|unauthenticated/.test(String(error?.code || ""))) contexts.clear();
+    throw error;
+  });
 }
+const contexts = inFlightRequests<ClubContext>();
+let contextUid = auth.currentUser?.uid || null;
+let contextIdentityObserved = false;
+function observeContextIdentity() {
+  if (contextIdentityObserved) return;
+  contextIdentityObserved = true;
+  auth.onAuthStateChanged(user => {
+    const next = user?.uid || null;
+    if (next !== contextUid) { contextUid = next; contexts.clear(); }
+  });
+}
+const contextInvalidationListeners = new Set<() => void>();
+export function subscribeClubContextInvalidation(listener: () => void) {
+  contextInvalidationListeners.add(listener);
+  return () => { contextInvalidationListeners.delete(listener); };
+}
+export function invalidateClubContext() { contexts.clear(); contextInvalidationListeners.forEach(listener => listener()); }

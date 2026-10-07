@@ -1,5 +1,23 @@
 # PoseTek website project context
 
+## Admin directory implementation (2026-10-06)
+
+The approved admin pass combines Accounts and Organizations into People &
+organizations. Read [the admin handoff](docs/ADMIN_DIRECTORY.md). It adds flat
+organization rosters, request-only management forms, full-width player tabs,
+typed return state and lazy frontend reads while preserving canonical services.
+Implementation is based on newer GitHub main `879324a`, including Device and
+team-session routes. Publication is recorded only after candidate and production
+verification in the admin release receipt.
+
+Fresh readback found production `6ac5324b4ab5d8f3d69e6fdc`, published October 6
+at 10:43:17 AM PDT, ahead of earlier notes. Its 1,704 provider records retain all
+1,697 predecessor protected files; application/feedback documents and four added
+runtime assets account for the change. The reconciled guard protects 1,701 files.
+Original marketing documents and current feedback are retained for this pass;
+the provider does not supply a source commit for that deployment. Existing native,
+diagnostic, replay-backend and training-content acceptance gates remain separate.
+
 Reviewed on October 5, 2026. This guide summarizes the available repository and
 release notes; it is not a claim that every historical discussion or private
 business document is included.
