@@ -9,7 +9,7 @@ export function validSummaryDay(value: unknown): value is string {
     && Number.isFinite(Date.parse(`${value}T12:00:00Z`)) && new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
 }
 export function summaryTimeZone(value: unknown): string | null {
-  const zone = value === undefined || value === null ? "UTC" : value;
+  const zone = value === undefined ? "UTC" : value;
   if (typeof zone !== "string" || !zone) return null;
   try { new Intl.DateTimeFormat("en-CA", { timeZone: zone }).format(); return zone; } catch { return null; }
 }

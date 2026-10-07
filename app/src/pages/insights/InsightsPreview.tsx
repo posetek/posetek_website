@@ -8,7 +8,7 @@ import type { CoachComparison } from "./CoachPlayer";
 import CoachPlayerOneScreen from "./CoachPlayerOneScreen";
 import ExpandedReport from "./ExpandedReport";
 import PlayerFilters from "./PlayerFilters";
-import { expandedRequest, overviewReset } from "./lib/expandedQuery";
+import { expandedRequest, expandedQuery } from "./lib/expandedQuery";
 import type { ExpandedRequest } from "./lib/expandedQuery";
 import { previewInsights, previewInsightPlayer, previewPlayerSummary } from "./lib/preview";
 import { EXERCISES } from "./lib/expanded";
@@ -18,22 +18,22 @@ import { adminPlayerLinkFromReport } from "../admin/lib/adminNavigation";
 
 export default function InsightsPreview({ embedded = false }: { embedded?: boolean }) {
   const location = useLocation(), navigate = useNavigate();
-  const [request, setRequest] = useState(() => expandedRequest(window.location.search + (embedded ? "" : "&orgId=northfield&teamId=harbor")));
+  const [request, setRequest] = useState(() => expandedRequest(window.location.search));
   useEffect(() => {
     const target = expandedRequest(location.search);
-    setRequest(value => value.view === target.view && value.playerId === target.playerId ? value
-      : { ...value, ...(target.view === "overview" && value.view !== "overview" ? overviewReset() : {}), view: target.view, playerId: target.playerId });
+    setRequest(value => ({ ...value, ...target }));
   }, [location.search]);
   const page = request.page;
   const [state, setState] = useState("normal"), [role, setRole] = useState<InsightAccess>(embedded ? "admin" : "coach");
   const data = previewInsights(request, page, state, role);
   const change = (patch: Partial<ExpandedRequest>) => {
-    setRequest(value => ({ ...value, ...(patch.view === "overview" && value.view !== "overview" ? overviewReset() : {}), ...patch, page: patch.page ?? 0 }));
-    if (!("view" in patch) && !("playerId" in patch)) return;
-    const params = new URLSearchParams(location.search), view = patch.view ?? request.view, playerId = patch.playerId ?? request.playerId;
-    params.set("view", view); if (playerId) params.set("playerId", playerId); else params.delete("playerId");
+    const dataChange = Object.keys(patch).some(key => !["view", "playerId", "extra", "cursor", "page"].includes(key));
+    const next = { ...request, ...patch, ...(dataChange ? { cursor: "", page: 0 } : {}) };
+    setRequest(next);
+    const params = expandedQuery(next);
     if (params.toString() !== new URLSearchParams(location.search).toString()) navigate({ search: params.toString() });
   };
+  const playerLink = (player: { id: string }) => `/insights?${expandedQuery(request, { view: "player", playerId: player.id })}`;
   const coach = !embedded && role === "coach";
   const selected = request.playerId ? previewInsightPlayer(request, request.playerId, state, role) : data.players[0];
   const tested = selected && request.testingWindow === "period" ? previewInsightPlayer({ ...request, testingWindow: "cumulative" }, selected.id, state, role) : selected;
@@ -48,10 +48,10 @@ export default function InsightsPreview({ embedded = false }: { embedded?: boole
     {request.view !== "player" && <InsightsControls choices={data.choices} request={request} scope={data.scope} loading={state === "loading"} hideScope={embedded} coach={coach} onChange={change} onRefresh={() => setState("normal")} />}
     <InsightTabs request={request} onChange={change} coach={coach} playerName={selected ? `${comparison.player.firstName} ${comparison.player.lastName}` : "Player unavailable"} onClosePlayer={() => change({ view: "overview", playerId: "" })} />
     {["overview", "testing", "player"].includes(request.view) && <div className="insights-toolbar"><p className="insights-note">Testing coverage</p><div className="insights-toggle" aria-label="Testing coverage period"><button aria-pressed={request.testingWindow === "cumulative"} onClick={() => change({ testingWindow: "cumulative" })}>Through selected end</button><button aria-pressed={request.testingWindow === "period"} onClick={() => change({ testingWindow: "period" })}>Selected period only</button></div></div>}
-    {state === "loading" ? <p role="status">Loading complete Insights…</p> : state === "error" ? <div role="alert"><p>Insights could not be loaded. Retry or choose another scope.</p><button className="quiet-button" onClick={() => setState("normal")}>Retry Insights</button></div> : <div id="insights-report" role="tabpanel" aria-labelledby={`insights-tab-${request.view}`}>{coach && request.view === "overview" && <><PlayerFilters data={data} request={request} onChange={change} /><CoachOverviewSnapshot data={data} playerLink={player => `/insights?preview=1&view=player&playerId=${player.id}`} /><CoachRoster preview data={data} search={request.rosterSearch} page={page} onSearch={rosterSearch => change({ rosterSearch })} onPrevious={() => change({ page: page - 1 })} onNext={() => change({ page: page + 1 })} playerLink={player => `/insights?preview=1&view=player&playerId=${player.id}`} /></>}
+    {state === "loading" ? <p role="status">Loading complete Insights…</p> : state === "error" ? <div role="alert"><p>Insights could not be loaded. Retry or choose another scope.</p><button className="quiet-button" onClick={() => setState("normal")}>Retry Insights</button></div> : <div id="insights-report" role="tabpanel" aria-labelledby={`insights-tab-${request.view}`}>{coach && request.view === "overview" && <><PlayerFilters data={data} request={request} onChange={change} /><CoachOverviewSnapshot data={data} playerLink={playerLink} /><CoachRoster preview data={data} search={request.rosterSearch} page={page} onSearch={rosterSearch => change({ rosterSearch })} onPrevious={() => change({ page: page - 1 })} onNext={() => change({ page: page + 1 })} playerLink={playerLink} /></>}
       {coach && request.view === "overview" ? null : coach && request.view === "player" ? summary ? <><CoachPlayerOneScreen summary={summary} performance={comparison.performance} testScores={comparison.testScores} period={comparison.period} generatedAtMillis={comparison.generatedAtMillis} onPrescribe={() => {}} disabled /><section className="coach-player-more" aria-label="Team comparison and full player records"><header className="coach-player-more-header"><h2>Team comparison and full player records</h2></header><CoachPercentile data={comparison} /><section className="coach-player-training insights-card"><p>This synthetic player has summary data only. Detailed plans, session records and coach notes are unavailable in this preview.</p></section></section></> : <section className="insights-card" role="alert"><h2>Player unavailable</h2><p>This player is not in the selected preview roster.</p><button className="quiet-button" onClick={() => change({ view: "overview", playerId: "" })}>Back to roster</button></section>
       : coach && request.view === "community" ? <section className="insights-card"><h2>Community</h2><p>Synthetic preview. Team activity, people and sharing settings appear here for signed-in coaches.</p></section>
-      : <ExpandedReport data={data} request={request} adminOverview={embedded && role === "admin"} onChange={change} page={page} onPrevious={() => change({ page: page - 1 })} onNext={() => change({ page: page + 1 })} playerLink={player => embedded ? adminPlayerLinkFromReport(player.id, "results", location.search, { orgId: player.organizationId, teamId: player.teamId || undefined }) : `/insights?preview=1&view=player&playerId=${player.id}`} playerActionLink={embedded ? (player, tab) => adminPlayerLinkFromReport(player.id, tab, location.search, { orgId: player.organizationId, teamId: player.teamId || undefined }) : undefined} />}</div>}
+      : <ExpandedReport data={data} request={request} adminOverview={embedded && role === "admin"} onChange={change} page={page} onPrevious={() => change({ page: page - 1 })} onNext={() => change({ page: page + 1 })} playerLink={player => embedded ? adminPlayerLinkFromReport(player.id, "results", location.search, { orgId: player.organizationId, teamId: player.teamId || undefined }) : playerLink(player)} playerActionLink={embedded ? (player, tab) => adminPlayerLinkFromReport(player.id, tab, location.search, { orgId: player.organizationId, teamId: player.teamId || undefined }) : undefined} />}</div>}
   </>;
   if (embedded) return <div className="pt-insights admin-insights">{content}</div>;
   if (role === "admin") return <AdminInsightsLayout uid="preview-admin" email="admin@posetek.test" preview onSignOut={() => {}}>{content}</AdminInsightsLayout>;

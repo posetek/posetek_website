@@ -44,6 +44,8 @@ describe("current plan calendar and session evidence", () => {
     expect(coachPlanLabel(selected, now)).toBe("1 per week · week 1 of 6");
     expect(coachPlanLabel({ ...selected, timezone: "UTC" }, now)).toBe("1 per week · week 2 of 6");
     expect(coachPlanLabel({ ...plan, timezone: "invalid/zone" }, now)).toContain("schedule unavailable");
+    expect(coachPlanLabel({ ...plan, timezone: null }, now)).toContain("schedule unavailable");
+    expect(coachPlanLabel({ ...plan, timezone: undefined }, now)).toBe("1 per week · week 2 of 6");
     expect(coachPlanLabel({ ...plan, intake: { trainingContext: { startDate: "2026-10-20" } } }, now)).toContain("starts Oct 20");
   });
   it("does not treat future, undated, zero-time or inverted endings as completed sessions", () => {
@@ -65,6 +67,7 @@ describe("current plan calendar and session evidence", () => {
     expect(attempted.some(row => row.id.includes("w2"))).toBe(false);
     expect(coachSessionRows({ ...summary, plan: { ...plan, intake: { trainingContext: { ...plan.intake.trainingContext, scheduleConfirmed: false } } } }, asOf, "UTC")).toEqual([]);
     expect(coachSessionRows({ ...summary, plan: { ...plan, timezone: "invalid/zone" } }, asOf, "UTC")).toEqual([]);
+    expect(coachSessionRows({ ...summary, plan: { ...plan, timezone: null } }, asOf, "UTC")).toEqual([]);
   });
   it("uses the reporting timezone for sessions without a plan", () => {
     const value = { ...summary, plan: null, logs: [{ id: "done", startedAt: now - 2000, endedAt: now - 1000, endReason: "completed" }] };
