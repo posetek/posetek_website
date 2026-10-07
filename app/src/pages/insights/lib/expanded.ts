@@ -15,6 +15,9 @@ export interface ExpandedPlayer {
   workouts: { status: string; started: number; completed: number; timerMinutes: number; estimatedMinutes: number; allPrescribedSetsCompleted: number; unknownPrescription: number; outcomeEvents?: number; timerRecords?: number; estimatedRecords?: number };
   usage: { status: string; collected: boolean; webCollected: boolean; iosCollected: boolean; activeMinutes: number; webMinutes: number; iosMinutes: number; activeDays: number };
 }
+/** Optional admin-only metrics for account rows; excluded history is never returned. */
+export type RosterMetric = { playerId: string; status: "included"; player: ExpandedPlayer }
+  | { playerId: string; status: "excluded" };
 export interface ExpandedInsights {
   schemaVersion: 2;
   scope: InsightScope & { label: string; access: InsightAccess; assignedTeamsOnly: boolean };
@@ -36,6 +39,7 @@ export interface ExpandedInsights {
   usage: { statuses: CountGroup[]; collectedPlayers: number; notCollectedPlayers: number; webCollectedPlayers: number; iosCollectedPlayers: number; activePlayers: number; returningPlayers: number; activeMinutes: number; webMinutes: number; iosMinutes: number; overlapMinutes: number; collectionStartedAtMillis: number | null; webCollectionStartedAtMillis: number | null; iosCollectionStartedAtMillis: number | null; featureMinutes: Record<string, number>;
     days: { date: string; activeMinutes: number | null; webMinutes: number | null; iosMinutes: number | null; collectedPlayers?: number; webCollectedPlayers?: number; iosCollectedPlayers?: number }[] };
   players: ExpandedPlayer[];
+  rosterMetrics?: RosterMetric[];
   pagination: { total: number; pageSize: number; nextCursor: string | null };
 }
 export const TESTING_LABELS: Record<string, string> = { fullyTested: "Fully tested", partiallyTested: "Partially tested", noSuccessfulTests: "No successful tests", noRecordedTests: "No recorded tests" };
