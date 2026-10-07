@@ -39,20 +39,25 @@ describe("unified coach workspace", () => {
     expect(html.match(/tabindex="0"/g)).toHaveLength(1);
     expect(renderToStaticMarkup(<InsightTabs request={request} onChange={() => {}} />)).not.toContain(">Community</button>");
   });
-  it("keeps the coach roster compact, uses backend age and preserves invitation controls", () => {
+  it("keeps the coach roster compact and preserves invitation controls", () => {
     const rows = { ...data, players: [{ ...data.players[0], age: null }] };
     const html = renderToStaticMarkup(<MemoryRouter><CoachRoster preview data={rows} search="" page={0} onSearch={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={player => `/insights?view=player&playerId=${player.id}`} /></MemoryRouter>);
-    for (const label of ["Age", "Testing", "Workouts completed", "Estimated active use", "Signup actions"]) expect(html).toContain(`>${label}</th>`);
+    for (const label of ["D1 standing", "Testing", "Workouts completed", "Signup actions"]) expect(html).toContain(`>${label}</th>`);
+    expect(html).toContain('<th scope="col" class="coach-training-heading"><span>Training</span><span>14 days</span></th>');
+    for (const label of ["Age", "Estimated active use"]) {
+      expect(html).not.toContain(`>${label}</th>`);
+      expect(html).not.toContain(`data-label="${label}"`);
+    }
     expect(html).not.toContain(">Team</th>"); expect(html).not.toContain("Division · age");
-    expect(html).toContain("Not recorded"); expect(html).toContain("view=player");
+    expect(html).toContain("view=player");
   });
-  it("restores an explicitly expanded disclosure when replacement roster data is rendered", () => {
+  it("keeps the roster visible when replacement or searched data is rendered", () => {
     const searched = previewInsights({ ...request, rosterSearch: "Alex" }, 0, "normal", "coach");
-    const renderRoster = (rows: typeof data, open: boolean) => renderToStaticMarkup(<MemoryRouter><CoachRoster collapsible disclosureOpen={open} preview data={rows} search="" page={0} onSearch={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "#player"} /></MemoryRouter>);
-    expect(renderRoster(data, false)).not.toContain('open=""');
     for (const rows of [data, searched]) {
-      const html = renderRoster(rows, true);
-      expect(html).toContain('open=""');
+      const html = renderToStaticMarkup(<MemoryRouter><CoachRoster preview data={rows} search="" page={0} onSearch={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "#player"} /></MemoryRouter>);
+      expect(html).not.toContain("<details");
+      expect(html).toContain("coach-roster-search");
+      if (rows.players.length) expect(html).toContain("<table");
       expect(html).toContain(`${rows.pagination.total} matching players`);
     }
   });

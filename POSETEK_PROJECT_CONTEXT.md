@@ -1,5 +1,28 @@
 # PoseTek website project context
 
+## Coach Overview follow-up candidate (2026-10-06)
+
+The current branch updates the coach Overview presentation: the “Worth reviewing”
+section and snapshot explanation sentence are removed, the roster stays open,
+Age and Estimated active use are omitted from roster columns, “Training / 14 days”
+uses a two-line heading, and each player row opens that player's page while its
+links, buttons and form controls keep their own actions. Coach-specific snapshot,
+roster filters, access and reporting definitions remain intact. The player page
+puts the requested concise summary first and keeps comparison and full records
+below it. This is a source change only; the current website and release baseline
+are unchanged. See [Kai's handoff](docs/KAI_DASHBOARD_HANDOFF.md) and
+[the unified coach workspace handoff](docs/UNIFIED_COACH_WORKSPACE.md).
+
+This source-only follow-up is integrated locally with current website `main` at
+`cf6674a` (the admin metrics release below). Frontend tests (1,801), backend
+tests (970 plus three existing skips), all 55 website release-guard tests,
+TypeScript, Svelte, Astro marketing build and quiet lint pass. Canonical rules
+tests could not start because Firebase CLI is unavailable; the separate mobile
+parity check flags an unchanged website copy of `docs/LLM_GATEWAY_CONTRACT.md`.
+The current website and release baseline remain unchanged. No production release
+or gateway, rules or native change is part of this update. See the updated
+[dashboard handoff](docs/KAI_DASHBOARD_HANDOFF.md) for full validation details.
+
 ## Admin metrics and roster production release (2026-10-06)
 
 Website `6ac5a02e62dff64d89f511e0`, source `5907d44`, was published October 6, 2026 at 6:38:19 PM PDT. People & organizations now combines scoped reporting with the account roster. Summary cards and each player show testing, completed workouts and estimated active use alongside existing signup code/link actions. Players retains Overview, Testing, Workouts and Usage within the same workspace; player details retain the selected reporting period. Read [the workspace handoff](docs/ADMIN_WORKSPACE_METRICS.md) and [production evidence](deployment/ADMIN_WORKSPACE_METRICS_PRODUCTION.json).
