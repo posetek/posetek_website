@@ -1,5 +1,9 @@
 # Admin roster and reporting workspace
 
+<!-- admin-hierarchy-current:start -->
+The current [organization/team hierarchy and complete reporting workspace](ADMIN_HIERARCHY_REPORTING.md) is recorded in [its production receipt](../deployment/ADMIN_HIERARCHY_REPORTING_PRODUCTION.json). Organization selection now opens graphs and a team directory; people require a team, explicit All teams/Unassigned destination or supported review/lookup action. The experience below records the earlier release. Its metric, invitation and management contracts remain in force.
+<!-- admin-hierarchy-current:end -->
+
 This follow-up connects People & organizations to the existing Insights metrics. Website `6ac5a02e62dff64d89f511e0`, source `5907d44`, was published October 6, 2026 at 6:38:19 PM PDT from the exact reviewed candidate. It follows main `eb67366` and website `6ac5905069994ecfbad5e391`. See [the confirmed receipt](../deployment/ADMIN_WORKSPACE_METRICS_PRODUCTION.json) and [PR #34](https://github.com/posetek/posetek_website/pull/34).
 
 ## Experience
