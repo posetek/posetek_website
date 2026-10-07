@@ -1,10 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { getClubContext, subscribeClubContextInvalidation } from "../../../lib/organization-data";
-import { accountContext } from "../lib/accountHierarchy";
-import { adminDirectoryPath, parseAdminDirectoryState, supportsAdminScope } from "../lib/adminNavigation";
+import { useEffect } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAdminToolLinks } from "../lib/useAdminNavigation";
-import type { InsightChoices } from "../../insights/lib/expanded";
 
 const SECTIONS = [
   { path: "/admin/accounts", icon: "supervisor_account", label: "People & organizations" },
@@ -24,65 +20,21 @@ export default function AdminHeader({ ready, email, uid = "", preview = false, o
   preview?: boolean;
   onSignOut: () => void;
 }) {
-  const location = useLocation(), navigate = useNavigate();
-  const context = accountContext(location.search);
+  const location = useLocation();
   const toolPath = useAdminToolLinks(uid);
-  // The directory owns its flat organization selector, including legacy rows.
-  // A second canonical-only selector would show a conflicting scope there.
-  const scopedTool = supportsAdminScope(location.pathname) && !location.pathname.startsWith("/admin/accounts") && location.pathname !== "/admin/organizations";
-  const [choices, setChoices] = useState<InsightChoices | null>(null);
-  const [contextRevision, setContextRevision] = useState(0);
-  useEffect(() => subscribeClubContextInvalidation(() => setContextRevision(value => value + 1)), []);
+  useEffect(() => {
+    document.querySelectorAll<HTMLDetailsElement>(".admin-section-menu[open]").forEach(menu => { menu.open = false; });
+  }, [location.pathname, location.search]);
 
   useEffect(() => {
-    setChoices(null);
-    if (!ready || !scopedTool) return;
-    let active = true;
-    if (preview) {
-      if (import.meta.env.DEV) void import("../../insights/lib/preview").then(module => { if (active) setChoices(module.PREVIEW_CHOICES); });
-      return () => { active = false; };
-    }
-    void getClubContext(context.orgId).then(result => {
-      if (!active) return;
-      setChoices({
-        global: true,
-        organizations: result.organizations.filter(org => org.schemaVersion === 2).map(org => ({
-          id: org.id,
-          name: org.name,
-          role: "admin",
-          teams: result.teams.filter(team => team.organizationId === org.id).map(team => ({ id: team.id, name: team.name })),
-        })),
+    const closeOutside = (event: PointerEvent) => {
+      document.querySelectorAll<HTMLDetailsElement>(".admin-section-menu[open]").forEach(menu => {
+        if (event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
       });
-    }).catch(() => { if (active) setChoices(null); });
-    return () => { active = false; };
-  }, [ready, preview, context.orgId, scopedTool, uid, contextRevision]);
-
-  // On phones the tabs scroll sideways; keep the active one (for example the
-  // eighth, Device performance) in view instead of leaving it off-screen.
-  const nav = useRef<HTMLElement>(null);
-  useEffect(() => {
-    const row = nav.current, active = row?.querySelector<HTMLElement>(".admin-nav-link.active");
-    if (!row || !active || row.scrollWidth <= row.clientWidth) return;
-    const bounds = row.getBoundingClientRect(), tab = active.getBoundingClientRect();
-    if (tab.left < bounds.left || tab.right > bounds.right) row.scrollLeft += tab.left - bounds.left - (bounds.width - tab.width) / 2;
-  }, [location.pathname, ready]);
-
-  const organization = choices?.organizations.find(row => row.id === context.orgId);
-  const team = organization?.teams.find(row => row.id === context.teamId);
-  const scopeLabel = team ? `${organization?.name} · ${team.name}` : organization?.name || "All organizations";
-
-  function changeScope(orgId?: string, teamId?: string) {
-    if (/^\/admin\/accounts\/(?:player|coach)\//.test(location.pathname)) {
-      navigate(adminDirectoryPath({ ...parseAdminDirectoryState(location.search), orgId, teamId, coachId: undefined, directoryTab: "players", page: 0, search: "", returnTo: undefined }));
-      return;
-    }
-    const query = new URLSearchParams(location.search);
-    for (const key of ["orgId", "teamId", "coachId"]) query.delete(key);
-    for (const key of ["page", "cursor", "search", "returnTo"]) query.delete(key);
-    if (orgId) query.set("orgId", orgId);
-    if (teamId) query.set("teamId", teamId);
-    navigate({ pathname: location.pathname, search: query.toString() ? `?${query}` : "" });
-  }
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    return () => document.removeEventListener("pointerdown", closeOutside);
+  }, []);
 
   return (
     <header className="admin-header">
@@ -92,27 +44,28 @@ export default function AdminHeader({ ready, email, uid = "", preview = false, o
           <span className="admin-wordmark">POSETEK</span>
           <span className="admin-badge">Admin</span>
         </Link>
-        {ready && scopedTool && <details className="admin-scope-menu">
-          <summary aria-label={`Current scope: ${scopeLabel}`}>
-            <span className="material-symbols-outlined" aria-hidden="true">domain</span>
-            <span>{scopeLabel}</span>
-            <span className="material-symbols-outlined" aria-hidden="true">expand_more</span>
-          </summary>
-          <div className="admin-menu-panel admin-scope-panel">
-            <label>Organization
-              <select aria-label="Admin organization scope" value={context.orgId || ""} onChange={event => changeScope(event.target.value || undefined)}>
-                <option value="">All organizations</option>
-                {choices?.organizations.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}
-              </select>
-            </label>
-            <label>Team
-              <select aria-label="Admin team scope" value={context.teamId || ""} disabled={!organization} onChange={event => changeScope(organization?.id, event.target.value || undefined)}>
-                <option value="">All teams</option>
-                {organization?.teams.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}
-              </select>
-            </label>
-          </div>
-        </details>}
+        {ready && <nav className="admin-primary-nav" aria-label="Admin sections">
+          <Link className="admin-primary-link" to={preview ? "/insights?from=organization&view=overview&preview=1" : "/insights?from=organization&view=overview"}>Overview</Link>
+          {[{ label: "Coaching hub", sections: SECTIONS.slice(0, 4) }, { label: "System & User Insights", sections: SECTIONS.slice(4) }].map(group => (
+            <details className="admin-section-menu" key={group.label} onKeyDown={event => {
+              if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
+            }} onToggle={event => {
+              if (event.currentTarget.open) document.querySelectorAll<HTMLDetailsElement>(".admin-section-menu[open]").forEach(menu => {
+                if (menu !== event.currentTarget) menu.open = false;
+              });
+            }}>
+              <summary>{group.label}<span className="material-symbols-outlined" aria-hidden="true">expand_more</span></summary>
+              <div className="admin-menu-panel admin-section-panel">
+                {group.sections.map(section => <NavLink key={section.path} to={toolPath(section.path)} onClick={event => {
+                  const menu = event.currentTarget.closest("details");
+                  if (menu) menu.open = false;
+                }} className={({ isActive }) => `admin-section-link${isActive ? " active" : ""}`}>
+                  <span className="material-symbols-outlined" aria-hidden="true">{section.icon}</span>{section.label}
+                </NavLink>)}
+              </div>
+            </details>
+          ))}
+        </nav>}
         {ready && <details className="admin-account-menu">
           <summary aria-label="Admin account menu" title={email}>
             <span aria-hidden="true">{(email || "A")[0].toUpperCase()}</span>
@@ -126,12 +79,6 @@ export default function AdminHeader({ ready, email, uid = "", preview = false, o
           </div>
         </details>}
       </div>
-      {ready && <nav ref={nav} className="admin-nav" aria-label="Admin sections">
-        {SECTIONS.map(section => <NavLink key={section.path} className={({ isActive }) => `admin-nav-link${isActive ? " active" : ""}`} to={toolPath(section.path)}>
-          <span className="material-symbols-outlined" aria-hidden="true">{section.icon}</span>
-          <span>{section.label}</span>
-        </NavLink>)}
-      </nav>}
     </header>
   );
 }
