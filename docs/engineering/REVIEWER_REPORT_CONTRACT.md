@@ -1,5 +1,13 @@
 # Advisory reviewer report preparation
 
+Historical contract checkpoint: the backend now contains a disabled trusted
+coordinator with mocked resolver/provider/publisher tests. The pure website
+validator described below remains part of the contract, but the list of
+"remaining implementation" tasks records the state when this page was first
+written. Current activation and budget status are in
+[security and review](SECURITY_AND_REVIEW.md) and the
+[activation checklist](ACTIVATION_CHECKLIST.md).
+
 The hosted reviewer is not enabled. `ci/reviewer_contract.py` implements a pure,
 offline validator for a candidate report format, using only synthetic tests.
 It does not call a provider, execute PR content, fetch GitHub data, publish a
@@ -59,5 +67,4 @@ GitHub rendering. They establish only the report contract's checked properties.
   implemented in backend `ci/` and remains disabled. See the activation checklist.
 
 The validator is preparation, not a substitute for these controls or a running
-review service. The user must see new security and activation proposals before
-they are applied.
+review service. Activation remains a separate, reviewed operational step.

@@ -1,5 +1,12 @@
 # Pipeline candidate validation — September 26, 2026
 
+Historical snapshot. Later approved decisions and implementation supersede the
+pending lint, reviewer, dependency, and approval statements below. Do not use
+these counts as current pass criteria. Start at the
+[engineering handbook](README.md), then consult the
+[implementation status](IMPLEMENTATION_STATUS.md) and
+[2026-10-07 handoff](VERIFICATION_HANDOFF_20261007.md) for later evidence.
+
 Local evidence, not a hosted Actions run or a release. Primary checkouts and other
 instances' worktrees were not edited. Candidate branches are isolated:
 
