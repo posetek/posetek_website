@@ -1,0 +1,17 @@
+{
+  "status": "disabled-pending-user-review",
+  "enabled": false,
+  "gcp_project_id": null,
+  "firebase_project_id": null,
+  "website_origin": null,
+  "region": null,
+  "monthly_budget_usd": null,
+  "data": "synthetic-only",
+  "production_credentials_allowed": false,
+  "production_webhooks_allowed": false,
+  "deployment_identity": "short-lived-OIDC-with-ref-and-environment-restrictions",
+  "deploy_source": "approved-main-commit",
+  "promotion": "verified-artifact-digest",
+  "preview_environments_enabled": false,
+  "automatic_production_deploy_enabled": false
+}

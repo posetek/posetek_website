@@ -1,0 +1,45 @@
+{
+  "status": "implemented-in-backend-disabled-pending-activation",
+  "enabled": false,
+  "mode": "advisory",
+  "trigger": "each-new-ready-pr-head",
+  "provider": "anthropic",
+  "model": "claude-sonnet-5-5",
+  "github_app_id": null,
+  "budget": {
+    "daily_usd_limit": 5,
+    "max_attempt_usd": 1,
+    "shared_across_repositories": true,
+    "utc_day": true,
+    "reserve_full_attempt_without_refund": true,
+    "failures_count_toward_limits": true,
+    "covers": "modeled Anthropic API charges; Actions costs separate"
+  },
+  "timeout_minutes": 10,
+  "input": {
+    "max_diff_bytes": 200000,
+    "max_files": 40,
+    "oversize_result": "partial",
+    "source": "immutable-base-and-head",
+    "policy": "trusted-default-branch"
+  },
+  "permissions": {
+    "reviewer": [
+      "read-content"
+    ],
+    "publisher": [
+      "post-advisory-review"
+    ],
+    "approve": false,
+    "merge": false,
+    "deploy": false
+  },
+  "outcomes": [
+    "complete",
+    "partial",
+    "unavailable",
+    "not-run"
+  ],
+  "stale_head_action": "discard-and-report",
+  "spend_override": "explicit-maintainer-action-only"
+}
