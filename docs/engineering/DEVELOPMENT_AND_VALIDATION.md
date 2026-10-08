@@ -120,6 +120,24 @@ credentials or publish private rule bytes to reproduce this test.
 
 ## Diagnosing a red lane
 
+For the separate canonical-rules runner, use the same reviewed mobile checkout,
+an installed Firebase CLI and Java 21. After selecting an unused port offset,
+the command is:
+
+```sh
+export RULES_PATH="$POSETEK_MOBILE_REPO/firebase/firestore.rules"
+export STORAGE_RULES_PATH="$POSETEK_MOBILE_REPO/firebase/storage.rules"
+export FIREBASE_BIN='/absolute/path/to/firebase'
+export RULES_PORT_OFFSET='1000'
+node scripts/run-rules-tests.mjs
+```
+
+`1000` is an example offset to check for availability, not a reserved range.
+`FIREBASE_BIN` may be omitted when `firebase` is already on `PATH`. Preserve
+the reviewed `JAVA_HOME`/Java runtime and canonical rule files; the runner checks
+rule hashes before and after execution. See [rules suite documentation](../../app/rules-tests/README.md)
+for named-suite selection and its exact port behavior.
+
 - First check the exact SHA, Node/Python version, lockfile and dependency
   installation. A stale `node_modules` tree can fail to load a package already
   committed in the lockfile; refresh from the lockfile, not with an upgrade.
