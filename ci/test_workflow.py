@@ -29,6 +29,9 @@ def validate(workflow):
     assert gate["if"] == "${{ always() }}"
     assert set(gate["needs"]) == set(jobs) - {"ci"}, "gate must cover all lanes"
     assert gate["permissions"] == {}
+    assert "node --test ci/verify-mobile-contract-artifact.test.cjs" in [
+        step.get("run") for step in jobs["server"]["steps"]
+    ], "contract artifact verifier regressions belong in the required server lane"
     for name, job in jobs.items():
         assert 0 < int(job["timeout-minutes"]) <= 30
         assert job["runs-on"] in {"ubuntu-24.04", "macos-15"}, "no persistent PR runners"
@@ -72,6 +75,7 @@ class WorkflowTests(unittest.TestCase):
             lambda w: w["jobs"]["policy"].update(**{"runs-on": "self-hosted"}),
             lambda w: w["jobs"]["policy"]["steps"][0]["with"].update(**{"persist-credentials": "true"}),
             lambda w: w["jobs"]["policy"]["steps"][0].update(uses="actions/checkout@v4"),
+            lambda w: w["jobs"]["server"]["steps"].pop(),
             lambda w: w["jobs"]["ci"]["needs"].remove("policy"),
         ]
         for mutate in mutations:

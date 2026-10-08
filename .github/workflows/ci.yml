@@ -57,6 +57,7 @@ jobs:
           node-version: '22.23.3'
       - run: npm --prefix functions ci --ignore-scripts --no-audit --no-fund
       - run: node --test functions/*.test.js scripts/*.test.cjs scripts/*.test.mjs
+      - run: node --test ci/verify-mobile-contract-artifact.test.cjs
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
