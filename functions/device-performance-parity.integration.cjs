@@ -8,6 +8,7 @@ const path = require("node:path");
 const { test } = require("node:test");
 
 const PINNED = path.join(__dirname, "contracts", "device-performance-v1");
+const FRONTEND = path.join(__dirname, "..", "app", "src", "pages", "admin", "lib", "__fixtures__", "device-performance-v1");
 const sha256File = (file) => crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
 function listFiles(root, prefix = "") {
   return fs.readdirSync(path.join(root, prefix), { withFileTypes: true })
@@ -35,5 +36,26 @@ test("the pinned copy is byte-identical to the canonical mobile contract (schema
   assert.deepEqual(pinned, pinnedContractFiles(canonical), "the pinned and canonical directories hold the same schema and fixtures");
   for (const file of pinned) {
     assert.equal(sha256File(path.join(PINNED, file)), sha256File(path.join(canonical, file)), `${file} differs from the canonical copy`);
+  }
+});
+
+test("the frontend schema and fixtures match canonical mobile bytes and the pinned digest table", () => {
+  const repo = process.env.POSETEK_MOBILE_REPO || path.resolve(__dirname, "..", "..", "PoseTek-mobile-app");
+  const canonical = path.join(repo, "tools", "contracts", "device-performance-v1");
+  if (!fs.existsSync(path.join(canonical, "schema.json"))) {
+    assert.fail(`Canonical device-performance contract not found at ${canonical}. Set POSETEK_MOBILE_REPO to the reviewed source; frontend parity fails rather than skips.`);
+  }
+  const files = pinnedContractFiles(canonical);
+  assert.deepEqual(pinnedContractFiles(FRONTEND), files, "frontend schema and fixture names match canonical source");
+  for (const file of files) {
+    assert.equal(sha256File(path.join(FRONTEND, file)), sha256File(path.join(canonical, file)), `${file} differs in frontend copy`);
+  }
+  // The source artifact intentionally excludes private prose. The local pinned
+  // README's digest table still guards the frontend copy's executable bytes.
+  const readme = fs.readFileSync(path.join(PINNED, "README.md"), "utf8");
+  const digests = [...readme.matchAll(/^\| `([^`]+\.json)` \| `([0-9a-f]{64})` \|$/gm)];
+  assert.ok(digests.length >= 19, "pinned digest table covers the contract files");
+  for (const [, file, digest] of digests) {
+    assert.equal(sha256File(path.join(FRONTEND, file)), digest, `${file} differs from pinned digest`);
   }
 });
