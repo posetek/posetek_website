@@ -6,6 +6,11 @@ name: Mobile contract source candidate
 # This workflow is not a required PR gate until artifact handoff is reviewed.
 on:
   workflow_dispatch:
+    inputs:
+      mobile_sha:
+        description: Reviewed full mobile commit SHA for public contract data
+        required: true
+        type: string
 
 permissions: {}
 
@@ -24,15 +29,17 @@ jobs:
       - name: Validate default branch and immutable revision
         id: revision
         shell: bash
+        env:
+          REVIEWED_MOBILE_SHA: ${{ inputs.mobile_sha }}
         run: |
           set -euo pipefail
           if [[ "$GITHUB_EVENT_NAME" != workflow_dispatch || "$GITHUB_REF" != refs/heads/main ]]; then
             echo 'Trusted source preparation runs only from main' >&2
             exit 1
           fi
-          mobile_sha="$(python3 -c 'import json; d=json.load(open("ci/mobile-contract-source.json")); assert set(d)=={"repository","sha"} and d["repository"]=="posetek/posetek-mobile-app"; print(d["sha"])')"
+          mobile_sha="$REVIEWED_MOBILE_SHA"
           if [[ ! "$mobile_sha" =~ ^[0-9a-f]{40}$ ]]; then
-            echo 'Pinned mobile revision must be a full lowercase commit SHA' >&2
+            echo 'Reviewed mobile revision must be a full lowercase commit SHA' >&2
             exit 1
           fi
           printf 'sha=%s\n' "$mobile_sha" >> "$GITHUB_OUTPUT"

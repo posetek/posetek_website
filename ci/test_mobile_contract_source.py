@@ -18,6 +18,12 @@ STAGE = ROOT / "ci/stage-mobile-contract.sh"
 def validate(workflow):
     assert workflow["permissions"] == {}
     assert set(workflow["on"]) == {"workflow_dispatch"}
+    assert workflow["on"]["workflow_dispatch"]["inputs"] == {
+        "mobile_sha": {
+            "description": "Reviewed full mobile commit SHA for public contract data",
+            "required": "true", "type": "string",
+        },
+    }
     assert set(workflow["jobs"]) == {"source"}
     job = workflow["jobs"]["source"]
     assert job["runs-on"] == "ubuntu-24.04"
@@ -29,8 +35,10 @@ def validate(workflow):
     assert website["uses"] == "actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
     assert website["with"] == {"persist-credentials": "false"}
     assert revision["id"] == "revision"
+    assert revision["env"] == {"REVIEWED_MOBILE_SHA": "${{ inputs.mobile_sha }}"}
     assert '"$GITHUB_REF" != refs/heads/main' in revision["run"]
-    assert "ci/mobile-contract-source.json" in revision["run"]
+    assert 'mobile_sha="$REVIEWED_MOBILE_SHA"' in revision["run"]
+    assert "${{" not in revision["run"]
     assert "^[0-9a-f]{40}$" in revision["run"]
     assert '>> "$GITHUB_OUTPUT"' in revision["run"]
     assert token["uses"] == "actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1"
@@ -79,12 +87,15 @@ class MobileContractSourceTests(unittest.TestCase):
     def test_privilege_expansions_are_rejected(self):
         mutations = [
             lambda w: w["on"].update(pull_request_target={}),
+            lambda w: w["on"]["workflow_dispatch"]["inputs"]["mobile_sha"].update(required="false"),
             lambda w: w["jobs"]["source"].update(environment="unprotected"),
             lambda w: w["jobs"]["source"].update(permissions={"contents": "write"}),
             lambda w: w["jobs"]["source"]["steps"][2]["with"].update(repositories="other-repo"),
             lambda w: w["jobs"]["source"]["steps"][2]["with"].update(**{"permission-contents": "write"}),
             lambda w: w["jobs"]["source"]["steps"][3]["with"].update(**{"persist-credentials": "true"}),
             lambda w: w["jobs"]["source"]["steps"][3]["with"].update(ref="${{ github.event.pull_request.head.sha }}"),
+            lambda w: w["jobs"]["source"]["steps"][1]["env"].update(REVIEWED_MOBILE_SHA="${{ github.event.pull_request.head.sha }}"),
+            lambda w: w["jobs"]["source"]["steps"][1].update(run="set -euo pipefail\nmobile_sha='${{ inputs.mobile_sha }}'\n"),
             lambda w: w["jobs"]["source"]["steps"][5]["with"].update(**{"if-no-files-found": "warn"}),
         ]
         for mutate in mutations:
@@ -94,31 +105,26 @@ class MobileContractSourceTests(unittest.TestCase):
                 with self.assertRaises(AssertionError):
                     validate(candidate)
 
-    def test_revision_validation_fails_outside_main_or_for_bad_pin(self):
+    def test_revision_validation_fails_outside_main_or_for_bad_input(self):
         script = self.workflow["jobs"]["source"]["steps"][1]["run"]
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            manifest = root / "ci/mobile-contract-source.json"
-            manifest.parent.mkdir()
             output = root / "step-output"
 
-            def run(ref="refs/heads/main"):
+            def run(value="a" * 40, ref="refs/heads/main"):
                 return subprocess.run(
                     ["bash", "-c", script], cwd=root, capture_output=True, text=True,
                     env={**os.environ, "GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_REF": ref,
-                         "GITHUB_OUTPUT": str(output)},
+                         "GITHUB_OUTPUT": str(output), "REVIEWED_MOBILE_SHA": value},
                 )
 
-            manifest.write_text(json.dumps({"repository": "posetek/posetek-mobile-app", "sha": "a" * 40}))
-            self.assertNotEqual(run("refs/heads/feature").returncode, 0)
+            self.assertNotEqual(run(ref="refs/heads/feature").returncode, 0)
             self.assertFalse(output.exists())
-            for value in ("", "a" * 39, "A" * 40, "a" * 40 + "\nanything"):
-                manifest.write_text(json.dumps({"repository": "posetek/posetek-mobile-app", "sha": value}))
-                self.assertNotEqual(run().returncode, 0)
+            injection = "$(touch injected)"
+            for value in ("", "a" * 39, "A" * 40, "a" * 40 + "\nanything", injection):
+                self.assertNotEqual(run(value).returncode, 0)
                 self.assertFalse(output.exists())
-            manifest.write_text(json.dumps({"repository": "other-repo", "sha": "a" * 40}))
-            self.assertNotEqual(run().returncode, 0)
-            manifest.write_text(json.dumps({"repository": "posetek/posetek-mobile-app", "sha": "a" * 40}))
+            self.assertFalse((root / "injected").exists())
             result = run()
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(output.read_text(), "sha=" + "a" * 40 + "\n")
@@ -132,6 +138,9 @@ class MobileContractSourceTests(unittest.TestCase):
             (source / "schema.json").write_text('{"type":"object"}')
             (source / "README.md").write_text("prose only")
             (source / "fixtures/one.json").write_text('{"ok":true}')
+            (mobile / "firebase").mkdir()
+            (mobile / "firebase/firestore.rules").write_text("private rules")
+            (mobile / "firebase/storage.rules").write_text("private rules")
             subprocess.run(["git", "init", "-q", str(mobile)], check=True)
             subprocess.run(["git", "-C", str(mobile), "add", "."], check=True)
             subprocess.run(["git", "-C", str(mobile), "-c", "user.name=CI", "-c", "user.email=ci@example.invalid",
@@ -151,6 +160,7 @@ class MobileContractSourceTests(unittest.TestCase):
             self.assertEqual((output / "source-sha.txt").read_text(), sha + "\n")
             self.assertEqual((output / "tools/contracts/device-performance-v1/fixtures/one.json").read_text(), '{"ok":true}')
             self.assertFalse((output / "tools/contracts/device-performance-v1/README.md").exists())
+            self.assertFalse((output / "firebase").exists(), "private rules must not be staged")
             (source / "fixtures/one.json").unlink()
             self.assertNotEqual(stage().returncode, 0, "empty fixtures must fail")
             (source / "fixtures/one.json").write_text('{"ok":true}')
