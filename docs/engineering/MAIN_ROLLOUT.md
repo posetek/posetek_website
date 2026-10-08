@@ -9,9 +9,9 @@ not certify subsequent revisions.
 
 | Stage | Scope | Acceptance before merge | Status |
 | --- | --- | --- | --- |
-| 1 — Documentation | Central website handbook and backend/mobile companion guides. | Review staged scope, navigation, factual readiness labels and preservation of existing product guidance. | Preparing documentation-only PRs. |
-| 2 — CI and tooling | Automatic PR/main checks, behavioral tests, developer commands, dependency policies and disabled reviewer/native/contract candidates. | Fresh-main integration, local policy tests, hosted CI on the PR revision, inspection of failures and skipped lanes. | Pending stage 1. |
-| 3 — Runtime safety | Gateway environment validation and release preflight; website test-only emulator bootstrap and compatible production dependency patches. | Focused behavior tests, complete affected standing checks, review of release prerequisites and unchanged production configuration. | Pending earlier stages. |
+| 1 — Documentation | Central website handbook and backend/mobile companion guides. | Review staged scope, navigation, factual readiness labels and preservation of existing product guidance. | Merged in all three repositories; links below. |
+| 2 — CI and tooling | Automatic PR/main checks, behavioral tests, developer commands, dependency policies and disabled reviewer/native/contract candidates. Website dependency patches accompany the audit gate so its baseline is reproducible. | Fresh-main integration, local policy tests, hosted CI on the PR revision, inspection of failures and skipped lanes. | Merged in all three repositories after green hosted PR checks. |
+| 3 — Runtime safety | Gateway environment validation and release preflight; website test-only emulator bootstrap. | Focused behavior tests, complete affected standing checks, review of release prerequisites and unchanged production configuration. | Preparing final source PRs; production activation remains separate. |
 | Activation — separate | Provider credentials, supported protected reviewer identity, staging infrastructure, native assets, deployment identity and production releases. | Specific activation checklist evidence, supported hosting/permissions and explicit release authorization. | Held; Claude API key remains last. |
 
 Some repositories can finish with stage 2 because they have no changed deployed
@@ -32,6 +32,8 @@ Primary checkouts and unrelated PRs remain owned by their existing work. Fetch
 again before merging; if main changes, incorporate it and repeat affected checks.
 All three repositories belong to the `posetek` GitHub organization; the backend
 canonical name is `posetek-backend` despite its historical local directory name.
+The local backend `origin` URL was normalized to that verified canonical repository
+during integration; linked primary files and branches were not switched or edited.
 
 ## Bootstrap review and deployment boundaries
 
@@ -89,9 +91,27 @@ row records a verified remote result, treat it as pending.
 
 | Repository / stage | PR | Main merge | Validation / remaining limits |
 | --- | --- | --- | --- |
-| Website documentation | Pending | Pending | Central handbook and historical decisions; no code activated. |
-| Backend documentation | Pending | Pending | Backend companion index and operational handoffs. |
-| Mobile documentation | Pending | Pending | Mobile companion index, rules/native/playbook mapping. |
+| Website documentation | [#41](https://github.com/posetek/posetek_website/pull/41) | `e52cf41a0214d8a910db72e861c108ad80231fe0` | Documentation scope, navigation and whitespace checked; no existing hosted CI; Netlify skipped. |
+| Backend documentation | [#10](https://github.com/posetek/posetek-backend/pull/10) | `baa5056568f09eb76a9bab36435b77ed4ab99ae9` | Documentation scope, local links, JSON and whitespace checked; no existing hosted CI. |
+| Mobile documentation | [#36](https://github.com/posetek/posetek-mobile-app/pull/36) | `38b53f123c4aff64dafcc50f8ab313b31c0c8004` | Nine documentation paths, navigation and whitespace checked; no existing hosted CI. |
+| Website CI/tooling | [#42](https://github.com/posetek/posetek_website/pull/42) | `c21cee5737c35f2ca77952031c5405d305745661` | [PR run 37746753545](https://github.com/posetek/posetek_website/actions/runs/37746753545): all six jobs passed. Build 1m42s, unit/lint 45s, server 47s, dependency audit 29s, policy 7s, aggregate 3s. Netlify skipped. |
+| Backend CI/tooling | [#11](https://github.com/posetek/posetek-backend/pull/11) | `46bae9df8a3cea3497889b784f2c6285181c59e8` | [PR run 37746126865](https://github.com/posetek/posetek-backend/actions/runs/37746126865): all four jobs passed; 2,416 gateway tests passed/2 emulator cases skipped without the optional emulator; 19 authored replay cases passed. Gateway lane 9m21s (pytest 462.40s). |
+| Mobile CI/tooling | [#37](https://github.com/posetek/posetek-mobile-app/pull/37) | `c15d56094119189edd352d623a4f53bdb67c8fcf` | [PR run 37746363445](https://github.com/posetek/posetek-mobile-app/actions/runs/37746363445) and [main run 37746815933](https://github.com/posetek/posetek-mobile-app/actions/runs/37746815933) passed all five jobs. Rules 1,232 passed/zero skips; PR rules lane 2m4s, Swift syntax 45s, operations 11s, policy 14s, aggregate 4s. No native build. |
+
+Hosted integration exposed two previously local assumptions: the website frontend
+parity assertion needed private sibling source, and the Mac runner did not include
+`rg`. Both were fixed before merge. Website frontend and server byte parity now
+run together in the explicit integration command, which fails without reviewed
+source; ordinary frontend tests remain self-contained. The existing Swift wrapper's
+fallback handles the hosted Mac. Legacy upload routing/repair tests were also
+added to the required website server lane. No failing assertion was replaced with
+a successful skip.
+
+The durations above are first hosted observations, not performance SLOs or billing
+predictions. They include runner setup where stated and vary with platform/load.
+The two optional backend emulator cases also passed separately in local trusted
+emulator validation recorded in the historical handoff. That separate result does
+not turn their hosted skips into hosted emulator coverage.
 
 See [activation checklist](ACTIVATION_CHECKLIST.md), [security and review](SECURITY_AND_REVIEW.md)
 and [release and operations](RELEASE_AND_OPERATIONS.md) for deferred activation,

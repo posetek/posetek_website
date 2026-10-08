@@ -36,7 +36,7 @@ coverage-count tests. Source-text assertions alone do not prove runtime behavior
 
 | Repository | PR lanes in this candidate | Important limit |
 | --- | --- | --- |
-| Website | Vitest and lint; Functions/tooling Node tests; TypeScript/Astro build; Svelte check; marketing build; guest Chromium smoke; policy and production dependency audits | Ordinary builds do not prove the protected production artifact. Three existing private-fixture tests skip. Canonical mobile contract parity is a separate explicit integration command, not a standing public PR check. |
+| Website | Hosted PR `ci`: Vitest and lint; Functions/tooling and legacy-guard Node tests; TypeScript/Astro build; Svelte check; marketing build; guest Chromium smoke; policy and production dependency audits | [PR #42](https://github.com/posetek/posetek_website/pull/42) passed all hosted lanes. Ordinary builds do not prove the protected production artifact. Three existing private-fixture tests skip. Canonical mobile contract parity is a separate explicit integration command, not a standing public PR check. |
 | Backend | Gateway pytest with live-network guard; authored replay evaluation; legacy processor syntax; workflow contract tests | Replay is not model-quality evidence. Processor syntax is not video/biomechanics coverage. Python dependencies need Linux lock work. |
 | Mobile | Canonical Firestore/Storage emulator suites and hash receipt; publishing-tool unit tests; all tracked app Swift syntax; workflow contract tests | No full native build, simulator XCTest, signing or camera acceptance is claimed. |
 
@@ -113,7 +113,8 @@ integration, with exact partner SHAs logged.
    backend/mobile private, and private protection requires a plan decision.
    Repository controls were inspected; no remote settings were changed. Hosting
    integration behavior still needs explicit review before any push.
-2. Review/merge these separate CI PRs. Resolve recorded baseline failures first.
+2. Website CI merged after its hosted PR run passed; see the
+   [rollout ledger](MAIN_ROLLOUT.md). Review backend/mobile stages separately.
    Run each workflow on GitHub; local results are not hosted-run evidence.
 3. Only after green hosted runs and supported plans, protect main: require PRs,
    passing `ci`, and completed latest-revision AI review from trusted check sources.
