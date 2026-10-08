@@ -54,3 +54,13 @@ test('dirty or symlinked canonical rules cannot be used as reviewed bytes', () =
     assert.throws(() => reviewedMobileRules(source.dir, source.sha), /cannot be a symlink/);
   } finally { source.cleanup(); }
 });
+
+test('assume-unchanged cannot hide modified private rule bytes', () => {
+  const source = checkout();
+  try {
+    git(source.dir, 'update-index', '--assume-unchanged', 'firebase/firestore.rules');
+    appendFileSync(path.join(source.dir, 'firebase/firestore.rules'), '// hidden edit\n');
+    assert.equal(git(source.dir, 'status', '--porcelain', '--', 'firebase/firestore.rules'), '');
+    assert.throws(() => reviewedMobileRules(source.dir, source.sha), /bytes differ from the reviewed commit/);
+  } finally { source.cleanup(); }
+});

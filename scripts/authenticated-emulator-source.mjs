@@ -1,7 +1,7 @@
 // Resolve only explicitly reviewed private mobile rules for local test use.
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { lstatSync, realpathSync } from 'node:fs';
+import { lstatSync, readFileSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
 const canonicalRemotes = new Set([
@@ -36,6 +36,10 @@ export function reviewedMobileRules(repoInput, shaInput) {
       `${relative} must be tracked at the reviewed commit`);
     assert.equal(git(repo, 'status', '--porcelain', '--', relative), '',
       `${relative} differs from the reviewed commit`);
+    const reviewedBytes = execFileSync('git', ['show', `${shaInput}:${relative}`],
+      { cwd: repo, stdio: ['ignore', 'pipe', 'pipe'] });
+    assert.equal(readFileSync(file).equals(reviewedBytes), true,
+      `${relative} bytes differ from the reviewed commit`);
     return [name === 'firestore.rules' ? 'firestore' : 'storage', file];
   }));
   return { repo, sha: shaInput, ...rules };
