@@ -1,8 +1,9 @@
 # Pipeline implementation status
 
 Updated October 8, 2026. This tracks the 42 approved components; approved does not mean
-implemented, enabled, or verified on hosted infrastructure. All work is local to
-isolated worktrees. No production deployment or paid reviewer is enabled.
+implemented, enabled, or verified on hosted infrastructure. Website standing CI
+has reached `main` and passed its hosted PR run; the test-only runtime bootstrap
+remains staged. No production deployment or paid reviewer is enabled.
 
 ## Decisions and operating rules
 
@@ -31,10 +32,10 @@ between assignments or that archived future scope is being implemented.
 | 6 Baseline | Partial | Website/emulator and Linux ARM gateway results recorded; AMD64 and native execution unresolved. |
 | 7 Coverage review | Partial | Specific native/rules/gateway batches documented; wider user-facing coverage review remains. |
 | 8 Scheduling | Partial | PR/main/manual/merge-group candidate exists; expensive schedules not enabled. |
-| 9 Aggregate gate | Candidate tested locally | Failure/skip/cancel guards present; hosted required-check evidence outstanding. |
+| 9 Aggregate gate | Hosted CI passed | Website PR #42 aggregate and all five prerequisite lanes succeeded; server-enforced required-check settings remain separate. |
 | 10 Workflow security | Under review | Existing restrictions retained; source-workflow hardening and hosted controls outstanding. |
 | 11 Dependencies | Partial | Local isolated dependencies restored; tested Linux locking remains. |
-| 12 Astro/lint | Implemented locally | Astro checks pass; lint added to PR unit lane, existing warnings retained. |
+| 12 Astro/lint | Hosted CI passed | Astro/build and lint ran in website PR #42; existing warnings remain visible. |
 | 13 Browser | Partial | Seven guest checks plus local signup/redemption/privacy/refresh emulator journey pass; no hosted authenticated gate. |
 | 14 Functions/tooling | Baseline verified locally | Ordinary server suite is independent of the private mobile checkout; three historical private-fixture skips remain. Explicit parity command is separate. |
 | 15 Gateway | Partial | Linux ARM 2,428 passed/3 explained skips and 19 replay profiles pass; separate real Firestore SDK cases 2/2 pass. |
@@ -48,7 +49,7 @@ between assignments or that archived future scope is being implemented.
 | 23 Exceptions | Register prepared | EXCEPTIONS.md records exact gaps and closure evidence; permanent maintainer assignments remain. |
 | 24 Merge protections | Remote audit complete | Public website unprotected; private repository APIs require paid plan. No settings activated. |
 | 25 Code owners | Pending names | No placeholder or invented owners installed. |
-| 26 Scanning | Local gate prepared | Required local CI dependency lane covers app, Functions and legacy. Exact-path delegated exceptions expire 2026-10-14; findings remain visible. Hosted evidence and remote enforcement remain outstanding. |
+| 26 Scanning | Hosted CI passed | Website dependency lane passed on PR #42 across app, Functions and legacy. Exact-path delegated exceptions expire 2026-10-14; findings remain visible. Remote required-check enforcement remains separate. |
 | 27 Reviewer | Backend coordinator prepared, disabled | Offline report and mocked coordinator tests pass; provider credentials, publication and hosted enforcement are not active. |
 | 28 Reviewer limits | Prepared, not activated | Bounded review and durable shared budget coordinator implemented in backend; Sonnet API and $5/day shared/$1 attempt approved, exact model/provider activation pending. |
 | 29 Staging | Guard implemented locally | Explicit environment/project/buckets and startup preflight tested; migration inputs required before release. No project provisioned. |
@@ -64,7 +65,7 @@ between assignments or that archived future scope is being implemented.
 | 39 Queue/previews | Deferred | Archived in future register. |
 | 40 Autonomous work | Deferred | Archived, including personalized account-specific skills. |
 | 41 Extra mechanisms | Deferred | Archived with concerns and reconsideration conditions. |
-| 42 Documentation | Partial | Full 12-file mobile adoption audit and future register committed; integration reconciliation ongoing. |
+| 42 Documentation | Integrated, updates ongoing | Central handbook, full 12-file mobile adoption audit and future register are on `main`; release/activation evidence must continue to be updated. |
 
 ## Evidence checkpoints
 

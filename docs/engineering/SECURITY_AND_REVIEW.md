@@ -11,8 +11,10 @@ on them. Local workflow tests cannot establish branch protection.
 The website is public; backend and mobile are private. Repository-authored CI
 and its policy tests are mutable by a PR author and remain ordinary code
 review evidence. The website's aggregate `ci` checks policy, production
-dependencies, unit/lint, server, and build/browser lanes. Hosted runs and
-required-check settings must be verified after integration. On the current
+dependencies, unit/lint, server, and build/browser lanes. Its
+[PR #42 hosted run](https://github.com/posetek/posetek_website/actions/runs/37746753545)
+passed; required-check settings and continued enforcement still need separate
+verification. On the current
 GitHub Free organization, private backend/mobile merge protection is a team
 convention rather than an enforced rule. GitHub Team is explicitly deferred;
 its future purchase and configuration are in [deferred purchases](FUTURE_PURCHASES.md).
