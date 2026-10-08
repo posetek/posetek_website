@@ -13,7 +13,9 @@ or `legacy`) to `npm audit --omit=dev --json`, captures its exit code and feeds
 both into the validator. It runs no install or upgrade command, times out, and
 returns a nonzero result on scanner failure. Its `--baseline` argument is
 mandatory; until owners and dates are approved there is deliberately no file
-to pass. This runner is not referenced by an active workflow.
+to pass. Valid scanner reports still list high/critical advisory paths before
+the missing-baseline error; that error remains nonzero. This runner is not
+referenced by an active workflow.
 
 An exception file has `schema: 1` and an `exceptions` array. Each entry must
 name the advisory URL, root-to-package `path`, approved severity, named owner,

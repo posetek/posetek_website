@@ -1,6 +1,8 @@
 """Exercise the inactive runner without querying the registry."""
 
 import json
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 import subprocess
 from types import SimpleNamespace
@@ -15,6 +17,17 @@ def clean_report():
     return {"auditReportVersion": 2, "vulnerabilities": {},
             "metadata": {"vulnerabilities": {"info": 0, "low": 0, "moderate": 0,
                                               "high": 0, "critical": 0, "total": 0}}}
+
+
+def high_report():
+    report = clean_report()
+    report["metadata"]["vulnerabilities"].update(high=1, total=1)
+    report["vulnerabilities"]["@grpc/grpc-js"] = {
+        "name": "@grpc/grpc-js", "severity": "high",
+        "nodes": ["node_modules/@grpc/grpc-js"],
+        "via": [{"url": "https://github.com/advisories/GHSA-m9gg-hp2v-232j", "severity": "high"}],
+    }
+    return report
 
 
 class AuditRunnerTests(unittest.TestCase):
@@ -36,14 +49,7 @@ class AuditRunnerTests(unittest.TestCase):
 
     def test_clean_report_can_pass_and_high_advisory_blocks(self):
         self.assertEqual(self.invoke(0, json.dumps(clean_report())), 0)
-        report = clean_report()
-        report["metadata"]["vulnerabilities"].update(high=1, total=1)
-        report["vulnerabilities"]["@grpc/grpc-js"] = {
-            "name": "@grpc/grpc-js", "severity": "high",
-            "nodes": ["node_modules/@grpc/grpc-js"],
-            "via": [{"url": "https://github.com/advisories/GHSA-m9gg-hp2v-232j", "severity": "high"}],
-        }
-        self.assertEqual(self.invoke(1, json.dumps(report)), 1)
+        self.assertEqual(self.invoke(1, json.dumps(high_report())), 1)
 
     def test_scanner_error_bad_json_missing_baseline_and_mismatched_status_fail(self):
         self.assertEqual(self.invoke(2, ""), 2)
@@ -51,6 +57,14 @@ class AuditRunnerTests(unittest.TestCase):
         self.assertEqual(self.invoke(1, json.dumps(clean_report())), 2)
         self.baseline.unlink()
         self.assertEqual(self.invoke(0, json.dumps(clean_report())), 2)
+
+    def test_unapproved_existing_high_remains_visible_and_cannot_pass(self):
+        self.baseline.unlink()
+        output = StringIO()
+        with redirect_stdout(output):
+            result = self.invoke(1, json.dumps(high_report()))
+        self.assertEqual(result, 2)
+        self.assertIn("firebase -> @firebase/firestore -> @grpc/grpc-js", output.getvalue())
 
     def test_timeout_fails(self):
         with patch.object(candidate.subprocess, "run", side_effect=subprocess.TimeoutExpired("npm", 120)):

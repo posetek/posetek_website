@@ -7,7 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-from dependency_audit_policy import evaluate, load_json, require, SEVERITY
+from dependency_audit_policy import evaluate, findings, load_json, require, SEVERITY
 
 ROOT = Path(__file__).resolve().parents[1]
 SCOPES = {
@@ -27,14 +27,15 @@ def run(scope, baseline, npm="npm"):
         require(completed.returncode in (0, 1), f"scanner error exit status {completed.returncode}")
         audit = json.loads(completed.stdout)
         lock = load_json(directory / "package-lock.json")
-        current, failures = evaluate(audit, lock, load_json(baseline), date.today())
+        current = findings(audit, lock)
+        for (advisory, path), severity in sorted(current.items()):
+            if SEVERITY[severity] >= SEVERITY["high"]:
+                print(f"{scope} {severity}: {advisory} via {' -> '.join(path)}")
         require((completed.returncode == 0) == (not audit["vulnerabilities"]), "audit exit/report mismatch")
+        current, failures = evaluate(audit, lock, load_json(baseline), date.today())
     except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError, subprocess.TimeoutExpired) as error:
         print(f"Dependency audit incomplete for {scope}: {error}", file=sys.stderr)
         return 2
-    for (advisory, path), severity in sorted(current.items()):
-        if SEVERITY[severity] >= SEVERITY["high"]:
-            print(f"{scope} {severity}: {advisory} via {' -> '.join(path)}")
     for (advisory, path), severity, reason in failures:
         print(f"BLOCK {scope} {reason}: {severity} {advisory} via {' -> '.join(path)}", file=sys.stderr)
     print(f"{scope}: {len(current)} advisory-path findings; {len(failures)} blocking")
