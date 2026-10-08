@@ -53,6 +53,16 @@ native CI candidate, and test actual log-handling behavior synthetically. This
 approval changes the previously held wrapper proposal; it does not authorize
 native execution, asset provisioning, or hosted runner activation.
 
+## Specific implementation approval: active Functions dependency fixes
+
+The user explicitly approved the separately proposed compatible lockfile patch for
+active `functions/package-lock.json`: resolve the identified critical advisories
+in protobufjs, proxy-addr, and websocket-driver. Verify current fixed versions and
+existing dependency ranges, review every transitive change, and run clean install,
+relevant Functions tests, and full/production dependency audits. Preserve the
+manifest unless an additional change is separately reviewed. No deployment or
+legacy processor dependency update is authorized by this approval.
+
 ## Binding implementation conditions
 
 - The orchestrator delegates to GPT-6-Sol with medium reasoning effort, with one
