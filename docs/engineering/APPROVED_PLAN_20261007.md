@@ -94,6 +94,16 @@ authorize disclosure of private Firebase rules or other mobile contents. Validat
 input as data and fail on malformed revisions. Preparation is approved; hosted
 activation, credentials, and environment configuration remain separate checkpoints.
 
+## Specific decision: defer independent contract verifier
+
+The user approved deferring the additional privileged, independent contract
+verification service/check. Retain ordinary mutable PR contract tests and their
+honest provenance limits for this iteration; do not add a new checks-write workflow
+solely for independent contract verification. This decision is separate from and
+does not defer the approved required AI-review completion check. Reconsider the
+contract verifier after demonstrated need, a reviewed threat model, and explicit
+approval of its additional permissions and operating burden.
+
 ## Binding implementation conditions
 
 - The orchestrator delegates to GPT-6-Sol with medium reasoning effort, with one
