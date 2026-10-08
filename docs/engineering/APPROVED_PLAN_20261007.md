@@ -24,6 +24,16 @@ artifacts. This authorizes the previously proposed `app/src/lib/firebase.ts`
 adaptation and focused regression/browser coverage. It does not authorize live
 service calls, deployment, or unrelated older-code replacements.
 
+## Specific implementation approval: gateway emulator access
+
+The user explicitly approved a narrow network-guard exception for the two
+parameterized `test_real_firestore_sdk_roundtrips_fallback_pointer_and_private_artifact`
+cases (`matrix` and `size`) in the gateway suite. Permit only their exact configured
+127.0.0.1 Firestore emulator port; retain outbound denial for other destinations and
+tests. Add regression checks for the exception boundaries and run the disposable
+emulator cases. This is not permission for general localhost access, live Firebase
+connections, or unrelated security changes.
+
 ## Binding implementation conditions
 
 - The orchestrator delegates to GPT-6-Sol with medium reasoning effort, with one
