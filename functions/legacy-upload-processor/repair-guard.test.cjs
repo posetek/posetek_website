@@ -161,16 +161,31 @@ test("all six explicitly local-processed test archives skip cloud duplication wi
   assert.equal(calls.logs.length, 6);
 });
 
-test("free record and legacy uploads retain processing even when unsupported marker values are supplied", async () => {
+test("string true local-processing marker skips free record, unsupported context, and unrelated paths", async () => {
   for (const [name, metadata] of [
     ["athlete/freeRecord/session1/kick2/video.mov", { posetekLocalProcessed: "true", posetekContextVersion: "1" }],
-    ["athlete/jump/session1/kick2/video.mov", {}],
     ["athlete/jump/session1/kick2/video.mov", { posetekLocalProcessed: "true", posetekContextVersion: "2" }],
+    ["players/unrelated/session1/kick2/video.mov", { posetekLocalProcessed: "TRUE" }],
+    ["players/unrelated/BodyScan.PNG", { posetekLocalProcessed: "true" }],
+  ]) {
+    const { handle, calls } = loadHandler();
+    await handle({ data: { ...data, name, metadata } });
+    assert.deepEqual(calls.storage, []);
+    assert.deepEqual(calls.posts, []);
+    assert.deepEqual(calls.errors, []);
+    assert.equal(calls.logs.length, 1);
+  }
+});
+
+test("unmarked and non-string marker uploads retain legacy processing", async () => {
+  for (const [name, metadata] of [
+    ["athlete/jump/session1/kick2/video.mov", {}],
     ["athlete/jump/session1/kick2/video.mov", { posetekLocalProcessed: true, posetekContextVersion: "1" }],
   ]) {
     const { handle, calls } = loadHandler();
     await handle({ data: { ...data, name, metadata } });
     assert.equal(calls.posts.length, 1);
+    assert.equal(calls.storage.filter(call => call.operation === "getSignedUrl").length, 1);
   }
 });
 
