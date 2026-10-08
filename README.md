@@ -1,7 +1,15 @@
 # PoseTek website
 
+<!-- player-account-recovery-current:start -->
+## Current player account recovery release
+
+Website `6ac73b9c8091f2ef117b22bf`, runtime source `293acca795c4baddf279a23e9792404f97336326`, was published October 8, 2026 at 12:03:50 AM PDT. Players can request tracked sign-in help. Active organization managers can assist their own enabled password-based players after identity confirmation and sign-in within five minutes; PoseTek retains global/staff recovery. Administrators share a private one-time 30-minute link directly, and players choose their own password. Shared, Password updated and Sign-in confirmed remain separate evidence. Requests expire through 90-day TTL. The same recovered account supports existing website and mobile password sign-in; native UI and release gates are unchanged.
+
+The exact draft passed hosted and production synthetic acceptance. Ten scoped functions are verified, 120 unrelated functions are unchanged, required indexes/TTL are ready, and the reconciled 1,872-file baseline passed its ordinary preservation build. Marketing, isolated feedback, stable P icons and teammate navigation remain preserved. All seven owned synthetic accounts were removed; delayed independent readback found zero owned, descendant or scoped-query documents with verification browser and copied owner credential files removed. Read [the recovery handoff](docs/PLAYER_ACCOUNT_RECOVERY.md), [production evidence](deployment/PLAYER_ACCOUNT_RECOVERY_PRODUCTION.json), [scoped operations](deployments/account-recovery/README.md) and [PR #40](https://github.com/posetek/posetek_website/pull/40).
+<!-- player-account-recovery-current:end -->
+
 <!-- organization-navigation-current:start -->
-## Current organization manager navigation release
+## Historical organization manager navigation release
 
 Website `6ac6c5c6cebb1cb580004fae`, runtime source `0a7fe6d`, was published October 7, 2026 at 3:28:24 PM PDT. Kai's PR #39 retains organization navigation across manager Organization, Insights, Planner and Community. Planner links follow the currently verified selection while preserving unsaved intake and draft state. Existing admin/coach access and the preceding coach release are retained.
 

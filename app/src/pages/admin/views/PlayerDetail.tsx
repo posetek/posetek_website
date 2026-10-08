@@ -100,6 +100,9 @@ export function PlayerDetailContent({ player, panel, onProfileSaved, children, s
           </p>
         </div>
         <div className="admin-heading-actions">
+          {player.organizationId && <Link className="quiet-button" to={`/admin/access?orgId=${encodeURIComponent(player.organizationId)}&playerId=${encodeURIComponent(player.id)}`}>
+            <span className="material-symbols-outlined" aria-hidden="true">key</span>Help with sign-in
+          </Link>}
           <Link className="primary-cta small" to={adminPlannerPath(player.id, plannerQuery.toString())}>
             <span className="material-symbols-outlined" aria-hidden="true">fitness_center</span>Prescribe workouts
           </Link>

@@ -11,6 +11,7 @@ import { insightsLink } from "../insights/lib/navigation";
 import OrganizationHeader from "./OrganizationHeader";
 import SignupStatus from "../admin/views/SignupStatus";
 import AccessLinkCard from "../../components/AccessLinkCard";
+import AccountRecoveryWorkspace from "../../components/AccountRecoveryWorkspace";
 import { accessLinkText, accessStatusLabel, refreshAfterIssued } from "../../lib/access-link-issuer";
 import type { IssuedAccessLink } from "../../lib/access-link-issuer";
 import { emptyStaffPlayerProfile, missingRequirement, staffPlayerProfileFields } from "../../lib/player-profile";
@@ -28,6 +29,8 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
   const [context, setContext] = useState<ClubContext | null>(null);
   const [organizationId, setOrganizationId] = useState("");
   const [teamId, setTeamId] = useState("");
+  const [recoveryPlayerId, setRecoveryPlayerId] = useState("");
+  const [recoverySelectionRevision, setRecoverySelectionRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -55,7 +58,7 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
   const unassignedPlayers = context?.players.filter(player => player.organizationId === organizationId && !context.teams.some(entry => entry.id === player.teamId)) || [];
 
   const clearClubData = useCallback((preserveIssued = false) => {
-    setContext(null); setOrganizationId(""); setTeamId(""); setWebsiteUrl("");
+    setContext(null); setOrganizationId(""); setTeamId(""); setWebsiteUrl(""); setRecoveryPlayerId("");
     if (!preserveIssued) setIssued(null);
     setEditedStaff(null); setReplaceInvitation(null); setNotice("");
     setNewClub(""); setTeamName(""); setTeamNameDraft({ teamId: "", value: "" });
@@ -175,6 +178,11 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
       if (mounted.current && auth.currentUser?.uid === uid) setError("Clipboard access is unavailable. Select the private code and share it directly with instructions to open posetek.net/join.");
     }
   }
+  function helpPlayerSignIn(playerId: string) {
+    setRecoveryPlayerId(playerId);
+    setRecoverySelectionRevision(value => value + 1);
+    document.getElementById("organization-recovery")?.scrollIntoView({ behavior: "auto", block: "start" });
+  }
   const body = <main className="club-shell">
     <section className="club-heading">
       <div><p className="eyebrow">{admin ? "PoseTek admin" : context?.role === "manager" ? "Organization admin" : "Coach"}</p>
@@ -205,7 +213,7 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
       </section>
       {team && <section className="club-card"><div className="club-section-title"><h2>{team.name}</h2><Link className="quiet-button" to={insightsLink({ orgId: organizationId, teamId: team.id }, "organization")}>Team Insights</Link><Link className="quiet-button" to={`${admin ? "/admin/programs" : "/programs"}${accountQuery({ orgId: organizationId, teamId: team.id })}`}>Personalized programs</Link>{context.role === "coach" && <Link className="quiet-button" to={`/dashboard?team=${encodeURIComponent(team.id)}&orgId=${encodeURIComponent(organizationId)}&teamId=${encodeURIComponent(team.id)}`}>Team dashboard</Link>}</div>
         {manager && <form className="club-inline" onSubmit={event => { event.preventDefault(); void mutate(() => clubCall("saveClubTeam", { organizationId, teamId, name: editTeamName.trim() }), "Team renamed."); }}><label>Team name<input required maxLength={120} value={editTeamName} onChange={event => setEditTeamName(event.target.value)} /></label><button className="quiet-button" disabled={busy}>Save name</button></form>}
-        <div className="club-player-list">{players.length ? players.map(player => <div className="club-player" key={player.id}><Link to={organizationPlayerPath(player, admin)}><strong>{player.firstName} {player.lastName}</strong><span>Open profile and results</span></Link><SignupStatus playerId={player.id} playerName={`${player.firstName} ${player.lastName}`} variant="club" reloadKey={invitationVersion} disabled={busy} />{manager && <label className="club-move">Team<select aria-label={`Team for ${player.firstName} ${player.lastName}`} value={player.teamId} disabled={busy} onChange={event => { void mutate(() => clubCall("setClubPlayerTeam", { organizationId, playerId: player.id, teamId: event.target.value }), "Player moved; existing results and sign-in preserved."); }}>{context.teams.map(entry => <option key={entry.id} value={entry.id}>{entry.name}</option>)}</select></label>}</div>) : <p>No players in this team yet.</p>}</div>
+        <div className="club-player-list">{players.length ? players.map(player => <div className="club-player" key={player.id}><Link to={organizationPlayerPath(player, admin)}><strong>{player.firstName} {player.lastName}</strong><span>Open profile and results</span></Link><SignupStatus playerId={player.id} playerName={`${player.firstName} ${player.lastName}`} variant="club" reloadKey={invitationVersion} disabled={busy} />{manager && <button type="button" className="quiet-button small" disabled={busy} aria-label={`Help ${player.firstName} ${player.lastName} sign in`} onClick={() => helpPlayerSignIn(player.id)}>Help with sign-in</button>}{manager && <label className="club-move">Team<select aria-label={`Team for ${player.firstName} ${player.lastName}`} value={player.teamId} disabled={busy} onChange={event => { void mutate(() => clubCall("setClubPlayerTeam", { organizationId, playerId: player.id, teamId: event.target.value }), "Player moved; existing results and sign-in preserved."); }}>{context.teams.map(entry => <option key={entry.id} value={entry.id}>{entry.name}</option>)}</select></label>}</div>) : <p>No players in this team yet.</p>}</div>
         <form className="club-inline" onSubmit={event => { event.preventDefault(); const missing = missingRequirement(newProfile); if (missing) { setError(missing); return; } void mutate(async isCurrent => {
           const result = await clubCall<{ playerId: string; code: string }>("createClubPlayer", { organizationId, teamId, ...newPlayer, ...staffPlayerProfileFields(newProfile) });
           if (isCurrent()) { setNewPlayer({ firstName: "", lastName: "" }); setNewProfile(emptyStaffPlayerProfile()); }
@@ -215,9 +223,11 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
       {manager && unassignedPlayers.length > 0 && <section className="club-card"><h2>Unassigned players</h2><p>These players belong to this organization and need a current team.</p><div className="club-player-list">{unassignedPlayers.map(player => <div className="club-player" key={player.id}>
         <Link to={organizationPlayerPath(player, admin)}><strong>{player.firstName} {player.lastName}</strong><span>Open profile and results</span></Link>
         <SignupStatus playerId={player.id} playerName={`${player.firstName} ${player.lastName}`} variant="club" reloadKey={invitationVersion} disabled={busy} />
+        <button type="button" className="quiet-button small" disabled={busy} aria-label={`Help ${player.firstName} ${player.lastName} sign in`} onClick={() => helpPlayerSignIn(player.id)}>Help with sign-in</button>
         <label className="club-move">Team<select aria-label={`Team for ${player.firstName} ${player.lastName}`} value="" disabled={busy || !context.teams.length} onChange={event => { void mutate(() => clubCall("setClubPlayerTeam", { organizationId, playerId: player.id, teamId: event.target.value }), "Player assigned; existing results and sign-in preserved."); }}><option value="" disabled>Choose a team</option>{context.teams.map(entry => <option key={entry.id} value={entry.id}>{entry.name}</option>)}</select></label>
       </div>)}</div></section>}
       {manager && <>
+        <AccountRecoveryWorkspace key={organizationId} organizationId={organizationId} organizationName={context.organization?.name} players={context.players} selectedPlayerId={recoveryPlayerId} selectionRevision={recoverySelectionRevision} role={context.role} />
         <section className="club-card"><h2>Organization logo</h2><p>Import the logo from your club’s official website.</p><form className="club-inline" onSubmit={event => { event.preventDefault(); void mutate(() => clubCall("importClubLogo", { organizationId, websiteUrl: websiteUrl.trim() }), "Organization logo imported."); }}><label>Official website<input type="url" required value={websiteUrl} onChange={event => setWebsiteUrl(event.target.value)} placeholder="https://…" /></label><button className="primary-cta" disabled={busy}>Import logo</button></form></section>
         <section className="club-card"><h2>Add staff</h2><p>Organization admins can access every team. Coaches receive access to the teams selected here. You will get a private activation link to share directly.</p><form onSubmit={event => { event.preventDefault(); void mutate(async isCurrent => { const result = await clubCall<IssuedAccessLink>("createClubStaffInvitation", { organizationId, ...invite, activationMode: "manual", teamIds: invite.role === "manager" ? [] : invite.teamIds }); if (isCurrent()) setInvite({ firstName: "", lastName: "", email: "", role: "coach", teamIds: [] }); return { issued: { ...result, organizationName: context.organization?.name } }; }, "Activation link ready. Share it directly. No email was sent."); }}>
           <div className="club-fields"><label>First name<input required maxLength={100} value={invite.firstName} onChange={event => setInvite({ ...invite, firstName: event.target.value })} /></label><label>Last name<input required maxLength={100} value={invite.lastName} onChange={event => setInvite({ ...invite, lastName: event.target.value })} /></label><label>Email<input type="email" required autoComplete="off" spellCheck={false} value={invite.email} onChange={event => setInvite({ ...invite, email: event.target.value })} /></label><label>Role<select value={invite.role} onChange={event => setInvite({ ...invite, role: event.target.value as StaffRole })}><option value="coach">Coach</option><option value="manager">Organization admin</option></select></label></div>

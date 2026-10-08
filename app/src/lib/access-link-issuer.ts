@@ -29,7 +29,7 @@ export function accessPurposeLabel(purpose: AccessPurpose): string {
 export function accessStatusLabel(status: string, purpose: AccessPurpose = "staff_activation", expiresAtMillis?: number, now = Date.now()): string {
   if (status === "pending" && expiresAtMillis !== undefined && expiresAtMillis <= now) return "Expired";
   if (status === "pending") return purpose === "account_recovery" ? "Awaiting recovery" : "Awaiting activation";
-  if (status === "claimed" || status === "completed") return purpose === "account_recovery" ? "Recovered" : "Active";
+  if (status === "claimed" || status === "completed") return purpose === "account_recovery" ? "Password updated" : "Active";
   return ({ consuming: "Completing setup", revoked: "Revoked", expired: "Expired", blocked: "Needs PoseTek review", inactive: "Inactive", active: "Active" } as Record<string, string>)[status] || "Needs review";
 }
 export function accessLinkText(link: IssuedAccessLink, kind: "link" | "code" | "instructions"): string {

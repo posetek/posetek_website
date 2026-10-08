@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "status": "production-verified",
+  "recordedAt": "2026-10-08T07:23:12.799088+00:00",
+  "deploymentId": "6ac73b9c8091f2ef117b22bf",
+  "previousDeploymentId": "6ac6c5c6cebb1cb580004fae",
+  "runtimeSourceCommit": "293acca795c4baddf279a23e9792404f97336326",
+  "publishedAt": "2026-10-08T07:03:50.113Z",
+  "publishedPacific": "October 8, 2026 at 12:03:50 AM PDT",
+  "url": "https://posetek.net",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/40",
+  "deploymentScopes": [
+    "website",
+    "ten scoped Firebase account recovery functions",
+    "two recovery indexes, membership collection-group equality index and two TTL policies"
+  ],
+  "exactReviewedCandidatePromoted": true,
+  "behavior": {
+    "existingResetEmailPreserved": true,
+    "publicHelpAcknowledgementGeneric": true,
+    "claimedIdentityNeverAuthorizesRecovery": true,
+    "uniqueCanonicalPlayerBindingRequired": true,
+    "activeOrganizationManagersOwnPlayersOnly": true,
+    "coachesExcluded": true,
+    "privilegedOrDisabledOrConflictingTargetsRequirePoseTekReview": true,
+    "identityConfirmationRequired": true,
+    "recentAdminSignInMinutes": 5,
+    "manualPrivateOneTimeLinkMinutes": 30,
+    "copyAndSharingSeparate": true,
+    "passwordChangeAndFreshSignInSeparate": true,
+    "passwordChosenByRecipient": true,
+    "requestRetentionDays": 90,
+    "websiteFirstSharedPasswordSupportsMobileSignIn": true,
+    "interruptedWriteProtectionsPreserved": true,
+    "realPlayerPasswordChanged": false
+  },
+  "artifact": {
+    "files": 1874,
+    "providerRecords": 1875,
+    "fullProviderInventoryVerified": true,
+    "localArtifactSha256": "3bae8e7149bd6f05561972c2be35e3b1f05394a4e695443674c057d0036cfee6",
+    "providerInventorySha256": "c8c9dc334ebc5879de397e442e8b505f9516d16aea91788943372f4d604e532d",
+    "applicationSha1": "6d9933f47e7db5c12823514defdb15dbdbf4a161",
+    "feedbackSha1": "039a6cb1c652002dcd7e556359e5fbd1974ce426",
+    "preservedPredecessorRecords": 1855,
+    "changedPredecessorRecords": [
+      "/application.html",
+      "/netlify.toml (generated metadata)"
+    ],
+    "addedRuntimeAssets": 18,
+    "approvedMarketing": [
+      {
+        "path": "/index.html",
+        "sha": "9e6e486665e3fdd1257c23fe8a69cf8e72e619e4",
+        "size": 37689
+      },
+      {
+        "path": "/coaches/index.html",
+        "sha": "829a6277b98f9f62b39908d1a3a39c230ae0efe1",
+        "size": 26209
+      }
+    ],
+    "originalFeedbackEntryRestoredBeforeUpload": true,
+    "stableIconsPreserved": true,
+    "effectiveConfigurationPreserved": true,
+    "draftRouteChecks": 15,
+    "newAssetUrlChecks": 36,
+    "primaryHostRoutes": 51
+  },
+  "backend": {
+    "exactCommittedRuntimeFiles": 9,
+    "uploadedRuntimeSourceSha256": "df3c3893b1a5c70651d6bb3e3fdbd18dc0079af3c09e393ec8fb1a580a893446",
+    "functionVersions": {
+      "getAccountAccessLink": "2",
+      "completeAccountAccessLink": "2",
+      "listAccountAccessLinks": "2",
+      "revokeAccountAccessLink": "2",
+      "inspectPlayerRecovery": "1",
+      "issuePlayerRecovery": "1",
+      "submitAccountRecoveryRequest": "1",
+      "listAccountRecoveryRequests": "1",
+      "updateAccountRecoveryRequest": "1",
+      "confirmAccountRecovery": "1"
+    },
+    "functionsBefore": 124,
+    "functionsAfter": 130,
+    "unrelatedFunctionDefinitionsPreserved": 120,
+    "existingRuntimeAndIamPreserved": true,
+    "runtimeModuleClosureVerified": true,
+    "twoCompositeIndexes": "READY",
+    "memberUserUidCollectionGroupEqualityIndex": "READY",
+    "requestAndRateTtlPolicies": "ACTIVE"
+  },
+  "validation": {
+    "backendTests": 1012,
+    "frontendTests": 1895,
+    "frontendTestFiles": 163,
+    "typeScript": true,
+    "svelteErrors": 0,
+    "svelteWarnings": 0,
+    "releaseGuards": 47,
+    "operatorTests": 36,
+    "transportTests": 4,
+    "artifactAuditTests": 15,
+    "localRenderedBrowserChecks": 32,
+    "liveApiChecks": 34,
+    "hostedBrowserChecks": 50,
+    "productionPositiveBrowserChecks": 43,
+    "productionNegativeProbe": {
+      "includedInPositiveCount": false,
+      "firstUnexpectedStatus": "not retained",
+      "singleFollowupStatus": "PERMISSION_DENIED",
+      "providerStatus": 403,
+      "normalRateCounters": "retained without changes",
+      "furtherNegativeProbes": false
+    },
+    "phoneViewportWidths": [
+      360,
+      390,
+      430
+    ],
+    "isolatedBrowserContextsClosed": true,
+    "noSecretCapturesOrEmails": true,
+    "sourceFrozenAfterRuntimeTests": true
+  },
+  "rules": {
+    "published": false,
+    "canonicalSourceCommit": "c53b374546da23996de09bf470846cf9b67ae516",
+    "canonicalAssertions": 313,
+    "canonicalFirestoreSha256": "a05eb70b64097ac76ff46b6fb375540a74166253b78c40a851f6e64a7507d2dd",
+    "canonicalStorageSha256": "7b72186e93c88a9ba2a9326e8bb2f53d490eec1117c4cedd613030b27bfc9e7f",
+    "exactPublishedSourceAssertions": 353,
+    "exactPublishedPolicyTestedInLocalEmulators": true,
+    "productionClientRuleWrites": 0,
+    "releasePointersStable": true,
+    "publishedFirestoreSha256": "64bf1a13c90c8e930d1bc7808a975e9a94170c7560c3aa172807f7e98eb68855",
+    "publishedStorageSha256": "1da8799ec5f785c1a43330342f895fef76774622b32bbf48853b45bc3e4bf3eb",
+    "unrelatedMainVersusPublishedDifferencesPreserved": true
+  },
+  "preservation": {
+    "syntheticPlayerRecordsChecked": 4,
+    "playerRecordsExact": true,
+    "syntheticCanonicalMembershipsChecked": 3,
+    "membershipsExact": true,
+    "fixtureTrainingAndResults": "Initially empty; none created by recovery. This does not establish preservation of nonempty synthetic training records.",
+    "workoutNotificationRecords": 0,
+    "realTrainingRecordsWritten": 0,
+    "marketingFeedbackIconsAndTeammateNavigationPreserved": true,
+    "gatewayNativeCatalogAndRulesNotDeployed": true
+  },
+  "cleanup": {
+    "syntheticAuthAccountsRemoved": 7,
+    "remainingOwnedAuthAccounts": 0,
+    "remainingKnownDocuments": 0,
+    "remainingOwnedDescendants": 0,
+    "remainingScopedQueryDocuments": 0,
+    "delayedIndependentReadback": true,
+    "browserCredentialFileAbsent": true,
+    "taskOwnerCredentialCopyAbsent": true,
+    "originalOperatorLoginPreserved": true,
+    "sharedRateCounters": "Retained under ordinary TTL; no quota reset or bypass",
+    "lateProjectionStateRemovedBySecondExactCleanup": true
+  },
+  "baseline": {
+    "deploymentId": "6ac73b9c8091f2ef117b22bf",
+    "protectedFiles": 1872,
+    "sourceCommit": "293acca795c4baddf279a23e9792404f97336326",
+    "ordinaryPreservationBuildPassed": true,
+    "guardEnforced": true
+  }
+}

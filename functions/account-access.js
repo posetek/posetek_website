@@ -4,6 +4,7 @@ const crypto = require("node:crypto");
 const { isIP } = require("node:net");
 const { isClubAdmin, activeMember } = require("./club-access");
 const { playerSegment } = require("./athlete-storage-paths");
+const { createAccountRecovery } = require("./account-recovery");
 
 const ACCESS_CODE = /^ACCESS-[A-F0-9]{64}$/;
 const TTL = Object.freeze({ staff_activation: 7 * 86400000, internal_admin_activation: 86400000, account_recovery: 1800000 });
@@ -71,6 +72,7 @@ function createAccountAccess({ db, authDirectory, clubs, FieldValue, HttpsError,
     if (confirmation && data?.identityConfirmed !== true) fail("invalid-argument", "Confirm the person's identity and account address before issuing access.");
     return current;
   }
+  const recovery = createAccountRecovery({ db, authDirectory, HttpsError, actor, now });
   async function rate(rawRequest, auth, kind, limit) {
     let ip = rawRequest?.ip;
     if (typeof ip !== "string" || ip.length > 64 || !isIP(ip)) fail("failed-precondition", "This request could not be checked. Please try again.");
@@ -160,14 +162,15 @@ function createAccountAccess({ db, authDirectory, clubs, FieldValue, HttpsError,
     let previous = null;
     if (target?.activeGrantId) previous = await tx.get(grantRef(target.activeGrantId));
     const old = previous?.data();
-    const reviewedRecovery = bundle.grant.purpose === "account_recovery" && old?.status === "blocked" && Number.isFinite(old.failureAtMillis) && now() - old.failureAtMillis > OPERATION_QUIET_MS;
+    const sameRecoveryScope = isClubAdmin(bundle.current) || !bundle.grant.recoveryScope || (old?.recoveryScope === bundle.grant.recoveryScope && old?.organizationId === bundle.grant.organizationId && old?.playerId === bundle.grant.playerId);
+    const reviewedRecovery = bundle.grant.purpose === "account_recovery" && sameRecoveryScope && old?.status === "blocked" && Number.isFinite(old.failureAtMillis) && now() - old.failureAtMillis > OPERATION_QUIET_MS;
     if (old && ((!reviewedRecovery && ["consuming", "blocked"].includes(old.status)) || (old.status === "pending" && old.expiresAtMillis > now() && previous.id !== replacementId))) fail("already-exists", "This account already has an active or unfinished access link. Revoke or review it before issuing another.");
     if (replacementId && (!previous || previous.id !== replacementId || old.status !== "pending")) fail("failed-precondition", "That invitation cannot be replaced while activation is in progress.");
   }
   function writeGrant(tx, bundle, target, extra = {}, replacementId = null) {
     tx.create(grantRef(bundle.id), { ...bundle.grant, ...extra });
     tx.set(targetRef(bundle.grant.email), { ...target.target, activeGrantId: bundle.id, updatedAtMillis: now() }, { merge: true });
-    tx.create(db.collection("accountAccessAudit").doc(), { action: "issued", grantId: bundle.id, purpose: bundle.grant.purpose, targetUID: bundle.grant.targetUID, email: bundle.grant.email, actorUID: bundle.grant.createdByUID, atMillis: now(), ...(bundle.grant.verificationMethod ? { verificationMethod: bundle.grant.verificationMethod } : {}) });
+    tx.create(db.collection("accountAccessAudit").doc(), { action: "issued", grantId: bundle.id, purpose: bundle.grant.purpose, targetUID: bundle.grant.targetUID, email: bundle.grant.email, actorUID: bundle.grant.createdByUID, atMillis: now(), ...(bundle.grant.verificationMethod ? { verificationMethod: bundle.grant.verificationMethod } : {}), ...(bundle.grant.recoveryScope ? { recoveryScope: bundle.grant.recoveryScope, organizationId: bundle.grant.organizationId, playerId: bundle.grant.playerId, requestId: bundle.grant.requestId } : {}) });
     if (replacementId) tx.update(grantRef(replacementId), { status: "revoked", replacedByGrantId: bundle.id, revokedAtMillis: now(), revokedByUID: bundle.grant.createdByUID });
   }
   function issued(bundle, extra = {}) {
@@ -213,21 +216,60 @@ function createAccountAccess({ db, authDirectory, clubs, FieldValue, HttpsError,
     await db.runTransaction(async tx => { await guardTarget(tx, bundle); writeGrant(tx, bundle, target); });
     return issued(bundle);
   }
+  async function issuePlayerRecovery(data, auth) {
+    const { current, target } = await recovery.preparePlayerRecovery(data, auth);
+    const bundle = makeGrant("account_recovery", target, current, {});
+    Object.assign(bundle.grant, target.scope, { verificationMethod: "administrator_assisted_player_recovery" });
+    bundle.current = current;
+    let requestId;
+    await db.runTransaction(async tx => {
+      await recovery.validateGrantScope(bundle.grant, tx, current, target.user);
+      await guardTarget(tx, bundle);
+      const prepared = await recovery.prepareIssuedRequest(data, target, current, tx);
+      requestId = prepared.ref.id;
+      bundle.grant.requestId = requestId;
+      writeGrant(tx, bundle, target);
+      recovery.writeIssuedRequest(tx, prepared, target, current, bundle.id);
+    });
+    return issued(bundle, { ...target.scope, requestId });
+  }
   function summary(id, g) {
-    return { grantId: id, email: g.email, targetUID: g.targetUID, purpose: g.purpose, accountMode: g.accountMode, status: g.status === "pending" && g.expiresAtMillis <= now() ? "expired" : g.status, expiresAtMillis: g.expiresAtMillis, createdAtMillis: g.createdAtMillis, role: g.role, firstName: g.firstName || "", lastName: g.lastName || "" };
+    return { grantId: id, email: g.email, targetUID: g.targetUID, purpose: g.purpose, accountMode: g.accountMode, status: g.status === "pending" && g.expiresAtMillis <= now() ? "expired" : g.status, expiresAtMillis: g.expiresAtMillis, createdAtMillis: g.createdAtMillis, role: g.role, firstName: g.firstName || "", lastName: g.lastName || "", ...(g.recoveryScope ? { recoveryScope: g.recoveryScope, organizationId: g.organizationId, playerId: g.playerId, playerName: g.playerName, requestId: g.requestId, signInConfirmedAtMillis: g.signInConfirmedAtMillis || null } : {}) };
   }
   async function listAccountAccessLinks(data, auth) {
     const current = await actor(auth);
-    if (!isClubAdmin(current) || !isClubAdmin(auth)) fail("permission-denied", "Only a PoseTek administrator can review account access.");
-    const docs = await db.collection("accountAccessGrants").orderBy("createdAtMillis", "desc").limit(100).get();
-    return { links: docs.docs.map(doc => summary(doc.id, doc.data())) };
+    if (isClubAdmin(current) && !isClubAdmin(auth)) fail("permission-denied", "Refresh your administrator sign-in before reviewing access.");
+    let query = db.collection("accountAccessGrants");
+    if (!isClubAdmin(current) || !isClubAdmin(auth)) {
+      await recovery.manager(current, data?.organizationId);
+      query = query.where("organizationId", "==", data.organizationId).where("recoveryScope", "==", recovery.SCOPE);
+    }
+    const docs = await query.orderBy("createdAtMillis", "desc").limit(100).get();
+    const links = [];
+    for (const doc of docs.docs) {
+      if (!isClubAdmin(current) || !isClubAdmin(auth)) {
+        if (doc.data().purpose !== "account_recovery") continue;
+        try { await recovery.validateGrantScope(doc.data(), undefined, current); }
+        catch (error) { if (["permission-denied", "failed-precondition", "not-found"].includes(error?.code)) continue; throw error; }
+      }
+      links.push(summary(doc.id, doc.data()));
+    }
+    return { links };
   }
   async function revokeAccountAccessLink(data, auth) {
-    const current = await trustedAdmin(auth, data, false);
+    const current = await actor(auth);
+    if (isClubAdmin(current) && !isClubAdmin(auth)) fail("permission-denied", "Refresh your administrator sign-in before changing access.");
+    recovery.fresh(auth);
     const ref = grantRef(knownId(data?.grantId));
     await db.runTransaction(async tx => {
       const g = (await tx.get(ref)).data();
       if (!g) invalid();
+      if (!isClubAdmin(current) || !isClubAdmin(auth)) {
+        if (g.recoveryScope !== recovery.SCOPE || g.purpose !== "account_recovery") fail("permission-denied", "Only PoseTek can manage this access link.");
+        await recovery.manager(current, g.organizationId, tx);
+        await recovery.validateGrantScope(g, tx, current);
+        if (data?.organizationId && data.organizationId !== g.organizationId) fail("permission-denied", "This access link belongs to another organization.");
+      }
       if (g.status === "revoked") return;
       if (g.status !== "pending") fail("failed-precondition", "This setup has started. Review the account instead of revoking its old link.");
       let invite = null;
@@ -255,11 +297,13 @@ function createAccountAccess({ db, authDirectory, clubs, FieldValue, HttpsError,
     if (g.accountMode === "new" ? !user.disabled : user.disabled) fail("failed-precondition", "This account's activation state changed. Try signing in or contact PoseTek.");
     if (g.purpose === "staff_activation" && companyEmail(user.email)) fail("permission-denied", "Company accounts cannot use staff activation.");
     if (g.purpose === "internal_admin_activation" && !companyEmail(user.email)) fail("permission-denied", "The attested company address no longer matches.");
+    await recovery.validateGrantScope(g, undefined, undefined, user);
     return user;
   }
   async function checkIssuer(g) {
     const issuer = await getUser(g.createdByUID);
     if (issuer.disabled) fail("permission-denied", "The issuer no longer has permission. Ask PoseTek for a new link.");
+    if (g.recoveryScope === recovery.SCOPE) { await recovery.validateGrantScope(g, undefined, issuer); return issuer; }
     if (isClubAdmin(issuer)) return issuer;
     if (g.purpose !== "staff_activation") fail("permission-denied", "The PoseTek administrator who issued this link is no longer authorized.");
     const member = (await db.doc(`organizations/${g.organizationId}/members/${issuer.uid}`).get()).data();
@@ -267,19 +311,20 @@ function createAccountAccess({ db, authDirectory, clubs, FieldValue, HttpsError,
     return issuer;
   }
   async function getAccountAccessLink(data) {
-    const { g } = await load(data?.code);
+    const { id, g } = await load(data?.code);
     if (g.status === "blocked" && !["password_applied", "membership_applied", "admin_attestation_applied", "enable_attempted", "account_enabled", "sessions_revoked"].includes(g.stage)) needsHelp();
     if (g.status === "pending") { await checkTarget(g); await checkIssuer(g); }
-    return { status: g.status === "pending" ? "ready" : g.status === "completed" ? "completed" : "processing", purpose: g.purpose, accountMode: g.accountMode, email: g.email, targetUID: g.targetUID, firstName: g.firstName || "", lastName: g.lastName || "", role: g.role, ...(g.organizationId ? { organizationId: g.organizationId, organizationName: g.organizationName || "", teamNames: g.teamNames || [] } : {}), expiresAtMillis: g.expiresAtMillis, requiresSignIn: g.status !== "pending" || (g.accountMode === "existing" && g.purpose !== "account_recovery") };
+    return { grantId: id, ...(g.requestId ? { requestId: g.requestId, playerId: g.playerId } : {}), status: g.status === "pending" ? "ready" : g.status === "completed" ? "completed" : "processing", purpose: g.purpose, accountMode: g.accountMode, email: g.email, targetUID: g.targetUID, firstName: g.firstName || "", lastName: g.lastName || "", role: g.role, ...(g.organizationId ? { organizationId: g.organizationId, organizationName: g.organizationName || "", teamNames: g.teamNames || [] } : {}), expiresAtMillis: g.expiresAtMillis, requiresSignIn: g.status !== "pending" || (g.accountMode === "existing" && g.purpose !== "account_recovery") };
   }
-  function result(g) {
-    return { status: "completed", purpose: g.purpose, targetUID: g.targetUID, email: g.email, role: g.role, ...(g.organizationId ? { organizationId: g.organizationId, teamIds: g.teamIds } : {}) };
+  function result(g, id) {
+    return { ...(id ? { grantId: id } : {}), ...(g.requestId ? { requestId: g.requestId, playerId: g.playerId } : {}), status: "completed", purpose: g.purpose, targetUID: g.targetUID, email: g.email, role: g.role, ...(g.organizationId ? { organizationId: g.organizationId, ...(g.teamIds ? { teamIds: g.teamIds } : {}) } : {}) };
   }
   async function finishGrant(id, g, acknowledgement = false) {
     await db.runTransaction(async tx => {
       const fresh = (await tx.get(grantRef(id))).data();
       if (fresh?.status === "completed") return;
       if (!fresh || !(acknowledgement ? ["consuming", "blocked"] : ["consuming"]).includes(fresh.status)) needsHelp();
+      await recovery.validateGrantScope(g, tx);
       tx.update(grantRef(id), { status: "completed", stage: "completed", completedAtMillis: now() });
       if (acknowledgement && g.accountMode === "new") tx.update(targetRef(g.email), { state: "activated", activatedAtMillis: now() });
       tx.create(db.collection("accountAccessAudit").doc(), { action: acknowledgement ? "completion_acknowledged" : "completed", grantId: id, purpose: g.purpose, targetUID: g.targetUID, atMillis: now(), ...(g.verificationMethod ? { verificationMethod: g.verificationMethod, confirmedByUID: g.createdByUID } : {}) });
@@ -289,6 +334,7 @@ function createAccountAccess({ db, authDirectory, clubs, FieldValue, HttpsError,
     if (!auth || auth.uid !== g.targetUID || !["membership_applied", "admin_attestation_applied", "enable_attempted", "account_enabled", "sessions_revoked"].includes(g.stage)) needsHelp();
     const current = await actor(auth), user = await getUser(g.targetUID);
     if (email(current.email) !== g.email || creation(user) !== g.authCreatedAt) needsHelp();
+    await recovery.validateGrantScope(g, undefined, undefined, user);
     if (g.purpose === "staff_activation") {
       const membership = (await db.doc(`organizations/${g.organizationId}/members/${g.targetUID}`).get()).data();
       const invite = (await db.doc(`clubStaffInvitations/${g.invitationId}`).get()).data();
@@ -297,13 +343,14 @@ function createAccountAccess({ db, authDirectory, clubs, FieldValue, HttpsError,
     // This acknowledges durable side effects only; it cannot enable an account,
     // grant membership, set verification, revoke tokens or rewrite a password.
     await finishGrant(id, g, true);
-    return result(g);
+    return result(g, id);
   }
   async function applyAfterPassword(id, g, user, issuer) {
+    await recovery.validateGrantScope(g, undefined, issuer, user);
     if (g.purpose === "account_recovery") {
       if (g.stage !== "sessions_revoked") {
         await authDirectory.revokeRefreshTokens(g.targetUID);
-        await grantRef(id).update({ stage: "sessions_revoked" });
+        await grantRef(id).update({ stage: "sessions_revoked", sessionsRevokedAtMillis: now() });
       }
     } else if (g.purpose === "staff_activation") {
       await clubs.claimManualStaffInvitation(g.invitationId, { uid: g.targetUID, email: g.email, emailVerified: user.emailVerified, isAnonymous: false }, id, issuer);
@@ -324,7 +371,7 @@ function createAccountAccess({ db, authDirectory, clubs, FieldValue, HttpsError,
       await targetRef(g.email).update({ state: "activated", activatedAtMillis: now() });
     }
     await finishGrant(id, g);
-    return result(g);
+    return result(g, id);
   }
   async function resumeApplied(id, g, auth) {
     // An enabled, signed-in recipient can acknowledge a lost final response.
@@ -340,6 +387,7 @@ function createAccountAccess({ db, authDirectory, clubs, FieldValue, HttpsError,
     await db.runTransaction(async tx => {
       const fresh = (await tx.get(grantRef(id))).data(), target = (await tx.get(targetRef(g.email))).data();
       if (fresh?.status !== "blocked" || fresh.stage !== g.stage || target?.activeGrantId !== id) needsHelp();
+      await recovery.validateGrantScope(g, tx, issuer, user);
       tx.update(grantRef(id), { status: "consuming", resumedAtMillis: now() });
     });
     try { return await applyAfterPassword(id, g, user, issuer); }
@@ -350,7 +398,7 @@ function createAccountAccess({ db, authDirectory, clubs, FieldValue, HttpsError,
   }
   async function completeAccountAccessLink(data, auth = null) {
     const { id, g } = await load(data?.code);
-    if (g.status === "completed") return result(g); // Never rerun password/verification writes.
+    if (g.status === "completed") return result(g, id); // Never rerun password/verification writes.
     if (g.status !== "pending") return resumeApplied(id, g, auth);
     const passwordWrite = g.accountMode === "new" || g.purpose === "account_recovery";
     if (passwordWrite) {
@@ -367,6 +415,7 @@ function createAccountAccess({ db, authDirectory, clubs, FieldValue, HttpsError,
       const fresh = (await tx.get(grantRef(id))).data();
       const target = (await tx.get(targetRef(g.email))).data();
       if (fresh?.status !== "pending" || fresh.expiresAtMillis <= now() || target?.activeGrantId !== id || target.targetUID !== g.targetUID) invalid();
+      await recovery.validateGrantScope(g, tx, issuer, user);
       tx.update(grantRef(id), { status: "consuming", stage: "reserved", consumingAtMillis: now() });
     });
     try {
@@ -384,7 +433,27 @@ function createAccountAccess({ db, authDirectory, clubs, FieldValue, HttpsError,
       needsHelp();
     }
   }
-  return { rate, issueStaffActivation, replaceClubStaffInvitation, issueInternalAdminAccess, issueAccountRecovery, listAccountAccessLinks, revokeAccountAccessLink, getAccountAccessLink, completeAccountAccessLink };
+  async function confirmAccountRecovery(data, auth) {
+    const current = await actor(auth), id = knownId(data?.grantId);
+    recovery.fresh(auth);
+    if (auth?.signInProvider !== "password") fail("failed-precondition", "Sign in with your new password to confirm recovery.");
+    await db.runTransaction(async tx => {
+      const g = (await tx.get(grantRef(id))).data();
+      if (!g || g.purpose !== "account_recovery" || g.status !== "completed" || current.uid !== g.targetUID || email(current.email) !== g.email) fail("permission-denied", "Sign in to the account named on your recovery link.");
+      const target = (await tx.get(targetRef(g.email))).data();
+      if (target?.activeGrantId !== id || target.targetUID !== g.targetUID || target.authCreatedAt !== g.authCreatedAt) fail("failed-precondition", "Use your current recovery link to confirm sign-in.");
+      const user = await getUser(g.targetUID);
+      const stages = [g.passwordAppliedAtMillis, g.sessionsRevokedAtMillis, g.completedAtMillis];
+      if (creation(user) !== g.authCreatedAt || !stages.every(Number.isFinite) || Number(auth.authTime) <= Math.floor(Math.max(...stages) / 1000)) fail("failed-precondition", "Sign in again with your new password to confirm recovery.");
+      await recovery.validateGrantScope(g, tx, undefined, user);
+      if (!g.signInConfirmedAtMillis) {
+        tx.update(grantRef(id), { signInConfirmedAtMillis: now(), signInConfirmedByUID: current.uid });
+        tx.create(db.collection("accountAccessAudit").doc(), { action: "sign_in_confirmed", grantId: id, purpose: g.purpose, targetUID: g.targetUID, actorUID: current.uid, atMillis: now() });
+      }
+    });
+    return { confirmed: true, grantId: id };
+  }
+  return { rate, issueStaffActivation, replaceClubStaffInvitation, issueInternalAdminAccess, issueAccountRecovery, issuePlayerRecovery, inspectPlayerRecovery: recovery.inspectPlayerRecovery, submitAccountRecoveryRequest: recovery.submitAccountRecoveryRequest, listAccountRecoveryRequests: recovery.listAccountRecoveryRequests, updateAccountRecoveryRequest: recovery.updateAccountRecoveryRequest, confirmAccountRecovery, listAccountAccessLinks, revokeAccountAccessLink, getAccountAccessLink, completeAccountAccessLink };
 }
 
 module.exports = { createAccountAccess, ACCESS_CODE, TTL, RECENT_AUTH_MS };
