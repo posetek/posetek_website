@@ -3,7 +3,7 @@
 // query-state merging and cursor reset, and the attempt timeline.
 
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -23,51 +23,16 @@ import type {
 } from "./devicePerformance";
 import { PREVIEW_SCENARIOS, previewDevice, previewFleet } from "./devicePerformancePreview";
 
-// MARK: - Fixture copy (fail, never skip, when the canonical checkout is absent)
+// MARK: - Self-contained pinned fixture checks. Cross-repository byte parity
+// runs explicitly in functions/device-performance-parity.integration.cjs.
 
 // Contracts v1.2.2 (mobile main 7a0f624); v1.2.1 was 95343aae…, v1.0 was 906c843c….
 const SCHEMA_SHA256 = "e8a09d63a84ed2d95130015489e97ce6884f5e8fef0655caf2115ff16d08e0d3";
-const CANONICAL = path.join("tools", "contracts", "device-performance-v1");
 const localCopy = fileURLToPath(new URL("./__fixtures__/device-performance-v1/", import.meta.url));
-const websiteRoot = fileURLToPath(new URL("../../../../../", import.meta.url));
 const sha256 = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");
 const fixture = (name: string) => JSON.parse(readFileSync(path.join(localCopy, "fixtures", name), "utf8"));
 
-/** POSETEK_MOBILE_REPO wins; otherwise ../PoseTek-mobile-app beside this checkout, or beside the main checkout of a linked worktree. */
-function mobileRepoCandidates(): string[] {
-  if (process.env.POSETEK_MOBILE_REPO) return [path.resolve(process.env.POSETEK_MOBILE_REPO)];
-  const candidates = [path.resolve(websiteRoot, "../PoseTek-mobile-app")];
-  const gitFile = path.join(websiteRoot, ".git");
-  if (existsSync(gitFile) && statSync(gitFile).isFile()) {
-    const gitdir = /^gitdir:\s*(.+)$/m.exec(readFileSync(gitFile, "utf8"))?.[1]?.trim();
-    if (gitdir) candidates.push(path.resolve(path.dirname(path.resolve(websiteRoot, gitdir, "../..")), "../PoseTek-mobile-app"));
-  }
-  return candidates;
-}
-
 describe("canonical device-performance-v1 copy", () => {
-  it("is byte-identical to the canonical contract in the sibling mobile checkout", () => {
-    const candidates = mobileRepoCandidates();
-    const repo = candidates.find(dir => existsSync(path.join(dir, CANONICAL, "schema.json")));
-    if (!repo) {
-      throw new Error(`The canonical contract was not found at ${candidates.map(dir => path.join(dir, CANONICAL)).join(" or ")}. `
-        + "Check out PoseTek-mobile-app beside this repository or set POSETEK_MOBILE_REPO. This check fails rather than skips.");
-    }
-    const canonical = path.join(repo, CANONICAL);
-    expect(sha256(path.join(canonical, "schema.json"))).toBe(sha256(path.join(localCopy, "schema.json")));
-    const canonicalFiles = readdirSync(path.join(canonical, "fixtures")).filter(name => name.endsWith(".json")).sort();
-    const localFiles = readdirSync(path.join(localCopy, "fixtures")).sort();
-    expect(localFiles).toEqual(canonicalFiles);
-    for (const name of canonicalFiles) {
-      expect(sha256(path.join(localCopy, "fixtures", name)), name).toBe(sha256(path.join(canonical, "fixtures", name)));
-    }
-    // The README's pinned digest table must describe these same bytes.
-    const readme = readFileSync(path.join(canonical, "README.md"), "utf8");
-    const pinned = [...readme.matchAll(/^\| `([^`]+\.json)` \| `([0-9a-f]{64})` \|$/gm)].map(match => [match[1], match[2]] as const);
-    expect(pinned.length).toBeGreaterThanOrEqual(19);
-    for (const [file, digest] of pinned) expect(sha256(path.join(localCopy, file)), file).toBe(digest);
-  });
-
   it("pins the frozen schema digest", () => {
     expect(sha256(path.join(localCopy, "schema.json"))).toBe(SCHEMA_SHA256);
   });

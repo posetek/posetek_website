@@ -1,5 +1,14 @@
 # PoseTek website context
 
+For the staged engineering pipeline, start at
+`docs/engineering/README.md`, then read `WORKFLOW.md` and the approved plan in
+that directory. The pipeline remains separate from the current production
+release below until staged integration and hosted verification. Current policy
+allows authors to merge their own PRs after passing CI and a completed
+latest-revision advisory AI review; private protection and paid reviewer
+activation remain pending. Preserve the published release records and use
+isolated worktrees.
+
 <!-- player-account-recovery-current:start -->
 ## Current player account recovery release
 

@@ -1,5 +1,10 @@
 # PoseTek website project context
 
+The current production release record below comes from fresh `main`.
+The engineering pipeline remains a separate staged candidate; use
+`docs/engineering/README.md` for its guides, status, and activation limits.
+Merging source is not promotion of a production website artifact.
+
 <!-- player-account-recovery-current:start -->
 ## Current player account recovery release (2026-10-08)
 

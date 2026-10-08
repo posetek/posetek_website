@@ -11,6 +11,7 @@
 // Environment:
 //   RULES_PATH, STORAGE_RULES_PATH  canonical files (default ../PoseTek-mobile-app/firebase/)
 //   FIREBASE_BIN                    firebase CLI (default `firebase` on PATH)
+//   RULES_PORT_OFFSET               non-negative offset for isolated worktree runs
 //   JAVA_HOME / PATH                a Java 11+ runtime for the emulators
 // See app/rules-tests/README.md.
 import { spawn } from 'node:child_process';
@@ -26,6 +27,12 @@ const firebase = process.env.FIREBASE_BIN || 'firebase';
 // A direct JavaScript entrypoint works on Windows without invoking a .cmd shim.
 const firebaseCommand = /\.[cm]?js$/i.test(firebase) ? process.execPath : firebase;
 const firebasePrefix = firebaseCommand === process.execPath ? [firebase] : [];
+const portText = process.env.RULES_PORT_OFFSET || '0';
+const portOffset = Number(portText);
+if (!/^\d+$/.test(portText) || !Number.isSafeInteger(portOffset) || portOffset > 65535 - 9299) {
+  console.error('RULES_PORT_OFFSET must be an integer from 0 to 56236.');
+  process.exit(2);
+}
 
 // project: each suite's own demo project id, so their fixtures never share an emulator.
 // storage: whether the suite needs the Storage emulator as well as Firestore.
@@ -66,10 +73,10 @@ fs.writeFileSync(config, JSON.stringify({
   firestore: { rules: firestoreRulesPath },
   storage: { rules: storageRulesPath },
   emulators: {
-    firestore: { host: '127.0.0.1', port: 8189 },
-    storage: { host: '127.0.0.1', port: 9299 },
-    hub: { host: '127.0.0.1', port: 4419 },
-    logging: { host: '127.0.0.1', port: 4519 },
+    firestore: { host: '127.0.0.1', port: 8189 + portOffset },
+    storage: { host: '127.0.0.1', port: 9299 + portOffset },
+    hub: { host: '127.0.0.1', port: 4419 + portOffset },
+    logging: { host: '127.0.0.1', port: 4519 + portOffset },
     ui: { enabled: false },
     singleProjectMode: true,
   },
