@@ -84,7 +84,8 @@ the current `app/astro-dist` output, uses separate guest contexts and blocks ext
 WebSocket requests before navigation. It does not log in, seed data, send email,
 call a model or claim authenticated end-to-end coverage.
 
-Canonical mobile contract parity is outside ordinary server CI. Set
+Canonical mobile contract parity for both server and frontend pinned copies is
+outside ordinary server and Vitest CI. Set
 `POSETEK_MOBILE_REPO` to a reviewed canonical mobile checkout, record its exact
 SHA, and run `node --test functions/device-performance-parity.integration.cjs`.
 Missing source fails this explicit integration command. A local override does
