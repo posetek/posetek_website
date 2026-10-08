@@ -250,9 +250,7 @@ playbook files and retain any additional omissions instead of silently dropping 
 | Automatic rollback of stateful changes | 06, 09; D20 | Demonstrate compatibility and recovery safety before proposing automation. |
 | Queue failure swallowing, cron workers, dashboards, prompt registries and extra communications | 01, 06; D21 | Separate product/operations needs; preserve retry semantics and existing systems now. |
 
-## Delegation sequence
-
-### Hosted action-runtime maintenance follow-up (2026-10-08)
+## Hosted action-runtime maintenance follow-up (2026-10-08)
 
 The final hosted runs report Node 20 deprecation annotations for several pinned
 GitHub actions, including checkout and setup-python. GitHub executes those actions
@@ -267,6 +265,8 @@ changes, and validate fresh hosted runs across all three repositories. Do not
 replace immutable pins with floating tags or suppress the warning. The source
 integration used the tested existing pins; an action-version migration was not
 part of this rollout and remains follow-up work.
+
+## Delegation sequence
 
 Wave 1: website, backend and mobile agents independently inventory and run safe
 available baseline checks in their assigned worktrees. The orchestrator owns this
