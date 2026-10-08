@@ -93,6 +93,7 @@ class DependencyAuditPolicyTests(unittest.TestCase):
         for change in (
             lambda x: x.pop("vulnerabilities"),
             lambda x: x["metadata"]["vulnerabilities"].update(total=0),
+            lambda x: x["metadata"]["vulnerabilities"].update(high=True, total=True),
             lambda x: x["vulnerabilities"]["parser"].update(via=["unreported"]),
             lambda x: x["vulnerabilities"]["parser"]["via"][0].update(url="http://unknown"),
             lambda x: x["vulnerabilities"]["parser"]["via"][0].update(severity="low"),
