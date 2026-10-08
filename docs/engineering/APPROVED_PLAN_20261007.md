@@ -44,6 +44,15 @@ history, and the no-push-without-authorization rule. Distinguish this target pol
 from currently inactive hosted automation and deferred private-repository protection.
 This approval does not cover the separately proposed XCTest skip-wrapper change.
 
+## Specific implementation approval: strict native CI skips
+
+The user explicitly approved an opt-in strict mode in mobile `scripts/validate.sh`
+that lists skipped XCTest cases and fails when any selected case skips. Preserve
+ordinary local behavior and the zero-result guard. Require this mode in the inactive
+native CI candidate, and test actual log-handling behavior synthetically. This
+approval changes the previously held wrapper proposal; it does not authorize
+native execution, asset provisioning, or hosted runner activation.
+
 ## Binding implementation conditions
 
 - The orchestrator delegates to GPT-6-Sol with medium reasoning effort, with one
