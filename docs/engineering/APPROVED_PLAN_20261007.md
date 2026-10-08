@@ -73,6 +73,16 @@ changes and current advisories; propose any additional manifest/source change ou
 the agreed compatible patch. Keep this batch separate from active Functions.
 No deletion, retirement, deployment, or push is authorized by this approval.
 
+## Specific decision: canonical Firebase rules remain private
+
+The user approved retaining canonical Firestore/Storage rules in the private mobile
+repository for this iteration. Prepare cross-repository integration against trusted,
+reviewed code before release; do not publish rules through public website artifacts
+or expose them to arbitrary public PR-authored test code. Public website PRs do not
+receive the full canonical-rules integration check under this decision. Record that
+coverage gap explicitly; local authorized emulator success does not establish an
+automatic hosted PR gate. No new hosted workflow or release activation is authorized.
+
 ## Binding implementation conditions
 
 - The orchestrator delegates to GPT-6-Sol with medium reasoning effort, with one
