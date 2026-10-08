@@ -1,5 +1,10 @@
 # PoseTek website
 
+For development, tests, CI, review, releases and recovery across all three
+repositories, start with the [engineering handbook](docs/engineering/README.md).
+The [main rollout ledger](docs/engineering/MAIN_ROLLOUT.md) distinguishes merged
+source, verified checks and activation still pending.
+
 <!-- player-account-recovery-current:start -->
 ## Current player account recovery release
 
