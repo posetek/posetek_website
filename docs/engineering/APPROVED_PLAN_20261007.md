@@ -14,6 +14,16 @@ independent-human-approval requirements below. GitHub Team is explicitly deferre
 as a future purchase; private enforcement remains unavailable on the current plan.
 The original component review remains preserved below as its historical record.
 
+## Specific implementation approval: authenticated website tests
+
+The user explicitly approved updating the existing website Firebase initialization
+with a test-only mode for local Auth, Firestore, Storage, and Functions emulators.
+Use synthetic accounts/data and a demo project; preserve production initialization,
+reject incomplete/nonlocal test configuration, and prevent test mode in production
+artifacts. This authorizes the previously proposed `app/src/lib/firebase.ts`
+adaptation and focused regression/browser coverage. It does not authorize live
+service calls, deployment, or unrelated older-code replacements.
+
 ## Binding implementation conditions
 
 - The orchestrator delegates to GPT-6-Sol with medium reasoning effort, with one
