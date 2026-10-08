@@ -36,7 +36,7 @@ def validate(candidate):
     assert node["with"] == {"node-version": "22.23.3"}
     assert install["run"] == "npm --prefix functions ci --ignore-scripts --no-audit --no-fund"
     assert parity["env"] == {"POSETEK_MOBILE_REPO": "${{ runner.temp }}/mobile-contract-source"}
-    assert parity["run"] == "node --test functions/device-performance-contract.test.js"
+    assert parity["run"] == "node --test functions/device-performance-parity.integration.cjs"
     for step in job["steps"]:
         assert not step.get("if") and not step.get("continue-on-error")
         assert not any("secrets." in str(value) for value in step.values())

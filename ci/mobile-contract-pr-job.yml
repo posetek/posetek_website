@@ -40,4 +40,4 @@ mobile-contract:
     - name: Check mobile parity against the verified source
       env:
         POSETEK_MOBILE_REPO: ${{ runner.temp }}/mobile-contract-source
-      run: node --test functions/device-performance-contract.test.js
+      run: node --test functions/device-performance-parity.integration.cjs
