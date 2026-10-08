@@ -104,6 +104,18 @@ does not defer the approved required AI-review completion check. Reconsider the
 contract verifier after demonstrated need, a reviewed threat model, and explicit
 approval of its additional permissions and operating burden.
 
+## Specific implementation approval: dependency scanning policy
+
+The user approved required checks that block newly introduced production high or
+critical dependency vulnerabilities. Existing findings must remain visible with
+an owner and remediation deadline; exceptions require explicit review and expiry.
+Scanner errors, missing inputs, or malformed output must not appear as clean
+results. No automatic upgrade merges or blanket waiver of existing findings is
+authorized. Prepare and test enforcement against trusted baseline evidence;
+remote required-check activation remains subject to verified hosted results and
+the deferred private-repository plan upgrade. Unassigned owners/deadlines remain
+unresolved, not implicit approved exceptions.
+
 ## Binding implementation conditions
 
 - The orchestrator delegates to GPT-6-Sol with medium reasoning effort, with one
