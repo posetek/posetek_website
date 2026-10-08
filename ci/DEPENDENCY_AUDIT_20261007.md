@@ -1,5 +1,11 @@
 # Website dependency audit candidate — 2026-10-07
 
+This section preserves the **pre-patch baseline at `dab0602`**. The compatible
+lockfile patches and current unresolved findings are recorded in
+[DEPENDENCY_POLICY_CANDIDATE.md](DEPENDENCY_POLICY_CANDIDATE.md). Do not use the
+critical counts below as the current lockfile state or treat the remaining
+high findings as accepted exceptions.
+
 This is a read-only preparation record. It does not enable a scanner, change a
 package, waive an advisory, or claim exploitability. The repository contains no
 tracked Dependabot, Renovate, CodeQL, or dependency-scanning configuration. Its
