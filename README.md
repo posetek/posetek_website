@@ -1,8 +1,11 @@
 # PoseTek website
 
-Engineering pipeline preparation: [handbook](docs/engineering/README.md).
-Its checks and docs are staged source; they do not change the current
-production release described below until deliberate artifact promotion.
+For development, tests, CI, review, releases and recovery across all three
+repositories, start with the [engineering handbook](docs/engineering/README.md).
+The [main rollout ledger](docs/engineering/MAIN_ROLLOUT.md) distinguishes merged
+source, verified checks and activation still pending.
+Engineering pipeline source does not change the production release below
+until deliberate artifact promotion.
 
 <!-- player-account-recovery-current:start -->
 ## Current player account recovery release
