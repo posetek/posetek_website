@@ -127,6 +127,17 @@ commit; verify marked skips and retained unmarked routing using offline tests.
 This is an explicit product-behavior decision, not a dependency-driven assertion
 weakening. No handler behavior change, deployment, or retirement is authorized.
 
+## Latest execution authorization
+
+The user grants the agents executive discretion to finish remaining implementation
+and validation tasks without further routine approval, maintaining production
+safety, clean maintainable code, worktree isolation, and coherent commit checkpoints.
+Leave Claude API credentials until the very end. This supersedes earlier per-edit
+approval checkpoints for these remaining tasks; retain specific privacy decisions,
+deferred purchases, and no production deployment or billing change. Report genuine
+end-to-end results and unavoidable external prerequisites without claiming mock
+provider tests establish live-provider validation.
+
 ## Binding implementation conditions
 
 - The orchestrator delegates to GPT-6-Sol with medium reasoning effort, with one

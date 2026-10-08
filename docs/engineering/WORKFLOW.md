@@ -21,7 +21,10 @@ the approved plan records their subsequent decisions and future implementation s
    results and remaining gaps, linked companion PRs and compatibility/release order.
 5. Automatic CI tests the PR merge commit. The `ci` job succeeds only when every
    lane succeeds; cancellation, failure and skipped lanes cannot satisfy it.
-   AI review will be advisory when enabled. A human reviews and merges.
+   The target policy requires completed AI review of the latest revision; findings
+   are advisory. A human, including the author, may merge without another human
+   approval. Partial/failed/unavailable review blocks except a recorded owner
+   emergency bypass. Hosted reviewer/enforcement is not yet active.
 6. Merge means integrated source. Release requires separate artifact verification,
    environment approval, promotion, smoke, rollback readiness and a receipt.
 
@@ -102,21 +105,23 @@ integration, with exact partner SHAs logged.
    integration behavior still needs explicit review before any push.
 2. Review/merge these separate CI PRs. Resolve recorded baseline failures first.
    Run each workflow on GitHub; local results are not hosted-run evidence.
-3. Only after green hosted runs, protect main: require a PR, one human approval,
-   stale-approval dismissal, resolved conversations and the `ci` check from the
-   expected Actions source; block force pushes/deletion. Confirm emergency access
-   explicitly. Keep GitHub workflow write-token permissions restricted.
+3. Only after green hosted runs and supported plans, protect main: require PRs,
+   passing `ci`, and completed latest-revision AI review from trusted check sources.
+   Authors may merge; independent human approval is not required. Keep findings
+   advisory, restrict and record owner emergency bypasses, and block force pushes
+   and deletion. GitHub Team is deferred; private enforcement remains a convention.
 4. Assign real owners for `.github/`, agent policy, release scripts, Firebase rules
    and identity/payment code. Do not install placeholder CODEOWNERS handles.
 5. Confirm whether Netlify Git publishing is enabled before pushing/merging source.
    Its ordinary build preserves the deployed application, so green Git CI alone
    neither releases new app code nor validates an intended application release.
-6. Wire private cross-repo tests and native build prerequisites, then require their
-   gates. Do not pretend pending suites already protect merges.
+6. Keep canonical rules private. Run their integration only against trusted reviewed
+   code before release; no full canonical-rules gate on arbitrary public PR code.
+   Finish native build prerequisites before requiring native gates.
 
 Merge queue is optional and pending (D12); the merge_group trigger is prepared.
 Do not enable a queue until its synthetic merge commit demonstrably receives the
-required check. Keep humans responsible for merge; bot approval is not a substitute.
+required check. Keep humans responsible for merge; the author may perform it.
 
 ## Staging and release preparation
 

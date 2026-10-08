@@ -28,33 +28,33 @@ between assignments or that archived future scope is being implemented.
 | 3 Isolation | In use | Separate website/backend/mobile pipeline worktrees. |
 | 4 Commits | In use | Coherent checkpoints retained, including corrective commits. |
 | 5 Guidance | Partial | Approval ledger and additive preparation docs; old workflow claims need reconciliation. |
-| 6 Baseline | Partial | Website and emulator results recorded below; backend Linux and native execution unresolved. |
+| 6 Baseline | Partial | Website/emulator and Linux ARM gateway results recorded; AMD64 and native execution unresolved. |
 | 7 Coverage review | Partial | Specific native/rules/gateway batches documented; wider user-facing coverage review remains. |
 | 8 Scheduling | Partial | PR/main/manual/merge-group candidate exists; expensive schedules not enabled. |
 | 9 Aggregate gate | Candidate tested locally | Failure/skip/cancel guards present; hosted required-check evidence outstanding. |
 | 10 Workflow security | Under review | Existing restrictions retained; source-workflow hardening and hosted controls outstanding. |
 | 11 Dependencies | Partial | Local isolated dependencies restored; tested Linux locking remains. |
 | 12 Astro/lint | Implemented locally | Astro checks pass; lint added to PR unit lane, existing warnings retained. |
-| 13 Browser | Partial | Seven guest smoke checks pass on Astro output; authenticated journeys pending. |
-| 14 Functions/tooling | Baseline verified | 1,083 pass with three historical fixture skips; integration additions pending. |
-| 15 Gateway | Partial | Focused suites pass; full macOS suite/replay blocked by SciPy binary failure. |
+| 13 Browser | Partial | Seven guest checks plus local signup/redemption/privacy/refresh emulator journey pass; no hosted authenticated gate. |
+| 14 Functions/tooling | Baseline verified | 1,086 Node tests pass with three historical skips; legacy marker suite 13/13; patched lockfiles tested. |
+| 15 Gateway | Partial | Linux ARM 2,428 passed/3 explained skips and 19 replay profiles pass; separate real Firestore SDK cases 2/2 pass. |
 | 16 Processing | Inventory prepared | Client-side native coverage prioritized; no new legacy server suite. |
 | 17 Rules | Baseline verified | 1,232 emulator tests across 11 suites and 40 publisher tests pass locally. |
 | 18 Cross-repo | In progress | Trusted manual source candidate; active PR handoff/required gate still incomplete. |
 | 19 Compatibility | Partial | Backend matrix and existing tests mapped; cross-client release checks remain. |
 | 20 Native CI | Preparation verified locally | Runner handoff and five prerequisite tests; missing models/clips/Pods prevent native evidence. |
 | 21 Device acceptance | Existing protocol retained | Protocol mapped; new device acceptance not performed. |
-| 22 Live evaluations | Pending preparation | No paid model runs enabled. |
+| 22 Live evaluations | Pending preparation | Six-case disabled proposal and quality/budget requirements prepared; no paid runs. |
 | 23 Exceptions | Register prepared | EXCEPTIONS.md records exact gaps and closure evidence; permanent maintainer assignments remain. |
 | 24 Merge protections | Remote audit complete | Public website unprotected; private repository APIs require paid plan. No settings activated. |
 | 25 Code owners | Pending names | No placeholder or invented owners installed. |
-| 26 Scanning | Pending preparation | Tool support/cost/blocking policy not yet established. |
+| 26 Scanning | Pending preparation | Approved blocking policy and tested offline runner implemented; no accepted exceptions or hosted activation. |
 | 27 Reviewer | Offline validation implemented | Seven structured report tests pass; trusted resolver/provider/publisher still pending. |
-| 28 Reviewer limits | Partial | Bounds/stale revision/scope checks tested; provider/model/budget and enforceable spend control outstanding. |
+| 28 Reviewer limits | Partial | Bounds/stale revision/scope checks tested; Sonnet API and $5/day shared/$1 attempt approved; atomic coordinator implementation underway. |
 | 29 Staging | Guard implemented locally | Explicit environment/project/buckets and startup preflight tested; migration inputs required before release. No project provisioned. |
 | 30 Deployment identity | Design only | OIDC/IAM configuration and activation still require reviewed specifics. |
 | 31 Website release | Partial | Guarded publisher retained; full hosted publishing configuration review remains. |
-| 32 Gateway release | Retained and documented | Canonical script preserved; Linux evidence outstanding. |
+| 32 Gateway release | Retained and documented | Canonical script preserved; Linux ARM image tested, production AMD64 remains unverified. |
 | 33 Functions/index/data | Partial | Release-order interfaces documented; detailed platform rollout preparation remains. |
 | 34 iOS release | Retained | Native preparation references physical acceptance and TestFlight gates. |
 | 35 Receipts/recovery | Partial | Offline structural receipt validator tested; evidence verification/rehearsal not completed. |
@@ -118,3 +118,25 @@ Local success with a reviewed partner-path override is not hosted CI evidence.
 Local Linux ARM production-image build and SciPy imports succeeded at backend
 `268c19fd7bed5563dcf22f1f2280993a211fb4c6`; full test/replay runs are underway.
 This is neither production AMD64 evidence nor a deployed service.
+
+## Latest approved implementation results
+
+- Website authenticated emulator journey (`7110970`) passed signup, canonical
+  identity binding, one-time code redemption, stranger denial and refresh.
+- Active Functions (`049461f`) and legacy processor (`1701101`, `08f082c`)
+  compatible patches remove critical findings in their captured audits; remaining
+  high findings are not waived. Legacy is confirmed active; no deployment occurred.
+- Approved legacy marker contract tests (`44e3fb4`) pass 13/13 with handler unchanged.
+- Reviewed SHA source input (`ea095be`) passes four policy tests; private rules excluded.
+- Dependency scanner runner (`a2daee9`) has 11 synthetic tests; full website Python
+  policy suite passed 38 before the subsequent CI wiring change.
+- Mobile strict XCTest skip/failure gates are implemented and synthetically tested;
+  no Xcode/device execution occurred.
+- Gateway local Firestore SDK cases passed 2/2 in 0.41 seconds using disposable
+  demo-project emulator 1.22.0 at exact loopback port. The parent stopped its own
+  emulator afterward. Evidence: `/private/tmp/posetek-gateway-emulator-f5ek8u92/`.
+
+Latest user authorization permits routine implementation decisions for remaining
+work without further approval, while preserving production safety and maintainable
+code. Claude credentials are the final step. No paid invocation or deployment is
+implied, and missing hardware, billing, or hosted verification is not completed E2E.
