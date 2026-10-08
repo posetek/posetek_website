@@ -116,6 +116,17 @@ remote required-check activation remains subject to verified hosted results and
 the deferred private-repository plan upgrade. Unassigned owners/deadlines remain
 unresolved, not implicit approved exceptions.
 
+## Specific implementation approval: legacy client-processed marker contract
+
+The user explicitly approved preserving the legacy upload handler's broad early
+skip for the string metadata marker `posetekLocalProcessed=true`. Marked media
+must not invoke legacy processing merely because its path is free Record or
+unrelated, or its context version differs. Correct the older contradictory
+`repair-guard.test.cjs` expectations to this approved contract in a separate
+commit; verify marked skips and retained unmarked routing using offline tests.
+This is an explicit product-behavior decision, not a dependency-driven assertion
+weakening. No handler behavior change, deployment, or retirement is authorized.
+
 ## Binding implementation conditions
 
 - The orchestrator delegates to GPT-6-Sol with medium reasoning effort, with one
