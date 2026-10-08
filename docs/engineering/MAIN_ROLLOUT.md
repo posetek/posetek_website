@@ -9,9 +9,9 @@ not certify subsequent revisions.
 
 | Stage | Scope | Acceptance before merge | Status |
 | --- | --- | --- | --- |
-| 1 — Documentation | Central website handbook and backend/mobile companion guides. | Review staged scope, navigation, factual readiness labels and preservation of existing product guidance. | Preparing documentation-only PRs. |
-| 2 — CI and tooling | Automatic PR/main checks, behavioral tests, developer commands, dependency policies and disabled reviewer/native/contract candidates. | Fresh-main integration, local policy tests, hosted CI on the PR revision, inspection of failures and skipped lanes. | Pending stage 1. |
-| 3 — Runtime safety | Gateway environment validation and release preflight; website test-only emulator bootstrap and compatible production dependency patches. | Focused behavior tests, complete affected standing checks, review of release prerequisites and unchanged production configuration. | Pending earlier stages. |
+| 1 — Documentation | Central website handbook and backend/mobile companion guides. | Review staged scope, navigation, factual readiness labels and preservation of existing product guidance. | Merged in all three repositories; links below. |
+| 2 — CI and tooling | Automatic PR/main checks, behavioral tests, developer commands, dependency policies and disabled reviewer/native/contract candidates. Website dependency patches accompany the audit gate so its baseline is reproducible. | Fresh-main integration, local policy tests, hosted CI on the PR revision, inspection of failures and skipped lanes. | Preparing code PRs. |
+| 3 — Runtime safety | Gateway environment validation and release preflight; website test-only emulator bootstrap. | Focused behavior tests, complete affected standing checks, review of release prerequisites and unchanged production configuration. | Pending earlier stages. |
 | Activation — separate | Provider credentials, supported protected reviewer identity, staging infrastructure, native assets, deployment identity and production releases. | Specific activation checklist evidence, supported hosting/permissions and explicit release authorization. | Held; Claude API key remains last. |
 
 Some repositories can finish with stage 2 because they have no changed deployed
@@ -89,9 +89,9 @@ row records a verified remote result, treat it as pending.
 
 | Repository / stage | PR | Main merge | Validation / remaining limits |
 | --- | --- | --- | --- |
-| Website documentation | Pending | Pending | Central handbook and historical decisions; no code activated. |
-| Backend documentation | Pending | Pending | Backend companion index and operational handoffs. |
-| Mobile documentation | Pending | Pending | Mobile companion index, rules/native/playbook mapping. |
+| Website documentation | [#41](https://github.com/posetek/posetek_website/pull/41) | `e52cf41a0214d8a910db72e861c108ad80231fe0` | Documentation scope, navigation and whitespace checked; no existing hosted CI; Netlify skipped. |
+| Backend documentation | [#10](https://github.com/posetek/posetek-backend/pull/10) | `baa5056568f09eb76a9bab36435b77ed4ab99ae9` | Documentation scope, local links, JSON and whitespace checked; no existing hosted CI. |
+| Mobile documentation | [#36](https://github.com/posetek/posetek-mobile-app/pull/36) | `38b53f123c4aff64dafcc50f8ab313b31c0c8004` | Nine documentation paths, navigation and whitespace checked; no existing hosted CI. |
 
 See [activation checklist](ACTIVATION_CHECKLIST.md), [security and review](SECURITY_AND_REVIEW.md)
 and [release and operations](RELEASE_AND_OPERATIONS.md) for deferred activation,
