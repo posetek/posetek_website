@@ -1,16 +1,19 @@
 {
-  "status": "disabled-pending-user-review",
+  "status": "implemented-in-backend-disabled-pending-activation",
   "enabled": false,
   "mode": "advisory",
   "trigger": "each-new-ready-pr-head",
-  "provider": null,
-  "model": null,
+  "provider": "anthropic",
+  "model": "claude-sonnet-5-5",
   "github_app_id": null,
   "budget": {
-    "max_attempts_per_head": 1,
-    "max_attempts_per_pr": 3,
-    "daily_usd_limit": null,
-    "failures_count_toward_limits": true
+    "daily_usd_limit": 5,
+    "max_attempt_usd": 1,
+    "shared_across_repositories": true,
+    "utc_day": true,
+    "reserve_full_attempt_without_refund": true,
+    "failures_count_toward_limits": true,
+    "covers": "modeled Anthropic API charges; Actions costs separate"
   },
   "timeout_minutes": 10,
   "input": {

@@ -55,7 +55,8 @@ GitHub rendering. They establish only the report contract's checked properties.
 - A trusted publisher that safely renders text, limits mentions/links, handles
   duplicate delivery and stale revisions, and has only advisory-comment authority.
 - Reviewed GitHub identity, credentials, daily budget, alert ownership, and
-  activation. Provider and budget remain unset in `reviewer.proposed.json`.
+  activation. Provider/model and spending policy are now approved; the canonical runtime is
+  implemented in backend `ci/` and remains disabled. See the activation checklist.
 
 The validator is preparation, not a substitute for these controls or a running
 review service. The user must see new security and activation proposals before

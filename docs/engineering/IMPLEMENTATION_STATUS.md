@@ -140,3 +140,14 @@ Latest user authorization permits routine implementation decisions for remaining
 work without further approval, while preserving production safety and maintainable
 code. Claude credentials are the final step. No paid invocation or deployment is
 implied, and missing hardware, billing, or hosted verification is not completed E2E.
+
+## Final credential-free checkpoint
+
+See [VERIFICATION_HANDOFF_20261007.md](VERIFICATION_HANDOFF_20261007.md) for the
+final source revisions and results. Reviewer implementation and independent review
+are complete locally; protected hosted activation and a real provider review are
+not completed. Production dependency scanning is now wired into the local website
+workflow with exact expiring exceptions and static-runtime preflight. No ordinary
+website server test needs a private mobile checkout; partner parity remains an
+explicit separate integration requirement. Final policy suites: website 40, backend
+63, mobile 20 passing; final frontend 1,666 passing.

@@ -167,8 +167,10 @@ merge could create an alarm before a scheduled publish.
 
 [reviewer.proposed.json](reviewer.proposed.json) and
 [the rubric](../../.github/review/CORE.md) are prepared specifications. There is no
-running bot, provider key or review workflow yet. Activation needs a provider/model,
-hard daily budget, repository data handling approval and GitHub identity.
+running bot or provider key yet. The backend coordinator now implements bounded
+Sonnet 5.5 review with the approved shared USD 5/day and USD 1/attempt API envelope.
+Its workflow is inactive pending a protected GitHub identity/environment boundary,
+ledger setup and final provider credentials. See [activation steps](ACTIVATION_CHECKLIST.md).
 
 The intended implementation has three separate trust domains:
 

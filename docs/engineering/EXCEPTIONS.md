@@ -30,3 +30,21 @@ reproduce before changing retries. A retry must report the original failure and
 all attempts. Any proposed quarantine or movement out of required PR coverage
 needs a separate reviewed scope and expiry. No blanket failure allowance or
 unbounded rerun-until-green policy is approved.
+
+## Closure evidence and remaining boundaries
+
+- WEB-04: ordinary server tests now run independently (1,085 pass, three historical
+  skips). Separate canonical parity passes against reviewed mobile SHA and fails
+  on missing source. Hosted source handoff remains inactive; no parity waiver.
+- WEB-05: local four-emulator signup/redemption/privacy/refresh journey now passes.
+  Canonical private rules are intentionally excluded from arbitrary public PR jobs.
+- API-01: Linux ARM production-image validation passes 2,428 tests and all 19 replay
+  profiles. Mac SciPy issue is retained historically; AMD64 still needs qualification.
+- API-02: both real SDK parameterizations passed on a disposable local Firestore
+  emulator (2/2, 0.41 seconds). They are not hosted execution evidence.
+- IOS-01: primary checkout has both models and matching Pods manifests. It still
+  lacks two required clips and has an empty app debug clip; native execution remains
+  unverified. Worktree omissions must not be called permanently unavailable assets.
+- Dependency exceptions are distinct from test skips: exact advisory/path entries
+  for unpatched node-forge and browser-unshipped Node gRPC expire 2026-10-14.
+  See the committed CI exception JSON and dependency policy; findings remain visible.
