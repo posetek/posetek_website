@@ -6,7 +6,8 @@ const { isClubAdmin, activeMember } = require("./club-access");
 const { EXERCISES, testingStatus, demographics } = require("./insights-v2-qualification");
 const { createInsightProjection, completeQuery, mapBounded, PROJECTION_VERSION } = require("./insights-v2-projection");
 const { readPlayerUsage, FEATURES } = require("./insight-usage");
-const { comparePlayer } = require("./insights-axis-scoring");
+const { comparePlayer, recentDrillScores } = require("./insights-axis-scoring");
+const { activePlan, playerPerformance } = require("./insights-overview");
 const DAY = 86400000;
 const FILTERS = Object.freeze({ division: ["boys", "girls", "unknown"], ageBand: ["under10", "10-12", "13-15", "16-18", "19+", "unknown"],
   testingStatus: ["fullyTested", "partiallyTested", "noSuccessfulTests", "noRecordedTests"],
@@ -95,6 +96,17 @@ function summarizeWorkouts(events, period, now) {
   output.status = ["completed", "inProgress", "endedEarly", "abandoned"].find(key => output[key] > 0) || "none";
   return { ...output, events: safe };
 }
+// Report pagination and the admin directory lookup share one public row shape.
+// Never serialize the internal profile, projection facts or usage history.
+function serializePlayer(row) {
+  return { id: row.id, firstName: row.firstName, lastName: row.lastName,
+    organizationId: row.organizationId, organizationName: row.organizationName, teamId: row.teamId, teamName: row.teamName,
+    registered: row.profile.registered === true || Boolean(row.profile.authenticationUID || row.profile.userUID), signupInvitationReady: row.profile.signupInvitationReady === true,
+    division: row.division, age: row.age, ageBand: row.ageBand, testing: row.testing,
+    workouts: Object.fromEntries(["status", "started", "completed", "outcomeEvents", "timerRecords", "estimatedRecords", "unknownDuration", "knownPrescription", "timerMinutes", "estimatedMinutes", "allPrescribedSetsCompleted", "unknownPrescription"].map(key => [key, row.workouts[key]])),
+    usage: { status: row.usage.status, collected: row.usage.collected, webCollected: row.usage.webCollected, iosCollected: row.usage.iosCollected,
+      activeMinutes: row.usage.totalMillis / 60000, webMinutes: row.usage.webMillis / 60000, iosMinutes: row.usage.iosMillis / 60000, activeDays: row.usage.activeDays } };
+}
 function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxPlayers = 5000,
   maxOrganizations = 500, maxTeams = 2000, maxRebuilds = 25, projection: suppliedProjection,
   usageReader = readPlayerUsage, ...projectionOptions }) {
@@ -104,6 +116,19 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
   }
   const projection = suppliedProjection || createInsightProjection({ db, bucket, HttpsError, now, ...projectionOptions });
   const ref = path => db.doc(path);
+  async function loadTrainingOverview(playerId, atMillis) {
+    const plansQuery = db.collection("players").doc(playerId).collection("trainingPlans");
+    const logsQuery = db.collection("players").doc(playerId).collection("workoutLogs")
+      .where("endedAt", ">=", new Date(atMillis - 14 * DAY)).where("endedAt", "<=", new Date(atMillis)).limit(501);
+    const [planDocs, logSnapshot] = await Promise.all([
+      completeQuery(plansQuery, 100, HttpsError, 100), logsQuery.get(),
+    ]);
+    if (logSnapshot.docs.length > 500) fail("resource-exhausted", "Recent training history exceeds the current reporting bound.");
+    const plans = planDocs.map(doc => ({ id: doc.id, data: doc.data() || {} }));
+    const logs = logSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const trainingHash = hash([plans.map(row => [row.id, row.data]), logs.map(row => [row.id, row])]);
+    return { plansQuery, logsQuery, fingerprint: trainingHash, plan: activePlan(plans), logs };
+  }
   // Directory internals never enter the allowlisted callable response.
   const independentAuthorities = new WeakMap();
   async function directory(caller, transaction) {
@@ -200,6 +225,20 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
   async function report(data, caller, comparison = false) {
     if (!caller?.uid || !playerSegment(caller.uid) || caller.isAnonymous === true) fail("unauthenticated", "Sign in to continue.");
     data ||= {};
+    const hasRosterLookup = Object.hasOwn(data, "rosterPlayerIds");
+    if (hasRosterLookup && comparison) fail("invalid-argument", "Player comparison does not accept a roster lookup.");
+    if (hasRosterLookup && !isClubAdmin(caller)) fail("permission-denied", "Roster metrics lookup requires administrator access.");
+    const rosterLookupInput = hasRosterLookup ? data.rosterPlayerIds : null;
+    if (hasRosterLookup && (!Array.isArray(rosterLookupInput) || rosterLookupInput.length < 1 || rosterLookupInput.length > 20
+      || !Array.from(rosterLookupInput).every(playerSegment) || new Set(rosterLookupInput).size !== rosterLookupInput.length)) {
+      fail("invalid-argument", "Choose between 1 and 20 unique player identifiers.");
+    }
+    const rosterPlayerIds = hasRosterLookup ? [...rosterLookupInput] : null;
+    const requireLookupScope = ids => {
+      if (hasRosterLookup && (!isClubAdmin(caller) || rosterPlayerIds.some(id => !ids.has(id)))) {
+        fail("permission-denied", "Roster metrics are unavailable in the selected scope.");
+      }
+    };
     const generatedAtMillis = now(), period = periodOf(data, generatedAtMillis, fail), testingMode = data.testingMode ?? "cumulative";
     if (!["cumulative", "period"].includes(testingMode)) fail("invalid-argument", "Choose cumulative or period testing.");
     const filters = data.filters || {};
@@ -211,24 +250,31 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
     if (comparison && (!playerSegment(data.playerId) || !["team", "coachRoster"].includes(data.scope?.kind))) fail("invalid-argument", "Choose a player and a team or independent roster.");
     const choices = await directory(caller), scope = resolveScope(data.scope, choices);
     const snapshots = await rosterFor(scope, choices);
+    requireLookupScope(new Set(snapshots.map(doc => doc.id)));
     if (comparison && !snapshots.some(doc => doc.id === data.playerId)) fail("permission-denied", "This player is not in the selected roster.");
     let rebuilds = 0, facts = 0;
     const loaded = await mapBounded(snapshots, 4, async doc => {
       const reporting = (await ref(`players/${doc.id}/insightMetadata/reporting`).get()).data() || {};
       if (reporting.include === false) return { id: doc.id, excluded: true };
-      const [history, usage] = await Promise.all([projection.loadInsightPlayer(doc.id, { allowRebuild: () => rebuilds++ < maxRebuilds }),
-        usageReader(db, doc.id, period.startMillis, Math.min(period.endMillis, generatedAtMillis), period.timeZone)]);
-      if (!history) fail("aborted", "A player changed during loading. Retry to refresh the complete roster.");
+      const [history, usage, training] = await Promise.all([projection.loadInsightPlayer(doc.id, { allowRebuild: () => rebuilds++ < maxRebuilds }),
+        usageReader(db, doc.id, period.startMillis, Math.min(period.endMillis, generatedAtMillis), period.timeZone),
+        comparison && doc.id !== data.playerId ? Promise.resolve(null) : loadTrainingOverview(doc.id, generatedAtMillis)]);
+      if (!history) {
+        if (hasRosterLookup && rosterPlayerIds.includes(doc.id)) fail("permission-denied", "Roster metrics are unavailable in the selected scope.");
+        fail("aborted", "A player changed during loading. Retry to refresh the complete roster.");
+      }
       if (usage.complete !== true) fail("failed-precondition", "Usage history is incomplete. Retry after the report is rebuilt.");
       facts += history.testing.length + history.workouts.length + history.failures.length;
       if (facts > 200000) fail("resource-exhausted", "The complete history exceeds the current reporting bound. No partial total was returned.");
-      return { id: doc.id, history, usage };
+      return { id: doc.id, history, usage, training };
     });
     // Authorize at response time and refresh canonical ownership and reporting
     // inclusion in one read-only transaction. Cached ownership is never a grant.
     const fresh = await db.runTransaction(async transaction => {
+      if (hasRosterLookup && !isClubAdmin(caller)) fail("permission-denied", "Roster metrics are unavailable in the selected scope.");
       const currentChoices = await directory(caller, transaction), currentScope = resolveScope(data.scope, currentChoices);
       const currentRosterIds = (await rosterFor(currentScope, currentChoices, query => transaction.get(query))).map(doc => doc.id);
+      requireLookupScope(new Set(currentRosterIds));
       if (hash(currentRosterIds.sort()) !== hash(snapshots.map(doc => doc.id).sort())) fail("aborted", "The roster changed. Retry to refresh every player in the report.");
       const rows = await mapBounded(loaded.filter(Boolean), 8, async row => {
         const [profile, reporting, summary, state] = await Promise.all([
@@ -240,8 +286,17 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
         if (reporting.data()?.include === false) return { id: row.id, excluded: true };
         if (row.excluded) fail("aborted", "Reporting inclusion changed. Retry to refresh the complete report.");
         if (summary.data()?.revisionId !== row.history.summary.revisionId || (state.data()?.token || null) !== row.history.summary.token) fail("aborted", "Player data changed. Retry to refresh the report.");
+        if (row.training) {
+          const [currentPlans, currentLogs] = await Promise.all([
+            completeQuery(row.training.plansQuery, 100, HttpsError, 100, query => transaction.get(query)),
+            transaction.get(row.training.logsQuery),
+          ]);
+          const currentTrainingHash = hash([currentPlans.map(doc => [doc.id, doc.data() || {}]), currentLogs.docs.map(doc => [doc.id, { id: doc.id, ...doc.data() }])]);
+          if (currentTrainingHash !== row.training.fingerprint) fail("aborted", "Training plan or workout history changed. Retry to refresh the report.");
+        }
         return { ...row, profile: profile.data(), reporting: reporting.data() || {} };
       });
+      requireLookupScope(new Set(rows.filter(Boolean).map(row => row.id)));
       return { choices: currentChoices, scope: currentScope, rows: rows.filter(Boolean) };
     }, { readOnly: true });
     const validEnd = Math.min(period.endMillis, generatedAtMillis + 1);
@@ -259,8 +314,10 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
         futureDatedDocuments: row.history.testing.filter(event => event.at > generatedAtMillis).length };
       const workouts = summarizeWorkouts(row.history.workouts, period, generatedAtMillis);
       const usage = { ...row.usage, status: !row.usage.collected ? "notCollected" : row.usage.returning ? "returning" : row.usage.totalMillis > 0 ? "active" : "inactive" };
+      const performance = playerPerformance({ testing: row.history.testing, profile: row.profile, training: row.training,
+        now: generatedAtMillis, endMillis: validEnd, timeZone: period.timeZone });
       return { ...row, organizationId: org?.id || "", organizationName: org?.name || "", teamId: team?.id || null, teamName: team?.name || null,
-        firstName: tidy(row.profile.firstName), lastName: tidy(row.profile.lastName), ...demographics(row.profile, row.reporting, generatedAtMillis), testing, workouts, usage, selected };
+        firstName: tidy(row.profile.firstName), lastName: tidy(row.profile.lastName), ...demographics(row.profile, row.reporting, generatedAtMillis), testing, workouts, usage, performance, selected };
     });
     if (comparison) {
       const player = allRows.find(row => row.id === data.playerId);
@@ -271,7 +328,8 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
           newestRebuiltAtMillis: rebuilt.length ? Math.max(...rebuilt) : null, qualification: "verified-artifacts", historicalOwnership: "current" },
         player: { id: player.id, firstName: player.firstName, lastName: player.lastName, age: player.age },
         roster: { total: fresh.rows.length, included: allRows.length, excluded: fresh.rows.filter(row => row.excluded).length },
-        axes: comparePlayer(allRows, data.playerId) };
+        axes: comparePlayer(allRows, data.playerId), performance: player.performance,
+        testScores: recentDrillScores(player.history.testing.filter(event => Number.isFinite(event.at) && event.at < validEnd), period.timeZone) };
     }
     const rows = allRows.filter(row => Object.entries(filters).every(([key, value]) => {
       if (key === "division" || key === "ageBand") return row[key] === value;
@@ -280,8 +338,14 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
       if (key === "usageFeature") return (row.usage.featureMillis[value] || 0) > 0;
       return row[key.replace("Status", "")].status === value;
     })).sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`) || a.id.localeCompare(b.id));
-    const rosterRows = rows.filter(row => `${row.firstName} ${row.lastName}`.toLocaleLowerCase("en-US").includes(nameSearch.toLocaleLowerCase("en-US")));
-    const fingerprint = hash([caller.uid, fresh.scope, period, testingMode, filters, nameSearch, rows.map(row => [row.id, row.history.summary.revisionId, row.usage.latestAtMillis, row.division, row.ageBand, row.teamId])]);
+    const rosterRows = rows.filter(row => `${row.firstName} ${row.lastName}`.toLocaleLowerCase("en-US").includes(nameSearch.toLocaleLowerCase("en-US")))
+      .sort((a, b) => {
+        const needsYou = row => row.performance.needsYouReasons.length > 0;
+        const untested = row => !row.history.testing.some(event => event.qualified && event.at !== null && event.at < validEnd);
+        return Number(needsYou(b)) - Number(needsYou(a)) || Number(untested(a)) - Number(untested(b))
+          || `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`) || a.id.localeCompare(b.id);
+      });
+    const fingerprint = hash([caller.uid, fresh.scope, period, testingMode, filters, nameSearch, rows.map(row => [row.id, row.history.summary.revisionId, row.usage.latestAtMillis, row.division, row.ageBand, row.teamId, row.training?.fingerprint, row.performance])]);
     let offset = 0;
     if (data.cursor !== undefined) {
       try { const parsed = JSON.parse(Buffer.from(data.cursor, "base64url").toString()); if (parsed.fingerprint !== fingerprint || !Number.isSafeInteger(parsed.offset) || parsed.offset < 0 || parsed.offset >= rosterRows.length) throw new Error(); offset = parsed.offset; }
@@ -346,13 +410,29 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
           activeMinutes: collectedPlayers ? totals?.activeMinutes || 0 : null, webMinutes: webCollectedPlayers ? totals?.webMinutes || 0 : null,
           iosMinutes: iosCollectedPlayers ? totals?.iosMinutes || 0 : null };
       }) };
-    const page = rosterRows.slice(offset, offset + pageSize).map(row => ({ id: row.id, firstName: row.firstName, lastName: row.lastName,
-      organizationId: row.organizationId, organizationName: row.organizationName, teamId: row.teamId, teamName: row.teamName,
-      registered: row.profile.registered === true || Boolean(row.profile.authenticationUID || row.profile.userUID), signupInvitationReady: row.profile.signupInvitationReady === true,
-      division: row.division, age: row.age, ageBand: row.ageBand, testing: row.testing,
-      workouts: Object.fromEntries(["status", "started", "completed", "outcomeEvents", "timerRecords", "estimatedRecords", "unknownDuration", "knownPrescription", "timerMinutes", "estimatedMinutes", "allPrescribedSetsCompleted", "unknownPrescription"].map(key => [key, row.workouts[key]])),
-      usage: { status: row.usage.status, collected: row.usage.collected, webCollected: row.usage.webCollected, iosCollected: row.usage.iosCollected,
-        activeMinutes: row.usage.totalMillis / 60000, webMinutes: row.usage.webMillis / 60000, iosMinutes: row.usage.iosMillis / 60000, activeDays: row.usage.activeDays } }));
+    const page = rosterRows.slice(offset, offset + pageSize).map(row => ({ ...serializePlayer(row), performance: row.performance }));
+    const overviewPlayers = rows.map(row => row.performance);
+    const withD1 = overviewPlayers.map(value => value.d1).filter(value => value !== null);
+    const withChange = overviewPlayers.map(value => value.change).filter(value => value !== null);
+    const plannedPlayers = overviewPlayers.filter(value => value.sessionsPlanned !== null && value.sessionsPlanned > 0);
+    const namedPlayers = predicate => rows.filter(predicate)
+      .map(row => ({ id: row.id, name: `${row.firstName} ${row.lastName}`.trim() || "Player" }))
+      .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+    const overview = { playersWithD1: withD1.length, averageD1: withD1.length ? withD1.reduce((total, value) => total + value, 0) / withD1.length : null,
+      playersWithChange: withChange.length, improved: overviewPlayers.filter(value => value.change > 2).length,
+      averageChange: withChange.length ? withChange.reduce((total, value) => total + value, 0) / withChange.length : null,
+      planPlayers: plannedPlayers.length, keepingUp: plannedPlayers.filter(value => value.sessionsDone * 2 >= value.sessionsPlanned).length,
+      coachFollowUp: overviewPlayers.filter(value => value.needsYouReasons.length > 0).length,
+      needsYouPlayers: rows.filter(row => row.performance.needsYouReasons.length > 0)
+        .map(row => ({ id: row.id, name: `${row.firstName} ${row.lastName}`.trim() || "Player", reasons: row.performance.needsYouReasons }))
+        .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),
+      noTestingPlayers: namedPlayers(row => row.testing.status === "noRecordedTests"),
+      noWorkoutPlayers: namedPlayers(row => row.workouts.status === "none") };
+    const lookupRows = hasRosterLookup ? new Map(allRows.map(row => [row.id, row])) : null;
+    const rosterMetrics = hasRosterLookup ? rosterPlayerIds.map(playerId => {
+      const row = lookupRows.get(playerId);
+      return row ? { playerId, status: "included", player: { ...serializePlayer(row), performance: row.performance } } : { playerId, status: "excluded" };
+    }) : null;
     const rebuilt = rows.map(row => row.history.summary.rebuiltAtMillis);
     const testingParticipants = new Set(rows.filter(row => row.history.testing.some(event => event.at !== null
       && event.at >= period.startMillis && event.at < validEnd)).map(row => row.id));
@@ -367,7 +447,8 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
       scopeBreakdown: { organizations: fresh.choices.organizations.map(org => ({ id: org.id, name: org.name, count: rows.filter(row => row.organizationId === org.id).length })),
         teams: fresh.choices.organizations.filter(org => fresh.scope.kind === "global" || org.id === fresh.scope.organizationId)
           .flatMap(org => [...org.teams, ...(org.role === "coach" ? [] : [{ id: null, name: "Unassigned" }])].map(team => ({ id: team.id, organizationId: org.id, name: team.name, count: rows.filter(row => row.organizationId === org.id && row.teamId === team.id).length }))) },
-      testing, workouts, usage, players: page, pagination: { total: rosterRows.length, pageSize,
+      testing, workouts, usage, overview, players: page,
+      ...(hasRosterLookup ? { rosterMetrics } : {}), pagination: { total: rosterRows.length, pageSize,
         nextCursor: offset + pageSize < rosterRows.length ? Buffer.from(JSON.stringify({ offset: offset + pageSize, fingerprint })).toString("base64url") : null } };
   }
   const getClubInsightsV2 = (data, caller) => report(data, caller);

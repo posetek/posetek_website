@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import firebase, { auth } from "../../../lib/firebase";
 import { clubCall } from "../../../lib/organization-data";
 import { accessLinkText, accessPurposeLabel, accessStatusLabel, refreshAfterIssued } from "../../../lib/access-link-issuer";
 import type { AccountAccessLink, IssuedAccessLink } from "../../../lib/access-link-issuer";
 import AccessLinkCard from "../../../components/AccessLinkCard";
+import AccountRecoveryWorkspace from "../../../components/AccountRecoveryWorkspace";
 import "../account-access.scss";
 
 type Mode = "internal_admin_activation" | "account_recovery";
@@ -12,6 +13,7 @@ const blankForm = () => ({ email: "", firstName: "", lastName: "", identityConfi
 const errorMessage = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback;
 
 export default function AccountAccess({ preview = false }: { preview?: boolean }) {
+  const [query] = useSearchParams();
   const [mode, setMode] = useState<Mode>("internal_admin_activation");
   const [form, setForm] = useState(blankForm);
   const [links, setLinks] = useState<AccountAccessLink[]>([]);
@@ -108,9 +110,10 @@ export default function AccountAccess({ preview = false }: { preview?: boolean }
     {error && <p className="form-message error" role="alert">{error}</p>}
     {notice && <p className="form-message" role="status">{notice}</p>}
     {issued && <AccessLinkCard link={issued} onCopy={kind => void copy(kind)} onDismiss={() => setIssued(null)} />}
+    <AccountRecoveryWorkspace preview={preview} selectedPlayerId={query.get("playerId") || ""} initialOrganizationId={query.get("orgId") || ""} />
     <section className="admin-card"><div className="admin-access-modes" role="group" aria-label="Access action"><button type="button" className={!recovery ? "quiet-button selected" : "quiet-button"} aria-pressed={!recovery} disabled={busy} onClick={() => { setMode("internal_admin_activation"); setForm(blankForm()); setRevoking(null); setError(""); }}>PoseTek admin activation</button><button type="button" className={recovery ? "quiet-button selected" : "quiet-button"} aria-pressed={recovery} disabled={busy} onClick={() => { setMode("account_recovery"); setForm(blankForm()); setRevoking(null); setError(""); }}>Password recovery</button></div>
       <h2>{recovery ? "Help someone sign in again" : "Activate a PoseTek admin"}</h2>
-      <p className="admin-note">{recovery ? "Confirm the person against their existing staff account. Their private link lets them choose a new password; organization access stays the same." : "Use this only for a confirmed PoseTek colleague with an @posetek.net address. This grants access across organizations. Add organization admins and coaches in organization staff management."}</p>
+      <p className="admin-note">{recovery ? "Confirm the person against their existing account. Their private link lets them choose a new password; organization access stays the same. For an organization player, use Player sign-in help above so the server checks the exact player binding." : "Use this only for a confirmed PoseTek colleague with an @posetek.net address. This grants access across organizations. Add organization admins and coaches in organization staff management."}</p>
       <form onSubmit={event => { event.preventDefault(); void perform(() => clubCall<IssuedAccessLink>(recovery ? "issueAccountRecovery" : "issueInternalAdminAccess", recovery ? { email: form.email.trim(), identityConfirmed: form.identityConfirmed } : { ...form, email: form.email.trim() }), `${recovery ? "Recovery" : "Activation"} link ready. Share it directly. No email was sent.`); }}>
         <fieldset disabled={busy || preview} className="admin-access-fields"><legend className="admin-sr-only">{recovery ? "Recovery account" : "PoseTek admin identity"}</legend>
           {!recovery && <div className="admin-access-name"><label>First name<input required maxLength={100} autoComplete="off" value={form.firstName} onChange={event => setForm({ ...form, firstName: event.target.value, identityConfirmed: false })} /></label><label>Last name<input required maxLength={100} autoComplete="off" value={form.lastName} onChange={event => setForm({ ...form, lastName: event.target.value, identityConfirmed: false })} /></label></div>}

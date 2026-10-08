@@ -3,3 +3,6 @@ app/src/pages/home/latest-hero/fallback/projection.json text eol=lf
 # Public vector icon bytes are pinned by the production preservation manifest.
 app/astro/public/brand/*.svg text eol=lf
 app/public/brand/*.svg text eol=lf
+# Raw copied contracts have frozen byte digests shared with the mobile repository.
+app/src/pages/admin/lib/__fixtures__/device-performance-v1/** text eol=lf
+functions/contracts/device-performance-v1/** text eol=lf

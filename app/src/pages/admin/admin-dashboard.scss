@@ -197,3 +197,61 @@
     &.admin-ready .admin-shell { padding: 22px 14px 56px; }
   }
 }
+
+// Three primary destinations share the logo row; tool links remain grouped.
+.pt-admin {
+  .admin-topbar { flex-wrap: wrap; }
+  .admin-primary-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-right: auto; }
+  .admin-primary-link, .admin-section-menu > summary {
+    display: flex; align-items: center; gap: 5px; min-height: 42px; padding: 8px 12px;
+    color: var(--text-primary); font-size: 13px; font-weight: 650; text-decoration: none;
+    border-radius: var(--radius-sm); cursor: pointer; list-style: none;
+  }
+  .admin-section-menu { position: relative; }
+  .admin-section-menu > summary::-webkit-details-marker { display: none; }
+  .admin-section-menu > summary .material-symbols-outlined { font-size: 18px; }
+  .admin-primary-link:hover, .admin-section-menu[open] > summary { background: var(--surface-2); }
+  .admin-section-panel { left: 0; }
+  .admin-section-link { display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 8px;
+    color: var(--text-primary); text-decoration: none; border-radius: var(--radius-sm); font-size: 13px; }
+  .admin-section-link:hover, .admin-section-link.active { background: var(--surface-1); color: var(--accent); }
+  .admin-section-link .material-symbols-outlined { font-size: 19px; }
+  .admin-primary-link:focus-visible, .admin-section-menu > summary:focus-visible, .admin-section-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .admin-account-menu { margin-left: auto; }
+  @media (max-width: 760px) {
+    .admin-primary-nav { order: 4; width: 100%; gap: 0; }
+    .admin-primary-link, .admin-section-menu > summary { padding: 8px; font-size: 12px; }
+    .admin-section-menu { position: static; }
+    .admin-section-panel { position: absolute; top: 100%; left: 14px; right: 14px; }
+  }
+}
+
+@keyframes admin-menu-enter {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pt-admin .admin-header {
+    details[open] > .admin-menu-panel { animation: admin-menu-enter 160ms ease-out; }
+    .admin-section-menu > summary .material-symbols-outlined,
+    .admin-scope-menu > summary .material-symbols-outlined:last-child {
+      transition: transform 160ms ease-out;
+    }
+    .admin-section-menu[open] > summary .material-symbols-outlined,
+    .admin-scope-menu[open] > summary .material-symbols-outlined:last-child {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+// Keep phone dropdowns below the complete, wrapping header row.
+@media (max-width: 760px) {
+  .pt-admin {
+    .admin-account-menu { position: static; }
+    .admin-account-panel { position: absolute; top: 100%; }
+    .admin-account-menu > summary { width: 44px; height: 44px; }
+    .admin-primary-link, .admin-section-menu > summary,
+    .admin-account-panel a, .admin-account-panel button { min-height: 44px; }
+  }
+}

@@ -1,6 +1,7 @@
 "use strict";
 
 const { axes, metrics } = require("./athlete-profile-spec.json");
+const { EXERCISES } = require("./insights-v2-qualification");
 const positive = value => typeof value === "number" && Number.isFinite(value) && value > 0;
 const mean = values => values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
 
@@ -30,6 +31,33 @@ function measuredAxes(events) {
   return axes.map(axis => ({ key: axis.key, label: axis.label,
     measuredScore: mean(metrics.filter(metric => metric.axis === axis.key && scores.has(metric.key)).map(metric => scores.get(metric.key))) }));
 }
+function overallD1(events) {
+  const measured = measuredAxes(events).map(axis => axis.measuredScore).filter(value => value !== null);
+  return mean(measured);
+}
+function recentD1Change(events, timeZone = "UTC") {
+  const days = new Map();
+  for (const event of events) {
+    if (!event.qualified || event.duplicate || !Number.isFinite(event.at) || !event.profileMetrics) continue;
+    const day = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(event.at));
+    if (!days.has(day)) days.set(day, []);
+    days.get(day).push(event);
+  }
+  const snapshots = [...days.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, rows]) => ({ date, score: overallD1(rows) })).filter(row => row.score !== null);
+  if (snapshots.length < 2) return { current: snapshots.at(-1)?.score ?? null, change: null, lastTestDate: snapshots.at(-1)?.date ?? null };
+  const [previous, current] = snapshots.slice(-2);
+  return { current: current.score, change: current.score - previous.score, lastTestDate: current.date, previousTestDate: previous.date };
+}
+// The caller applies the authoritative report end before selecting local test
+// dates. Per-test trends intentionally use the latest two dates, while overall
+// standing above retains the best-per-metric profile through that same end.
+function recentDrillScores(events, timeZone = "UTC") {
+  return EXERCISES.map(drill => {
+    const recent = recentD1Change(events.filter(event => event.drill === drill), timeZone);
+    return { drill, score: recent.current, change: recent.change === null ? null : Math.round(recent.change),
+      lastTestDate: recent.lastTestDate, previousTestDate: recent.previousTestDate || null };
+  });
+}
 function comparePlayer(rows, playerId) {
   const profiles = rows.map(row => ({ id: row.id, axes: measuredAxes(row.selected) }));
   const selected = profiles.find(row => row.id === playerId);
@@ -44,4 +72,4 @@ function comparePlayer(rows, playerId) {
     return { ...axis, percentile, sampleCount, status: "measured" };
   });
 }
-module.exports = { measuredMetrics, measuredAxes, comparePlayer };
+module.exports = { measuredMetrics, measuredAxes, overallD1, recentD1Change, recentDrillScores, comparePlayer };

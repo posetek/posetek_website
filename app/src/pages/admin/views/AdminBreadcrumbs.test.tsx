@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { MemoryRouter } from "react-router-dom";
-import AdminBreadcrumbs from "./AdminBreadcrumbs";
+import AdminBreadcrumbs, { isPlayerDetailRoute, PlayerHierarchyBreadcrumbs } from "./AdminBreadcrumbs";
 import { fleetPath } from "../lib/devicePerformance";
 
 const INSTALL = "0d5c9a1e-2b3f-4c6d-8e7f-a0b1c2d3e4f5";
@@ -19,6 +19,11 @@ describe("admin account breadcrumbs", () => {
   it("stays absent outside player detail and device report routes", () => {
     expect(renderToStaticMarkup(<MemoryRouter initialEntries={["/admin/drills"]}><AdminBreadcrumbs /></MemoryRouter>)).toBe("");
     expect(renderToStaticMarkup(<MemoryRouter initialEntries={["/admin/device-performance?drill=jump"]}><AdminBreadcrumbs /></MemoryRouter>)).toBe("");
+  });
+  it("names the unified workspace even for a compatible legacy report return", () => {
+    const html = renderToStaticMarkup(<MemoryRouter initialEntries={["/admin/accounts/player/player-1?returnTo=" + encodeURIComponent("/admin?view=workouts&start=2026-09-01")]}><AdminBreadcrumbs /></MemoryRouter>);
+    expect(html).toContain("Organizations"); expect(html).not.toContain(">Overview<");
+    expect(html).toContain('href="/admin?view=workouts&amp;start=2026-09-01"');
   });
 });
 
@@ -46,5 +51,38 @@ describe("device performance breadcrumbs", () => {
     );
     expect(html).not.toContain("<img");
     expect(html).toContain(`href="${fleetPath("?q=station&acursor=a1")}"`);
+  });
+});
+
+
+describe("current player hierarchy breadcrumbs", () => {
+  it("owns all PlayerDetail routes but leaves rep and workout editor headers separate", () => {
+    for (const suffix of ["", "/", "/results", "/results/", "/results/sprint", "/results/sprint/"]) expect(isPlayerDetailRoute(`/admin/accounts/player/p${suffix}`), suffix).toBe(true);
+    for (const path of ["/admin/accounts/player/p/results/sprint/rep", "/admin/accounts/player/p/plan/plan/workout/w", "/admin/accounts"]) expect(isPlayerDetailRoute(path), path).toBe(false);
+  });
+  it("retains deep results crumbs with current parents and the validated return after transfer", () => {
+    const back = "/admin/accounts?orgId=old&teamId=old&reportView=testing";
+    const html = renderToStaticMarkup(<MemoryRouter initialEntries={[`/admin/accounts/player/p/results/change-of-direction?orgId=old&teamId=old&returnTo=${encodeURIComponent(back)}`]}>
+      <PlayerHierarchyBreadcrumbs player={{ name: "Alex", organizationId: "current", teamId: "u17" }} />
+    </MemoryRouter>);
+    expect(html).toContain(">Alex</a>"); expect(html).toContain(">Results</a>"); expect(html).toContain('aria-current="page">change of direction');
+    const hrefs = Array.from(html.matchAll(/href="([^"]+)"/g), match => new URL(match[1].replaceAll("&amp;", "&"), "https://posetek.net"));
+    for (const url of hrefs.filter(url => url.pathname.startsWith("/admin/accounts/player/"))) {
+      expect(url.searchParams.get("orgId")).toBe("current"); expect(url.searchParams.get("teamId")).toBe("u17"); expect(url.searchParams.get("returnTo")).toBe(back);
+    }
+  });
+  it("uses actual ownership for parent links after a transfer without loading another context", () => {
+    const html = renderToStaticMarkup(<MemoryRouter initialEntries={["/admin/accounts/player/p?orgId=old&teamId=old&reportView=testing&reportTimezone=UTC&search=Ana&page=2"]}>
+      <PlayerHierarchyBreadcrumbs player={{ name: "Alex", organizationId: "current", teamId: "u17" }} />
+    </MemoryRouter>);
+    expect(html).toContain("Organizations"); expect(html).toContain("Organization"); expect(html).toContain(">Team<");
+    expect(html).toContain("orgId=current"); expect(html).toContain("teamId=u17"); expect(html).not.toContain("orgId=old"); expect(html).not.toContain("teamId=old");
+    expect(html).toContain("reportTimezone=UTC"); expect(html).not.toContain("search=Ana"); expect(html).toContain('aria-current="page">Alex');
+  });
+  it("keeps unassigned and independent people reachable without inventing a team", () => {
+    const html = renderToStaticMarkup(<MemoryRouter initialEntries={["/admin/accounts/player/p"]}>
+      <PlayerHierarchyBreadcrumbs player={{ name: "Alex", organizationId: "club", teamId: null }} />
+    </MemoryRouter>);
+    expect(html).toContain(">Unassigned<"); expect(html).toContain("directoryLookup=unassigned"); expect(html).not.toContain("teamId=");
   });
 });

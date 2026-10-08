@@ -1,8 +1,4 @@
-// One athlete under Monitor accounts: the profile inputs the generator reads,
-// the private coach note, plan generation, and **every workout listed
-// vertically** — "the workouts are listed out vertically that shows the drills
-// in each workout and dose for those drills … so the admin can scroll down to
-// see all of the workouts that have been built for that athlete."
+// One full-width athlete workspace. Only the selected panel reads its evidence.
 //
 // Read-only for athlete evidence: an admin inspects logs and edits
 // prescriptions, and never starts, completes or alters work as the athlete
@@ -10,8 +6,9 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from 'react';
+import { Link, useLocation, useNavigate, useNavigationType, useParams, useSearchParams } from "react-router-dom";
 import { blockDoseLine } from "../../../lib/contracts/drillV2";
 import {
   currentWeekNumber,
@@ -27,159 +24,177 @@ import {
 } from "../../../lib/contracts/planV3";
 import { POSITIONS, POSITION_LABELS, domainLabel, isV3Plan, planSchemaVersion } from "../../../lib/contracts/types";
 import type { Position } from "../../../lib/contracts/types";
-import { loadAthleteBundle } from "../../coach-dashboard/lib/data";
 import {
   COACH_NOTE_MAX_CHARS,
-  activePlan,
   clearCoachNote,
   eligibilityFor,
-  loadCoachNote,
-  loadCoachOfPlayer,
-  loadPlanAdjustments,
   loadPlayer,
-  loadPlayerPlans,
-  loadWorkoutLogs,
   resolvePlayerAge,
   saveCoachNote,
   savePlayerProfile,
 } from "../lib/accounts";
 import type { CoachNote, CoachRow, PlayerRow } from "../lib/accounts";
-import { accountContext, accountPlayerPath, accountQuery, accountReturnPath } from "../lib/accountHierarchy";
-import { RESULT_DRILLS, resultsPath } from "../lib/results";
+import { adminPlannerPath, adminPlayerPath, adminPlayerReturn } from "../lib/adminNavigation";
+import { PLAYER_DETAIL_PANELS, loadPlayerProfileData, loadPlayerWorkoutsData, playerDetailPanel } from "../lib/playerDetailData";
+import type { PlayerDetailPanel, PlayerProfileData, PlayerWorkoutsData } from "../lib/playerDetailData";
+import { useAccountLoad } from "../lib/useAccountLoad";
+import { ADMIN_RETURN_STATE } from '../lib/useAdminNavigation';
+import { parseWorkoutFocus, workoutFocusQuery } from "../lib/workoutNotifications";
+import AdminResults from "./AdminResults";
 import PlayerAiIncidents from "./PlayerAiIncidents";
-import PlayerWorkoutHistory from "./PlayerWorkoutHistory";
+import PlayerSummary from "./PlayerSummary";
+import { PlayerHierarchyBreadcrumbs } from "./AdminBreadcrumbs";
+import { PlayerWorkoutHistoryContent } from "./PlayerWorkoutHistory";
+import "../player-detail.scss";
 
-export default function PlayerDetail() {
+const PlayerDetailPreview = import.meta.env.DEV ? lazy(() => import('./PlayerDetailPreview')) : null;
+export default function PlayerDetail({ preview = false }: { preview?: boolean }) {
+  if (import.meta.env.DEV && preview && PlayerDetailPreview) return <Suspense fallback={<p role="status">Loading player preview…</p>}><PlayerDetailPreview /></Suspense>;
+  return <LivePlayerDetail />;
+}
+
+function LivePlayerDetail() {
   const { playerId = "" } = useParams();
   const [query] = useSearchParams();
-  const navigation = accountContext(query);
-  const [player, setPlayer] = useState<PlayerRow | null>(null);
-  const [coach, setCoach] = useState<CoachRow | null>(null);
-  const [plans, setPlans] = useState<any[]>([]);
-  const [logs, setLogs] = useState<any[]>([]);
-  const [note, setNote] = useState<CoachNote | null>(null);
-  const [adjustments, setAdjustments] = useState<any[]>([]);
-  const [reps, setReps] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const reload = useCallback(async () => {
+  const location = useLocation();
+  const panel = playerDetailPanel(query, /\/results(?:\/|$)/.test(location.pathname));
+  const scope = `${query.get('orgId') || ''}/${query.get('teamId') || ''}`;
+  const loader = useCallback(async () => {
     const found = await loadPlayer(playerId);
     if (!found) throw new Error("That athlete could not be found.");
-    setPlayer(found);
-    const [foundCoach, foundPlans, foundLogs, foundNote] = await Promise.all([
-      loadCoachOfPlayer(found).catch(() => null),
-      loadPlayerPlans(playerId),
-      loadWorkoutLogs(playerId),
-      loadCoachNote(playerId).catch(() => null),
-    ]);
-    setCoach(foundCoach);
-    setPlans(foundPlans);
-    setLogs(foundLogs);
-    setNote(foundNote);
-    const active = activePlan(foundPlans);
-    setAdjustments(active ? await loadPlanAdjustments(playerId, active.id).catch(() => []) : []);
-  }, [playerId]);
+    return found;
+  }, [playerId, scope]);
+  const { state: load, refresh } = useAccountLoad(loader);
 
   useEffect(() => {
     document.title = "Athlete | PoseTek admin";
-    let live = true;
-    reload()
-      .then(() => loadAthleteBundle(playerId).then(bundle => { if (live) setReps(bundle.reps); }).catch(() => undefined))
-      .catch((loadError: any) => { if (live) setError(loadError?.message || "That athlete could not be loaded."); })
-      .finally(() => { if (live) setLoading(false); });
-    return () => { live = false; };
-  }, [playerId, reload]);
+  }, []);
 
-  const plan = useMemo(() => activePlan(plans), [plans]);
-  const resolvedAge = useMemo(() => (player ? resolvePlayerAge(player.raw) : null), [player]);
-  const eligibility = useMemo(() => eligibilityFor(player, coach), [player, coach]);
+  return <section className="admin-player-workspace">
+    {load.kind === 'loading' && <div className="portal-loading" role="status"><span className="spinner" /><p>Loading the athlete…</p></div>}
+    {load.kind === 'error' && <><p className="form-message" role="alert">{load.message}</p><button type="button" className="quiet-button" onClick={refresh}>Try again</button></>}
+    {load.kind === 'ready' && <PlayerDetailContent key={`${playerId}/${scope}`} player={load.data} panel={panel} onProfileSaved={async () => refresh()} />}
+  </section>;
+}
 
-  if (loading) return <div className="portal-loading"><span className="spinner" /><p>Loading the athlete…</p></div>;
-  if (!player) return <p className="form-message" role="alert">{error}</p>;
-
-  return (
-    <>
+export function PlayerDetailContent({ player, panel, onProfileSaved, children, summary }: { player: PlayerRow; panel: PlayerDetailPanel; onProfileSaved: () => Promise<void>; children?: ReactNode; summary?: ReactNode }) {
+  const location = useLocation();
+  const resolvedAge = resolvePlayerAge(player.raw);
+  const athlete = useMemo(() => ({ ...player.raw, id: player.id }), [player]);
+  const plannerQuery = new URLSearchParams(location.search);
+  // Current ownership wins over a stale directory context after a transfer.
+  if (player.organizationId) plannerQuery.set('orgId', player.organizationId); else plannerQuery.delete('orgId');
+  if (player.teamId) plannerQuery.set('teamId', player.teamId); else plannerQuery.delete('teamId');
+  return <>
+      <PlayerHierarchyBreadcrumbs player={player} />
       <section className="admin-heading">
-        <Link className="icon-button" to={accountReturnPath(navigation)} aria-label="Back">
+        <Link className="icon-button" state={ADMIN_RETURN_STATE} to={adminPlayerReturn(location.search)} aria-label="Back to people and organizations">
           <span className="material-symbols-outlined">arrow_back</span>
         </Link>
         <div>
-          <p className="eyebrow">Athlete{player.organizationId ? " · organization member" : coach ? ` · ${coach.name}` : ""}</p>
+          <p className="eyebrow">Athlete{player.organizationId ? " · organization member" : ""}</p>
           <h1>{player.name}</h1>
           <p>
             {player.email || "No email on file"} ·{" "}
-            {resolvedAge?.age !== null && resolvedAge ? `${resolvedAge.age} years old` : "age unknown"} ·
-            {" "}drills up to difficulty {eligibility.maxDrillDifficulty} ({eligibility.source})
+            {resolvedAge.age !== null ? `${resolvedAge.age} years old` : "Age unknown"}
           </p>
         </div>
         <div className="admin-heading-actions">
-          <Link className="primary-cta small" to={accountPlayerPath(player.id, navigation, true)}>
-            <span className="material-symbols-outlined">analytics</span>Recorded results
+          {player.organizationId && <Link className="quiet-button" to={`/admin/access?orgId=${encodeURIComponent(player.organizationId)}&playerId=${encodeURIComponent(player.id)}`}>
+            <span className="material-symbols-outlined" aria-hidden="true">key</span>Help with sign-in
+          </Link>}
+          <Link className="primary-cta small" to={adminPlannerPath(player.id, plannerQuery.toString())}>
+            <span className="material-symbols-outlined" aria-hidden="true">fitness_center</span>Prescribe workouts
           </Link>
-          <Link className="quiet-button" to={`/athlete?player=${player.id}`}>
-            <span className="material-symbols-outlined">open_in_new</span>Their portal
+          <Link className="quiet-button" to={`/athlete?player=${encodeURIComponent(player.id)}&returnTo=${encodeURIComponent(location.pathname + location.search)}`}>
+            <span className="material-symbols-outlined" aria-hidden="true">open_in_new</span>Read-only player preview
           </Link>
         </div>
       </section>
 
-      {error && <p className="form-message" role="alert">{error}</p>}
-
-      <ResultsCard playerId={player.id} reps={reps} context={accountQuery(navigation)} />
-
-      <PlayerWorkoutHistory key={`workout-history:${player.id}`} playerId={player.id} />
-
-      <div className="admin-grid-two">
-        <ProfileCard key={String(player.raw?.updatedAt?.seconds ?? player.id)} player={player} coach={coach} onSaved={reload} />
-        <CoachNoteCard playerId={playerId} note={note} onSaved={reload} />
+      {summary ?? <PlayerSummary player={player} />}
+      <PlayerDetailTabs playerId={player.id} selected={panel} />
+      <div role="tabpanel" id={`admin-player-panel-${panel}`} aria-labelledby={`admin-player-tab-${panel}`} tabIndex={0} className="admin-player-panel">
+        {children ?? <>
+          {panel === 'results' && <AdminResults embedded athlete={athlete} />}
+          {panel === 'workouts' && <PlayerWorkoutsPanel player={player} />}
+          {panel === 'profile' && <PlayerProfilePanel player={player} onSaved={onProfileSaved} />}
+          {panel === 'ai-incidents' && <PlayerAiIncidents playerId={player.id} />}
+        </>}
       </div>
-
-      <PlanSection
-        playerId={playerId}
-        player={player}
-        plan={plan}
-        plans={plans}
-        logs={logs}
-        context={accountQuery(navigation)}
-      />
-
-      {plan && isV3Plan(plan) && <AdjustmentHistory adjustments={adjustments} />}
-
-      <PlayerAiIncidents key={player.id} playerId={player.id} />
-    </>
-  );
+    </>;
 }
 
-// MARK: - Recorded results → the rep tools
+export function PlayerDetailTabs({ playerId, selected }: { playerId: string; selected: PlayerDetailPanel }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const navigationType = useNavigationType();
+  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
+  const previousSelection = useRef(selected);
+  useEffect(() => {
+    const restore = previousSelection.current !== selected && (navigationType === 'POP' || buttons.current.some(button => button === document.activeElement));
+    previousSelection.current = selected;
+    if (!restore) return;
+    // Run after the browser restores history focus, so Back lands on its active tab.
+    const frame = requestAnimationFrame(() => buttons.current[PLAYER_DETAIL_PANELS.findIndex(panel => panel.key === selected)]?.focus({ preventScroll: true }));
+    return () => cancelAnimationFrame(frame);
+  }, [selected, navigationType]);
+  return <div className="admin-player-tabs" role="tablist" aria-label="Player information">
+    {PLAYER_DETAIL_PANELS.map((panel, index) => <button type="button" key={panel.key} ref={element => { buttons.current[index] = element; }}
+      role="tab" id={`admin-player-tab-${panel.key}`} aria-controls={`admin-player-panel-${panel.key}`} aria-selected={selected === panel.key}
+      tabIndex={selected === panel.key ? 0 : -1} className={selected === panel.key ? 'active' : ''}
+      onClick={() => { if (panel.key !== selected) navigate(adminPlayerPath(playerId, panel.key, location.search)); }}
+      onKeyDown={event => {
+        let next: number | undefined;
+        if (event.key === 'ArrowRight') next = (index + 1) % PLAYER_DETAIL_PANELS.length;
+        if (event.key === 'ArrowLeft') next = (index + PLAYER_DETAIL_PANELS.length - 1) % PLAYER_DETAIL_PANELS.length;
+        if (event.key === 'Home') next = 0;
+        if (event.key === 'End') next = PLAYER_DETAIL_PANELS.length - 1;
+        if (next !== undefined) { event.preventDefault(); buttons.current[next]?.focus(); }
+      }}>{panel.label}</button>)}
+  </div>;
+}
 
-function ResultsCard({ playerId, reps, context }: { playerId: string; reps: any[]; context: string }) {
-  return (
-    <section className="admin-card">
-      <div className="admin-heading" style={{ marginBottom: 8 }}>
-        <div>
-          <h2>Recorded results</h2>
-          <p>Every drill this athlete has recorded. Open one to inspect its sessions and reps, or to fix a rep that did not process correctly.</p>
-        </div>
-      </div>
-      <div className="admin-results-grid">
-        {RESULT_DRILLS.map(drill => {
-          const count = reps.filter(rep => rep._statsDrill === drill.key).length;
-          return (
-            <Link key={drill.key} className={`admin-result-tile${count ? "" : " empty"}`} to={resultsPath(playerId, drill.key) + context}>
-              <span className="material-symbols-outlined">{drill.icon}</span>
-              <strong>{drill.label}</strong>
-              <span>{count} {count === 1 ? "rep" : "reps"}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </section>
-  );
+function PlayerProfilePanel({ player, onSaved }: { player: PlayerRow; onSaved: () => Promise<void> }) {
+  const loader = useCallback(() => loadPlayerProfileData(player), [player]);
+  const { state: load, refresh } = useAccountLoad(loader);
+  const saved = async () => { refresh(); await onSaved(); };
+  if (load.kind === 'loading') return <p className="admin-note" role="status">Loading profile inputs…</p>;
+  if (load.kind === 'error') return <><p className="form-message" role="alert">{load.message}</p><button type="button" className="quiet-button" onClick={refresh}>Try again</button></>;
+  return <PlayerProfileContent player={player} data={load.data} onSaved={saved} />;
+}
+
+export function PlayerProfileContent({ player, data, onSaved, readOnly = false }: { player: PlayerRow; data: PlayerProfileData; onSaved: () => Promise<void>; readOnly?: boolean }) {
+  return <div className="admin-grid-two">
+    <ProfileCard key={String(player.raw?.updatedAt?.seconds ?? player.id)} player={player} coach={data.coach} onSaved={onSaved} readOnly={readOnly} />
+    <CoachNoteCard playerId={player.id} note={data.note} onSaved={onSaved} readOnly={readOnly} />
+  </div>;
+}
+
+function PlayerWorkoutsPanel({ player }: { player: PlayerRow }) {
+  const [query, setQuery] = useSearchParams();
+  const [revision, setRevision] = useState(0);
+  const loader = useCallback(() => loadPlayerWorkoutsData(player.id), [player.id]);
+  const { state: load, refresh } = useAccountLoad(loader);
+  if (load.kind !== 'ready') return <PlayerWorkoutHistoryContent playerId={player.id} request={parseWorkoutFocus(query)} refresh={revision}
+    load={{ kind: load.kind }} onRefresh={refresh} onSelect={focus => setQuery(workoutFocusQuery(query, focus))} />;
+  return <PlayerWorkoutsContent player={player} data={load.data} revision={revision} onRefresh={() => { setRevision(value => value + 1); refresh(); }} />;
+}
+
+export function PlayerWorkoutsContent({ player, data, revision = 0, onRefresh }: { player: PlayerRow; data: PlayerWorkoutsData; revision?: number; onRefresh: () => void }) {
+  const [query, setQuery] = useSearchParams();
+  return <>
+    <PlayerWorkoutHistoryContent playerId={player.id} request={parseWorkoutFocus(query)} refresh={revision}
+      load={{ kind: 'ready', logs: data.logs, checkedAt: data.checkedAt }} onRefresh={onRefresh} onSelect={focus => setQuery(workoutFocusQuery(query, focus))} />
+    <PlanSection playerId={player.id} plan={data.plan} plans={data.plans}
+      logs={data.logs.filter(log => log._workoutSource === 'workoutLogs')} context={`?${query}`} />
+    {data.plan && isV3Plan(data.plan) && <AdjustmentHistory adjustments={data.adjustments} />}
+  </>;
 }
 
 // MARK: - Profile inputs
 
-function ProfileCard({ player, coach, onSaved }: { player: PlayerRow; coach: CoachRow | null; onSaved: () => Promise<void> }) {
+function ProfileCard({ player, coach, onSaved, readOnly = false }: { player: PlayerRow; coach: CoachRow | null; onSaved: () => Promise<void>; readOnly?: boolean }) {
   const resolved = resolvePlayerAge(player.raw);
   const [position, setPosition] = useState<string>(String(player.raw?.position ?? ""));
   const [birthDate, setBirthDate] = useState<string>(() => {
@@ -278,7 +293,7 @@ function ProfileCard({ player, coach, onSaved }: { player: PlayerRow; coach: Coa
           <label className="admin-field">
             <span>Recorded age (only when there is no birth date)</span>
             <input type="number" min={5} max={80} value={age} onChange={event => setAge(event.target.value)} />
-            {!hasRecordedBirthday && <button type="button" className="quiet-button" disabled={saving || !canConfirmAge} onClick={() => void confirmCurrentAge()}>Confirm current age</button>}
+            {!hasRecordedBirthday && <button type="button" className="quiet-button" disabled={readOnly || saving || !canConfirmAge} onClick={() => void confirmCurrentAge()}>Confirm current age</button>}
           </label>
         </div>
         <p className="admin-note">
@@ -300,7 +315,7 @@ function ProfileCard({ player, coach, onSaved }: { player: PlayerRow; coach: Coa
         </label>
         {message && <p className="admin-note">{message}</p>}
         <div className="admin-form-actions">
-          <button className="primary-cta" type="button" disabled={saving} onClick={save}>
+          <button className="primary-cta" type="button" disabled={readOnly || saving} onClick={save}>
             {saving ? "Saving…" : "Save profile"}
           </button>
         </div>
@@ -311,7 +326,7 @@ function ProfileCard({ player, coach, onSaved }: { player: PlayerRow; coach: Coa
 
 // MARK: - The private coach note
 
-function CoachNoteCard({ playerId, note, onSaved }: { playerId: string; note: CoachNote | null; onSaved: () => Promise<void> }) {
+function CoachNoteCard({ playerId, note, onSaved, readOnly = false }: { playerId: string; note: CoachNote | null; onSaved: () => Promise<void>; readOnly?: boolean }) {
   const [text, setText] = useState(note?.text ?? "");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -361,7 +376,7 @@ function CoachNoteCard({ playerId, note, onSaved }: { playerId: string; note: Co
         )}
         {message && <p className="admin-note">{message}</p>}
         <div className="admin-form-actions">
-          <button className="primary-cta" type="button" disabled={saving} onClick={save}>
+          <button className="primary-cta" type="button" disabled={readOnly || saving} onClick={save}>
             {saving ? "Saving…" : text.trim() ? "Save note" : "Clear note"}
           </button>
         </div>
@@ -372,22 +387,18 @@ function CoachNoteCard({ playerId, note, onSaved }: { playerId: string; note: Co
 
 // MARK: - The plan
 
-function PlanSection({ playerId, player, plan, plans, logs, context }: {
-  playerId: string; player: PlayerRow; plan: any | null; plans: any[]; logs: any[]; context: string;
+function PlanSection({ playerId, plan, plans, logs, context }: {
+  playerId: string; plan: any | null; plans: any[]; logs: any[]; context: string;
 }) {
-  const query = new URLSearchParams(context);
-  query.set("players", playerId);
-  if (player.organizationId) query.set("orgId", player.organizationId);
-  if (player.teamId) query.set("teamId", player.teamId);
   const version = plan ? planSchemaVersion(plan) : null;
   return <>
     <section className="admin-card"><div className="admin-heading">
       <div><h2>Training program</h2><p>{plan ? planHorizonWeeks(plan) + " weeks from " + String(plan.startDate ?? "—") : "No active plan yet."}</p></div>
-      <Link className="primary-cta" to={"/admin/programs?" + query}>Open personalized planner</Link>
+      <Link className="quiet-button" to={adminPlannerPath(playerId, context)}>Open personalized planner</Link>
     </div><p>Build a draft from current evidence, review its workouts, then choose Use this plan.</p></section>
     {!plan && <div className="admin-banner"><p>This athlete has no active plan.{plans.length ? " " + plans.length + " older plans on file." : ""}</p></div>}
     {plan && version !== 3 && <LegacyPlanCard plan={plan} />}
-    {plan && version === 3 && <WorkoutList playerId={playerId} plan={plan} logs={logs} />}
+    {plan && version === 3 && <WorkoutList playerId={playerId} plan={plan} logs={logs} context={context} />}
   </>;
 }
 
@@ -435,7 +446,7 @@ function LegacyPlanCard({ plan }: { plan: any }) {
 
 // MARK: - Every workout, vertically
 
-function WorkoutList({ playerId, plan, logs }: { playerId: string; plan: any; logs: any[] }) {
+function WorkoutList({ playerId, plan, logs, context }: { playerId: string; plan: any; logs: any[]; context: string }) {
   const states = useMemo(
     () => workoutStates([String(plan.planId ?? ""), String(plan.id ?? "")], logs),
     [plan, logs],
@@ -479,7 +490,7 @@ function WorkoutList({ playerId, plan, logs }: { playerId: string; plan: any; lo
                       <StatusChip state={state} isNext={isNext} />
                       <Link
                         className="primary-cta small"
-                        to={`/admin/accounts/player/${playerId}/plan/${plan.id}/workout/${workout.workoutId}`}
+                        to={`/admin/accounts/player/${encodeURIComponent(playerId)}/plan/${encodeURIComponent(plan.id)}/workout/${encodeURIComponent(workout.workoutId)}${context}`}
                       >
                         <span className="material-symbols-outlined">edit</span>Edit
                       </Link>

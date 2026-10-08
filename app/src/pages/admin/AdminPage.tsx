@@ -11,6 +11,8 @@ import { Suspense, lazy } from "react";
 import type { ReactNode } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { auth } from "../../lib/firebase";
+import { legacyAdminWorkspacePath, legacyOrganizationsPath } from "./lib/adminNavigation";
+import { useAdminScrollRestoration } from "./lib/useAdminNavigation";
 import { useAdminSession } from "./lib/session";
 import type { AdminSession } from "./lib/session";
 import "../../styles/pose-portal.css";
@@ -19,10 +21,8 @@ import "./admin-surfaces.scss";
 import "../../styles/admin-theme.scss";
 import "./admin-dashboard.scss";
 import AdminHeader from "./views/AdminHeader";
-import AdminBreadcrumbs from "./views/AdminBreadcrumbs";
+import AdminBreadcrumbs, { isPlayerDetailRoute } from "./views/AdminBreadcrumbs";
 
-const OrganizationPage = lazy(() => import("../organization/OrganizationPage"));
-const AdminOverview = lazy(() => import("./views/AdminOverview"));
 const DrillLibrary = lazy(() => import("./views/DrillLibrary"));
 const DrillDetail = lazy(() => import("./views/DrillDetail"));
 const DrillForm = lazy(() => import("./views/DrillForm"));
@@ -30,7 +30,6 @@ const MonitorAccounts = lazy(() => import("./views/MonitorAccounts"));
 const CoachDetail = lazy(() => import("./views/CoachDetail"));
 const PlayerDetail = lazy(() => import("./views/PlayerDetail"));
 const WorkoutEditor = lazy(() => import("./views/WorkoutEditor"));
-const AdminResults = lazy(() => import("./views/AdminResults"));
 const RepTools = lazy(() => import("./views/RepTools"));
 const PlannerRedirect = lazy(() => import("./views/PlannerRedirect"));
 const AnalysisWorkspace = lazy(() => import("./views/AnalysisWorkspace"));
@@ -68,6 +67,8 @@ function AuthenticatedAdminConsole() {
 function AdminConsole({ session, preview = false }: { session: AdminSession; preview?: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const uid = session.kind === "ready" ? session.identity.uid : "";
+  useAdminScrollRestoration(uid);
 
   async function signOut() {
     if (preview) return;
@@ -110,21 +111,21 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
     body = <VerificationCard email={session.email} onSignOut={signOut} />;
   } else {
     body = (
-      <Suspense fallback={<div className="portal-loading"><span className="spinner" /><p>Loading…</p></div>}>
+      <Suspense key={uid} fallback={<div className="portal-loading"><span className="spinner" /><p>Loading…</p></div>}>
         <Routes>
-          <Route index element={<AdminOverview uid={session.identity.uid} preview={preview} />} />
+          <Route index element={<Navigate to={legacyAdminWorkspacePath(location.search)} state={location.state} replace />} />
           <Route path="feeds" element={<Navigate to="/feed" replace />} />
           <Route path="drills" element={<DrillLibrary />} />
           <Route path="drills/new" element={<DrillForm mode="create" />} />
           <Route path="drills/:drillId" element={<DrillDetail />} />
           <Route path="drills/:drillId/edit" element={<DrillForm mode="edit" />} />
-          <Route path="organizations" element={<OrganizationPage admin />} />
+          <Route path="organizations" element={<Navigate to={legacyOrganizationsPath(location.search)} replace />} />
           <Route path="accounts" element={<MonitorAccounts />} />
           <Route path="access" element={<AccountAccess preview={preview} />} />
           <Route path="accounts/coach/:coachId" element={<CoachDetail />} />
-          <Route path="accounts/player/:playerId" element={<PlayerDetail />} />
-          <Route path="accounts/player/:playerId/results" element={<AdminResults />} />
-          <Route path="accounts/player/:playerId/results/:drillKey" element={<AdminResults />} />
+          <Route path="accounts/player/:playerId" element={<PlayerDetail preview={preview} />} />
+          <Route path="accounts/player/:playerId/results" element={<PlayerDetail preview={preview} />} />
+          <Route path="accounts/player/:playerId/results/:drillKey" element={<PlayerDetail preview={preview} />} />
           <Route path="accounts/player/:playerId/results/:drillKey/:repId" element={<RepTools />} />
           <Route path="programs" element={<PersonalizedPrograms />} />
           <Route path="analysis" element={<AnalysisWorkspace />} />
@@ -149,7 +150,7 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
                 icon="help"
                 title="No such admin page"
                 body="That address is not part of the admin console."
-                action={<Link className="primary-cta" to="/admin">Admin home</Link>}
+                action={<Link className="primary-cta" to="/admin/accounts">Admin home</Link>}
               />
             }
           />
@@ -160,9 +161,9 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
 
   return (
     <div className={`pt-pose portal-body pt-admin${session.kind === "ready" ? " admin-ready" : ""}`}>
-      <AdminHeader ready={session.kind === "ready"} preview={preview}
+      <AdminHeader key={uid} ready={session.kind === "ready"} preview={preview} uid={uid}
         email={session.kind === "ready" ? session.identity.email : undefined} onSignOut={() => void signOut()} />
-      <main className="admin-shell">{session.kind === "ready" && <AdminBreadcrumbs />}{body}</main>
+      <main className="admin-shell">{session.kind === "ready" && !isPlayerDetailRoute(location.pathname) && <AdminBreadcrumbs />}{body}</main>
     </div>
   );
 }

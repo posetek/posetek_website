@@ -13,6 +13,7 @@ import {
 } from "./support-content";
 import "./support.scss";
 import ReportProblem from "./ReportProblem";
+import AccountRecoveryRequest from "../../components/AccountRecoveryRequest";
 
 function SupportEmail() {
   return <a href={SUPPORT_MAILTO}>{SUPPORT_EMAIL}</a>;
@@ -93,7 +94,9 @@ export default function SupportPage() {
           </Question>
 
           <Question id="forgot-password">
-            <p>Choose <strong>Forgot password?</strong> on the sign-in screen, in the app or on the website, and enter your account email. We'll send a link to set a new password. If it doesn't arrive within a few minutes, check your spam folder, then email us from the address on your account.</p>
+            <p>On the website, open <Link to="/signin">sign in</Link> and choose <strong>Forgot password or need sign-in help?</strong>, then <strong>Reset password by email</strong>. In the app, choose <strong>Forgot password?</strong>. Enter your account email and check your inbox and spam folder.</p>
+            <p>If email recovery does not help, request sign-in help below. PoseTek can help existing accounts after checking identity; organization admins can help players in their own organization. Your private link lets you choose your own password and keeps your existing results and access.</p>
+            <AccountRecoveryRequest />
           </Question>
 
           <Question id="camera">

@@ -39,4 +39,11 @@ describe("organization athlete navigation", () => {
     expect(athleteRosterNavigation("coach", { id: "legacy", teamId: "legacy team" }).to).toBe("/roster?team=legacy%20team");
     expect(athleteRosterNavigation("coach", { id: "legacy" }).to).toBe("/roster?userType=coach");
   });
+
+  it("returns the authorized read-only admin preview to the requested player panel", () => {
+    const back = "/admin/accounts/player/current?orgId=current-club&playerTab=workouts";
+    expect(athleteRosterNavigation("admin", player, `?returnTo=${encodeURIComponent(back)}`)).toEqual({ to: back, label: "Back to player" });
+    expect(athleteRosterNavigation("coach", player, `?returnTo=${encodeURIComponent(back)}`).label).toBe("Organization");
+    expect(athleteRosterNavigation("admin", player, "?returnTo=https%3A%2F%2Fevil.test").to).toBe("/admin/accounts?orgId=current-club&teamId=current-team");
+  });
 });

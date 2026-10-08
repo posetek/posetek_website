@@ -27,7 +27,8 @@ independent-coach scope, player comparison, roster search and rollout contract.
   },
   nameSearch?: string, // <=120 characters; roster only, not report totals
   pageSize?: number, // 1..100, default 50
-  cursor?: string // opaque; reset when selection changes or failed-precondition asks to refresh
+  cursor?: string, // opaque; reset when selection changes or failed-precondition asks to refresh
+  rosterPlayerIds?: string[] // admin only; 1..20 unique canonical player IDs in the selected scope
 }
 ```
 
@@ -101,13 +102,45 @@ The response is an allowlisted object:
     usage: {status: string; collected: boolean; activeMinutes: number;
       webMinutes: number; iosMinutes: number; activeDays: number; webCollected: boolean; iosCollected: boolean}
   }>,
-  pagination: {total: number; pageSize: number; nextCursor: string | null}
+  pagination: {total: number; pageSize: number; nextCursor: string | null},
+  rosterMetrics?: Array<
+    {playerId: string; status: 'included'; player: /* same allowlisted players row above */ ExpandedPlayer}
+    | {playerId: string; status: 'excluded'}
+  >
 }
 ```
 
 Charts and totals cover every filtered player, independent of the displayed page
 or roster name search. Pagination totals count search matches; roster.filtered
 retains the complete reporting-filter population.
+
+The optional `rosterPlayerIds` lookup connects an admin directory's visible page
+to the same authoritative player metrics without draining reporting pages or
+issuing separate comparison calls. It is restricted to verified, nonanonymous
+PoseTek admins; organization managers and coaches cannot use it. Its input must
+contain 1–20 unique IDs accepted by the canonical player-ID validator. Empty,
+duplicate, malformed and oversized lists return `invalid-argument` before
+directory/history reads. `getCoachPlayerComparison` rejects this field with
+`invalid-argument`, including for admins.
+
+`rosterMetrics` is omitted when the field is absent. When requested, it preserves
+input order, and each included `player` is the exact same allowlisted shape as a
+normal `players` entry. The lookup uses the selected scope, reporting period,
+testing mode and existing usage definitions, before optional report filters,
+name search and pagination. It does not change report totals, the normal player
+page, existing cursors or the projection schema. The ID list is copied after
+validation; lookup selection does not become part of the reporting cursor.
+
+Every requested ID must belong to the freshly authorized canonical scope both
+before history loading and during the final read-only transaction. Missing,
+foreign, wrong-team, deleted and transferred-out requested profiles receive the
+same generic `permission-denied` response; no per-ID existence detail is returned.
+An authorized player whose server-owned reporting inclusion is false returns
+only `{playerId, status: 'excluded'}` and its projection/history and usage are not
+loaded. If inclusion changes during a read, newly excluded rows remain hidden;
+newly included rows require the existing complete-report retry before any
+metrics are returned. The existing legacy-scope restrictions remain authoritative;
+the lookup does not broaden canonical reporting to legacy organizations.
 Participation counts distinct athletes with selected-period recording documents
 and actual workout starts/endings, plus their union. Plans and usage time do not
 substitute for either activity.

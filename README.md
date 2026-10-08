@@ -1,25 +1,77 @@
 # PoseTek website
 
-Engineering pipeline candidate: [workflow and validation](docs/engineering/WORKFLOW.md),
-[playbook decisions requiring review](docs/engineering/DECISIONS.md). CI configuration
-is prepared; hosted checks, branch protection, staging and paid review are not yet enabled.
+Engineering pipeline preparation: [handbook](docs/engineering/README.md).
+Its checks and docs are staged source; they do not change the current
+production release described below until deliberate artifact promotion.
+
+<!-- player-account-recovery-current:start -->
+## Current player account recovery release
+
+Website `6ac73b9c8091f2ef117b22bf`, runtime source `293acca795c4baddf279a23e9792404f97336326`, was published October 8, 2026 at 12:03:50 AM PDT. Players can request tracked sign-in help. Active organization managers can assist their own enabled password-based players after identity confirmation and sign-in within five minutes; PoseTek retains global/staff recovery. Administrators share a private one-time 30-minute link directly, and players choose their own password. Shared, Password updated and Sign-in confirmed remain separate evidence. Requests expire through 90-day TTL. The same recovered account supports existing website and mobile password sign-in; native UI and release gates are unchanged.
+
+The exact draft passed hosted and production synthetic acceptance. Ten scoped functions are verified, 120 unrelated functions are unchanged, required indexes/TTL are ready, and the reconciled 1,872-file baseline passed its ordinary preservation build. Marketing, isolated feedback, stable P icons and teammate navigation remain preserved. All seven owned synthetic accounts were removed; delayed independent readback found zero owned, descendant or scoped-query documents with verification browser and copied owner credential files removed. Read [the recovery handoff](docs/PLAYER_ACCOUNT_RECOVERY.md), [production evidence](deployment/PLAYER_ACCOUNT_RECOVERY_PRODUCTION.json), [scoped operations](deployments/account-recovery/README.md) and [PR #40](https://github.com/posetek/posetek_website/pull/40).
+<!-- player-account-recovery-current:end -->
+
+<!-- organization-navigation-current:start -->
+## Historical organization manager navigation release
+
+Website `6ac6c5c6cebb1cb580004fae`, runtime source `0a7fe6d`, was published October 7, 2026 at 3:28:24 PM PDT. Kai's PR #39 retains organization navigation across manager Organization, Insights, Planner and Community. Planner links follow the currently verified selection while preserving unsaved intake and draft state. Existing admin/coach access and the preceding coach release are retained.
+
+All 1,856 artifact files match 1,857 provider records; 1,824 predecessor records remain exact and 31 runtime assets are added. Approved marketing, isolated feedback and P icon bytes are preserved. The reconciled baseline protects 1,854 files. Frontend validation covers 1,870 unique tests, TypeScript, 55 release guards, hosted manager navigation and 360/390/430px menus. The temporary account, five owned documents and deletion tombstone are removed; independent delayed readback found zero residue and no credential file. All 124 function versions/configurations are unchanged. Backend, rules, indexes, gateway, catalog and native were not deployed.
+
+Read [the organization navigation handoff](docs/ORGANIZATION_NAVIGATION_RELEASE.md), [production evidence](deployment/ORGANIZATION_NAVIGATION_PRODUCTION.json) and [PR #39](https://github.com/posetek/posetek_website/pull/39). The earlier release records below remain historical checkpoints.
+<!-- organization-navigation-current:end -->
+
+
+<!-- coach-release-alignment-current:start -->
+## Historical combined coach and admin-menu release
+
+Website `6ac6a6bd448852167e52d189`, runtime source `69e51f5`, was published October 7, 2026 at 1:14:12 PM PDT from the exact reviewed candidate. Kai's always-visible coach roster and player summary now share authoritative cumulative D1 standing through the selected end, latest-two-local-test-date change and current fourteen-day plan progress. Missing summaries remain unavailable. Signup copying, scope/filter/history returns, player records and prescribing remain connected. The admin header groups Overview, Coaching hub and System & User Insights while retaining the existing tools and hierarchy.
+
+All 1,825 artifact files match 1,826 provider records; 1,809 predecessor provider records remain exact and 15 runtime assets are added. The nine scoped Expanded Insights functions from `4ceba70` passed immutable source, configuration, IAM and dependency-closure verification; all 115 unrelated functions remain unchanged. Verified versions are getClubInsightsV2 version 7, getCoachPlayerComparison version 4, recordInsightUsage version 6, all six projectInsight writers version 7. Owned additive candidate and production acceptance passed 35 and 35 checks, with 13 and 13 captures. The reconciled baseline protects 1,823 files and passed the ordinary preservation build.
+
+Owned active accounts/documents, current and noncurrent storage objects and notification outboxes are absent after delayed independent cleanup; verification credentials were removed. Deleted run-owned synthetic JSON generations remain recoverable under the unchanged seven-day bucket soft-delete policy until automatic expiry; zero active/current/noncurrent objects is verified, not physical erasure of retained soft-deleted generations.
+
+Marketing, isolated feedback, stable P icons, real athlete evidence, active plans, coach assignments and private drafts/conversations are preserved. Rules, indexes, gateway, catalog and native were not deployed. The eighty held drills and their device/content acceptance hold, default-disabled gateway-first native voice, diagnostics, historical replay and other native release gates remain unchanged. Read [the coach handoff](docs/COACH_RELEASE_READINESS.md), [menu handoff](docs/ADMIN_SECTION_MENU.md), [production evidence](deployment/COACH_RELEASE_ALIGNMENT_PRODUCTION.json) and [PR #38](https://github.com/posetek/posetek_website/pull/38). The earlier admin hierarchy release and candidate receipts below remain historical checkpoints.
+<!-- coach-release-alignment-current:end -->
+
 
 Shared source repository: [dk242/posetek_website](https://github.com/dk242/posetek_website).
 Public website: [posetek.net](https://posetek.net).
 
-The current hosting deployment is `6ac3d1c930af650008d83718`, merged source
-`b776c32`, published October 5, 2026 at 9:37:14 AM PDT by the ordinary Git build.
-The application and feedback bytes remain unchanged. Its verified baseline now
-protects 1,697 files. The [marketing snapshot receipt](deployment/MARKETING_SNAPSHOT_20261005.json)
-records the ignored local snapshot and successful application-release build;
-that local candidate has not been uploaded or published.
+<!-- admin-hierarchy-current:start -->
+## Historical admin hierarchy and complete reporting release (October 6, 2026)
 
-The latest application-changing release is `6ac395bfba35bceed566d26c`, source `5792b63`, published
+Website `6ac5ac30bb13dae95443c2b4`, source `3f03565`, was published October 6, 2026 at 7:24:56 PM PDT from the exact reviewed candidate. People & organizations now follows Organizations → Team → People. Selecting an organization shows its aggregate graphs and team directory; a team, explicit All teams or Unassigned destination opens people. Overview, Testing, Workouts and Usage keep their complete cards, graphs, explanations and evidence tables above the roster. Read [the hierarchy handoff](docs/ADMIN_HIERARCHY_REPORTING.md) and [production evidence](deployment/ADMIN_HIERARCHY_REPORTING_PRODUCTION.json).
+
+The exact candidate and production passed 43 and 43 live synthetic browser checks. All 1,810 artifact files match 1,811 provider records. The nine already-live Insights function definitions and IAM were checked read-only and remain unchanged; this pass deployed no backend. All owned accounts and records were removed, with delayed independent zero-residue readback. The reconciled baseline protects 1,808 files and passed the ordinary preservation build. Marketing, isolated feedback, P icons, Kai's coach workspace, signup codes, Device/team routes and separate native/content/replay/diagnostics gates are preserved. No rules, indexes, gateway, catalog or native deployment is included. Source and confirmed records are in [PR #36](https://github.com/posetek/posetek_website/pull/36).
+
+At that historical release checkpoint, the later GitHub main commit `11cff549ec959487a9b3ff831976bc7be12af6a5` merged PR #35 after this admin artifact was promoted. Its separate coach/frontend/backend source is preserved but remains unpublished. Production continues to use the verified admin runtime `3f03565`; no combined application or backend release is implied by the source merge. A future combined release must first include `insights-overview.js` in the prescribed backend bundle and verify the additive summary contract, so absent summaries cannot be displayed as zero or no follow-up. Preserve the coach candidate's remaining rules/parity and production acceptance gates. The ordinary build still preserves the 1,808-file live baseline.
+<!-- admin-hierarchy-current:end -->
+
+
+## Historical admin metrics and roster release
+
+Website `6ac5a02e62dff64d89f511e0`, source `5907d44`, was published October 6, 2026 at 6:38:19 PM PDT. People & organizations now combines scoped reporting with the account roster. Summary cards and each player show testing, completed workouts and estimated active use alongside existing signup code/link actions. Players retains Overview, Testing, Workouts and Usage within the same workspace; player details retain the selected reporting period. Read [the workspace handoff](docs/ADMIN_WORKSPACE_METRICS.md) and [production evidence](deployment/ADMIN_WORKSPACE_METRICS_PRODUCTION.json).
+
+The exact candidate and production passed 32 and 32 live synthetic browser checks respectively. All 1,785 artifact files match 1,786 provider records. The nine website-owned Expanded Insights functions passed source/configuration/IAM and unrelated-function preservation checks, plus 12 live access/lookup checks. Temporary accounts and records were removed; delayed independent readback found zero residue. The reconciled baseline protects 1,783 files. Marketing, feedback isolation, stable P icons, Kai's coach workspace, invitation codes, Device/team routes and separate native/content/replay/diagnostics gates are preserved. No rules, gateway, catalog or native deployment is included. Source and confirmed records are in [PR #34](https://github.com/posetek/posetek_website/pull/34).
+
+The preceding admin directory release was `6ac5905069994ecfbad5e391`, source `afb52a0`, on October 6 at 5:26:55 PM PDT. Its [receipt](deployment/ADMIN_DIRECTORY_PRODUCTION.json) remains historical evidence.
+
+Before the preceding directory release, actual production was `6ac5324b4ab5d8f3d69e6fdc`, ahead of
+the supplied notes. Its original marketing and isolated feedback documents,
+stable icons and unrelated assets are preserved. The earlier ordinary Git build
+`6ac3d1c930af650008d83718` and [marketing snapshot receipt](deployment/MARKETING_SNAPSHOT_20261005.json)
+remain historical records. Device performance and team-session routes are
+retained; their separate backend/native acceptance gates are unchanged.
+
+The preceding feedback attribution release is `6ac395bfba35bceed566d26c`, source `5792b63`, published
 October 5, 2026 at 5:23:26 AM PDT. New signed-in feedback includes a server-verified
 account snapshot after a clear notice before the questions. Signed-out shared
 links and earlier anonymous responses remain anonymous. See [the feedback handoff](docs/APP_FEEDBACK.md)
 and [attribution receipt](deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json).
-That release protected 1,638 files, all retained unchanged by the current baseline.
+That release protected 1,638 file paths, retained in the current baseline with
+subsequent application and feedback entry updates recorded in later releases.
 
 Kai's preceding coach Overview release is preserved. It leads with a dated Team
 snapshot, count-matching review links, visible filters and a collapsed roster
@@ -48,8 +100,9 @@ results feedback remains optional and available separately. The verified feedbac
 introduction release was `6ac17bc21377cbeaea114800`, published October 3, 2026 at 3:12:14 PM PDT.
 The exact candidate passed 20 hosted browser checks across nine screenshots with
 zero feedback writes before promotion. See [the feedback handoff](docs/APP_FEEDBACK.md)
-and [attribution production evidence](deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json) for current publication
-and integrity checks. The website owns the two scoped feedback
+and [attribution production evidence](deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json) for feedback behavior,
+backend evidence and integrity checks. Current website publication is recorded in
+[the hierarchy reporting receipt](deployment/ADMIN_HIERARCHY_REPORTING_PRODUCTION.json). The website owns the two scoped feedback
 functions; the canonical mobile repository owns and publishes their client-denial
 rules. The [12-player comprehension pilot](docs/APP_FEEDBACK_PILOT.md) remains outstanding, and native
 invitations require a separate mobile release.

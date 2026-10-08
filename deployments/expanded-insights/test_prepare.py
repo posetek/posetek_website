@@ -2,9 +2,13 @@ import contextlib
 from copy import deepcopy
 import io
 import json
+import os
 from pathlib import Path
+import shutil
+import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
 
 import prepare as release
@@ -49,10 +53,96 @@ class ReleaseTests(unittest.TestCase):
         self.api.deployed(self.run)
         with contextlib.redirect_stdout(io.StringIO()): release.verify(self.run, self.api)
         self.assertTrue(json.loads((self.run / 'verified.json').read_text())['unrelatedFunctionsPreserved'])
-        self.assertEqual(len(list((self.run / 'source').iterdir())), 15)
+        self.assertEqual(len(list((self.run / 'source').iterdir())), 16)
         self.assertTrue((self.run / 'source' / 'processing-evidence.js').is_file())
         self.assertTrue((self.run / 'source' / 'effective-rep.js').is_file())
         self.assertTrue((self.run / 'source' / 'athlete-profile-spec.json').is_file())
+        self.assertTrue((self.run / 'source' / 'insights-overview.js').is_file())
+        manifest = release.read(self.run / 'manifest.json')
+        self.assertIn('insights-overview.js', manifest['moduleClosure']['imports']['insights-v2.js'])
+        self.assertIn('athlete-profile-spec.json', manifest['moduleClosure']['localModules'])
+        self.assertTrue(release.read(self.run / 'verified.json')['runtimeModuleClosureVerified'])
+    def test_refuses_missing_transitive_module_before_creating_release_manifest(self):
+        incomplete = Path(self.temp.name) / 'incomplete'
+        files = tuple(name for name in release.FILES if name != 'insights-overview.js')
+        with patch.object(release, 'FILES', files):
+            with self.assertRaisesRegex(RuntimeError, 'Required runtime module missing: insights-v2.js -> ./insights-overview'):
+                release.prepare(incomplete, self.api)
+        self.assertFalse((incomplete / 'manifest.json').exists())
+    def test_runtime_closure_refuses_missing_computed_escaping_and_undeclared_imports(self):
+        path = self.run / 'source' / 'insights-overview.js'
+        original = path.read_text(encoding='utf-8')
+        manifest = release.read(self.run / 'manifest.json')['files']
+        cases = [("require('./private-helper')", 'Required runtime module missing'),
+                 ("require(moduleName)", 'Computed runtime import requires review'),
+                 ("require('../private-helper')", 'Runtime import escapes prepared source'),
+                 ("require('unreviewed-package')", 'Undeclared runtime dependency')]
+        for expression, message in cases:
+            with self.subTest(expression=expression):
+                path.write_text(original + '\n' + expression + ';\n', encoding='utf-8')
+                with self.assertRaisesRegex(RuntimeError, message):
+                    release.runtime_module_closure(self.run / 'source', manifest)
+        path.write_text(original, encoding='utf-8')
+    def test_refuses_runtime_closure_receipt_drift(self):
+        self.api.deployed(self.run)
+        manifest = release.read(self.run / 'manifest.json')
+        manifest['moduleClosure']['localModules'].remove('insights-overview.js')
+        release.write(self.run / 'manifest.json', manifest)
+        with self.assertRaisesRegex(RuntimeError, 'Prepared runtime module closure changed'):
+            release.verify(self.run, self.api)
+    def test_refuses_missing_overview_module_in_deployed_archive(self):
+        self.api.deployed(self.run)
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, 'w') as archive:
+            for path in (self.run / 'source').iterdir():
+                if path.name != 'insights-overview.js': archive.writestr(path.name, path.read_bytes())
+        self.api.archives['getClubInsightsV2'] = data.getvalue()
+        with self.assertRaisesRegex(RuntimeError, 'Required source absent from deployed archive'):
+            release.verify(self.run, self.api)
+    @unittest.skipUnless(shutil.which('node') and (release.ROOT / 'functions' / 'node_modules' / 'firebase-functions').is_dir()
+                         and (release.ROOT / 'functions' / 'node_modules' / 'firebase-admin').is_dir(),
+                         'Node and installed functions dependencies are required for runtime discovery')
+    def test_immutable_prepared_source_discovers_exact_nine_sdk_functions(self):
+        # External SDKs come from the installed dependency tree. Relative module
+        # resolution stays inside the copied source, so the retired omission
+        # fails here exactly as it would during Firebase CLI discovery.
+        script = '''
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const index = process.argv[1];
+const endpoints = JSON.parse(process.argv[2]);
+const definitions = JSON.parse(process.argv[3]);
+const loaded = require(index);
+assert.deepEqual(Object.keys(loaded).sort(), endpoints.sort());
+for (const name of endpoints) {
+  const trigger = loaded[name].__trigger, expected = definitions[name];
+  assert.ok(trigger, name + ' SDK trigger missing');
+  assert.equal(trigger.timeout, expected.timeout, name + ' timeout');
+  assert.equal(trigger.availableMemoryMb ?? 256, expected.availableMemoryMb, name + ' memory');
+  assert.equal(trigger.maxInstances, expected.maxInstances, name + ' maximum instances');
+  if (expected.httpsTrigger) {
+    assert.ok(trigger.httpsTrigger && !trigger.eventTrigger, name + ' callable transport');
+    assert.equal(trigger.labels['deployment-callable'], 'true', name + ' callable label');
+  } else {
+    assert.ok(!trigger.httpsTrigger, name + ' event transport');
+    assert.deepEqual({...trigger.eventTrigger, failurePolicy: trigger.failurePolicy}, expected.eventTrigger, name + ' event definition');
+  }
+}
+assert.ok(require.cache[path.join(path.dirname(index), 'insights-overview.js')]);
+process.stdout.write(JSON.stringify({discovered: Object.keys(loaded).length, overviewLoaded: true}));
+'''
+        manifest_before = (self.run / 'manifest.json').read_bytes()
+        environment = {**os.environ, 'NODE_PATH': str(release.ROOT / 'functions' / 'node_modules'),
+                       'GCLOUD_PROJECT': release.PROJECT,
+                       'FIREBASE_CONFIG': json.dumps({'projectId': release.PROJECT, 'storageBucket': release.BUCKET})}
+        result = subprocess.run([shutil.which('node'), '-e', script, str(self.run / 'source' / 'index.js'),
+                                 json.dumps(release.ENDPOINTS), json.dumps(release.expected_definitions())], cwd=self.temp.name, env=environment,
+                                text=True, capture_output=True, timeout=60)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout), {'discovered': 9, 'overviewLoaded': True})
+        self.assertEqual((self.run / 'manifest.json').read_bytes(), manifest_before)
+        for name, expected in release.read(self.run / 'manifest.json')['files'].items():
+            self.assertEqual(release.sha((self.run / 'source' / name).read_bytes()), expected['sha256'])
     def test_refuses_local_source_drift(self):
         self.api.deployed(self.run)
         (self.run / 'source' / 'index.js').write_text('changed')

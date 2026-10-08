@@ -54,6 +54,24 @@ All equal scores give 50. Existing D1 comparisons remain separate in testing det
 
 ## Authorization and age
 
+The Overview response adds an aggregate `overview` object and safe per-player
+`performance` summaries. D1 is the mean of measured axis scores from qualified v4
+metrics; change compares each player's overall D1 score on their latest two local
+test dates. Change within two points displays **Same**; team improvement counts
+include increases greater than two. Planned sessions use confirmed weekly
+`trainingContext.sessionDays` when available, otherwise `sessionsPerWeek`, bounded
+by the active plan's start date and the rolling 14-day window. Done sessions match
+completed recent workout logs to the current plan's workout slots. Team training
+counts include only players with a usable active-plan target; “keeping up” means
+at least half of planned sessions were completed.
+
+Per-player follow-up reasons are no `lastLogin` recorded with an active plan at
+least three days old, under half of planned sessions after an active plan is at
+least seven days old, and a D1 drop of five points or more. The report reads plans
+and recent logs on the server and rechecks those snapshots in the read-only
+response transaction. Raw plan/log documents do not enter the callable response;
+existing authorization and projection versions remain unchanged.
+
 Organization/team authority remains current canonical membership and team ownership. Independent authority requires exactly one owned `coaches` document with `userUID` equal to the caller. Candidates come from `members` and existing coach-link fields, then intersect the canonical Firestore read predicate: `coachUID`, `coachId` or `coachDocId` must equal the caller UID, or the player's `coachDocId` (defaulting to caller UID when absent) must identify the owned coach and its `members` must include the player. This avoids listing legacy document-ID aliases that the existing profile/workout rules deny. A player with any `organizationId` property is excluded, even when stale legacy mirrors still list them.
 
 A canonical organization membership at the caller UID, including an inactive or malformed one, blocks independent fallback. Any owned coach document with an `organizationId` or `organizationRole` property also blocks it. Ambiguous owned coach documents grant no independent access. Verified PoseTek admins keep existing global/organization/team access; this scope does not introduce impersonation.

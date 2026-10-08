@@ -89,4 +89,40 @@ describe("four-view Insights report", () => {
     expect(html).toContain("Players by team");
     expect(html).toContain("84 matching players");
   });
+  it("puts the admin roster after summary and attention, before detailed breakdowns", () => {
+    const html = renderToStaticMarkup(<MemoryRouter><ExpandedReport data={previewInsights(base)} request={base} adminOverview onChange={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "/admin/accounts/player/sample/results"} /></MemoryRouter>);
+    expect(html.indexOf('aria-label="overview summary"')).toBeLessThan(html.indexOf("Needs attention"));
+    expect(html.indexOf("Needs attention")).toBeLessThan(html.indexOf('id="insights-players-heading"'));
+    expect(html.indexOf('id="insights-players-heading"')).toBeLessThan(html.indexOf("Detailed breakdowns"));
+    expect(html.indexOf("Detailed breakdowns")).toBeLessThan(html.indexOf("Testing coverage"));
+    expect(html.match(/id="insights-players-heading"/g)).toHaveLength(1);
+    expect(render().indexOf('id="insights-players-heading"')).toBeGreaterThan(render().indexOf("Players by team"));
+  });
+  it("labels general technique review honestly without forwarding unsupported scope filters", () => {
+    const request = { ...base, orgId: "northfield", teamId: "harbor" };
+    const html = renderToStaticMarkup(<MemoryRouter><ExpandedReport data={previewInsights(request)} request={request} adminOverview onChange={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "#player"} /></MemoryRouter>);
+    expect(html).toContain('href="/admin/analysis"');
+    expect(html).not.toContain('/admin/analysis?');
+    expect(html).toContain("General technique review");
+    expect(html).toContain("these counts are not a filtered queue");
+    expect(html).toContain("Show these players");
+    expect(html).not.toContain('href="/admin/accounts');
+  });
+  it("disables the exact no-recorded-tests action when there are no matching players", () => {
+    const data = previewInsights(base);
+    data.testing.statuses = data.testing.statuses.map(row => row.key === "noRecordedTests" ? { ...row, count: 0 } : row);
+    const html = renderToStaticMarkup(<MemoryRouter><ExpandedReport data={data} request={base} adminOverview onChange={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "#player"} /></MemoryRouter>);
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Show these players<\/button>/);
+  });
+  it("offers one-action Workouts and Profile beside admin player names in every report view", () => {
+    for (const view of ["overview", "testing", "workouts", "usage"] as const) {
+      const request = { ...base, view };
+      const html = renderToStaticMarkup(<MemoryRouter><ExpandedReport data={previewInsights(request)} request={request} adminOverview onChange={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={player => `/admin/accounts/player/${player.id}/results`} playerActionLink={(player, tab) => `/admin/accounts/player/${player.id}/${tab}`} /></MemoryRouter>);
+      expect(html).toContain('/workouts"');
+      expect(html).toContain('/profile"');
+      expect(html).toContain('class="insights-player-actions"');
+      expect(html.match(/id="insights-players-heading"/g)).toHaveLength(1);
+    }
+    expect(render()).not.toContain('class="insights-player-actions"');
+  });
 });

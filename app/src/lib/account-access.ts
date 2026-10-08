@@ -4,7 +4,7 @@ import type { AccountRole } from "../pages/landing/account-entry";
 
 export const ACCOUNT_ACCESS_PATTERN = /^ACCESS-[A-F0-9]{64}$/i;
 export const STAFF_ACCESS_STALE = "Your sign-in changed. Please try again.";
-export const STAFF_RECOVERY_HELP = "Contact PoseTek for a recovery link after an identity check. Your organization admin can help you reach PoseTek.";
+export const STAFF_RECOVERY_HELP = "PoseTek can share a private recovery link after an identity check. Organization admins can help players in their own organization.";
 export type AccessLinkCapture = { present: boolean; code: string };
 let captured: AccessLinkCapture = { present: false, code: "" };
 
@@ -40,6 +40,7 @@ export function staffAccessInstructions(value: { code: string; email: string; ex
 
 export type AccessPurpose = "staff_activation" | "internal_admin_activation" | "account_recovery";
 export interface AccountAccessLink {
+  grantId?: string;
   status: "ready" | "processing" | "completed";
   purpose: AccessPurpose;
   accountMode: "new" | "existing";
@@ -55,6 +56,7 @@ export interface AccountAccessLink {
   requiresSignIn: boolean;
 }
 export interface CompletedAccountAccess {
+  grantId?: string;
   status: "completed";
   purpose: AccessPurpose;
   targetUID: string;

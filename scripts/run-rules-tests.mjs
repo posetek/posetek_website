@@ -43,6 +43,7 @@ const suites = [
   { name: 'deviceProcessing', project: 'demo-device-processing' },
   { name: 'userIssues', project: 'demo-user-issues' },
   { name: 'appFeedback', project: 'demo-app-feedback' },
+  { name: 'accountRecovery', project: 'demo-account-recovery' },
   { name: 'personalizedRules', project: 'demo-personalized-planner' },
   { name: 'personalWorkoutSetup', project: 'demo-personal-workout-setup' },
   { name: 'socialRules', project: 'demo-posetek-feed', storage: true },
