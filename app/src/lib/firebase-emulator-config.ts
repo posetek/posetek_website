@@ -1,5 +1,4 @@
-// Test-only configuration candidate. The application does not import this file.
-// Any future browser harness must select it before creating Firebase clients.
+// Test-only configuration; firebase.ts selects it only in the explicit dev mode.
 export type EmulatorService = 'auth' | 'firestore' | 'functions' | 'storage';
 
 const projectId = 'demo-posetek-website-e2e';
