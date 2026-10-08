@@ -69,6 +69,19 @@ class DependencyAuditPolicyTests(unittest.TestCase):
         _, failures = evaluate(report(), lock(), other, TODAY)
         self.assertIn("new production", failures[0][2])
 
+    def test_shared_hoisted_node_requires_each_new_production_path(self):
+        baseline = {"schema": 1, "exceptions": [exception()]}
+        expanded = lock()
+        expanded["packages"][""]["dependencies"]["second"] = "1.0.0"
+        expanded["packages"]["node_modules/second"] = {
+            "version": "1.0.0", "dependencies": {"parser": "1.0.0"},
+        }
+        current, failures = evaluate(report(), expanded, baseline, TODAY)
+        self.assertEqual(current[(URL, ("server", "parser"))], "high")
+        self.assertEqual(current[(URL, ("second", "parser"))], "high")
+        self.assertEqual(len(failures), 1)
+        self.assertEqual(failures[0][0][1], ("second", "parser"))
+
     def test_exception_requires_named_owner_reason_and_unexpired_date(self):
         for field, value in (("owner", "pending"), ("reason", ""), ("expires", "2026-10-06")):
             baseline = {"schema": 1, "exceptions": [exception()]}
@@ -77,6 +90,8 @@ class DependencyAuditPolicyTests(unittest.TestCase):
                 evaluate(report(), lock(), baseline, TODAY)
         with self.assertRaisesRegex(ValueError, "missing approved baseline"):
             evaluate(report(), lock(), {}, TODAY)
+        with self.assertRaisesRegex(ValueError, "missing approved baseline"):
+            evaluate(report(), lock(), {"schema": True, "exceptions": []}, TODAY)
 
     def test_dev_only_or_unresolved_nodes_cannot_be_mislabeled_production(self):
         for node in ("node_modules/testkit", "node_modules/missing"):

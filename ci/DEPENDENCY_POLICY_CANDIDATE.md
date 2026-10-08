@@ -34,9 +34,10 @@ The current `app/package-lock.json` SHA-256 is
 and `functions/legacy-upload-processor/package-lock.json` is
 `5f6a01cec4842b0f63dc5ab7cb908aa48c6e7d11856c3e5ecb9e16d121f67a6f`.
 Fresh production audits on 2026-10-07 found 4, 12, and 11 vulnerable package
-nodes respectively, with one remaining high advisory
-path per scope: app `firebase -> @firebase/firestore -> @grpc/grpc-js`, and
-Functions/legacy `firebase-admin -> node-forge`. Each has an exact seven-day
+nodes respectively. The app's remaining high advisory has two production
+paths to the same hoisted gRPC node: through `firebase -> @firebase/firestore`
+and through `firebase -> @firebase/firestore-compat -> @firebase/firestore`.
+Functions/legacy each have `firebase-admin -> node-forge`. Each path has an exact seven-day
 exception, while all other current production high/critical findings were
 patched. The runner passed against fresh registry responses for all three
 scopes; this is local evidence, not a hosted required-check result.

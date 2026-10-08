@@ -41,25 +41,26 @@ def resolve(packages, parent, name):
 
 
 def production_paths(lock):
-    require(lock.get("lockfileVersion") == 3, "expected npm lockfile v3")
+    require(type(lock.get("lockfileVersion")) is int and lock["lockfileVersion"] == 3, "expected npm lockfile v3")
     packages = lock.get("packages")
     require(isinstance(packages, dict) and isinstance(packages.get(""), dict), "missing lock package graph")
     root = packages[""]
     paths = {}
     queue = deque()
     for name in sorted(set(root.get("dependencies", {})) | set(root.get("optionalDependencies", {}))):
-        queue.append((resolve(packages, "", name), (name,)))
+        queue.append((resolve(packages, "", name), (name,), frozenset()))
     while queue:
-        location, chain = queue.popleft()
-        if location in paths:
+        location, chain, ancestors = queue.popleft()
+        if location in ancestors:
             continue
         package = packages[location]
         require(isinstance(package, dict) and package.get("version"), f"invalid lock node {location}")
         require(package.get("dev") is not True, f"production path marked dev: {location}")
-        paths[location] = chain
+        paths.setdefault(location, set()).add(chain)
+        require(sum(map(len, paths.values())) <= 10000, "production dependency graph has too many paths")
         names = set(package.get("dependencies", {})) | set(package.get("optionalDependencies", {}))
         for name in sorted(names):
-            queue.append((resolve(packages, location, name), chain + (name,)))
+            queue.append((resolve(packages, location, name), chain + (name,), ancestors | {location}))
     return paths
 
 
@@ -96,8 +97,9 @@ def findings(audit, lock):
             require(level in SEVERITY, f"invalid advisory severity for {name}")
             via_levels.append(level)
             for node in nodes:
-                key = (item["url"], paths[node])
-                result[key] = max(result.get(key, "info"), level, key=SEVERITY.get)
+                for chain in paths[node]:
+                    key = (item["url"], chain)
+                    result[key] = max(result.get(key, "info"), level, key=SEVERITY.get)
         require(max(via_levels, key=SEVERITY.get) == severity, f"audit severity disagrees with advisories for {name}")
     require(not vulnerabilities or result, "audit has vulnerabilities without advisory identities")
     return result
@@ -105,7 +107,9 @@ def findings(audit, lock):
 
 def evaluate(audit, lock, baseline, today):
     current = findings(audit, lock)
-    require(isinstance(baseline, dict) and baseline.get("schema") == 1 and isinstance(baseline.get("exceptions"), list), "missing approved baseline")
+    require(isinstance(baseline, dict) and set(baseline) == {"schema", "exceptions"}
+            and type(baseline["schema"]) is int and baseline["schema"] == 1
+            and isinstance(baseline["exceptions"], list), "missing approved baseline")
     approved = {}
     for entry in baseline["exceptions"]:
         require(isinstance(entry, dict) and set(entry) == {"advisory", "path", "severity", "owner", "reason", "expires"}, "invalid exception fields")
