@@ -1,6 +1,6 @@
 // Synthetic player signup across the local Astro app and four Firebase emulators.
 // Requires cached Java 21, Firebase emulator binaries, Playwright Chromium,
-// and POSETEK_MOBILE_REPO pointing at the sibling engineering-pipeline checkout.
+// and an explicit reviewed mobile checkout and full SHA.
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, symlink, writeFile, rm } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
@@ -10,6 +10,7 @@ import path from 'node:path';
 import net from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium } from '../app/node_modules/playwright/index.mjs';
+import { reviewedMobileRules } from './authenticated-emulator-source.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const projectId = 'demo-posetek-website-e2e';
@@ -20,14 +21,6 @@ const origin = `http://${host}:${ports.astro}`;
 const require = createRequire(import.meta.url);
 const admin = require('../functions/node_modules/firebase-admin');
 const { initializeTestEnvironment, assertFails } = require('../app/node_modules/@firebase/rules-unit-testing');
-
-function exactMobileRules() {
-  const mobile = process.env.POSETEK_MOBILE_REPO;
-  assert.ok(mobile, 'POSETEK_MOBILE_REPO must identify the canonical local mobile checkout');
-  assert.equal(path.resolve(mobile), path.resolve(root, '../../posetek-mobile-app/engineering-pipeline'),
-    'mobile rules must come from the canonical sibling engineering-pipeline checkout');
-  return { firestore: path.join(mobile, 'firebase/firestore.rules'), storage: path.join(mobile, 'firebase/storage.rules') };
-}
 
 async function assertFreePorts() {
   for (const port of Object.values(ports)) {
@@ -50,9 +43,8 @@ async function runOuter() {
   assert.equal(process.env.FIREBASE_EMULATORS_PATH?.startsWith('/private/tmp/'), true, 'use cached local emulator binaries');
   assert.ok(process.env.PLAYWRIGHT_BROWSERS_PATH, 'PLAYWRIGHT_BROWSERS_PATH must identify cached local Chromium');
   await assertFreePorts();
-  const rules = exactMobileRules();
-  const { stat } = await import('node:fs/promises');
-  await Promise.all(Object.values(rules).map(stat));
+  const rules = reviewedMobileRules(process.env.POSETEK_MOBILE_REPO, process.env.POSETEK_MOBILE_SHA);
+  console.log(`Reviewed private mobile rules from ${rules.sha}`);
   await Promise.all(['/private/tmp/posetek-website-e2e-home', '/private/tmp/posetek-website-e2e-config'].map(dir => mkdir(dir, { recursive: true })));
   const tmp = await mkdtemp(path.join(root, '.firebase-e2e-'));
   try {
@@ -84,7 +76,7 @@ async function runOuter() {
     await writeFile(configFile, JSON.stringify(config));
     const cli = spawn('firebase', ['emulators:exec', '--only', 'auth,firestore,functions,storage', '--project', projectId,
       '--config', configFile, 'node scripts/authenticated-emulator-smoke.mjs --inside'],
-    { cwd: root, env: safeEnvironment({ POSETEK_MOBILE_REPO: process.env.POSETEK_MOBILE_REPO }), stdio: 'inherit' });
+    { cwd: root, env: safeEnvironment({ POSETEK_MOBILE_REPO: rules.repo, POSETEK_MOBILE_SHA: rules.sha }), stdio: 'inherit' });
     const code = await new Promise((resolve, reject) => { cli.once('error', reject); cli.once('exit', resolve); });
     assert.equal(code, 0, `Firebase emulator journey exited ${code}`);
   } finally { await rm(tmp, { recursive: true, force: true }); }
