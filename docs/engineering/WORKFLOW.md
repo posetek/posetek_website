@@ -36,7 +36,7 @@ coverage-count tests. Source-text assertions alone do not prove runtime behavior
 
 | Repository | PR lanes in this candidate | Important limit |
 | --- | --- | --- |
-| Website | Vitest and lint; Functions/tooling Node tests; TypeScript/Astro build; Svelte check; marketing build; guest Chromium smoke; workflow contract tests | Ordinary builds do not prove the protected production artifact. Three existing private-fixture tests skip. Hosted server tests still need partner-source delivery for the existing mobile contract assertion. |
+| Website | Vitest and lint; Functions/tooling Node tests; TypeScript/Astro build; Svelte check; marketing build; guest Chromium smoke; policy and production dependency audits | Ordinary builds do not prove the protected production artifact. Three existing private-fixture tests skip. Canonical mobile contract parity is a separate explicit integration command, not a standing public PR check. |
 | Backend | Gateway pytest with live-network guard; authored replay evaluation; legacy processor syntax; workflow contract tests | Replay is not model-quality evidence. Processor syntax is not video/biomechanics coverage. Python dependencies need Linux lock work. |
 | Mobile | Canonical Firestore/Storage emulator suites and hash receipt; publishing-tool unit tests; all tracked app Swift syntax; workflow contract tests | No full native build, simulator XCTest, signing or camera acceptance is claimed. |
 
@@ -50,7 +50,8 @@ filters, per-job read permissions, timeouts and immutable action SHAs. The gate
 tests exercise its actual shell script against success, failure, cancellation,
 skip and malformed/empty evidence. They also reject dangerous workflow mutations.
 These tests help prevent mistakes; an author who edits tests and policy together
-still requires independent human review and server-enforced GitHub controls.
+can change the evidence. Current author-merge policy has no independent human
+approval requirement. Server-enforced controls remain an activation prerequisite.
 
 ## Local website commands
 
@@ -62,14 +63,20 @@ npm --prefix functions ci --ignore-scripts --no-audit --no-fund
 npm --prefix app test
 npm --prefix app run lint
 node --test functions/*.test.js scripts/*.test.cjs scripts/*.test.mjs
+node --test ci/verify-mobile-contract-artifact.test.cjs
 npm --prefix app run check:svelte
 npm --prefix app run build
 npm --prefix app run build:marketing
+node --test ci/check-static-firestore-transport.test.mjs
+node scripts/check-static-firestore-transport.mjs
 node app/node_modules/playwright/cli.js install chromium
 node --test scripts/browser-smoke.mjs
 # In your Python virtual environment:
 python -m pip install -r ci/requirements.txt
 python -m unittest discover -s ci -p 'test_*.py'
+python3 ci/run_dependency_audit.py app --baseline ci/dependency-exceptions/app.json
+python3 ci/run_dependency_audit.py functions --baseline ci/dependency-exceptions/functions.json
+python3 ci/run_dependency_audit.py legacy --baseline ci/dependency-exceptions/legacy.json
 ```
 
 Browser smoke starts a disposable loopback server on an available port, exercises
@@ -77,11 +84,13 @@ the current `app/astro-dist` output, uses separate guest contexts and blocks ext
 WebSocket requests before navigation. It does not log in, seed data, send email,
 call a model or claim authenticated end-to-end coverage.
 
-The Node contract-parity test also requires `POSETEK_MOBILE_REPO` to point to a
-reviewed canonical mobile checkout when it is not located at the historical sibling
-path. Record that checkout's exact SHA. A local override does not complete hosted
-cross-repository source delivery; the manually dispatched source workflow is only
-a preparation candidate until its trusted handoff and PR gate are verified.
+Canonical mobile contract parity is outside ordinary server CI. Set
+`POSETEK_MOBILE_REPO` to a reviewed canonical mobile checkout, record its exact
+SHA, and run `node --test functions/device-performance-parity.integration.cjs`.
+Missing source fails this explicit integration command. A local override does
+not complete hosted cross-repository source delivery; the manually dispatched
+source workflow is only a preparation candidate until its trusted handoff and
+PR gate are verified.
 
 Rules integration, when a reviewed mobile checkout is available:
 

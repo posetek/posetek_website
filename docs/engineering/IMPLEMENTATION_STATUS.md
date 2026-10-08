@@ -1,6 +1,6 @@
 # Pipeline implementation status
 
-October 7, 2026. This tracks the 42 approved components; approved does not mean
+Updated October 8, 2026. This tracks the 42 approved components; approved does not mean
 implemented, enabled, or verified on hosted infrastructure. All work is local to
 isolated worktrees. No production deployment or paid reviewer is enabled.
 
@@ -27,7 +27,7 @@ between assignments or that archived future scope is being implemented.
 | 2 Stack | Retained | Existing providers; Redis remains future scope. |
 | 3 Isolation | In use | Separate website/backend/mobile pipeline worktrees. |
 | 4 Commits | In use | Coherent checkpoints retained, including corrective commits. |
-| 5 Guidance | Partial | Approval ledger and additive preparation docs; old workflow claims need reconciliation. |
+| 5 Guidance | Partial | Approval ledger and central handbook added; staged integration and older historical wording remain explicit. |
 | 6 Baseline | Partial | Website/emulator and Linux ARM gateway results recorded; AMD64 and native execution unresolved. |
 | 7 Coverage review | Partial | Specific native/rules/gateway batches documented; wider user-facing coverage review remains. |
 | 8 Scheduling | Partial | PR/main/manual/merge-group candidate exists; expensive schedules not enabled. |
@@ -36,7 +36,7 @@ between assignments or that archived future scope is being implemented.
 | 11 Dependencies | Partial | Local isolated dependencies restored; tested Linux locking remains. |
 | 12 Astro/lint | Implemented locally | Astro checks pass; lint added to PR unit lane, existing warnings retained. |
 | 13 Browser | Partial | Seven guest checks plus local signup/redemption/privacy/refresh emulator journey pass; no hosted authenticated gate. |
-| 14 Functions/tooling | Baseline verified | 1,086 Node tests pass with three historical skips; legacy marker suite 13/13; patched lockfiles tested. |
+| 14 Functions/tooling | Baseline verified locally | Ordinary server suite is independent of the private mobile checkout; three historical private-fixture skips remain. Explicit parity command is separate. |
 | 15 Gateway | Partial | Linux ARM 2,428 passed/3 explained skips and 19 replay profiles pass; separate real Firestore SDK cases 2/2 pass. |
 | 16 Processing | Inventory prepared | Client-side native coverage prioritized; no new legacy server suite. |
 | 17 Rules | Baseline verified | 1,232 emulator tests across 11 suites and 40 publisher tests pass locally. |
@@ -48,9 +48,9 @@ between assignments or that archived future scope is being implemented.
 | 23 Exceptions | Register prepared | EXCEPTIONS.md records exact gaps and closure evidence; permanent maintainer assignments remain. |
 | 24 Merge protections | Remote audit complete | Public website unprotected; private repository APIs require paid plan. No settings activated. |
 | 25 Code owners | Pending names | No placeholder or invented owners installed. |
-| 26 Scanning | Pending preparation | Approved blocking policy and tested offline runner implemented; no accepted exceptions or hosted activation. |
-| 27 Reviewer | Offline validation implemented | Seven structured report tests pass; trusted resolver/provider/publisher still pending. |
-| 28 Reviewer limits | Partial | Bounds/stale revision/scope checks tested; Sonnet API and $5/day shared/$1 attempt approved; atomic coordinator implementation underway. |
+| 26 Scanning | Local gate prepared | Required local CI dependency lane covers app, Functions and legacy. Exact-path delegated exceptions expire 2026-10-14; findings remain visible. Hosted evidence and remote enforcement remain outstanding. |
+| 27 Reviewer | Backend coordinator prepared, disabled | Offline report and mocked coordinator tests pass; provider credentials, publication and hosted enforcement are not active. |
+| 28 Reviewer limits | Prepared, not activated | Bounded review and durable shared budget coordinator implemented in backend; Sonnet API and $5/day shared/$1 attempt approved, exact model/provider activation pending. |
 | 29 Staging | Guard implemented locally | Explicit environment/project/buckets and startup preflight tested; migration inputs required before release. No project provisioned. |
 | 30 Deployment identity | Design only | OIDC/IAM configuration and activation still require reviewed specifics. |
 | 31 Website release | Partial | Guarded publisher retained; full hosted publishing configuration review remains. |
@@ -89,9 +89,12 @@ between assignments or that archived future scope is being implemented.
   skips/failures, and 40 publishing-tool passes. No production access.
 
 The original parity-test move (`67c04c0`) was corrected by `68be703` before
-activation of the replacement lane. The older assertion remains in the server
-suite; a clean hosted checkout still needs partner-source delivery to pass it.
-Local success with a reviewed partner-path override is not hosted CI evidence.
+activation of a replacement lane. Later `641cec2` established a dedicated
+`functions/device-performance-parity.integration.cjs` command and moved only
+the canonical mobile checkout assertion out of ordinary server CI. That
+command fails without source and passed locally against a reviewed mobile SHA;
+its hosted artifact lane remains inactive. Ordinary server CI must not be
+reported as partner parity evidence.
 
 ## Subsequent implementation checkpoints
 
