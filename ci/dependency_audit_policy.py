@@ -82,16 +82,23 @@ def findings(audit, lock):
         require(isinstance(nodes, list) and nodes and isinstance(via, list) and via, f"missing nodes/advisories for {name}")
         for node in nodes:
             require(node in paths, f"audit node outside production lock graph: {node}")
+        via_levels = []
         for item in via:
             if isinstance(item, str):
                 require(item in vulnerabilities, f"unresolved aggregate advisory: {item}")
+                referenced = vulnerabilities[item]
+                require(isinstance(referenced, dict) and referenced.get("severity") in SEVERITY,
+                        f"invalid aggregate severity: {item}")
+                via_levels.append(referenced["severity"])
                 continue
             require(isinstance(item, dict) and ADVISORY.fullmatch(str(item.get("url", ""))), f"invalid advisory for {name}")
             level = item.get("severity")
             require(level in SEVERITY, f"invalid advisory severity for {name}")
+            via_levels.append(level)
             for node in nodes:
                 key = (item["url"], paths[node])
                 result[key] = max(result.get(key, "info"), level, key=SEVERITY.get)
+        require(max(via_levels, key=SEVERITY.get) == severity, f"audit severity disagrees with advisories for {name}")
     require(not vulnerabilities or result, "audit has vulnerabilities without advisory identities")
     return result
 

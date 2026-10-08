@@ -95,6 +95,7 @@ class DependencyAuditPolicyTests(unittest.TestCase):
             lambda x: x["metadata"]["vulnerabilities"].update(total=0),
             lambda x: x["vulnerabilities"]["parser"].update(via=["unreported"]),
             lambda x: x["vulnerabilities"]["parser"]["via"][0].update(url="http://unknown"),
+            lambda x: x["vulnerabilities"]["parser"]["via"][0].update(severity="low"),
         ):
             candidate = report()
             change(candidate)
@@ -102,6 +103,18 @@ class DependencyAuditPolicyTests(unittest.TestCase):
         for candidate in cases:
             with self.subTest(candidate=candidate), self.assertRaises(ValueError):
                 findings(candidate, lock())
+
+    def test_aggregate_severity_must_match_referenced_advisory(self):
+        candidate = report()
+        candidate["vulnerabilities"]["server"] = {
+            "name": "server", "severity": "high", "nodes": ["node_modules/server"], "via": ["parser"],
+        }
+        candidate["metadata"]["vulnerabilities"].update(high=2, total=2)
+        self.assertEqual(findings(candidate, lock())[(URL, ("server", "parser"))], "high")
+        candidate["vulnerabilities"]["server"]["severity"] = "critical"
+        candidate["metadata"]["vulnerabilities"].update(high=1, critical=1)
+        with self.assertRaisesRegex(ValueError, "severity disagrees"):
+            findings(candidate, lock())
 
     def test_cli_rejects_scanner_error_missing_files_and_exit_mismatch(self):
         with tempfile.TemporaryDirectory() as directory:
