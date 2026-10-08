@@ -44,6 +44,18 @@ not authenticated journeys or production assembly. The static Firestore
 transport guard is essential while the narrowly excepted gRPC advisory is
 present; an SSR/adapter change requires renewed assessment.
 
+For a fresh local browser setup, install the Chromium version matching the
+committed Playwright dependency before running the smoke test:
+
+```sh
+node app/node_modules/playwright/cli.js install chromium
+node --test scripts/browser-smoke.mjs
+```
+
+The hosted Ubuntu workflow uses `install --with-deps chromium` to install its
+system libraries as well. Run the preceding app install/build commands first;
+a browser binary from another Playwright version is not interchangeable.
+
 ## Explicit integration batches
 
 These are outside ordinary public PR `ci` because they need a private source,
@@ -69,6 +81,42 @@ local listeners; never kill another runner's process to make a test pass. The
 [mobile build and testing guide](https://github.com/posetek/posetek-mobile-app/blob/main/docs/BUILD_AND_TESTING.md)
 owns mobile-specific native and emulator detail. The [backend baseline](https://github.com/posetek/posetek-backend/blob/main/docs/engineering/BACKEND_BASELINE_20261007.md)
 owns backend suites and exact recorded results.
+
+### Reproducing the local authenticated journey
+
+This is the documented macOS validation setup, not a cloud deployment command.
+Prepare the app and Functions dependencies from their lockfiles, install a
+compatible Firebase CLI on `PATH`, and provision Java 21 plus the Firebase
+Firestore/Storage emulator cache. Replace the mobile path and SHA below with
+the checkout and full commit you reviewed. The cache paths match the recorded
+local validation; their existence is a prerequisite, not guaranteed on a new
+machine.
+
+```sh
+export JAVA_HOME='/private/tmp/posetek-mobile-java21/jdk-21.0.12.1+1/Contents/Home'
+export FIREBASE_EMULATORS_PATH='/private/tmp/posetek-mobile-emulators'
+export PLAYWRIGHT_BROWSERS_PATH='/private/tmp/posetek-website-playwright-browsers'
+export POSETEK_MOBILE_REPO='/absolute/path/to/reviewed/posetek-mobile-app'
+export POSETEK_MOBILE_SHA='REPLACE_WITH_REVIEWED_FULL_LOWERCASE_COMMIT_SHA'
+command -v firebase
+"$JAVA_HOME/bin/java" -version
+node app/node_modules/playwright/cli.js install chromium
+node scripts/authenticated-emulator-smoke.mjs
+```
+
+The current harness requires a `JAVA_HOME` containing `jdk-21`, an emulator
+cache below `/private/tmp/`, and nonempty `PLAYWRIGHT_BROWSERS_PATH`. It checks
+these fixed loopback ports before starting: Auth `19199`, Firestore `18189`,
+Functions `15101`, Storage `19399`, emulator hub `14400`, logging `14500`,
+WebSocket `14150`, and Astro `14321`. `RULES_PORT_OFFSET` affects the separate
+rules runner, **not** this journey. If a port belongs to another task, wait or
+coordinate ownership; do not kill that task's process. Port configurability
+and a portable hosted authenticated lane remain future improvements.
+
+The harness passes a restricted environment to its child processes rather than
+local cloud credentials. It uses a demo project, blocks browser requests to live
+services and removes its temporary Functions wrapper. Do not supply production
+credentials or publish private rule bytes to reproduce this test.
 
 ## Diagnosing a red lane
 
