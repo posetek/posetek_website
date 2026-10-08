@@ -19,7 +19,7 @@ const firebaseConfig = {
 // ports fail before a client can fall through to the production project.
 const emulator = import.meta.env.MODE === "posetek-emulator-e2e"
   ? websiteEmulatorConfig({ mode: import.meta.env.MODE, dev: import.meta.env.DEV,
-    portOffset: import.meta.env.VITE_FIREBASE_EMULATOR_PORT_OFFSET ?? "" })
+    portOffset: import.meta.env.PUBLIC_FIREBASE_EMULATOR_PORT_OFFSET ?? "" })
   : null;
 if (emulator && firebase.apps.length) throw new Error("Emulator mode requires a fresh demo Firebase app");
 if (!firebase.apps.length) firebase.initializeApp(emulator?.firebase ?? firebaseConfig);

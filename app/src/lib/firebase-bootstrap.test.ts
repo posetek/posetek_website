@@ -36,7 +36,7 @@ describe('Firebase client bootstrap', () => {
 
   it('connects all four clients to exact loopback endpoints before exposing them', async () => {
     vi.stubEnv('MODE', 'posetek-emulator-e2e'); vi.stubEnv('DEV', true);
-    vi.stubEnv('VITE_FIREBASE_EMULATOR_PORT_OFFSET', '100');
+    vi.stubEnv('PUBLIC_FIREBASE_EMULATOR_PORT_OFFSET', '100');
     await import('./firebase');
     expect(mock.firebase.initializeApp).toHaveBeenCalledWith(expect.objectContaining({ projectId: 'demo-posetek-website-e2e', apiKey: 'demo-api-key' }));
     expect(mock.auth.useEmulator).toHaveBeenCalledWith('http://127.0.0.1:19199');
@@ -48,13 +48,13 @@ describe('Firebase client bootstrap', () => {
 
   it('fails before Firebase initialization for production, partial, or reused test setup', async () => {
     vi.stubEnv('MODE', 'posetek-emulator-e2e'); vi.stubEnv('DEV', false);
-    vi.stubEnv('VITE_FIREBASE_EMULATOR_PORT_OFFSET', '0');
+    vi.stubEnv('PUBLIC_FIREBASE_EMULATOR_PORT_OFFSET', '0');
     await expect(import('./firebase')).rejects.toThrow(/development test mode/);
     expect(mock.firebase.initializeApp).not.toHaveBeenCalled();
-    vi.resetModules(); vi.stubEnv('DEV', true); vi.stubEnv('VITE_FIREBASE_EMULATOR_PORT_OFFSET', 'bad');
+    vi.resetModules(); vi.stubEnv('DEV', true); vi.stubEnv('PUBLIC_FIREBASE_EMULATOR_PORT_OFFSET', 'bad');
     await expect(import('./firebase')).rejects.toThrow(/offset/);
     expect(mock.firebase.initializeApp).not.toHaveBeenCalled();
-    vi.resetModules(); vi.stubEnv('VITE_FIREBASE_EMULATOR_PORT_OFFSET', '0'); mock.firebase.apps.push({});
+    vi.resetModules(); vi.stubEnv('PUBLIC_FIREBASE_EMULATOR_PORT_OFFSET', '0'); mock.firebase.apps.push({});
     await expect(import('./firebase')).rejects.toThrow(/fresh demo Firebase app/);
     expect(mock.firebase.initializeApp).not.toHaveBeenCalled();
   });
