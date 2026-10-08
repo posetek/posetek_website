@@ -452,7 +452,7 @@ function requireCaller(context) {
   if (context.auth.token?.firebase?.sign_in_provider === "anonymous") {
     throw new functions.https.HttpsError("permission-denied", "A registered account is required.");
   }
-  return { uid: context.auth.uid, email: context.auth.token?.email || null, emailVerified: context.auth.token?.email_verified === true, authTime: context.auth.token?.auth_time, isAnonymous: false };
+  return { uid: context.auth.uid, email: context.auth.token?.email || null, emailVerified: context.auth.token?.email_verified === true, authTime: context.auth.token?.auth_time, signInProvider: context.auth.token?.firebase?.sign_in_provider || null, isAnonymous: false };
 }
 
 // Explicit exports keep Firebase deployment discovery stable across releases.
@@ -482,6 +482,21 @@ for (const name of ["getAccountAccessLink", "completeAccountAccessLink"]) {
   exports[name] = functions.runWith({ timeoutSeconds: 120 }).https.onCall(async (data, context) => {
     const caller = context.auth ? requireCaller(context) : null;
     await accountAccess.rate(context.rawRequest, caller, name === "getAccountAccessLink" ? "check" : "complete", name === "getAccountAccessLink" ? 60 : 10);
+    return accountAccess[name](data || {}, caller);
+  });
+}
+// Public help intake never grants account access. Player recovery is authorized
+// against current canonical organization membership and exact ownership in the
+// account-access service, including recipient-side redemption and confirmation.
+exports.submitAccountRecoveryRequest = functions.runWith({ timeoutSeconds: 30, maxInstances: 10 }).https.onCall(async (data, context) => {
+  const caller = context.auth && context.auth.token?.firebase?.sign_in_provider !== "anonymous" ? requireCaller(context) : null;
+  await accountAccess.rate(context.rawRequest, caller, "recovery_request", 5);
+  return accountAccess.submitAccountRecoveryRequest(data || {}, caller, context.rawRequest);
+});
+for (const name of ["inspectPlayerRecovery", "issuePlayerRecovery", "listAccountRecoveryRequests", "updateAccountRecoveryRequest", "confirmAccountRecovery"]) {
+  exports[name] = functions.runWith({ timeoutSeconds: 60, maxInstances: 5 }).https.onCall(async (data, context) => {
+    const caller = requireCaller(context);
+    await accountAccess.rate(context.rawRequest, caller, name === "issuePlayerRecovery" ? "issue" : "recovery_manage", name === "issuePlayerRecovery" ? 30 : 60);
     return accountAccess[name](data || {}, caller);
   });
 }

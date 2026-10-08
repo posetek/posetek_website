@@ -1,0 +1,28 @@
+.account-recovery {
+  color: inherit;
+  line-height: 1.6;
+  fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 16px; min-width: 0; }
+  label { display: grid; gap: 6px; font-size: 14px; }
+  input, select, textarea { width: 100%; min-width: 0; min-height: 44px; padding: 11px 13px; border: 1px solid var(--admin-line, #3b5147); border-radius: 8px; background: var(--admin-bg, transparent); color: inherit; font: inherit; }
+  button, summary { min-height: 44px; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--admin-accent, #b7f34a); outline-offset: 3px; }
+  .recovery-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .recovery-confirm { display: flex; flex-direction: row; align-items: start; gap: 10px; cursor: pointer; }
+  .recovery-confirm input { width: 20px; height: 20px; min-height: 20px; flex: 0 0 20px; margin-top: 3px; accent-color: var(--admin-accent, #b7f34a); }
+  .recovery-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+  .recovery-actions .quiet-button { margin-left: 0; }
+  .recovery-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--admin-line, #3b5147); }
+  .recovery-row small { display: block; }
+  .recovery-row div, code { overflow-wrap: anywhere; }
+  .recovery-target, .recovery-request-detail { padding: 18px; margin: 18px 0; border: 1px solid var(--admin-line, #3b5147); border-radius: 12px; }
+  .recovery-target strong, .recovery-target span { display: block; }
+  .recovery-heading { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .recovery-selection { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 18px 0; }
+  .recovery-password { display: flex; align-items: center; gap: 10px; }
+  @media (max-width: 640px) { .recovery-selection, .recovery-row { grid-template-columns: 1fr; } }
+}
+.account-recovery-request { padding: 16px 0; }
+.account-recovery-request summary { cursor: pointer; display: list-item; padding: 9px 0; font-weight: 600; }
+.account-recovery-request form { margin-top: 20px; }
+.account-recovery-request .primary-cta { justify-self: start; min-height: 44px; padding: 12px 18px; border: 1px solid #b7f34a; border-radius: 12px; background: #b7f34a; color: #082116; font: inherit; font-weight: 700; cursor: pointer; }
+.account-recovery-request .primary-cta:disabled { opacity: .55; cursor: default; }

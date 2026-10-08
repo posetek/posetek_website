@@ -7,6 +7,7 @@ import type { AccountAccessLink, ActiveAccountAccess } from "../../lib/account-a
 import { accountDestination, accountError } from "../landing/account-entry";
 import { claimStaffInvitation, staffOrganizationRoute, STAFF_INVITATION_PATTERN } from "./staff-invitation";
 import { activateManagedAccount, confirmCurrentAccess, signInForAccessLink } from "./account-activation";
+import { confirmAccountRecovery } from "../../lib/account-recovery";
 import "../../styles/pose-portal.css";
 import "../organization/organization.scss";
 import "./staff-invite.scss";
@@ -39,7 +40,7 @@ export default function StaffInvitePage() {
 
   useEffect(() => {
     mounted.current = true;
-    document.title = "Activate account | PoseTek";
+    document.title = "Account access | PoseTek";
     const stop = auth.onAuthStateChanged(current => {
       const uid = current?.uid || null;
       const expected = expectedSignIn.current !== null && (uid === expectedSignIn.current || (Boolean(current?.email) && expectedSignIn.current === `email:${current!.email!.toLowerCase()}`));
@@ -126,6 +127,7 @@ export default function StaffInvitePage() {
         isCurrent,
         currentUser: () => auth.currentUser,
         complete: completeAccountAccessLink,
+        confirmRecovery: confirmAccountRecovery,
         signIn: async (address: string, secret: string) => {
           const credential = await auth.signInWithEmailAndPassword(address, secret);
           if (!credential.user) throw new Error("Sign-in could not be confirmed.");
@@ -173,7 +175,7 @@ export default function StaffInvitePage() {
   return <div className="pt-pose portal-body pt-club staff-activation" data-clarity-mask="true">
     <header className="portal-header"><Link className="portal-brand" to="/signin"><span className="portal-brand-mark">P</span>POSETEK</Link><Link className="club-inline-link" to="/signin">Sign in</Link></header>
     <main className="club-shell club-signup">
-      <p className="eyebrow">Coaches &amp; administrators</p><h1 ref={titleRef} tabIndex={-1}>{title}</h1>
+      <p className="eyebrow">Account activation &amp; recovery</p><h1 ref={titleRef} tabIndex={-1}>{title}</h1>
       <p>{!link && !legacy ? "Open the access link your administrator shared, or paste your code below." : setsPassword ? "Use this password whenever you sign in to PoseTek." : "Use your existing PoseTek account to continue."}</p>
       {error && <p className="club-message error" role="alert" tabIndex={-1} ref={errorRef}>{error}</p>}
       {notice && <p className="club-message" role="status">{notice}</p>}

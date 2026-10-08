@@ -1,5 +1,17 @@
 # PoseTek website
 
+<!-- player-account-recovery-current:start -->
+## Player account recovery implementation
+
+The player recovery extension adds tracked sign-in help, server-bound account
+lookup and scoped organization-manager recovery. Players choose their own
+password; private links are shared directly after identity confirmation.
+Read [the implementation handoff](docs/PLAYER_ACCOUNT_RECOVERY.md) and
+[scoped release procedure](deployments/account-recovery/README.md).
+The current production release below remains authoritative until the extension's
+publication and synthetic acceptance are recorded.
+<!-- player-account-recovery-current:end -->
+
 <!-- organization-navigation-current:start -->
 ## Current organization manager navigation release
 

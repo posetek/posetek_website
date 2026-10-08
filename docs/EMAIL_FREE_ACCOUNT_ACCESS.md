@@ -5,6 +5,11 @@ Production handoff, September 26, 2026. Published as website deployment
 [release receipt](../deployment/EMAIL_FREE_ACCOUNT_ACCESS_PRODUCTION.json) records
 scoped backend deployment, browser acceptance, artifact verification and cleanup.
 
+The [player recovery extension](PLAYER_ACCOUNT_RECOVERY.md) adds player-specific
+organization-manager assistance and a tracked help queue. Its source/publication
+status is recorded separately; the September receipt below describes the original
+PoseTek-only recovery release.
+
 ## Account ownership and authority
 
 `/signin` is the everyday entry for all accounts. `/join` accepts privately shared

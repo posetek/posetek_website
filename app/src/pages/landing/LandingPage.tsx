@@ -37,6 +37,7 @@ import {
   redeemPlayerSignupCode,
 } from "./signup-data";
 import "./landing.scss";
+import AccountRecoveryRequest from "../../components/AccountRecoveryRequest";
 
 export default function LandingPage() {
   useThemeColor("#04130e"); // kickai.html: <meta name="theme-color" content="#04130e">
@@ -337,14 +338,17 @@ export default function LandingPage() {
     const existing = loginEmail.trim();
     const email = existing || (await showForgotPasswordModal());
     if (email) {
+      const revision = authEpoch.current;
+      const current = () => loginMounted.current && authEpoch.current === revision;
       setLoginLoading(true);
+      setLoginError(""); setLoginSuccess("");
       try {
         await auth.sendPasswordResetEmail(email);
-        setLoginSuccess("Password reset email sent. Please check your inbox.");
+        if (current()) setLoginSuccess("If this email has an account, a password reset link has been requested. Check your inbox and spam folder. If it does not arrive, request sign-in help below.");
       } catch (error: any) {
-        setLoginError(error.message);
+        if (current()) setLoginError(accountError(error, "The reset email could not be requested. Check your connection and retry, or request sign-in help below."));
       } finally {
-        setLoginLoading(false);
+        if (current()) setLoginLoading(false);
       }
     }
   }
@@ -596,7 +600,7 @@ export default function LandingPage() {
                       setSignInHelp(value => !value);
                     }}
                   >
-                    Need help signing in?
+                    Forgot password or need sign-in help?
                   </a>
                 </div>
                 <div className="error-message" id="loginError" role="alert" style={{ display: loginError ? "block" : "none" }}>
@@ -621,7 +625,7 @@ export default function LandingPage() {
                   ></span>
                 </button>
               </form>
-              {signInHelp && <aside className="account-signin-help" aria-label="Sign-in help"><strong>Coach or admin account?</strong><p>{STAFF_RECOVERY_HELP} No email is sent from this screen.</p><Link className="text-link" to="/join">Open an access code</Link><details><summary>Player or independent account</summary><p>Use the existing password reset email for a player or independent coach account.</p><button className="secondary-action" type="button" onClick={() => { void handleForgotPassword(); }}>Reset password by email</button></details></aside>}
+              {signInHelp && <aside className="account-signin-help" aria-label="Sign-in help"><strong>Forgot your password?</strong><p>Players and independent coaches can request a reset email for their existing account.</p><button className="secondary-action" type="button" disabled={loginLoading} onClick={() => { void handleForgotPassword(); }}>Reset password by email</button><p>{STAFF_RECOVERY_HELP}</p><Link className="text-link" to="/join">Open a private recovery or access code</Link><AccountRecoveryRequest initialEmail={loginEmail} /></aside>}
               {pendingActivation && <Link className="secondary-action activation-pending" to="/join">Finish staff activation</Link>}
               <div className="signup-prompt">
                 <p>Joining PoseTek?</p>

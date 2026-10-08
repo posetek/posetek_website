@@ -1,5 +1,26 @@
 # PoseTek website project context
 
+<!-- player-account-recovery-current:start -->
+## Player account recovery implementation (2026-10-07)
+
+The approved extension keeps password-reset email and adds signed-out sign-in
+help requests, player-record recovery controls and private request queues. Exact
+current Auth email and unique canonical player ownership route matched cases to
+their organization managers; unresolved claims remain with PoseTek. Public
+claims never authorize a reset. Active canonical organization managers may issue
+30-minute recovery for enabled player accounts within their organization after
+identity confirmation and recent sign-in. Global/staff recovery stays PoseTek-only.
+
+Sharing, password update and fresh password sign-in have separate evidence.
+Requests expire after 90 days and all recovery state remains server-only. Private
+contact/account/case evidence stays outside Git. Website-first scope preserves
+native release gates, gateway ownership, canonical rules publication and training
+records. Read [the implementation handoff](docs/PLAYER_ACCOUNT_RECOVERY.md) and
+[scoped release procedure](deployments/account-recovery/README.md). Implementation
+does not establish that a real player's password was changed; publication must
+be verified separately from the existing production release below.
+<!-- player-account-recovery-current:end -->
+
 <!-- organization-navigation-current:start -->
 ## Current organization manager navigation release
 

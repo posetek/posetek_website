@@ -27,7 +27,7 @@ describe("private access sharing", () => {
     expect(accessStatusLabel("pending", "staff_activation", 300, 200)).toBe("Awaiting activation");
     expect(accessStatusLabel("pending", "staff_activation", 200, 200)).toBe("Expired");
     expect(accessStatusLabel("claimed")).toBe("Active");
-    expect(accessStatusLabel("completed", "account_recovery")).toBe("Recovered");
+    expect(accessStatusLabel("completed", "account_recovery")).toBe("Password updated");
     expect(accessStatusLabel("consuming")).toBe("Completing setup");
     expect(accessStatusLabel("blocked")).toBe("Needs PoseTek review");
     expect(accessPurposeLabel("internal_admin_activation")).toBe("PoseTek admin activation");

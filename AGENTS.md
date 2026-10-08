@@ -1,5 +1,20 @@
 # PoseTek website context
 
+<!-- player-account-recovery-current:start -->
+## Player account recovery extension
+
+Read `docs/PLAYER_ACCOUNT_RECOVERY.md` and `deployments/account-recovery/README.md`
+before recovery changes. Active canonical organization managers may issue scoped
+player recovery after identity confirmation and recent sign-in; global/staff
+recovery remains PoseTek-only. Bind exact current Auth identity through unique
+canonical ownership, never names or profile/signup email. Public help claims
+remain unverified and never authorize recovery. Link sharing, credential change
+and fresh password sign-in are distinct evidence. Keep request/grant/audit state
+server-only, private case evidence out of Git, and the existing uncertain-write
+protections. Publication evidence must be verified separately; implementation
+does not claim a real player's account has been recovered.
+<!-- player-account-recovery-current:end -->
+
 <!-- organization-navigation-current:start -->
 ## Current organization manager navigation release
 
