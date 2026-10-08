@@ -21,13 +21,23 @@ and administrator bypass enabled. Backend has no environments. The proposed
 `mobile-contract-source` environment does not exist yet. Existing environments
 are unrelated to approval of a new secret-bearing source workflow.
 
+## Latest user decision
+
+The GitHub Team upgrade is deferred and archived as a future purchase in
+[FUTURE_PURCHASES.md](FUTURE_PURCHASES.md). Retain Free for now; private required
+checks remain a convention until supported protection is purchased and activated.
+Authors may merge their own PRs after CI and completed advisory AI review; this
+supersedes the earlier independent-human-approval proposal. No remote change.
+
 ## Prepared protection settings
 
 After successful hosted runs on the actual PR revisions and private-repository
 plan support, prepare main protection with:
 
-- Required PR and at least one independent human approval.
-- Dismiss stale approvals, resolve review conversations, and require current CI.
+- Required PR, passing current CI, and completed AI review of the latest revision.
+- Authors may merge their own PRs; no independent human approval requirement.
+- AI findings are advisory; partial/failed/unavailable review does not satisfy the
+  gate. Restrict and record emergency bypasses for designated owners.
 - Required `ci` check bound to its observed trusted GitHub Actions source, not an
   arbitrary integration with the same check name.
 - No force pushes or branch deletion; preserve merge commits and intermediate
@@ -60,11 +70,10 @@ artifact provenance and required-check verification before enabling enforcement.
 
 ## Decisions remaining
 
-1. Organization plan upgrade for private-repository protection; keep repositories
+1. Deferred future purchase: organization plan upgrade for private-repository protection; keep repositories
    private. GitHub Team is the relevant organization plan to evaluate, rather
    than interpreting the API's generic Pro message as a personal-account fix.
-2. Real code owners and independent reviewers; PR authors cannot satisfy their
-   own required approval.
+2. Verify real owner/team identities and access; author merges are permitted.
 3. Emergency access, source-environment approvers, GitHub App identity and reviewed
    artifact-disclosure policy.
 4. Concrete hosted-run evidence and branch-protection activation approval.

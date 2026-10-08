@@ -6,6 +6,14 @@ explicit implementation checkpoints. It does not mean implementation is complete
 or hosted checks, branch protections, paid reviewers, staging, or CD are enabled.
 Earlier candidate documents retain their historical status until reconciled.
 
+## Subsequent configuration decisions
+
+See [FUTURE_PURCHASES.md](FUTURE_PURCHASES.md) for the latest approved reviewer,
+spending, author-merge, and emergency-bypass decisions. They supersede earlier
+independent-human-approval requirements below. GitHub Team is explicitly deferred
+as a future purchase; private enforcement remains unavailable on the current plan.
+The original component review remains preserved below as its historical record.
+
 ## Binding implementation conditions
 
 - The orchestrator delegates to GPT-6-Sol with medium reasoning effort, with one
