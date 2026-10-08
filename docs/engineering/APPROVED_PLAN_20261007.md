@@ -34,6 +34,16 @@ tests. Add regression checks for the exception boundaries and run the disposable
 emulator cases. This is not permission for general localhost access, live Firebase
 connections, or unrelated security changes.
 
+## Specific implementation approval: mobile workflow guidance
+
+The user explicitly approved updating mobile `AGENTS.md` and
+`docs/brand/APP_STORE_RELEASE_CHECKLIST.md` to describe feature branches, PRs,
+passing CI, completed advisory AI review of the latest revision, and author merges.
+No independent human approval is required. Preserve incremental commits, merge
+history, and the no-push-without-authorization rule. Distinguish this target policy
+from currently inactive hosted automation and deferred private-repository protection.
+This approval does not cover the separately proposed XCTest skip-wrapper change.
+
 ## Binding implementation conditions
 
 - The orchestrator delegates to GPT-6-Sol with medium reasoning effort, with one
