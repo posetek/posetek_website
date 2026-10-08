@@ -63,6 +63,16 @@ relevant Functions tests, and full/production dependency audits. Preserve the
 manifest unless an additional change is separately reviewed. No deployment or
 legacy processor dependency update is authorized by this approval.
 
+## Specific implementation approval: legacy processor dependency fixes
+
+The user explicitly approved investigating whether the legacy upload processor
+still serves production and preparing a separate compatible dependency patch and
+offline upload-routing tests. Verify live status only through authorized read-only
+metadata, without invoking processors or inspecting user data. Review all transitive
+changes and current advisories; propose any additional manifest/source change outside
+the agreed compatible patch. Keep this batch separate from active Functions.
+No deletion, retirement, deployment, or push is authorized by this approval.
+
 ## Binding implementation conditions
 
 - The orchestrator delegates to GPT-6-Sol with medium reasoning effort, with one
