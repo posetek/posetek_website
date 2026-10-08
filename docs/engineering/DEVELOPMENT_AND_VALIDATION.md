@@ -23,10 +23,12 @@ test count from an earlier revision is evidence about that revision only.
 
 ## Website standing CI
 
-The candidate [CI workflow](../../.github/workflows/ci.yml) runs for PRs,
+The merged [CI workflow](../../.github/workflows/ci.yml) runs for PRs,
 `main`, merge groups, and manual dispatch without path filters. Five lanes
 must all succeed for aggregate `ci`; missing, skipped, failed, or cancelled
-lanes fail the aggregate. Its current jobs are:
+lanes fail the aggregate. [PR #42](https://github.com/posetek/posetek_website/pull/42)
+passed all six hosted check conclusions, including aggregate `ci`; remote
+branch-protection enforcement remains separate. Its current jobs are:
 
 | Lane | What to run locally | What it protects |
 | --- | --- | --- |
@@ -52,7 +54,7 @@ not turn missing input into a green skip.
 | --- | --- | --- |
 | Canonical mobile contract parity | Set `POSETEK_MOBILE_REPO` to the reviewed lowercase `posetek-mobile-app` checkout and record `git -C "$POSETEK_MOBILE_REPO" rev-parse HEAD`; run `node --test functions/device-performance-parity.integration.cjs`. | Two dedicated assertions compare both server and frontend pinned schema/fixture bytes to canonical mobile source. Missing source fails. The local pinned README digest table still guards frontend bytes; private source README prose is deliberately excluded from the artifact. The [source artifact workflow candidate](../../ci/mobile-contract-pr-job.yml) is inactive and its ordinary PR consumer is mutable. |
 | Canonical rules | Set `RULES_PATH` and `STORAGE_RULES_PATH` to reviewed mobile `firebase/firestore.rules` and `firebase/storage.rules`, select a free `RULES_PORT_OFFSET`, and run `node scripts/run-rules-tests.mjs`. | Authorization suites run against the private canonical rule bytes and verify they did not change mid-run. Requires Java/Firebase emulators; no public rule artifact. |
-| Authenticated browser journey | With cached Java 21, Firebase binaries, Chromium, installed local dependencies, explicit absolute `POSETEK_MOBILE_REPO`, and reviewed full lowercase `POSETEK_MOBILE_SHA`, run `node scripts/authenticated-emulator-smoke.mjs`. | Synthetic signup and four local Auth/Firestore/Functions/Storage emulators; exact demo project and loopback ports; no cloud credentials or live service. The harness checks the canonical mobile Git origin, exact HEAD, clean tracked private rule files, and free local ports before launch. This is local trusted-code evidence, not a public PR gate. |
+| Authenticated browser journey | With cached Java 21, Firebase binaries, Chromium, installed local dependencies, explicit absolute `POSETEK_MOBILE_REPO`, and reviewed full lowercase `POSETEK_MOBILE_SHA`, run `node scripts/authenticated-emulator-smoke.mjs`. | Synthetic signup and four local Auth/Firestore/Functions/Storage emulators; exact demo project and loopback ports; no cloud credentials or live service. The harness checks canonical mobile Git origin, exact HEAD and private rule bytes against that commit, plus free local ports before launch. This is local trusted-code evidence, not a public PR gate. |
 | Production assembly | Follow [release and operations](RELEASE_AND_OPERATIONS.md); use the current captured live baseline and production build scripts. | Preserves existing deployed files and proves intended additions/changes. A plain Astro build is insufficient and historic file counts must not be hard-coded. |
 
 For local rules work, supply an absolute path to a reviewed checkout of the
