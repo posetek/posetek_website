@@ -11,11 +11,11 @@ fields; it is not an active environment definition.
 
 Check the actual remote `main` and hosting integration before integrating
 pipeline commits. GitHub's ordinary CI, Netlify Git publishing, the guarded
-whole-site builders, and the live site have different effects. Verify whether
-a source push would trigger Netlify, and follow the rollout record's verified
-suppression or isolation mechanism for every staged head, PR title, and merge
-commit as applicable. Do not use a generic CI-skip marker: the required CI
-must still run. A source merge is not production artifact promotion.
+whole-site builders, and the live site have different effects. The verified
+staged-source procedure uses `[skip netlify]` in every pushed head, PR title,
+and merge commit; check its effect and record it in the
+[rollout ledger](MAIN_ROLLOUT.md). Never use `[skip ci]`: required CI must still
+run. A source merge is not production artifact promotion.
 
 Capture the current deployed website inventory and its source mapping rather
 than freezing an earlier count. Preserve every existing live file unless a
