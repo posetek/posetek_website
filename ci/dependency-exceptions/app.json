@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "exceptions": [
+    {
+      "advisory": "https://github.com/advisories/GHSA-m9gg-hp2v-232j",
+      "path": ["firebase", "@firebase/firestore", "@grpc/grpc-js"],
+      "severity": "high",
+      "owner": "taiyyoson",
+      "reason": "Orchestrator-delegated seven-day acceptance: Firebase 12 Firestore pins the affected Node gRPC transport to ~1.9.0, but this Astro site builds static output without a server adapter; Firestore browser exports and built client assets do not include grpc-js. The malformed compressed gRPC message prerequisite is absent from this deployed browser path. Reassess on SSR, adapter, bundle, or SDK changes; do not override the upstream pin or downgrade Firebase without separate compatibility review.",
+      "expires": "2026-10-14"
+    }
+  ]
+}

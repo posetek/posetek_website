@@ -74,6 +74,8 @@ jobs:
       - run: npm --prefix app run check:svelte
       - run: npm --prefix app run build
       - run: npm --prefix app run build:marketing
+      - run: node --test ci/check-static-firestore-transport.test.mjs
+      - run: node scripts/check-static-firestore-transport.mjs
       - run: node app/node_modules/playwright/cli.js install --with-deps chromium
       - run: node --test scripts/browser-smoke.mjs
       # Production assembly still requires the reviewed live preservation baseline.
