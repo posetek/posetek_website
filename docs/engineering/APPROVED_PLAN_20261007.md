@@ -83,6 +83,17 @@ receive the full canonical-rules integration check under this decision. Record t
 coverage gap explicitly; local authorized emulator success does not establish an
 automatic hosted PR gate. No new hosted workflow or release activation is authorized.
 
+## Specific implementation approval: reviewed mobile revision input
+
+The user approved allowing the trusted mobile contract source workflow to accept
+a human-reviewed full immutable mobile commit SHA, avoiding a preliminary website
+main update for each partner revision. Retain trusted main-only workflow execution,
+reviewed source-environment protection, and exact source/artifact provenance. Limit
+retrieval/publication to approved schema and synthetic fixture data; this does not
+authorize disclosure of private Firebase rules or other mobile contents. Validate
+input as data and fail on malformed revisions. Preparation is approved; hosted
+activation, credentials, and environment configuration remain separate checkpoints.
+
 ## Binding implementation conditions
 
 - The orchestrator delegates to GPT-6-Sol with medium reasoning effort, with one
