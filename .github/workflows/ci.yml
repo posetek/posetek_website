@@ -28,6 +28,21 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -r ci/requirements.txt
       - run: python -m unittest discover -s ci -p 'test_*.py'
+  dependencies:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.3'
+      - run: python3 ci/run_dependency_audit.py app --baseline ci/dependency-exceptions/app.json
+      - run: python3 ci/run_dependency_audit.py functions --baseline ci/dependency-exceptions/functions.json
+      - run: python3 ci/run_dependency_audit.py legacy --baseline ci/dependency-exceptions/legacy.json
   unit:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -83,7 +98,7 @@ jobs:
   ci:
     name: ci
     if: ${{ always() }}
-    needs: [policy, unit, server, build]
+    needs: [policy, dependencies, unit, server, build]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     permissions: {}

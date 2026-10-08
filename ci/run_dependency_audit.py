@@ -1,4 +1,4 @@
-"""Inactive npm production-audit runner; requires reviewed exception files."""
+"""Production npm audit runner; requires reviewed, expiring exception files."""
 
 import argparse
 from datetime import date

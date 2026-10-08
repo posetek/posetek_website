@@ -1,7 +1,7 @@
-"""Offline candidate policy for npm audit --omit=dev JSON and a v3 lockfile.
+"""Policy for npm audit --omit=dev JSON and a v3 lockfile.
 
-This is not wired into hosted CI. Baseline entries are explicit, expiring
-exceptions; a generated audit snapshot is never an approved baseline.
+Baseline entries are explicit, expiring exceptions; a generated audit snapshot
+is never an approved baseline.
 """
 
 import argparse

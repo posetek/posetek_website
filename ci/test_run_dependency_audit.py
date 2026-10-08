@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import run_dependency_audit_candidate as candidate
+import run_dependency_audit as candidate
 
 
 def clean_report():
