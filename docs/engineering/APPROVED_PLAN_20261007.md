@@ -252,6 +252,22 @@ playbook files and retain any additional omissions instead of silently dropping 
 
 ## Delegation sequence
 
+### Hosted action-runtime maintenance follow-up (2026-10-08)
+
+The final hosted runs report Node 20 deprecation annotations for several pinned
+GitHub actions, including checkout and setup-python. GitHub executes those actions
+under its Node 24 compatibility runtime; the recorded CI checks passed. This
+concerns the JavaScript runtime used internally by the actions, not the selected
+Node 22.23.3 application test runtime. See the [backend hosted evidence](https://github.com/posetek/posetek-backend/actions/runs/37749712714)
+and [GitHub's action-runtime notice](https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/).
+
+Retain this as a component 10/11 maintenance item: review current official action
+releases, select supported immutable commit pins, inspect permission and input
+changes, and validate fresh hosted runs across all three repositories. Do not
+replace immutable pins with floating tags or suppress the warning. The source
+integration used the tested existing pins; an action-version migration was not
+part of this rollout and remains follow-up work.
+
 Wave 1: website, backend and mobile agents independently inventory and run safe
 available baseline checks in their assigned worktrees. The orchestrator owns this
 approval record, integration, user checkpoints, and shared documentation.
