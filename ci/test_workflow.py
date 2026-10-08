@@ -36,6 +36,9 @@ def validate(workflow):
     assert "node --test ci/verify-mobile-contract-artifact.test.cjs" in [
         step.get("run") for step in jobs["server"]["steps"]
     ], "contract artifact verifier regressions belong in the required server lane"
+    assert "node --test functions/legacy-upload-processor/*.test.cjs" in [
+        step.get("run") for step in jobs["server"]["steps"]
+    ], "the active legacy upload handler needs its routing and repair regressions"
     assert "node scripts/check-static-firestore-transport.mjs" in [
         step.get("run") for step in jobs["build"]["steps"]
     ], "the app gRPC exception depends on a static browser build"
@@ -88,6 +91,7 @@ class WorkflowTests(unittest.TestCase):
             lambda w: w["jobs"]["dependencies"]["steps"].pop(),
             lambda w: w["jobs"]["ci"]["needs"].remove("dependencies"),
             lambda w: w["jobs"]["server"]["steps"].pop(),
+            lambda w: w["jobs"]["server"]["steps"].pop(-2),
             lambda w: w["jobs"]["build"]["steps"].pop(-3),
             lambda w: w["jobs"]["build"]["steps"].pop(-4),
             lambda w: w["jobs"]["ci"]["needs"].remove("policy"),
