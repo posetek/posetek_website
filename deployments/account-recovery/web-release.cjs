@@ -9,7 +9,8 @@ const APP_ROUTES = ["/application.html", "/signin", "/join", "/organization", "/
 const FEEDBACK_ROUTES = ["/feedback", "/feedback/", "/feedback.html"];
 const sha1 = value => crypto.createHash("sha1").update(value).digest("hex");
 const sha256 = value => crypto.createHash("sha256").update(value).digest("hex");
-const requireThat = (value, message) => { if (!value) throw Error(message); };
+class ReleaseError extends Error {}
+const requireThat = (value, message) => { if (!value) throw new ReleaseError(message); };
 const json = filename => JSON.parse(fs.readFileSync(filename, "utf8"));
 const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === "object" ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
 const digest = value => sha256(JSON.stringify(canonical(value)));
@@ -55,8 +56,9 @@ function localInventory(directory) {
   visit(directory); return rows.sort((a, b) => a.path.localeCompare(b.path));
 }
 function compareArtifact(local, provider, metadataPath) {
-  const remote = new Map(provider.filter(row => row.path !== metadataPath).map(row => [row.path, row]));
-  requireThat(local.length === remote.size && local.every(row => { const peer = remote.get(row.path); return peer?.sha === row.sha && peer.size === row.size; }), "Local production-dist differs from the complete provider inventory");
+  const files = provider.filter(row => row.path !== metadataPath), remote = new Map(files.map(row => [row.path.toLowerCase(), row]));
+  requireThat(remote.size === files.length && new Set(local.map(row => row.path.toLowerCase())).size === local.length, "Case-colliding artifact inventory");
+  requireThat(local.length === remote.size && local.every(row => { const peer = remote.get(row.path.toLowerCase()); return peer?.sha === row.sha && peer.size === row.size; }), "Local production-dist differs from the complete provider inventory");
 }
 function preserveBefore(before, after, metadataPath) {
   const remote = new Map(after.map(row => [row.path, row]));
@@ -82,7 +84,7 @@ function effectiveConfig(bytes) {
     requireThat(match, "Unsupported effective configuration syntax");
     const key = match[1].replace(/^["']|["']$/g, ""); let value;
     try { value = match[2].startsWith("'") && match[2].endsWith("'") ? match[2].slice(1, -1) : JSON.parse(match[2]); }
-    catch { throw Error("Unsupported effective configuration value"); }
+    catch { throw new ReleaseError("Unsupported effective configuration value"); }
     table[key] = value;
   }
   requireThat(result.redirects.length > 0 && result.headers.length > 0, "Effective redirects and headers are missing");
@@ -139,6 +141,16 @@ async function verifyArtifact(context, api, fetchServed = served) {
   requireThat(sha1(oldConfig) === beforeMap.get(metadataPath)?.sha && oldConfig.length === beforeMap.get(metadataPath)?.size && sha1(newConfig) === providerMap.get(metadataPath)?.sha && newConfig.length === providerMap.get(metadataPath)?.size, "Provider configuration byte readback differs");
   requireThat(digest(effectiveConfig(oldConfig)) === digest(effectiveConfig(newConfig)), "Effective redirects or headers changed");
   const origin = `https://${deploymentId}--posetek.netlify.app`, priorOrigin = `https://${previous}--posetek.netlify.app`, routes = [];
+  const providerFolded = new Map(provider.map(row => [row.path.toLowerCase(), row])), beforeFolded = new Set(before.map(row => row.path.toLowerCase()));
+  const assetRoutes = [];
+  for (const row of local.filter(row => !beforeFolded.has(row.path.toLowerCase()))) {
+    const peer = providerFolded.get(row.path.toLowerCase());
+    for (const name of new Set([row.path, peer.path])) {
+      const response = await fetchServed(origin, name);
+      requireThat(response.sha === row.sha && response.size === row.size, "A new asset URL does not serve its exact reviewed bytes");
+      assetRoutes.push({ path: name, ...response });
+    }
+  }
   for (const route of preflight.served) {
     const response = await fetchServed(origin, route.path);
     requireThat(response.sha === route.sha, "Freshly captured served marketing bytes differ"); routes.push({ path: route.path, ...response });
@@ -150,8 +162,8 @@ async function verifyArtifact(context, api, fetchServed = served) {
     requireThat(next.sha === (APP_ROUTES.includes(name) ? app.sha : old.sha), "Application fallback or isolated feedback rewrite differs");
     routes.push({ path: name, ...next });
   }
-  write(run, "candidate-inventory.json", provider); write(run, "local-inventory.json", local); write(run, "candidate-route-audit.json", routes);
-  return { schemaVersion: 1, accepted: true, checkedAt: new Date().toISOString(), deploymentId, previousDeploymentId: previous, siteId: SITE, localInventorySha256: digest(local), providerInventorySha256: digest(provider), beforeInventorySha256: digest(before), committedBaselineSha256: context.baselineDigest, localFiles: local.length, providerFiles: provider.length, preservedBeforeFiles: before.length - 2, addedFiles: provider.filter(row => !beforeMap.has(row.path)).length, publicFilesByteVerified: PUBLIC_FILES.length, effectiveConfigurationPreserved: true, checkedRoutes: routes.length };
+  write(run, "candidate-inventory.json", provider); write(run, "local-inventory.json", local); write(run, "candidate-route-audit.json", routes); write(run, "candidate-asset-route-audit.json", assetRoutes);
+  return { schemaVersion: 1, accepted: true, checkedAt: new Date().toISOString(), deploymentId, previousDeploymentId: previous, siteId: SITE, localInventorySha256: digest(local), providerInventorySha256: digest(provider), beforeInventorySha256: digest(before), committedBaselineSha256: context.baselineDigest, localFiles: local.length, providerFiles: provider.length, preservedBeforeFiles: before.length - 2, addedFiles: provider.filter(row => !beforeMap.has(row.path)).length, publicFilesByteVerified: PUBLIC_FILES.length, effectiveConfigurationPreserved: true, checkedRoutes: routes.length, checkedNewAssetUrls: assetRoutes.length };
 }
 function readContext(options, root, baselineBytes) {
   const run = path.resolve(root, options.runDir); safePath(path.join(root, ".netlify"), run);
@@ -201,7 +213,7 @@ async function runMode(options, { root = ROOT, api = authorizedApi(), fetchServe
     const fresh = await verifyArtifact(context, api, fetchServed);
     requireThat(fresh.localInventorySha256 === audit.localInventorySha256 && fresh.providerInventorySha256 === audit.providerInventorySha256, "Production artifact differs from accepted draft");
     const direct = [];
-    for (const row of json(path.join(run, "candidate-route-audit.json"))) {
+    for (const row of [...json(path.join(run, "candidate-route-audit.json")), ...json(path.join(run, "candidate-asset-route-audit.json"))]) {
       const response = await fetchServed("https://posetek.net", row.path);
       requireThat(response.sha === row.sha && digest(response.headers) === digest(row.headers) && response.finalPath === row.finalPath, "Primary-host served content or effective headers differ from the reviewed draft");
       direct.push({ path: row.path, ...response });
@@ -219,5 +231,5 @@ if (require.main === module) {
     safePath(path.join(ROOT, ".netlify"), run);
     requireThat(cp.spawnSync("git", ["check-ignore", "--quiet", run], { cwd: ROOT, windowsHide: true }).status === 0, "Run directory must be ignored");
     return runMode(options);
-  }).then(result => console.log(JSON.stringify(result))).catch(error => { console.error("Website release stopped: " + error.message); process.exitCode = 1; });
+  }).then(result => console.log(JSON.stringify(result))).catch(error => { console.error("Website release stopped: " + (error instanceof ReleaseError ? error.message : "Inspect the private audit records and current baseline without exposing credentials")); process.exitCode = 1; });
 }

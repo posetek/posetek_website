@@ -27,7 +27,7 @@ async function fixture(callback) {
   };
   const fetchServed = async (origin, route) => {
     const files = origin.includes(PREVIOUS) ? beforeBytes : candidateBytes, name = route === "/" ? "/index.html" : W.APP_ROUTES.includes(route) ? "/application.html" : route.startsWith("/feedback") ? "/feedback.html" : route;
-    const bytes = files.get(name);
+    const bytes = [...files.entries()].find(([key]) => key.toLowerCase() === name.toLowerCase())?.[1];
     assert.ok(bytes, "route fixture exists");
     return { sha: sha(bytes), size: bytes.length, finalPath: route, headers: { "cache-control": "no-store", "content-security-policy": null, "referrer-policy": null, "x-content-type-options": null, "x-frame-options": null } };
   };
@@ -93,3 +93,23 @@ test("an unresolved write-ahead record cannot blindly replay promotion", async (
   const audit = await W.runMode(f.args("verify-draft"), f.deps); fs.writeFileSync(path.join(f.run, "promotion-intent.json"), "{}");
   await assert.rejects(W.runMode({ ...f.args("promote"), browserEvidence: f.evidence(audit) }, f.deps), /outcome is unresolved/); assert.equal(f.posts(), 0);
 }));
+test("case-only CLI normalization preserves the source digest and verifies source and provider asset URLs", async () => fixture(async f => {
+  const name = "/_astro/Recovery.MixedCase.js", bytes = Buffer.from("reviewed mixed-case asset");
+  f.candidateBytes.delete("/_astro/new.js"); f.candidateBytes.set(name, bytes);
+  fs.unlinkSync(path.join(f.output, "_astro/new.js")); fs.writeFileSync(path.join(f.output, name.slice(1)), bytes);
+  const api = f.deps.api;
+  f.deps.api = async (...args) => { const value = await api(...args); return args[0] === `/deploys/${CANDIDATE}/files` ? value.map(row => ({ ...row, path: row.path.toLowerCase() })) : value; };
+  const audit = await W.runMode(f.args("verify-draft"), f.deps);
+  assert.equal(audit.checkedNewAssetUrls, 2);
+  const local = JSON.parse(fs.readFileSync(path.join(f.run, "local-inventory.json"))); assert.ok(local.some(row => row.path === name));
+  const routes = JSON.parse(fs.readFileSync(path.join(f.run, "candidate-asset-route-audit.json"))); assert.deepEqual(routes.map(row => row.path), [name, name.toLowerCase()]);
+}));
+test("new normalized asset URLs must return the exact asset rather than application fallback", async () => fixture(async f => {
+  const read = f.deps.fetchServed;
+  f.deps.fetchServed = async (origin, route) => read(origin, route === "/_astro/new.js" ? "/application.html" : route);
+  await assert.rejects(W.runMode(f.args("verify-draft"), f.deps), /asset URL/); assert.equal(f.posts(), 0);
+}));
+test("case-normalized matching does not allow ambiguous local or provider inventories", () => {
+  const one = { path: "/One.js", sha: "a".repeat(40), size: 1 }, two = { ...one, path: "/one.js" };
+  assert.throws(() => W.compareArtifact([one, two], [one, two], "/netlify.toml"), /Case-colliding/);
+});
