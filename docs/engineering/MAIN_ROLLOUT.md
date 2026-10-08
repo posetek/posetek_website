@@ -11,7 +11,7 @@ not certify subsequent revisions.
 | --- | --- | --- | --- |
 | 1 — Documentation | Central website handbook and backend/mobile companion guides. | Review staged scope, navigation, factual readiness labels and preservation of existing product guidance. | Merged in all three repositories; links below. |
 | 2 — CI and tooling | Automatic PR/main checks, behavioral tests, developer commands, dependency policies and disabled reviewer/native/contract candidates. Website dependency patches accompany the audit gate so its baseline is reproducible. | Fresh-main integration, local policy tests, hosted CI on the PR revision, inspection of failures and skipped lanes. | Merged in all three repositories after green hosted PR checks. |
-| 3 — Runtime safety | Gateway environment validation and release preflight; website test-only emulator bootstrap. | Focused behavior tests, complete affected standing checks, review of release prerequisites and unchanged production configuration. | Preparing final source PRs; production activation remains separate. |
+| 3 — Runtime safety | Gateway environment validation and release preflight; website test-only emulator bootstrap. | Focused behavior tests, complete affected standing checks, review of release prerequisites and unchanged production configuration. | Merged after green hosted PR checks; production activation remains separate. |
 | Activation — separate | Provider credentials, supported protected reviewer identity, staging infrastructure, native assets, deployment identity and production releases. | Specific activation checklist evidence, supported hosting/permissions and explicit release authorization. | Held; Claude API key remains last. |
 
 Some repositories can finish with stage 2 because they have no changed deployed
@@ -97,6 +97,9 @@ row records a verified remote result, treat it as pending.
 | Website CI/tooling | [#42](https://github.com/posetek/posetek_website/pull/42) | `c21cee5737c35f2ca77952031c5405d305745661` | [PR run 37746753545](https://github.com/posetek/posetek_website/actions/runs/37746753545): all six jobs passed. Build 1m42s, unit/lint 45s, server 47s, dependency audit 29s, policy 7s, aggregate 3s. Netlify skipped. |
 | Backend CI/tooling | [#11](https://github.com/posetek/posetek-backend/pull/11) | `46bae9df8a3cea3497889b784f2c6285181c59e8` | [PR run 37746126865](https://github.com/posetek/posetek-backend/actions/runs/37746126865): all four jobs passed; 2,416 gateway tests passed/2 emulator cases skipped without the optional emulator; 19 authored replay cases passed. Gateway lane 9m21s (pytest 462.40s). |
 | Mobile CI/tooling | [#37](https://github.com/posetek/posetek-mobile-app/pull/37) | `c15d56094119189edd352d623a4f53bdb67c8fcf` | [PR run 37746363445](https://github.com/posetek/posetek-mobile-app/actions/runs/37746363445) and [main run 37746815933](https://github.com/posetek/posetek-mobile-app/actions/runs/37746815933) passed all five jobs. Rules 1,232 passed/zero skips; PR rules lane 2m4s, Swift syntax 45s, operations 11s, policy 14s, aggregate 4s. No native build. |
+| Website authenticated validation | [#43](https://github.com/posetek/posetek_website/pull/43) | `61f8b0c19fecc01f91c389643c6741ccf6b01836` | [PR run 37747539136](https://github.com/posetek/posetek_website/actions/runs/37747539136) and [main run 37747963151](https://github.com/posetek/posetek_website/actions/runs/37747963151) passed all six jobs. Test-only Firebase bootstrap, pinned private-rule source guard and authenticated harness are merged; local four-emulator journey passed separately. Netlify skipped. |
+| Backend runtime safety | [#12](https://github.com/posetek/posetek-backend/pull/12) | `2107f6ce6cfc6014c2093bd88a0f88538ec22173` | [PR run 37747584674](https://github.com/posetek/posetek-backend/actions/runs/37747584674) passed all four jobs: 2,440 gateway tests passed/2 optional emulator skips, 19 replay cases passed, 67 CI-policy tests passed. Gateway lane 5m27s (pytest 253.17s). [Post-merge run](https://github.com/posetek/posetek-backend/actions/runs/37748280686) tracks the exact merge. No deployment or live service configuration change. |
+| Mobile evidence documentation | [#38](https://github.com/posetek/posetek-mobile-app/pull/38) | `0c2fa439d811a1bc3d6ccdcfe6fb63cc2376855f` | [PR run 37747307295](https://github.com/posetek/posetek-mobile-app/actions/runs/37747307295) and [main run 37747690106](https://github.com/posetek/posetek-mobile-app/actions/runs/37747690106) passed all five jobs; rules 1,232 passed/zero skips. Companion guides distinguish active checks from native/reviewer activation still held. |
 
 Hosted integration exposed two previously local assumptions: the website frontend
 parity assertion needed private sibling source, and the Mac runner did not include
@@ -116,3 +119,28 @@ not turn their hosted skips into hosted emulator coverage.
 See [activation checklist](ACTIVATION_CHECKLIST.md), [security and review](SECURITY_AND_REVIEW.md)
 and [release and operations](RELEASE_AND_OPERATIONS.md) for deferred activation,
 cost, ownership, missing prerequisites and future implementation details.
+
+## Remaining activation boundaries
+
+All 42 items are navigable in the [component map](COMPONENT_MAP.md). Source
+integration does not close the following operational requirements:
+
+- AI reviewer: supported trusted hosting and protected identity, scoped GitHub App
+  access, durable ledger initialization, current model/price validation and actual
+  publication evidence. Claude credentials remain last; GitHub Team is deferred.
+- Dependency risk: three exact-path exception files expire 2026-10-14. Review
+  upstream fixes and runtime reachability before expiry; never silently renew.
+- Native/device: authorized usable assets, qualified Mac toolchain and actual
+  build/XCTest/physical-device acceptance. Swift parsing remains syntax-only.
+- Cross-repository: trusted schema/fixture source delivery and its ordinary PR
+  consumer are not active partner attestations. Canonical rules stay private.
+- Staging and release: provision isolated infrastructure, qualify production AMD64
+  images and reviewed gateway environment variables, configure deployment identity,
+  and execute the owning release procedures only with release authorization.
+- Operations: actual restore drills, alert routing, supported client acceptance,
+  live-model quality evaluation and measured recurring costs remain distinct from
+  source-level tests and preparation documents.
+
+The current integration preserved original checkpoint commits and original
+playbook material. Historical records remain evidence of their dated state;
+the map, current guides and this ledger identify subsequent changes.

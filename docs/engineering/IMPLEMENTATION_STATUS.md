@@ -1,9 +1,11 @@
 # Pipeline implementation status
 
-Updated October 8, 2026. This tracks the 42 approved components; approved does not mean
-implemented, enabled, or verified on hosted infrastructure. Website standing CI
-has reached `main` and passed its hosted PR run; the test-only runtime bootstrap
-remains staged. No production deployment or paid reviewer is enabled.
+Updated October 8, 2026. Documentation, standing CI and the prepared runtime
+safeguards are merged across the three repositories. Hosted PR checks passed
+before each code merge. [The rollout ledger](MAIN_ROLLOUT.md) records exact
+source and post-merge evidence; [the component map](COMPONENT_MAP.md) provides
+navigation for every item. No production deployment, new staging infrastructure,
+paid reviewer or remote merge protection is enabled by this integration.
 
 ## Decisions and operating rules
 
@@ -28,46 +30,46 @@ between assignments or that archived future scope is being implemented.
 | 2 Stack | Retained | Existing providers; Redis remains future scope. |
 | 3 Isolation | In use | Separate website/backend/mobile pipeline worktrees. |
 | 4 Commits | In use | Coherent checkpoints retained, including corrective commits. |
-| 5 Guidance | Partial | Approval ledger and central handbook added; staged integration and older historical wording remain explicit. |
-| 6 Baseline | Partial | Website/emulator and Linux ARM gateway results recorded; AMD64 and native execution unresolved. |
-| 7 Coverage review | Partial | Specific native/rules/gateway batches documented; wider user-facing coverage review remains. |
-| 8 Scheduling | Partial | PR/main/manual/merge-group candidate exists; expensive schedules not enabled. |
-| 9 Aggregate gate | Hosted CI passed | Website PR #42 aggregate and all five prerequisite lanes succeeded; server-enforced required-check settings remain separate. |
-| 10 Workflow security | Under review | Existing restrictions retained; source-workflow hardening and hosted controls outstanding. |
+| 5 Guidance | Integrated | Central handbook, complete component map and companion indexes cover current commands, decisions and historical guidance. |
+| 6 Baseline | Hosted and local evidence recorded | Three repositories passed hosted PR CI; local authenticated emulators and Linux ARM image results are distinct. Production AMD64 image qualification/native execution remain unresolved. |
+| 7 Coverage review | Batches documented | Website, gateway, rules and native maps explain protected behaviors and gaps; counts alone are not coverage. |
+| 8 Scheduling | Active | Every PR/main push runs CI in all three repositories; merge-group/manual triggers included. Expensive native/live schedules remain disabled. |
+| 9 Aggregate gate | Hosted CI passed | All three repositories passed every standing lane and aggregate ci; server-enforced required-check settings remain separate. |
+| 10 Workflow security | Source guards active | Read-only secret-free ephemeral PR jobs and action pins are active. Privileged source/reviewer credentials and hosted protection remain separate activation. |
 | 11 Dependencies | Partial | Local isolated dependencies restored; tested Linux locking remains. |
 | 12 Astro/lint | Hosted CI passed | Astro/build and lint ran in website PR #42; existing warnings remain visible. |
 | 13 Browser | Partial | Seven guest checks plus local signup/redemption/privacy/refresh emulator journey pass; no hosted authenticated gate. |
-| 14 Functions/tooling | Baseline verified locally | Ordinary server suite is independent of the private mobile checkout; three historical private-fixture skips remain. Explicit parity command is separate. |
-| 15 Gateway | Partial | Linux ARM 2,428 passed/3 explained skips and 19 replay profiles pass; separate real Firestore SDK cases 2/2 pass. |
+| 14 Functions/tooling | Hosted CI passed | Ordinary server tests plus legacy routing/repair run on PRs without private mobile source; three historical fixture skips remain. Explicit frontend/server parity is separate. |
+| 15 Gateway | Hosted CI passed | Runtime stage: 2,440 passed/2 optional emulator skips, 19 replay cases passed. Separate local real SDK emulator cases 2/2 passed; no live model evaluation. |
 | 16 Processing | Inventory prepared | Client-side native coverage prioritized; no new legacy server suite. |
-| 17 Rules | Baseline verified | 1,232 emulator tests across 11 suites and 40 publisher tests pass locally. |
+| 17 Rules | Hosted CI passed | 1,232 emulator tests across 11 suites and 40 publisher tests pass; receipt artifact uploaded. No rules deployment. |
 | 18 Cross-repo | In progress | Trusted manual source candidate; active PR handoff/required gate still incomplete. |
 | 19 Compatibility | Partial | Backend matrix and existing tests mapped; cross-client release checks remain. |
-| 20 Native CI | Preparation verified locally | Runner handoff and five prerequisite tests; missing models/clips/Pods prevent native evidence. |
+| 20 Native CI | Prepared, inactive | Prerequisites and strict result handling have synthetic tests. Worktree lacks ignored models/Pods; primary has those, but authorized usable clips remain missing/incomplete. No full native execution. |
 | 21 Device acceptance | Existing protocol retained | Protocol mapped; new device acceptance not performed. |
-| 22 Live evaluations | Pending preparation | Six-case disabled proposal and quality/budget requirements prepared; no paid runs. |
+| 22 Live evaluations | Prepared, inactive | Six-case proposal and quality/budget requirements documented; no paid runs. |
 | 23 Exceptions | Register prepared | EXCEPTIONS.md records exact gaps and closure evidence; permanent maintainer assignments remain. |
 | 24 Merge protections | Remote audit complete | Public website unprotected; private repository APIs require paid plan. No settings activated. |
 | 25 Code owners | Pending names | No placeholder or invented owners installed. |
 | 26 Scanning | Hosted CI passed | Website dependency lane passed on PR #42 across app, Functions and legacy. Exact-path delegated exceptions expire 2026-10-14; findings remain visible. Remote required-check enforcement remains separate. |
 | 27 Reviewer | Backend coordinator prepared, disabled | Offline report and mocked coordinator tests pass; provider credentials, publication and hosted enforcement are not active. |
 | 28 Reviewer limits | Prepared, not activated | Bounded review and durable shared budget coordinator implemented in backend; Sonnet API and $5/day shared/$1 attempt approved, exact model/provider activation pending. |
-| 29 Staging | Guard implemented locally | Explicit environment/project/buckets and startup preflight tested; migration inputs required before release. No project provisioned. |
+| 29 Staging | Runtime guard merged | Explicit environment/project/buckets and release preflight passed local/hosted tests. Live configuration migration and staging provisioning have not occurred. |
 | 30 Deployment identity | Design only | OIDC/IAM configuration and activation still require reviewed specifics. |
 | 31 Website release | Partial | Guarded publisher retained; full hosted publishing configuration review remains. |
 | 32 Gateway release | Retained and documented | Canonical script preserved; Linux ARM image tested, production AMD64 remains unverified. |
-| 33 Functions/index/data | Partial | Release-order interfaces documented; detailed platform rollout preparation remains. |
+| 33 Functions/index/data | Handoff prepared | Release order, compatibility, readiness and recovery requirements documented; execution and operational verification remain separate. |
 | 34 iOS release | Retained | Native preparation references physical acceptance and TestFlight gates. |
 | 35 Receipts/recovery | Partial | Offline structural receipt validator tested; evidence verification/rehearsal not completed. |
 | 36 Production/drift | Design only | Existing alarm preserved; new checks and routing not activated. |
 | 37 Operations | Partial | Recovery design underway; restore/alert delivery not verified. |
-| 38 Speed/cost | Partial | Local runtimes captured; hosted runner/cost baseline absent. |
+| 38 Speed/cost | First hosted timings recorded | Lane durations are in MAIN_ROLLOUT.md; no billing prediction or coverage-reducing optimization is inferred. |
 | 39 Queue/previews | Deferred | Archived in future register. |
 | 40 Autonomous work | Deferred | Archived, including personalized account-specific skills. |
 | 41 Extra mechanisms | Deferred | Archived with concerns and reconsideration conditions. |
-| 42 Documentation | Integrated, updates ongoing | Central handbook, full 12-file mobile adoption audit and future register are on `main`; release/activation evidence must continue to be updated. |
+| 42 Documentation | Integrated | Central handbook, complete component map, companion indexes, twelve-playbook audit, approved/future registers and rollout ledger are linked; maintain evidence as changes land. |
 
-## Evidence checkpoints
+## Historical evidence checkpoints
 
 - Website `461c17a`: Astro browser adaptation; 1,660 frontend tests, 1,083 Node
   passes/three fixture skips, seven guest browser checks, Svelte and builds pass.

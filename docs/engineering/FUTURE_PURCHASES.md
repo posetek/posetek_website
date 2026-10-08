@@ -50,7 +50,10 @@ These supersede earlier proposals requiring an independent human merge approval:
   findings are advisory and do not independently block a human merge.
 - Approved model-spend ceilings: USD 5 per day **shared across all three
   repositories**, and USD 1 per attempt; failures count. These are ceilings, not
-  cost estimates. Shared accounting and enforcement remain to be implemented.
+  cost estimates. Shared durable reservation accounting is implemented and tested
+  offline in the backend coordinator. Trusted hosted activation, real provider
+  billing and publication remain unverified and disabled; see the
+  [activation checklist](ACTIVATION_CHECKLIST.md).
 - User, `dk242`, and Nolan (user supplied handle `athyleticsOG`) may author and
   merge their own PRs. Verify exact account/team mappings before changing access.
 - New maintainers can be granted repository Write access through GitHub; Admin
