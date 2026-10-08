@@ -1,0 +1,78 @@
+name: Mobile contract source candidate
+
+# Trusted source preparation only. No pull request code is checked out or run.
+# Configure the mobile-contract-source environment to allow protected main only,
+# with a required reviewer and its App key stored as an environment secret.
+# This workflow is not a required PR gate until artifact handoff is reviewed.
+on:
+  workflow_dispatch:
+    inputs:
+      mobile_sha:
+        description: Reviewed full mobile commit SHA for public contract data
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: mobile-contract-source
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout trusted website policy
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Validate default branch and immutable revision
+        id: revision
+        shell: bash
+        env:
+          REVIEWED_MOBILE_SHA: ${{ inputs.mobile_sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" != workflow_dispatch || "$GITHUB_REF" != refs/heads/main ]]; then
+            echo 'Trusted source preparation runs only from main' >&2
+            exit 1
+          fi
+          mobile_sha="$REVIEWED_MOBILE_SHA"
+          if [[ ! "$mobile_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo 'Reviewed mobile revision must be a full lowercase commit SHA' >&2
+            exit 1
+          fi
+          printf 'sha=%s\n' "$mobile_sha" >> "$GITHUB_OUTPUT"
+      - name: Create mobile contents token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.POSETEK_CI_APP_CLIENT_ID }}
+          private-key: ${{ secrets.POSETEK_CI_APP_PRIVATE_KEY }}
+          owner: posetek
+          repositories: posetek-mobile-app
+          permission-contents: read
+      - name: Retrieve reviewed mobile commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: posetek/posetek-mobile-app
+          ref: ${{ steps.revision.outputs.sha }}
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: false
+          path: mobile
+      - name: Verify and stage contract data
+        shell: bash
+        env:
+          MOBILE_DIR: mobile
+          EXPECTED_SHA: ${{ steps.revision.outputs.sha }}
+          ARTIFACT_ROOT: ${{ runner.temp }}/mobile-contract-artifact
+        run: |
+          set -euo pipefail
+          bash ci/stage-mobile-contract.sh
+      - name: Save contract data only
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mobile-contract-${{ steps.revision.outputs.sha }}
+          path: ${{ runner.temp }}/mobile-contract-artifact/
+          if-no-files-found: error
+          retention-days: 7

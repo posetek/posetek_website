@@ -1,0 +1,118 @@
+name: CI
+
+# No path filters: the stable gate must report for every PR, including policy edits.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+  workflow_dispatch:
+
+permissions: {}
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  policy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r ci/requirements.txt
+      - run: python -m unittest discover -s ci -p 'test_*.py'
+  dependencies:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.3'
+      - run: python3 ci/run_dependency_audit.py app --baseline ci/dependency-exceptions/app.json
+      - run: python3 ci/run_dependency_audit.py functions --baseline ci/dependency-exceptions/functions.json
+      - run: python3 ci/run_dependency_audit.py legacy --baseline ci/dependency-exceptions/legacy.json
+  unit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.3'
+      - run: npm --prefix app ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix app test
+      - run: npm --prefix app run lint
+  server:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.3'
+      - run: npm --prefix functions ci --ignore-scripts --no-audit --no-fund
+      - run: node --test functions/*.test.js scripts/*.test.cjs scripts/*.test.mjs
+      - run: node --test ci/verify-mobile-contract-artifact.test.cjs
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.3'
+      - run: npm --prefix app ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix app run check:svelte
+      - run: npm --prefix app run build
+      - run: npm --prefix app run build:marketing
+      - run: node --test ci/check-static-firestore-transport.test.mjs
+      - run: node scripts/check-static-firestore-transport.mjs
+      - run: node app/node_modules/playwright/cli.js install --with-deps chromium
+      - run: node --test scripts/browser-smoke.mjs
+      # Production assembly still requires the reviewed live preservation baseline.
+      # These are compile checks, not a production artifact or a deployment.
+  ci:
+    name: ci
+    if: ${{ always() }}
+    needs: [policy, dependencies, unit, server, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      # Missing, cancelled and skipped lanes must never become a successful gate.
+      - name: Require every lane to succeed
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          results = json.loads(os.environ['RESULTS'])
+          failed = {name: job['result'] for name, job in results.items() if job['result'] != 'success'}
+          if not results or failed:
+              raise SystemExit(f'CI incomplete or failed: {failed}')
+          print('All required lanes passed')
+          PY
