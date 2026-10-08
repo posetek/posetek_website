@@ -24,7 +24,7 @@ firebase projects:list --json --non-interactive
 node deployments/account-recovery/owner-session.cjs .netlify/account-recovery-owner.json
 python deployments/account-recovery/prepare.py --mode prepare --run-dir .netlify/account-recovery-backend --credential-file .netlify/account-recovery-owner.json
 npm --prefix .netlify/account-recovery-backend/source ci --ignore-scripts --no-audit --no-fund
-firebase deploy --only functions:getAccountAccessLink,functions:completeAccountAccessLink,functions:listAccountAccessLinks,functions:revokeAccountAccessLink,functions:inspectPlayerRecovery,functions:issuePlayerRecovery,functions:submitAccountRecoveryRequest,functions:listAccountRecoveryRequests,functions:updateAccountRecoveryRequest,functions:confirmAccountRecovery --config .netlify/account-recovery-backend/firebase.json --project kickai-69dd0 --non-interactive
+firebase deploy --only "functions:getAccountAccessLink,functions:completeAccountAccessLink,functions:listAccountAccessLinks,functions:revokeAccountAccessLink,functions:inspectPlayerRecovery,functions:issuePlayerRecovery,functions:submitAccountRecoveryRequest,functions:listAccountRecoveryRequests,functions:updateAccountRecoveryRequest,functions:confirmAccountRecovery" --config .netlify/account-recovery-backend/firebase.json --project kickai-69dd0 --non-interactive
 python deployments/account-recovery/prepare.py --mode verify --run-dir .netlify/account-recovery-backend --credential-file .netlify/account-recovery-owner.json
 ```
 
@@ -64,6 +64,24 @@ recovery makes no feedback document change. Verify every candidate provider file
 and all predecessor records other than the application/generated metadata, then
 perform browser acceptance on the immutable draft before exact draft promotion.
 Reconcile the baseline and pass its ordinary preservation build afterward.
+Verify production while the accepted local artifact remains intact, before that
+ordinary build. If historical HTML aliases are rewritten by Netlify's pretty-URL
+serving, seed their baseline cache only with checksum-and-size-verified original
+bytes from the accepted artifact or authenticated raw provider API. Never adopt
+rewritten served bytes or weaken the checksum guard.
+
+`web-release.cjs` verifies the complete provider inventory against the local
+artifact, predecessor preservation, effective routing/headers and new asset
+URLs. Netlify's filename normalization is accepted only with collision-free
+paths and exact served bytes. Promotion requires successful browser evidence
+bound to the accepted artifact digest, retains an intent receipt for interrupted
+responses, and publishes only the explicit new reviewed draft without rebuilding.
+
+```powershell
+node deployments/account-recovery/web-release.cjs verify-draft --run-dir .netlify/account-recovery-web --deployment-id "NEW_REVIEWED_DRAFT_ID"
+node deployments/account-recovery/web-release.cjs promote --run-dir .netlify/account-recovery-web --deployment-id "NEW_REVIEWED_DRAFT_ID" --browser-evidence .netlify/account-recovery-web/browser-evidence.json
+node deployments/account-recovery/web-release.cjs verify-production --run-dir .netlify/account-recovery-web --deployment-id "NEW_REVIEWED_DRAFT_ID"
+```
 
 The fixture tool does not touch real accounts or send email. Run it only after
 the scoped backend and indexes are verified. Fixture account IDs, selected player
@@ -118,4 +136,5 @@ Offline checks:
 ```powershell
 python -m unittest discover -s deployments/account-recovery -p "test_*.py"
 node --test deployments/account-recovery/entrypoints.test.cjs
+node --test deployments/account-recovery/web-release.test.cjs
 ```

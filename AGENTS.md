@@ -1,22 +1,15 @@
 # PoseTek website context
 
 <!-- player-account-recovery-current:start -->
-## Player account recovery extension
+## Current player account recovery release
 
-Read `docs/PLAYER_ACCOUNT_RECOVERY.md` and `deployments/account-recovery/README.md`
-before recovery changes. Active canonical organization managers may issue scoped
-player recovery after identity confirmation and recent sign-in; global/staff
-recovery remains PoseTek-only. Bind exact current Auth identity through unique
-canonical ownership, never names or profile/signup email. Public help claims
-remain unverified and never authorize recovery. Link sharing, credential change
-and fresh password sign-in are distinct evidence. Keep request/grant/audit state
-server-only, private case evidence out of Git, and the existing uncertain-write
-protections. Publication evidence must be verified separately; implementation
-does not claim a real player's account has been recovered.
+Website `6ac73b9c8091f2ef117b22bf`, runtime source `293acca795c4baddf279a23e9792404f97336326`, was published October 8, 2026 at 12:03:50 AM PDT from the exact reviewed draft. Active canonical organization managers may recover enabled, password-based player accounts only within their own organization after identity confirmation and sign-in within five minutes; global/staff recovery remains PoseTek-only. Exact current Auth identity must resolve through unique explicit player ownership. Public help claims remain unverified. Preserve the durable uncertain Auth-write protections. Share the private one-time 30-minute link manually; sharing, password update and fresh same-account password sign-in are separate evidence. Requests use 90-day TTL and all recovery state remains server-only.
+
+Ten scoped functions are source/configuration/IAM verified, all 120 unrelated functions are unchanged, and required indexes and TTL policies are ready. Hosted and production synthetic acceptance passed; the 1,872-file preservation baseline passed the ordinary build. Approved marketing, isolated feedback, P icons, teammate navigation and training records are preserved. Recovery supports the existing website and mobile password sign-in; no native UI, rules, gateway, catalog or acceptance gate was released. All seven owned synthetic accounts were removed; delayed independent readback found zero owned, descendant or scoped-query documents with verification browser and copied owner credential files removed. No real account recovery is claimed. Read [the recovery handoff](docs/PLAYER_ACCOUNT_RECOVERY.md), [production evidence](deployment/PLAYER_ACCOUNT_RECOVERY_PRODUCTION.json), [scoped operations](deployments/account-recovery/README.md) and [PR #40](https://github.com/posetek/posetek_website/pull/40). Keep private case evidence and credentials out of Git.
 <!-- player-account-recovery-current:end -->
 
 <!-- organization-navigation-current:start -->
-## Current organization manager navigation release
+## Historical organization manager navigation release
 
 Website `6ac6c5c6cebb1cb580004fae`, runtime source `0a7fe6d`, was published October 7, 2026 at 3:28:24 PM PDT. Kai's PR #39 retains organization navigation across manager Organization, Insights, Planner and Community. Planner links follow the currently verified selection while preserving unsaved intake and draft state. Existing admin/coach access and the preceding coach release are retained.
 

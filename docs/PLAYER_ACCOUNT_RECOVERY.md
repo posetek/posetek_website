@@ -1,9 +1,14 @@
 # Player password recovery and administrator assistance
 
-Implementation handoff, October 7, 2026. This document describes the player
-recovery extension. Publication and live acceptance must be recorded separately;
-the existing [email-free account access](EMAIL_FREE_ACCOUNT_ACCESS.md) receipt
-does not establish deployment of these additions.
+Production handoff, October 8, 2026. Website `6ac73b9c8091f2ef117b22bf`, runtime
+source `293acca795c4baddf279a23e9792404f97336326`, was published at 12:03:50 AM PDT
+from the exact reviewed draft. Tracked help, scoped organization-manager recovery
+and fresh same-account sign-in confirmation are live. Read [production evidence](../deployment/PLAYER_ACCOUNT_RECOVERY_PRODUCTION.json),
+[PR #40](https://github.com/posetek/posetek_website/pull/40) and the
+[scoped operations procedure](../deployments/account-recovery/README.md).
+The existing [email-free account access](EMAIL_FREE_ACCOUNT_ACCESS.md) remains
+the foundation. This website-first release supports the same Firebase account's
+existing mobile password sign-in without changing or releasing native recovery UI.
 
 ## Player and administrator process
 
@@ -85,8 +90,10 @@ operation is acknowledged with its code before obtaining a fresh session. The
 confirmation acknowledgement is bounded to three seconds and never gates access
 or repeats a password write. Manually closing a request is not recovery proof.
 
-Requests expire after 90 days through `expiresAt` TTL. Recovery codes, passwords
-and authentication tokens stay out of persistent browser storage, logs and Git.
+Requests expire after 90 days through `expiresAt` TTL. The recovery UI keeps
+codes, passwords and contact inputs in memory without adding browser storage.
+Normal Firebase Auth session persistence remains. Recovery secrets, contact
+details and authentication tokens are excluded from logs and Git.
 The link fragment is removed before application tracking; recovery forms mask
 contact and credential fields. Private acceptance journals and fixture identifiers
 remain in ignored operator storage. Account/privacy erasure must include bound
@@ -95,24 +102,49 @@ erasure; TTL does not replace a verified deletion request.
 
 ## Validation and publication
 
-Test canonical player/account uniqueness, current organization-manager authority,
-privileged-target exclusion, scoped listing/revocation/replacement, ownership
+The verified release covers player/account uniqueness, current canonical manager
+authority, privileged-target exclusion, scoped list/revoke/replacement, ownership
 transfers, issuer removal, expiry, concurrent issuance and interrupted Auth writes.
-Test public intake acknowledgement/routing/rate limits/retries and concurrent
-request handling. Validate the public, organization and PoseTek-admin website
-flows at phone widths and desktop, with keyboard navigation and stale account
-changes. Live acceptance uses owned synthetic accounts and verifies unchanged
-player/training records; remove fixtures and independently confirm zero residue.
+It also covers generic public acknowledgement, exact-account routing, rate limits,
+duplicate-safe retries, concurrent request handling and account/selection changes.
+Owned synthetic browser acceptance exercised public, organization and PoseTek-admin
+flows at desktop and phone widths, keyboard controls, manual sharing, actual
+same-UID password sign-in, fresh confirmation and dashboard access. Account providers and verification were preserved. Four player records and three
+canonical memberships matched exactly; fixture results and workouts started empty
+and remained empty. This does not establish preservation of nonempty training data.
 
-Publish only the scoped account-recovery backend before exposing the frontend.
-Verify exact deployed source, configuration/IAM, TTL/index readiness and unchanged
-unrelated functions. Use the guarded Astro application build with freshly verified
-marketing and existing feedback bytes, validate the hosted draft, promote that
-exact artifact, reconcile the preservation baseline and run its ordinary build.
-Record publication evidence without player identities, contact details or secrets.
+Validation passed:
 
-Canonical Firestore/Storage rules are tested through the mobile-owned suite and
-are never published from this website checkout. Gateway, native UI, training
-catalog and held content remain separate release scopes. Push source and handoff
-changes with `[skip netlify]` so an ordinary Git build does not substitute for
-the reviewed application release.
+- 1,012 backend and 1,895 frontend tests, TypeScript, and 32 local rendered checks.
+- 313 assertions against canonical mobile-owned rules and 353 against the exact
+  read-only capture of published rules, including private recovery client denials.
+- 34 live callable/API checks, 50 hosted draft checks and 43 positive production checks.
+- 47 release guards, 36 operator tests, four transport tests and 15 artifact tests.
+
+The ten scoped functions passed exact deployed-source, configuration/IAM and
+transport verification; all 120 unrelated functions remain unchanged. Required
+indexes are READY and TTL policies ACTIVE. The reviewed application preserved
+freshly captured Players/Coaches marketing, isolated feedback, stable P icons,
+teammate navigation and effective routing/headers. All 1,874 artifact files match
+1,875 provider records, with only the prior application/generated metadata changed
+and 18 runtime assets added. That exact hosted draft was promoted, verified in
+production, and reconciled into the 1,872-file baseline; its ordinary preservation
+build passed. See [production evidence](../deployment/PLAYER_ACCOUNT_RECOVERY_PRODUCTION.json).
+
+All seven owned synthetic accounts were removed. Delayed independent readback
+found zero known, descendant or scoped-query documents, including after removal
+of four late Insight projections. Temporary browser and copied owner credential
+files were removed; the original authorized Firebase CLI configuration was
+retained. Acceptance does not claim that any real player's password was changed. Private journals, fixture identifiers, credentials
+and case details remain outside Git. Shared operational rate counters retain their
+ordinary TTL.
+
+No Firestore/Storage rules, gateway, native UI, training catalog or held content
+was published. The exact published rules were captured and tested locally without
+production data writes; their unrelated testing/diagnostic differences from mobile
+main do not change the verified recovery default denials. Existing native/content
+acceptance gates remain unchanged. Future releases follow the
+[scoped operations procedure](../deployments/account-recovery/README.md), including
+pushed source with `[skip netlify]`, backend verification before frontend exposure,
+immutable hosted acceptance, exact draft promotion, cleanup readback and baseline
+preservation.
