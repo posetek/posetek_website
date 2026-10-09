@@ -5,8 +5,18 @@ The engineering pipeline remains a separate staged candidate; use
 `docs/engineering/README.md` for its guides, status, and activation limits.
 Merging source is not promotion of a production website artifact.
 
+<!-- admin-profile-contacts-current:start -->
+## Current administrator player contact release
+
+Website `6ac95bd8769320160da44176`, runtime source `4b5cc6804732588dd0284d85634237b27b1d2107`, was published October 9, 2026 at 2:28:04 PM PDT from the exact verified candidate. Administrator player **Profile** tabs now show saved email and canonical `phone_number` in a read-only Contact details card. Missing values display **Not recorded** independently. Contacts come from the existing player read; no Auth lookup, extra request, profile write or permission change is introduced.
+
+All 1,929 artifact files match 1,930 provider records; 1,873 predecessor records remain exact and 55 runtime assets are added. The reconciled baseline protects 1,927 files and passed the ordinary preservation build. All 1,904 frontend tests, six hosted source CI checks, and ten candidate plus ten production browser checks passed. Long contacts fit 360/390/430px and desktop. Both owned synthetic accounts, player profiles, admin profile and derived documents were removed; delayed separate readback found zero residue and no temporary credentials.
+
+Fresh main `92c4e36403122939de62f7c2df53489ab2c9a259` is retained, including engineering CI and the explicit test-only Firebase emulator bootstrap. Paid reviewer/provider activation and pending backend dependency releases remain separate. No backend, rules, indexes, gateway, catalog or native release occurred. Marketing, isolated feedback, P icons, recovery, Kai’s workspace and training/content gates remain preserved. Read [the contact handoff](docs/ADMIN_PROFILE_CONTACTS.md), [production evidence](deployment/ADMIN_PROFILE_CONTACTS_PRODUCTION.json) and [PR #46](https://github.com/posetek/posetek_website/pull/46). The following release checkpoints remain historical and their feature contracts stay in force.
+<!-- admin-profile-contacts-current:end -->
+
 <!-- player-account-recovery-current:start -->
-## Current player account recovery release (2026-10-08)
+## Preserved player account recovery release (2026-10-08)
 
 Website `6ac73b9c8091f2ef117b22bf`, runtime source `293acca795c4baddf279a23e9792404f97336326`, was published October 8, 2026 at 12:03:50 AM PDT from the exact reviewed draft. Existing reset email remains available, with tracked signed-out help and private manager/PoseTek queues. Exact current Auth email and unique explicit canonical player ownership route matched cases; unverified public claims never authorize recovery. Active canonical organization managers may issue scoped recovery for their own enabled password-based players after identity confirmation and sign-in within five minutes. Global/staff recovery stays PoseTek-only. Links are one-time, expire after 30 minutes and are shared manually; sharing, password update and fresh same-UID password sign-in have separate evidence. Requests use 90-day TTL and remain server-only.
 

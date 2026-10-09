@@ -165,10 +165,22 @@ function PlayerProfilePanel({ player, onSaved }: { player: PlayerRow; onSaved: (
 }
 
 export function PlayerProfileContent({ player, data, onSaved, readOnly = false }: { player: PlayerRow; data: PlayerProfileData; onSaved: () => Promise<void>; readOnly?: boolean }) {
-  return <div className="admin-grid-two">
-    <ProfileCard key={String(player.raw?.updatedAt?.seconds ?? player.id)} player={player} coach={data.coach} onSaved={onSaved} readOnly={readOnly} />
-    <CoachNoteCard playerId={player.id} note={data.note} onSaved={onSaved} readOnly={readOnly} />
-  </div>;
+  const phone = typeof player.raw?.phone_number === 'string' ? player.raw.phone_number.trim() : '';
+  const email = player.email.trim();
+  return <>
+    <section className="admin-card admin-contact-details" aria-label="Player contact details">
+      <h3>Contact details</h3>
+      <p className="admin-note">Contact information saved on this player profile.</p>
+      <dl>
+        <div><dt>Email</dt><dd>{email || 'Not recorded'}</dd></div>
+        <div><dt>Phone number</dt><dd>{phone || 'Not recorded'}</dd></div>
+      </dl>
+    </section>
+    <div className="admin-grid-two">
+      <ProfileCard key={String(player.raw?.updatedAt?.seconds ?? player.id)} player={player} coach={data.coach} onSaved={onSaved} readOnly={readOnly} />
+      <CoachNoteCard playerId={player.id} note={data.note} onSaved={onSaved} readOnly={readOnly} />
+    </div>
+  </>;
 }
 
 function PlayerWorkoutsPanel({ player }: { player: PlayerRow }) {

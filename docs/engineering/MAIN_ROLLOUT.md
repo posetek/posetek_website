@@ -144,3 +144,15 @@ integration does not close the following operational requirements:
 The current integration preserved original checkpoint commits and original
 playbook material. Historical records remain evidence of their dated state;
 the map, current guides and this ledger identify subsequent changes.
+
+## Website contact release — October 9, 2026
+
+[PR #46](https://github.com/posetek/posetek_website/pull/46) builds from fresh main
+`92c4e36403122939de62f7c2df53489ab2c9a259` and preserves its CI and test-only emulator bootstrap.
+Website `6ac95bd8769320160da44176` promoted the exact verified artifact at
+21:28:04 UTC, with runtime source `4b5cc6804732588dd0284d85634237b27b1d2107`. The live website uses
+normal production Firebase; no emulator connection, paid reviewer, deployment
+identity, private mobile artifact delivery, backend dependency release or native
+acceptance was activated. [The release receipt](../../deployment/ADMIN_PROFILE_CONTACTS_PRODUCTION.json)
+records hosted/production checks and the reconciled preservation build. Review
+was explicit local Codex advisory review; the paid hosted coordinator stays inactive.

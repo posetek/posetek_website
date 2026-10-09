@@ -1,0 +1,146 @@
+{
+  "status": "production-verified",
+  "websiteDeploymentId": "6ac95bd8769320160da44176",
+  "runtimeSource": "4b5cc6804732588dd0284d85634237b27b1d2107",
+  "baseCommit": "92c4e36403122939de62f7c2df53489ab2c9a259",
+  "publishedAt": "2026-10-09T21:28:04.193Z",
+  "publishedLocal": "October 9, 2026 at 2:28:04 PM PDT",
+  "previousDeploymentId": "6ac73b9c8091f2ef117b22bf",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/46",
+  "scope": "Read-only saved player email and canonical phone_number in administrator Profile tab",
+  "dataContract": {
+    "email": "Existing signupEmail then email mapping",
+    "phone": "phone_number string",
+    "missing": "Not recorded independently",
+    "authIdentityLookup": false,
+    "additionalDataRequests": false,
+    "profileWrites": false,
+    "newEndpointsRulesOrSchemas": false
+  },
+  "artifact": {
+    "stage": "production",
+    "candidateId": "6ac95bd8769320160da44176",
+    "previousId": "6ac73b9c8091f2ef117b22bf",
+    "sourceCommit": "4b5cc6804732588dd0284d85634237b27b1d2107",
+    "verifiedAt": "2026-10-09T21:28:09.633Z",
+    "artifactFiles": 1929,
+    "providerFiles": 1930,
+    "fullInventory": true,
+    "preservedPredecessorFiles": 1873,
+    "changedPredecessorFiles": [
+      "/application.html",
+      "/netlify.toml (generated provider metadata)"
+    ],
+    "addedAssets": 55,
+    "applicationSha1": "d83e48855d311d348ddf022b9f43dd84a29ab585",
+    "feedbackSha1": "039a6cb1c652002dcd7e556359e5fbd1974ce426",
+    "verifiedApplicationRoutes": 17,
+    "feedbackRoutes": 3,
+    "marketingRoutes": 5,
+    "effectiveFeedbackHeadersPreserved": true,
+    "publishedAt": "2026-10-09T21:28:04.193Z",
+    "artifactManifestSha256": "5dc26845d8d98490ab4d34c418806227c080f6b3a8acb029c446c47de9e6cabf"
+  },
+  "verification": {
+    "frontendTests": 1904,
+    "frontendFiles": 165,
+    "focusedTests": 13,
+    "hostedCi": "https://github.com/posetek/posetek_website/actions/runs/37992378244",
+    "sourceCiAllSixChecksPassed": true,
+    "candidate": {
+      "checks": [
+        "Signed-out profile hides contacts and retains sign-in destination",
+        "Verified admin UI sign-in opens exact profile and saved signup email/canonical phone as read-only text",
+        "Long email wraps at 360/390/430 and desktop; one/two-column contact layout fits viewport",
+        "Refresh retains contacts and Profile tab",
+        "Results does not mount contacts; Profile restores them",
+        "Player switch clears prior values and independently shows missing email/phone",
+        "Browser Back restores original player Profile",
+        "Sign-out clears contact display",
+        "Authenticated player cannot access administrator contact view",
+        "Readback confirms both player profiles and contact data were not mutated"
+      ],
+      "captures": 5,
+      "viewportWidths": [
+        360,
+        390,
+        430,
+        1440
+      ],
+      "browserErrors": 0,
+      "consoleErrors": 0,
+      "blockedWrites": 0,
+      "completedAt": "2026-10-09T21:27:40.540Z"
+    },
+    "production": {
+      "checks": [
+        "Signed-out profile hides contacts and retains sign-in destination",
+        "Verified admin UI sign-in opens exact profile and saved signup email/canonical phone as read-only text",
+        "Long email wraps at 360/390/430 and desktop; one/two-column contact layout fits viewport",
+        "Refresh retains contacts and Profile tab",
+        "Results does not mount contacts; Profile restores them",
+        "Player switch clears prior values and independently shows missing email/phone",
+        "Browser Back restores original player Profile",
+        "Sign-out clears contact display",
+        "Authenticated player cannot access administrator contact view",
+        "Readback confirms both player profiles and contact data were not mutated"
+      ],
+      "captures": 5,
+      "viewportWidths": [
+        360,
+        390,
+        430,
+        1440
+      ],
+      "browserErrors": 0,
+      "consoleErrors": 0,
+      "blockedWrites": 0,
+      "completedAt": "2026-10-09T21:28:44.909Z"
+    },
+    "profileReadbackUnchanged": true,
+    "review": {
+      "status": "completed",
+      "kind": "Local Codex advisory review by implementing assistant",
+      "independent": false,
+      "paidHostedProviderActivated": false,
+      "sourceCommit": "4b5cc6804732588dd0284d85634237b27b1d2107",
+      "unresolvedFindings": 0
+    },
+    "ordinaryPreservationBuildPassed": true,
+    "protectedFiles": 1927,
+    "exactOriginalBytesCached": true
+  },
+  "cleanup": {
+    "verified": true,
+    "ownedAuthAccountsRemoved": 2,
+    "ownedPlayerProfilesRemoved": 2,
+    "ownedAdminProfileRemoved": true,
+    "derivedDescendantsRemoved": true,
+    "delayedReadback": "2026-10-09T21:30:25.856Z",
+    "ownedDocuments": 0,
+    "authAccounts": 0,
+    "privateCredentialsPresent": false,
+    "storageObjectsCreated": false,
+    "noRealPlayerMutations": true
+  },
+  "releaseBoundaries": {
+    "backend": false,
+    "rules": false,
+    "indexes": false,
+    "gateway": false,
+    "catalog": false,
+    "native": false,
+    "hostedReviewer": false,
+    "pendingBackendDependencyRelease": false
+  },
+  "preserved": [
+    "All 1873 unchanged predecessor provider records",
+    "Approved Players and Coaches marketing",
+    "Isolated feedback bytes and effective headers",
+    "Stable P icons",
+    "Player recovery and email-free staff access",
+    "Kai coach workspace and organization navigation",
+    "Training, assignments, private drafts and existing release gates"
+  ],
+  "recordedAt": "2026-10-09T21:30:25.950Z"
+}
