@@ -26,4 +26,28 @@ the hosted and production contact UI with synthetic contacts, test missing and
 long values and account/player changes, and verify administrator access gates.
 Preserve approved marketing, isolated feedback, icons, account recovery and all
 unrelated live files. A source merge alone does not publish this UI. Confirmed
-publication and preservation-baseline evidence will be added after verification.
+publication and preservation-baseline evidence are recorded below.
+
+## Confirmed release
+
+The exact hosted candidate `6ac95bd8769320160da44176` was promoted to
+Posetek.net on October 9, 2026 at 2:28:04 PM PDT, with runtime source
+`4b5cc6804732588dd0284d85634237b27b1d2107`. [Production evidence](../deployment/ADMIN_PROFILE_CONTACTS_PRODUCTION.json)
+records full inventory and serving verification, 1,904 passing frontend tests,
+green hosted source CI, ten candidate and ten production live checks and five
+captures per environment. Visual review covered mobile and desktop; saved contact
+readback was unchanged after refresh, player changes, tabs and account changes.
+
+The original marketing and feedback bytes and all 1,873 unchanged predecessor
+provider records remain exact. The reconciled 1,927-file baseline passed the
+ordinary build. Both synthetic Auth accounts, player profiles, admin identity
+record and derived descendants were removed; a delayed separate operator read
+confirmed no owned records or temporary credentials. No storage objects were
+created. Verification used only run-owned player contacts; no real contact data
+was modified.
+
+The completed advisory review was local Codex review by the implementing assistant,
+not an independently hosted or paid provider review. Hosted reviewer activation,
+backend dependency patches, canonical rules and native/content gates remain
+separate. PR [#46](https://github.com/posetek/posetek_website/pull/46) carries the
+source and confirmed release records; its final revision must pass CI before merge.
