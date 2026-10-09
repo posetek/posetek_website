@@ -16,7 +16,7 @@ vi.mock('../lib/useAccountLoad', () => ({ useAccountLoad: () => {
 vi.mock('./AdminResults', () => ({ default: () => { f.panels.push('results'); return <p>Recorded results fixture</p>; } }));
 vi.mock('./PlayerAiIncidents', () => ({ default: () => { f.panels.push('ai-incidents'); return <p>AI incidents fixture</p>; } }));
 vi.mock('./PlayerWorkoutHistory', () => ({ PlayerWorkoutHistoryContent: () => { f.panels.push('workouts'); return <p>Workout activity fixture</p>; } }));
-import { PlayerDetailContent } from './PlayerDetail';
+import { PlayerDetailContent, PlayerProfileContent } from './PlayerDetail';
 import type { PlayerRow } from '../lib/accounts';
 import type { PlayerDetailPanel } from '../lib/playerDetailData';
 const player: PlayerRow = { id: 'athlete', name: 'Test athlete', email: 'athlete@example.test', registered: true,
@@ -54,5 +54,39 @@ describe('full-width player workspace', () => {
     const html = render('workouts');
     expect(html).not.toContain('Start workout'); expect(html).not.toContain('Complete workout');
     expect(html).not.toContain('Resume workout');
+  });
+});
+
+describe('administrator player contact details', () => {
+  const profile = (value: PlayerRow) => renderToStaticMarkup(
+    <PlayerProfileContent player={value} data={{ coach: null, note: null }} onSaved={async () => {}} />,
+  );
+  it('shows saved email and canonical phone as read-only text in Profile', () => {
+    const html = profile({ ...player, raw: { phone_number: ' (925)-872-7208 ' } });
+    expect(html).toContain('aria-label="Player contact details"');
+    expect(html).toContain('<dt>Email</dt><dd>athlete@example.test</dd>');
+    expect(html).toContain('<dt>Phone number</dt><dd>(925)-872-7208</dd>');
+    expect(html).not.toContain('type="email"');
+    expect(html).not.toContain('type="tel"');
+  });
+  it('keeps each missing contact independent and does not coerce malformed phone values', () => {
+    expect(profile({ ...player, raw: {} })).toContain('<dt>Phone number</dt><dd>Not recorded</dd>');
+    const html = profile({ ...player, email: ' ', raw: { phone_number: { number: '9258727208' } } });
+    expect(html.match(/<dd>Not recorded<\/dd>/g)).toHaveLength(2);
+    expect(html).not.toContain('[object Object]');
+  });
+  it('renders the selected player contacts without retaining another player’s values', () => {
+    const first = profile({ ...player, raw: { phone_number: '(925)-872-7208' } });
+    const next = profile({ ...player, id: 'next', email: 'next@example.test', raw: { phone_number: '(415)-555-0123' } });
+    expect(first).toContain('athlete@example.test');
+    expect(next).toContain('next@example.test');
+    expect(next).toContain('(415)-555-0123');
+    expect(next).not.toContain('athlete@example.test');
+    expect(next).not.toContain('(925)-872-7208');
+  });
+  it('does not mount the contact card in Results, Workouts or AI incidents', () => {
+    for (const panel of ['results', 'workouts', 'ai-incidents'] as const) {
+      expect(render(panel)).not.toContain('aria-label="Player contact details"');
+    }
   });
 });
