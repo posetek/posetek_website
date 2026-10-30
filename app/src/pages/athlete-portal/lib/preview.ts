@@ -3,10 +3,13 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { parseReviewedResults, type ReviewedResult } from "../../../lib/reviewed-results";
+import { reviewedResultFixtures } from "../../../lib/reviewed-results-fixtures";
+import { visibleAttempts } from "../../../lib/result-values";
 import { DRILLS } from "./drills";
 import type { BodyPoint, StandingRow } from "./mobile";
 
-export function previewData(): { access: "preview"; playerId: string; athlete: any; reps: Record<string, any[]> } {
+export function previewData(reviewed = false): { access: "preview"; playerId: string; athlete: any; reps: Record<string, any[]>; reviewedResults?: ReviewedResult[] } {
   const athlete = { firstName: "Jordan", lastName: "Rivera", height: 178, weight: 72 };
   const now = Date.now();
   const make = (type: string, values: number[], extra: (value: number, index: number) => Record<string, any>) =>
@@ -26,6 +29,14 @@ export function previewData(): { access: "preview"; playerId: string; athlete: a
   reps.dribbling = make("dribbling", [5.08, 5.25, 5.39], value => ({ totalTime: value, totalDistance: 9.8, phase1Time: 1.92, phase2Time: 1.08, phase3Time: 2.08, avgBallDistance: .46 }));
   reps.changeOfDirection = make("changeOfDirection", [4.42, 4.55, 4.68], value => ({ totalTime: value, totalDistance: 9.8, phase1Time: 1.7, phase2Time: .91, phase3Time: 1.81, startFrame: 10, apexFrame: 60, endFrame: 112 }));
   reps.freeRecord = make("freeRecord", [1, 2], (_, index) => ({ sessionNumber: 2 - index, repNumber: 1, sessionFolder: `session${2 - index}`, repFolder: "kick1" }));
+  if (import.meta.env.DEV && reviewed) {
+    const rows = reviewedResultFixtures();
+    const visible = visibleAttempts(rows);
+    const reviewedReps = Object.fromEntries(DRILLS.map(d => [d.key, visible.filter(r => d.types.includes(String(r.repType)))]));
+    // A good left attempt coexists with the separately displayed right estimate.
+    reviewedReps.dribbling.push({ id: 'review-preview-qualified-left', repType: 'dribbling', sessionNumber: 1, repNumber: 1, createdAtMillis: Date.UTC(2026, 0, 10), totalTime: 8, dribble_foot: 'left', resultStatus: { qualified: true, duplicate: false, reason: 'complete', revisionId: null } } as any);
+    return { access: "preview", playerId: "review-preview-player", athlete: { firstName: "Jordan", lastName: "Example", age: 11 }, reps: reviewedReps, reviewedResults: parseReviewedResults(rows) };
+  }
   return { access: "preview", playerId: "preview-player", athlete, reps };
 }
 

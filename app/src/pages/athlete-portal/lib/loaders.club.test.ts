@@ -14,6 +14,7 @@ vi.mock("../../../lib/identity", () => ({ findCoach: mocks.coach, findPlayer: mo
 vi.mock("../../../lib/organization-data", () => ({ loadClubMembership: mocks.membership }));
 vi.mock("../../admin/lib/identity", () => ({ refreshAdminIdentity: mocks.admin }));
 import { loadAuthenticated, loadTeamStandings } from "./loaders";
+import { reviewedResultFixtures } from "../../../lib/reviewed-results-fixtures";
 const membership = { uid: "viewer", organizationId: "club", role: "coach", teamIds: ["blue"], status: "active" };
 function player(data = {}) {
   return { id: "original-player-doc", exists: true, data: () => ({ organizationId: "club", teamId: "blue", userUID: "athlete-auth", ...data }),
@@ -73,6 +74,16 @@ describe("club athlete handoff", () => {
     mocks.call.mockRejectedValue(new Error("Result evidence unavailable"));
     await expect(loadAuthenticated({ uid: "viewer" }, "original-player-doc")).rejects.toThrow("Result evidence unavailable");
     expect(mocks.freeRecords).not.toHaveBeenCalled();
+  });
+  it("keeps reviewed failed tests in a separate display projection without restoring failed measured reps", async () => {
+    mocks.own.mockReturnValue(true);
+    mocks.call.mockResolvedValue({ data: { version: 1, reps: reviewedResultFixtures() } });
+    const result = await loadAuthenticated({ uid: "athlete-auth" }, "original-player-doc");
+    expect(result.reviewedResults).toHaveLength(10);
+    expect(result.reviewedResults?.filter(r => r.status === 'retest_required')).toHaveLength(4);
+    const reps = Object.values(result.reps).flat();
+    expect(reps).toHaveLength(6);
+    expect(reps.every(r => !r.failedAttempt && r.resultStatus.qualified === false)).toBe(true);
   });
   it("asks the server for this athlete's actual team standings", async () => {
     await loadTeamStandings("original-player-doc");

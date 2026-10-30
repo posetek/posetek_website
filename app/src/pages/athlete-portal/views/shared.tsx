@@ -5,6 +5,7 @@
 
 import { Fragment } from "react";
 import type { Access } from "../lib/loaders";
+import type { ReviewedResult } from "../../../lib/reviewed-results";
 import type { ProvisionalEstimate } from "../../../lib/provisional-estimates";
 
 export interface PortalContext {
@@ -14,6 +15,7 @@ export interface PortalContext {
   notify: (text: string) => void;
   allStatsReps: () => any[];
   provisionalEstimates?: ProvisionalEstimate[];
+  reviewedResults?: ReviewedResult[];
   allResultReps?: () => any[];
 }
 

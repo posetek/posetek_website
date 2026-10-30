@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { auth, cloud, db } from '../../../lib/firebase';
+import { auth, db } from '../../../lib/firebase';
+import { parseReviewedResults } from '../../../lib/reviewed-results';
 import { visibleAttempts } from '../../../lib/result-values';
 import { parseProvisionalEstimates } from '../../../lib/provisional-estimates';
 import { DRILLS, drillByKey } from '../lib/drills';
 import { accepted, allStatsReps, normalizeRep } from '../lib/metrics';
+import { watchEffectiveResults } from '../lib/effective-results-watch';
 import type { PortalContext } from '../views/shared';
 import DrillDashboard from '../views/DrillDashboard';
 import SessionView from '../views/SessionView';
@@ -35,6 +37,7 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   const personal = usePersonalWorkouts(ctx.playerId!, preview, coachConfig);
   const [reps, setReps] = useState(initialReps), [athlete, setAthlete] = useState(ctx.athlete), [dataset, setDataset] = useState(defaultDataset);
   const [provisionalEstimates, setProvisionalEstimates] = useState(ctx.provisionalEstimates || []);
+  const [reviewedResults, setReviewedResults] = useState(ctx.reviewedResults || []);
   const [visited, setVisited] = useState(new Set([route.view])), [request, setRequest] = useState<Row | null>(null), [refreshError, setRefreshError] = useState('');
   const [feedbackInvitation, setFeedbackInvitation] = useState(false);
   const [feedbackOwner] = useState(() => ({ uid: auth.currentUser?.uid, playerId: ctx.playerId }));
@@ -62,28 +65,28 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   useEffect(() => {
     if (preview) return;
     const player = db.collection('players').doc(ctx.playerId!);
-    let alive = true, refreshVersion = 0;
     const stopPlayer = player.onSnapshot(d => { if (d.exists) setAthlete({ ...d.data(), id: d.id }); }, e => setRefreshError(e.message));
-    const stopReps = player.collection('reps').onSnapshot(() => {
-      const version = ++refreshVersion;
-      void cloud.httpsCallable('getAthleteEffectiveResults')({ playerId: ctx.playerId }).then(response => {
-        if (!alive || version !== refreshVersion) return;
-        const payload = response.data as Row;
-        const rows = visibleAttempts((payload.reps || []).map(normalizeRep));
+    const stopReps = watchEffectiveResults(ctx.playerId!, {
+      pending: () => { setReviewedResults([]); setProvisionalEstimates([]); },
+      result: payload => {
+        const sourceRows = payload.reps.map(normalizeRep);
+        const rows = visibleAttempts(sourceRows);
+        setReviewedResults(parseReviewedResults(sourceRows));
         setReps(old => Object.fromEntries(DRILLS.map(d => [d.key, d.key === 'freeRecord' ? old.freeRecord : rows.filter(r => accepted(r, d))])));
         setProvisionalEstimates(parseProvisionalEstimates(payload.provisionalEstimates));
         setRefreshError('');
-      }).catch(e => { if (alive && version === refreshVersion) { setProvisionalEstimates([]); setRefreshError(e.message); } });
-    }, e => setRefreshError(e.message));
+      },
+      error: error => setRefreshError(error.message),
+    });
     const stopBenchmarks = db.collection('benchmarks').doc('d1').onSnapshot(d => {
       const value = d.data();
       if (value?.schemaVersion === 1 && value.tier === 'd1' && value.cells && Number.isInteger(value.generation)) setDataset(old => value.generation > old.generation ? value : old);
     }, () => { /* bundled generation remains valid offline */ });
-    return () => { alive = false; ++refreshVersion; stopPlayer(); stopReps(); stopBenchmarks(); };
+    return () => { stopPlayer(); stopReps(); stopBenchmarks(); };
   }, [ctx.playerId, preview]);
   const all = useMemo(() => allStatsReps(reps), [reps]);
   const profile = useMemo(() => playerProfile(all, athlete, dataset), [all, athlete, dataset]);
-  const playerCtx = useMemo(() => ({ ...ctx, athlete, provisionalEstimates, allStatsReps: () => all, allResultReps: () => Object.values(reps).flat() }), [ctx, athlete, all, reps, provisionalEstimates]);
+  const playerCtx = useMemo(() => ({ ...ctx, athlete, provisionalEstimates, reviewedResults, allStatsReps: () => all, allResultReps: () => Object.values(reps).flat() }), [ctx, athlete, all, reps, provisionalEstimates, reviewedResults]);
   const go = (view: string, drill?: string, session?: string, rep?: string) => {
     if (route.view === 'training' && view !== 'training') window.dispatchEvent(new CustomEvent('posetek:player-route-leave'));
     const params = new URLSearchParams(location.search);
@@ -96,10 +99,10 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   return <PlayerShell activeView={route.view} search={location.search} pathname={location.pathname} onNavigate={view => go(view, view === 'drills' ? route.drill : undefined)} onSignOut={preview ? undefined : () => { void auth.signOut(); }}>
       {preview && <p className="player-preview-note">Local preview · sample data · no account changes</p>}
       {refreshError && <p className="player-error" role="status">Could not refresh your latest results: {refreshError}</p>}
-      {route.view === 'home' && <><PlayerProfile ctx={playerCtx} profile={profile} onWorkouts={() => go('training')} onLeaderboards={() => go('leaderboards')} onDrills={rep => go('drills', 'shooting', rep ? rep.sessionFolder || `session${rep.sessionNumber}` : undefined, rep?.id)} />{showResultsFeedback(ctx.access, profile.totalReps) && <PlayerResultsFeedbackLink />}</>}
+      {route.view === 'home' && <><PlayerProfile ctx={playerCtx} profile={profile} onReviewedResult={r => go('drills', r.drill, `session${r.sessionNumber}`, r.repId)} onWorkouts={() => go('training')} onLeaderboards={() => go('leaderboards')} onDrills={rep => go('drills', 'shooting', rep ? rep.sessionFolder || `session${rep.sessionNumber}` : undefined, rep?.id)} />{showResultsFeedback(ctx.access, profile.totalReps) && <PlayerResultsFeedbackLink />}</>}
       {visited.has('aiCoach') && <div hidden={route.view !== 'aiCoach'}><h1>Your AI Coach</h1><CoachChat playerId={ctx.playerId!} preview={preview} personalStore={personal} athlete={athlete} active={route.view === 'aiCoach'} onHandoff={r => { setRequest(r); if (r.conversationId) navigate({ pathname: location.pathname, search: personalDraftLink(location.search, r.conversationId) }); else go('training'); }} /></div>}
       {route.view === 'drills' && <section className="player-drills"><p className="eyebrow">Your measured progress</p><h1>Results</h1><p>Explore each test, follow your progress, and watch saved videos.</p><nav className="player-week-rail" aria-label="Drill results">{DRILLS.map(d => <button key={d.key} aria-pressed={d.key === route.drill} onClick={() => go('drills', d.key)}>{d.short || d.label}<small>{reps[d.key]?.length || 0} reps</small></button>)}</nav>
-        {route.session ? <SessionView drill={activeDrill} folder={route.session} selectedId={route.rep} reps={reps[activeDrill.key] || []} access={ctx.access} playerId={ctx.playerId} shareToken={null} onBack={() => go('drills', route.drill)} onSelectRep={id => go('drills', route.drill, route.session!, String(id))} /> : <DrillDashboard drill={activeDrill} reps={reps[activeDrill.key] || []} athlete={athlete} onOpenRep={(folder, id) => go('drills', route.drill, folder, String(id))} />}
+        {route.session ? <SessionView drill={activeDrill} folder={route.session} selectedId={route.rep} reps={reps[activeDrill.key] || []} reviewedResults={reviewedResults.filter(r => r.drill === activeDrill.key)} access={ctx.access} playerId={ctx.playerId} shareToken={null} onBack={() => go('drills', route.drill)} onSelectRep={id => go('drills', route.drill, route.session!, String(id))} /> : <DrillDashboard drill={activeDrill} reps={reps[activeDrill.key] || []} reviewedResults={reviewedResults.filter(r => r.drill === activeDrill.key)} athlete={athlete} onOpenRep={(folder, id) => go('drills', route.drill, folder, String(id))} />}
         <p className="muted-copy">Record and process new drills in the PoseTek app. Video appears here when it was saved to the cloud.</p>
         {showResultsFeedback(ctx.access, reps[activeDrill.key]?.length || 0) && <PlayerResultsFeedbackLink />}
       </section>}

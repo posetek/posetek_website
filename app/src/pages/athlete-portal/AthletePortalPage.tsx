@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../../styles/pose-portal.css";
 import { auth, cloud } from "../../lib/firebase";
+import { reviewRefreshIsCurrent, type ReviewedResult } from "../../lib/reviewed-results";
 import type { ProvisionalEstimate } from "../../lib/provisional-estimates";
 import AthleteStats from "../../components/athlete-stats/AthleteStats";
 import { DRILLS, drillByKey } from "./lib/drills";
@@ -65,6 +66,7 @@ export default function AthletePortalPage() {
   const [athlete, setAthlete] = useState<any>(null);
   const [reps, setReps] = useState<Record<string, any[]>>(() => Object.fromEntries(DRILLS.map(d => [d.key, []])));
   const [provisionalEstimates, setProvisionalEstimates] = useState<ProvisionalEstimate[]>([]);
+  const [reviewedResults, setReviewedResults] = useState<ReviewedResult[]>([]);
   const [view, setView] = useState("home");
   const [viewEpoch, setViewEpoch] = useState(0);
   const [drill, setDrill] = useState("shooting");
@@ -130,6 +132,7 @@ export default function AthletePortalPage() {
     setAthlete(data.athlete);
     setReps(data.reps);
     setProvisionalEstimates(data.access === "shared" ? [] : data.provisionalEstimates || []);
+    setReviewedResults(data.access === "shared" ? [] : data.reviewedResults || []);
     setView(nextView);
     setDrill(nextDrill);
     setSession(null);
@@ -147,7 +150,7 @@ export default function AthletePortalPage() {
       setPhase("error");
     };
     if (params.get("preview") === "1") {
-      finishLoad(previewData());
+      finishLoad(previewData(params.get("reviewed") === "1"));
       return;
     }
     if (shareToken) {
@@ -158,15 +161,20 @@ export default function AthletePortalPage() {
         .catch(error => fail(error, "shared"));
       return () => { cancelled = true; };
     }
+    let authVersion = 0;
     const unsubscribe = auth.onAuthStateChanged(user => {
+      const version = ++authVersion;
+      setReviewedResults([]);
+      setProvisionalEstimates([]);
+      setPhase("loading");
       if (!user) {
         const returnTo = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
         navigate(`/signin?returnTo=${returnTo}`, { replace: true });
         return;
       }
       loadAuthenticated(user, params.get("player"))
-        .then(data => { if (!cancelled) finishLoad(data); })
-        .catch(error => fail(error));
+        .then(data => { if (reviewRefreshIsCurrent(user.uid, auth.currentUser?.uid, !cancelled, version, authVersion)) finishLoad(data); })
+        .catch(error => { if (reviewRefreshIsCurrent(user.uid, auth.currentUser?.uid, !cancelled, version, authVersion)) fail(error); });
     });
     return () => {
       cancelled = true;
@@ -218,9 +226,9 @@ export default function AthletePortalPage() {
 
   const statsReps = () => allStatsReps(reps);
   const ctx: PortalContext = useMemo(
-    () => ({ access: (access || "athlete") as Access, playerId, athlete, notify, allStatsReps: statsReps, provisionalEstimates, allResultReps: () => Object.values(reps).flat() }),
+    () => ({ access: (access || "athlete") as Access, playerId, athlete, notify, allStatsReps: statsReps, provisionalEstimates, reviewedResults, allResultReps: () => Object.values(reps).flat() }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [access, playerId, athlete, reps, provisionalEstimates],
+    [access, playerId, athlete, reps, provisionalEstimates, reviewedResults],
   );
 
   const activeDrill = drillByKey(drill);

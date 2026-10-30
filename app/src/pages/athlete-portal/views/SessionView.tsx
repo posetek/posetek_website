@@ -5,6 +5,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useEffect, useState } from "react";
+import type { ReviewedResult } from "../../../lib/reviewed-results";
+import { ReviewedResultDetail } from "../player/ReviewedResults";
 import PosePlayback from "../../../components/PosePlayback";
 import {
   drawTrackingFrame,
@@ -37,6 +39,7 @@ interface SessionViewProps {
   folder: string;
   selectedId: any;
   reps: any[];
+  reviewedResults?: ReviewedResult[];
   access: Access;
   playerId: string | null;
   shareToken: string | null;
@@ -44,7 +47,8 @@ interface SessionViewProps {
   onSelectRep: (repId: any) => void;
 }
 
-export default function SessionView({ drill, folder, selectedId, reps, access, playerId, shareToken, onBack, onSelectRep }: SessionViewProps) {
+export default function SessionView({ drill, folder, selectedId, reps, reviewedResults = [], access, playerId, shareToken, onBack, onSelectRep }: SessionViewProps) {
+  const reviewed = reviewedResults.find(r => r.repId === String(selectedId) && `session${r.sessionNumber}` === folder);
   const sessionReps = reps
     .filter(rep => sessionFolder(rep) === folder)
     .sort((a, b) => repNumber(a) - repNumber(b));
@@ -73,7 +77,7 @@ export default function SessionView({ drill, folder, selectedId, reps, access, p
         ))}
       </nav>
       <section id="repViewer">
-        {selected ? (
+        {reviewed ? <ReviewedResultDetail result={reviewed} /> : selected ? (
           <RepViewer
             key={`${drill.key}:${String(selected.id)}`}
             drill={drill}

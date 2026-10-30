@@ -1,0 +1,13 @@
+.reviewed-results { margin-block: 1rem; }
+.reviewed-results ul { list-style: none; margin: 1rem 0 0; padding: 0; }
+.reviewed-results li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 0; border-top: 1px solid rgba(255,255,255,.12); }
+.reviewed-results h3 { margin: 0 0 .3rem; font-size: 1rem; }
+.reviewed-results small { color: #a8bcb3; }
+.reviewed-result-measurement { display: grid; justify-items: end; gap: .35rem; flex-shrink: 0; }
+.reviewed-result-badge { display: inline-block; width: fit-content; padding: .22rem .48rem; border-radius: .35rem; color: #f5ce89; background: rgba(245,206,137,.1); font-size: .68rem; letter-spacing: .06em; font-weight: 700; }
+.reviewed-retest { color: #d8e6df; background: rgba(216,230,223,.1); }
+.reviewed-result-value { display: block; font-size: 1.35rem; color: #f5f8f6; font-variant-numeric: tabular-nums; }
+.reviewed-result-detail { margin-top: 1rem; }
+.reviewed-result-detail .reviewed-result-value { margin-top: .6rem; font-size: 2rem; }
+.reviewed-result-detail p { max-width: 65ch; }
+@media (max-width: 420px) { .reviewed-results li { align-items: flex-start; gap: .65rem; } .reviewed-result-value { font-size: 1.15rem; } .reviewed-results h3 { font-size: .92rem; } .reviewed-result-measurement .hub-secondary { padding: .5rem .65rem; } }

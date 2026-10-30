@@ -1,12 +1,12 @@
 {
-  "deploymentId": "6ae3b61b65d402dd68565eb9",
-  "sourceCommit": null,
-  "url": "https://6ae3b61b65d402dd68565eb9--posetek.netlify.app",
+  "deploymentId": "6ae4fc4e990d28e8d584e696",
+  "sourceCommit": "63bae63653b86ea7b1725e90f0e7d516e5e35d7a",
+  "url": "https://6ae4fc4e990d28e8d584e696--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
-    "sha": "61db1d6f8f08801a2493a25cb3f62c0268361fcf",
-    "size": 4521,
+    "sha": "295d45ff436752e4ec158e01f34e77ae34af34ac",
+    "size": 3954,
     "note": "Protected Netlify CLI-generated metadata. Effective redirects and headers must be verified before release; this is not a served application asset."
   },
   "files": [
@@ -91,6 +91,11 @@
       "size": 3980
     },
     {
+      "path": "/_astro/account-access.dthq_8zp.js",
+      "sha": "eed85b3fba22045c50d9c072b859904e627f65e3",
+      "size": 4040
+    },
+    {
       "path": "/_astro/account-access.dv9i42tw.js",
       "sha": "0c0e141f49fc11143c303ae29e05a28978bf5d81",
       "size": 3980
@@ -151,6 +156,11 @@
       "size": 2545
     },
     {
+      "path": "/_astro/account-recovery.dol3_nvm.js",
+      "sha": "048ed46b70e191d90e46664aa64c496d8708eb82",
+      "size": 2518
+    },
+    {
       "path": "/_astro/accountaccess.4u6zlkkd.js",
       "sha": "31ce0f6f04726352bc1299444162e39ffe127b72",
       "size": 9920
@@ -184,6 +194,11 @@
       "path": "/_astro/accountaccess.c4ddlt7r.css",
       "sha": "76c8c2a578374dae6c181117611a0e6fd41f2e77",
       "size": 2491
+    },
+    {
+      "path": "/_astro/accountaccess.c9bzn3oc.js",
+      "sha": "7583027b9b2edbe188a4e91a51d39bbed7a9f258",
+      "size": 10198
     },
     {
       "path": "/_astro/accountaccess.cq8qxxij.js",
@@ -251,6 +266,11 @@
       "size": 3473
     },
     {
+      "path": "/_astro/accountrecoveryrequest.fjdmjfhd.js",
+      "sha": "909f04e4578de4858d0203cc3e953d5a82bef6a2",
+      "size": 3473
+    },
+    {
       "path": "/_astro/accountrecoveryworkspace.bjrwe5dl.js",
       "sha": "de091401c3f430387cd073dc4eb015d272534d44",
       "size": 13999
@@ -258,6 +278,11 @@
     {
       "path": "/_astro/accountrecoveryworkspace.cgxqlahk.js",
       "sha": "8cca441b7bdd18488fde9b482084af6ddd98cd03",
+      "size": 13999
+    },
+    {
+      "path": "/_astro/accountrecoveryworkspace.d6vpox9z.js",
+      "sha": "75b9aa2fa14e8fa8b32ca0fbe4609549df7283fa",
       "size": 13999
     },
     {
@@ -269,6 +294,11 @@
       "path": "/_astro/accountrecoveryworkspace.dzdxqtjv.js",
       "sha": "a38d5c65749993a02faecfbde1ecb5c94fd97684",
       "size": 13999
+    },
+    {
+      "path": "/_astro/accounts.bmwcrfnr.js",
+      "sha": "66358f94da295f55219cff8a6533637f9f17ab40",
+      "size": 9514
     },
     {
       "path": "/_astro/accounts.bnqvmz92.js",
@@ -364,6 +394,11 @@
       "path": "/_astro/admin-directory-lightning.cu2w_wf4.css",
       "sha": "e1bf5ef20f23e8de06f8df17f44f24be8595c2d3",
       "size": 5358
+    },
+    {
+      "path": "/_astro/admin-directory-lightning.tqsdzrvd.js",
+      "sha": "18b738e432d5e5e5a4b7b26fc6ab4f260fef7c5d",
+      "size": 3676
     },
     {
       "path": "/_astro/admin-lightning-surfaces.cc5yf0lz.css",
@@ -586,6 +621,11 @@
       "size": 13782
     },
     {
+      "path": "/_astro/adminpage.cihofnd0.js",
+      "sha": "a4d55f6cd8626c7e2d7ddb0fccd8c136158e1309",
+      "size": 14199
+    },
+    {
       "path": "/_astro/adminpage.co2-run5.js",
       "sha": "f459a627da21ea4d8411ca5e17450fa1f6e8830e",
       "size": 17691
@@ -731,6 +771,11 @@
       "size": 9852
     },
     {
+      "path": "/_astro/ai-incidents.cr04e-u5.js",
+      "sha": "b79edb36bea21fb5868187a0381799df146c48b4",
+      "size": 9852
+    },
+    {
       "path": "/_astro/ai-incidents.czsj9uds.js",
       "sha": "e8a7868fd604a0120d6e01f7759b71a11b218d10",
       "size": 9852
@@ -796,6 +841,11 @@
       "size": 22222
     },
     {
+      "path": "/_astro/aiincidents.bz83xuyi.js",
+      "sha": "a4514a429b0f34cebcec62a0164c523a163a98d4",
+      "size": 22222
+    },
+    {
       "path": "/_astro/aiincidents.c0bfrpvz.js",
       "sha": "3761032744535afbf68a99cdf2cc44934cbd9cdc",
       "size": 22425
@@ -858,6 +908,11 @@
     {
       "path": "/_astro/analysisworkspace.bpbwkzei.js",
       "sha": "44e6a74ff2d4f204738005ba6040d456d3e6bef3",
+      "size": 31214
+    },
+    {
+      "path": "/_astro/analysisworkspace.bteew4en.js",
+      "sha": "bfa4d606ce19f4b94eccd89bafa63d44047070fe",
       "size": 31214
     },
     {
@@ -939,6 +994,11 @@
       "path": "/_astro/analysisworkspace.uoaze7ea.js",
       "sha": "493968aa7f6051b72bff26449a53538a7110e0a3",
       "size": 31213
+    },
+    {
+      "path": "/_astro/appfeedback.cobzg6xz.js",
+      "sha": "ffeafa1fcb53fb9b22b72ffc4938dcc97716319f",
+      "size": 14616
     },
     {
       "path": "/_astro/appfeedback.ct-hd8gk.css",
@@ -1114,6 +1174,11 @@
       "path": "/_astro/applicationroot.dtyshaqs.js",
       "sha": "f1631e06159ffd446b47b44e490be58e9994266c",
       "size": 18124
+    },
+    {
+      "path": "/_astro/applicationroot.dv6snwmv.js",
+      "sha": "5a8a4b26590bcefb17fc3d6bc1ac47501d942327",
+      "size": 18138
     },
     {
       "path": "/_astro/applicationroot.dvxmlbk5.js",
@@ -1321,6 +1386,11 @@
       "size": 344349
     },
     {
+      "path": "/_astro/athleteportalpage.wlqlp91t.js",
+      "sha": "54868450a6f23d045dd2cf63609818186938b1bd",
+      "size": 344349
+    },
+    {
       "path": "/_astro/athletestats.becrijkp.js",
       "sha": "8fe4952f0298d30e06f18321957d5f6ddf936736",
       "size": 18019
@@ -1358,6 +1428,11 @@
     {
       "path": "/_astro/authenticatedorganizationheader.b8rhcrhz.js",
       "sha": "326bf1a50e0ca48c164a0d870505910b0a2e9fde",
+      "size": 972
+    },
+    {
+      "path": "/_astro/authenticatedorganizationheader.bqlhumlv.js",
+      "sha": "57ff2c477c0b58458d49345f635ac659addb919b",
       "size": 972
     },
     {
@@ -1449,6 +1524,11 @@
       "path": "/_astro/catalog.de0miim3.js",
       "sha": "2d34535ea4ef0d3ba1d504c528fd6cbe37d4cbef",
       "size": 5478
+    },
+    {
+      "path": "/_astro/catalog.dk69-lpw.js",
+      "sha": "dc0d720f6e44b92eb8cbb77c629a0dc8a9a40afa",
+      "size": 5557
     },
     {
       "path": "/_astro/catalog.dvnlxotj.js",
@@ -1629,6 +1709,11 @@
       "path": "/_astro/coachdetail.dt_wra0i.js",
       "sha": "efc64813941443038ed4a93e15851d05888cc97b",
       "size": 4726
+    },
+    {
+      "path": "/_astro/coachdetail.dwkiw2tk.js",
+      "sha": "e6ac775b2ddc3f11b6a478d6d97640c8eb1b9028",
+      "size": 4735
     },
     {
       "path": "/_astro/coachdetail.ljexj7oa.js",
@@ -1841,9 +1926,19 @@
       "size": 20233
     },
     {
+      "path": "/_astro/data.s1s53tnn.js",
+      "sha": "b3674cf8879fcf5635d76f9054d78584853fa488",
+      "size": 17760
+    },
+    {
       "path": "/_astro/device-performance.duqnuyx5.css",
       "sha": "a39eb08b3b86b604fed14b6c4bc9250e8db6ad7a",
       "size": 24456
+    },
+    {
+      "path": "/_astro/deviceperformance.b0qiaemy.js",
+      "sha": "0b2e5073ad7a80cba10aa41ddb07b4a2c446c52d",
+      "size": 110023
     },
     {
       "path": "/_astro/deviceperformance.blhuuirx.js",
@@ -1881,6 +1976,11 @@
       "size": 16677
     },
     {
+      "path": "/_astro/deviceperformancedetail.df9vgyic.js",
+      "sha": "e5d222a73a69b9645b45b5aff523ddc93461b54b",
+      "size": 16677
+    },
+    {
       "path": "/_astro/deviceperformancedetail.djt9y_c8.js",
       "sha": "740cc705c5608cb17fe0b6af2bea1c7067c9a574",
       "size": 16677
@@ -1893,6 +1993,11 @@
     {
       "path": "/_astro/deviceprocessing.blgqcssb.js",
       "sha": "ee978fbac7cfc5bb669b4261bdf9fe20ce436e61",
+      "size": 2217
+    },
+    {
+      "path": "/_astro/deviceprocessing.bobq7pf0.js",
+      "sha": "0e3b411df5a7d9ce845ee5050ad610f85f2eeec2",
       "size": 2217
     },
     {
@@ -1986,6 +2091,11 @@
       "size": 4691
     },
     {
+      "path": "/_astro/drilldashboard.dkn8ei2o.js",
+      "sha": "5e0b3cf8d02032aada0dc934aab812c64047314f",
+      "size": 4692
+    },
+    {
       "path": "/_astro/drilldashboard.dlpr3piv.js",
       "sha": "13af6170220caa02dce188a4ef198a23cd3ec616",
       "size": 4692
@@ -2023,6 +2133,11 @@
     {
       "path": "/_astro/drilldetail.br3qgu7m.js",
       "sha": "e32e55edc31058e5927f65ddb793c5e29c9dabed",
+      "size": 5827
+    },
+    {
+      "path": "/_astro/drilldetail.cnghp4-g.js",
+      "sha": "02fe4bd952c92890073e54d40cefe2dd5bd2e736",
       "size": 5827
     },
     {
@@ -2069,6 +2184,11 @@
       "path": "/_astro/drillform.bipum8qm.js",
       "sha": "fa8aa376b4a6435ca01c260dea6e45f68f101c60",
       "size": 18157
+    },
+    {
+      "path": "/_astro/drillform.bmaru9b3.js",
+      "sha": "5a8837b4a1328f442bbb993e489aa63d8e811900",
+      "size": 18413
     },
     {
       "path": "/_astro/drillform.btve7tph.js",
@@ -2161,6 +2281,11 @@
       "size": 6187
     },
     {
+      "path": "/_astro/drilllibrary.czhtujew.js",
+      "sha": "538cfba40a443f57f3de27c43e71ff838a5bea25",
+      "size": 6187
+    },
+    {
       "path": "/_astro/drilllibrary.dcu3cgrt.js",
       "sha": "d3065859692ef24ec1e4e29c3e06110016848251",
       "size": 6187
@@ -2188,6 +2313,11 @@
     {
       "path": "/_astro/drillproductionpanel.c-sxmdmc.js",
       "sha": "1f88026a7cf250bfb7114cf9c5e70631109ea96c",
+      "size": 8415
+    },
+    {
+      "path": "/_astro/drillproductionpanel.cajiz9ul.js",
+      "sha": "78a5e3d8245df8ba93fc335e2cb18c8a115bcada",
       "size": 8415
     },
     {
@@ -2279,6 +2409,11 @@
       "path": "/_astro/drillsharepage.cbgvd5vk.js",
       "sha": "a19ce5af1d406eda9f628910cc784dbe79fca393",
       "size": 33752
+    },
+    {
+      "path": "/_astro/drillsharepage.cp4v4i3y.js",
+      "sha": "cec4a7734ee1c23ed5d0bbc7f5b07b0d56c5b32b",
+      "size": 34156
     },
     {
       "path": "/_astro/drillsharepage.ddvgnbe_.js",
@@ -2408,6 +2543,11 @@
     {
       "path": "/_astro/feedpage.bqi8r7yq.js",
       "sha": "4417d6c56aee5b1a867da40569423fcfe0faed69",
+      "size": 29619
+    },
+    {
+      "path": "/_astro/feedpage.br8kjewr.js",
+      "sha": "a645c60e4244c26fb25617d8fc3afd8d488c04d3",
       "size": 29619
     },
     {
@@ -2541,6 +2681,11 @@
       "size": 624143
     },
     {
+      "path": "/_astro/firebase.dede_nda.js",
+      "sha": "4da180c66c724fdc5e0c9f72a7a084a393c1c339",
+      "size": 628825
+    },
+    {
       "path": "/_astro/firebase.dvv9hreu.js",
       "sha": "6a334db2ae6d957acef140de6ba23953c3df27b1",
       "size": 769064
@@ -2573,6 +2718,11 @@
     {
       "path": "/_astro/foreground-report.dkgxgmmp.js",
       "sha": "0a48165f170ec4d01f6f089297a913d5b9d6ad05",
+      "size": 7303
+    },
+    {
+      "path": "/_astro/foreground-report.leqylpys.js",
+      "sha": "f097122af852afefca44d7d22d83c5e7473e83e8",
       "size": 7303
     },
     {
@@ -2681,6 +2831,11 @@
       "size": 1120
     },
     {
+      "path": "/_astro/identity.xkf2mzww.js",
+      "sha": "9af6588f00ba4512caa993c80b1ede4a8af0463f",
+      "size": 1120
+    },
+    {
       "path": "/_astro/index-cvxu3_1x.bbjafwpb.js",
       "sha": "64fb9fad987659dabf875cf916051ba0fb44b2b2",
       "size": 148831
@@ -2746,6 +2901,11 @@
       "size": 35087
     },
     {
+      "path": "/_astro/insights.byfmfy8u.js",
+      "sha": "29c2d3fff28888026fa25fcc529c80ebb1ef999f",
+      "size": 35180
+    },
+    {
       "path": "/_astro/insights.ceych1hh.js",
       "sha": "5b9eeac61114502825316681ec82cd036409bd24",
       "size": 35087
@@ -2809,6 +2969,11 @@
       "path": "/_astro/insightspage.bgq8jact.js",
       "sha": "36652aa386487e6659cc7113dd9ed912281259a0",
       "size": 84974
+    },
+    {
+      "path": "/_astro/insightspage.bgxwgtid.js",
+      "sha": "0ce1435a954ce0703a4d6c1eff450233aeb0f267",
+      "size": 89127
     },
     {
       "path": "/_astro/insightspage.bs9fq7h6.css",
@@ -3041,6 +3206,11 @@
       "size": 30768
     },
     {
+      "path": "/_astro/landingpage.dzkgy9sk.js",
+      "sha": "795db4a6f06bb45a491d102c9dbf0d852a39c64d",
+      "size": 31064
+    },
+    {
       "path": "/_astro/landingpage.et0n2jve.js",
       "sha": "15dd0a47cc1df2674c57f8b02e720db4014246b9",
       "size": 30768
@@ -3069,6 +3239,11 @@
       "path": "/_astro/loaders.clsqns2f.js",
       "sha": "55a8397df137075bda62d53b4d66883d32b6bb23",
       "size": 17962
+    },
+    {
+      "path": "/_astro/loaders.cpafw8r6.js",
+      "sha": "182156ed19f0880295d05b25662147c71e8f0a0e",
+      "size": 20460
     },
     {
       "path": "/_astro/loaders.cu0cpw2j.js",
@@ -3283,6 +3458,11 @@
     {
       "path": "/_astro/monitoraccounts.cwkviami.js",
       "sha": "06ee5980c63e774c4401a9de881cd7e73ca6f9e2",
+      "size": 64230
+    },
+    {
+      "path": "/_astro/monitoraccounts.cypezwt7.js",
+      "sha": "2f3e43ff5530e34bc5a386663b8cbfff33da5627",
       "size": 64230
     },
     {
@@ -3516,6 +3696,11 @@
       "size": 8275
     },
     {
+      "path": "/_astro/navigation.ywb7yvuy.js",
+      "sha": "30132adb3f9e67e45c11432f5dd589a381bcb745",
+      "size": 8275
+    },
+    {
       "path": "/_astro/notfoundpage.bf7sb5ch.js",
       "sha": "cfa76c9d1c9e9c8058b9143c74472b5802f5065c",
       "size": 1340
@@ -3558,6 +3743,11 @@
     {
       "path": "/_astro/organization-data.blxl-fkh.js",
       "sha": "136eb32fc350129067883ac72cec238105f85a5f",
+      "size": 4038
+    },
+    {
+      "path": "/_astro/organization-data.brkz5rk9.js",
+      "sha": "a877668a8612407a881c68509254f6be1690b9cd",
       "size": 4038
     },
     {
@@ -3634,6 +3824,11 @@
       "path": "/_astro/organizationheader.fjzrq_cu.js",
       "sha": "04cb93a65f8c6f0432038fb7dbcc6740d5a2dc5f",
       "size": 4519
+    },
+    {
+      "path": "/_astro/organizationpage.698uqefi.js",
+      "sha": "78f91dd88cf341a8bb4fe9e416190fe75ed032bf",
+      "size": 20981
     },
     {
       "path": "/_astro/organizationpage.b60e60is.js",
@@ -3761,6 +3956,11 @@
       "size": 46315
     },
     {
+      "path": "/_astro/personalizedprograms.bcxua3yx.js",
+      "sha": "4170676326056ddbf6ebca8f1fa561156c92ac0c",
+      "size": 46773
+    },
+    {
       "path": "/_astro/personalizedprograms.bi-zo5v0.js",
       "sha": "ea58ce789c5c67689b59877de8cbf4aba0042399",
       "size": 46315
@@ -3846,6 +4046,11 @@
       "size": 24539
     },
     {
+      "path": "/_astro/phoneperformance.blk4uyqt.js",
+      "sha": "05804cdc4009e12589ae7168a9592c632cad1e2e",
+      "size": 24539
+    },
+    {
       "path": "/_astro/phoneperformance.cenbeatd.css",
       "sha": "9990c856c5485e153c829d6a2b1b81951f15ccb2",
       "size": 4274
@@ -3893,6 +4098,11 @@
     {
       "path": "/_astro/plannerscope.c92o1w5f.js",
       "sha": "ae9e0015bac9015a2949dbdf571b331954402c8d",
+      "size": 4103
+    },
+    {
+      "path": "/_astro/plannerscope.cltbv4-n.js",
+      "sha": "c240836eebc6a4bbbaed9f960251aa8c39b9f6b0",
       "size": 4103
     },
     {
@@ -3954,6 +4164,11 @@
       "path": "/_astro/playerdetail.b3rka3bf.js",
       "sha": "fd57c11901ab29f58f7831a54b2ec801d824a32b",
       "size": 27953
+    },
+    {
+      "path": "/_astro/playerdetail.b9qt66gk.js",
+      "sha": "7a2572e11cb255fd9d8edd141139b72721dc7c80",
+      "size": 46528
     },
     {
       "path": "/_astro/playerdetail.bjbr9cb8.js",
@@ -4316,6 +4531,11 @@
       "size": 1461
     },
     {
+      "path": "/_astro/programspage.bfxv77ia.js",
+      "sha": "99e756c5faada34887d73643aaa8b9077cd63d72",
+      "size": 1919
+    },
+    {
       "path": "/_astro/programspage.bkpdxtqk.js",
       "sha": "4ef3ec0fb44080fea186b9ce39868a10deeb8940",
       "size": 1461
@@ -4511,6 +4731,11 @@
       "size": 41477
     },
     {
+      "path": "/_astro/reptools.ezge9y2m.js",
+      "sha": "77edb37825bdb2e989daf7a9e6e90b9f9e028b11",
+      "size": 62800
+    },
+    {
       "path": "/_astro/reptools.gcezn2a3.js",
       "sha": "1812e4dbcf6acbc36cbc54ad280acecf9efe9f28",
       "size": 41422
@@ -4529,6 +4754,11 @@
       "path": "/_astro/reptools.xfyknpmq.js",
       "sha": "354e31a9d479462a10cd037a76ac6dd870de5d8c",
       "size": 36297
+    },
+    {
+      "path": "/_astro/reptools.zgs8xrn1.css",
+      "sha": "c3b92e275e4f25f1005775bb386ada7d4c4ae717",
+      "size": 4523
     },
     {
       "path": "/_astro/reptoolsdata.b-bxu_v8.js",
@@ -4589,6 +4819,11 @@
       "path": "/_astro/reptoolsdata.dtpm5vmh.js",
       "sha": "bc32d3fd6e43b22446f50f3db351e34870b1f2b1",
       "size": 18090
+    },
+    {
+      "path": "/_astro/reptoolsdata.dyh9wxrj.js",
+      "sha": "8085eb23fad31c888254758d0234b94cb05ce804",
+      "size": 20007
     },
     {
       "path": "/_astro/reptoolsdata.iunxconu.js",
@@ -4671,6 +4906,11 @@
       "size": 935
     },
     {
+      "path": "/_astro/results.dtm5pyb2.js",
+      "sha": "bf90d340dfc3f09045901d7da1eda48be0d0b207",
+      "size": 1025
+    },
+    {
       "path": "/_astro/results.dwfr5lvd.js",
       "sha": "a4976bbedfda9ee2767fb3d1d3167d62eee34dd1",
       "size": 1029
@@ -4709,6 +4949,11 @@
       "path": "/_astro/staffinvitepage.bwkrl762.js",
       "sha": "b353f2a7a3392d15b24eb8883e683e8630629ed1",
       "size": 14980
+    },
+    {
+      "path": "/_astro/staffinvitepage.c4orb4fk.js",
+      "sha": "74e5a19626c8451e0cabdf73e027b64f11964fb6",
+      "size": 15894
     },
     {
       "path": "/_astro/staffinvitepage.cabkpxez.js",
@@ -4833,6 +5078,11 @@
     {
       "path": "/_astro/supportpage.bvxpey6s.js",
       "sha": "dd2c3ad6e5124441f0ef5948941108134c92d649",
+      "size": 10814
+    },
+    {
+      "path": "/_astro/supportpage.bwj83wnv.js",
+      "sha": "28c24abaaaa97049d3ec8180ee48cbcf58a54c5c",
       "size": 10814
     },
     {
@@ -4976,6 +5226,11 @@
       "size": 35594
     },
     {
+      "path": "/_astro/teamsessionperformance.bypzywpz.js",
+      "sha": "4ed10f14812f92e45bcb3963edf78db39e2c905a",
+      "size": 35611
+    },
+    {
       "path": "/_astro/teamsessionperformance.ckz15khf.css",
       "sha": "9dbc82ef0fa67782985e37146b8ceb5a87e68b22",
       "size": 9945
@@ -5058,6 +5313,11 @@
     {
       "path": "/_astro/trainingreadinesspanel.cpod4mgj.js",
       "sha": "ec143a48c3524f63f228b0a4f771435f00f66cb6",
+      "size": 7883
+    },
+    {
+      "path": "/_astro/trainingreadinesspanel.cqjanaoo.js",
+      "sha": "6efe7d5b45734542ff0f4f8f877513faaf592e1e",
       "size": 7883
     },
     {
@@ -5206,6 +5466,11 @@
       "size": 8127
     },
     {
+      "path": "/_astro/userissues.davtbiek.js",
+      "sha": "f0f1e455e4aec4fc0a17197737338ed6c3d089f4",
+      "size": 8127
+    },
+    {
       "path": "/_astro/userissues.doujauuq.js",
       "sha": "c1a6f19b46f2fd8c5c0959c8f1a0df485325ea92",
       "size": 8127
@@ -5244,6 +5509,11 @@
       "path": "/_astro/wall-pass.ddpr7fzx.jpg",
       "sha": "362ed5bd53368802dff696c14638f5858b2e293d",
       "size": 103063
+    },
+    {
+      "path": "/_astro/wholebodytraining.5prjvlyp.js",
+      "sha": "8b560e078de5b5c6e699246bd013160b2f324f43",
+      "size": 2473
     },
     {
       "path": "/_astro/wholebodytraining.681kk_e1.js",
@@ -5396,6 +5666,11 @@
       "size": 27355
     },
     {
+      "path": "/_astro/workouteditor.d8d8jtem.js",
+      "sha": "d08db1dc6f2c7aae6a74d35266a3a9758e0d5d75",
+      "size": 27263
+    },
+    {
       "path": "/_astro/workouteditor.edau9rcq.js",
       "sha": "51c4edbef0a105a97820910ae5167df08eda1861",
       "size": 27270
@@ -5474,6 +5749,11 @@
       "path": "/_astro/workouthistory.dbbo8bnn.js",
       "sha": "9ed9a83f0a4a6349492a8c3e7ff09532b03d864f",
       "size": 3913
+    },
+    {
+      "path": "/_astro/workouthistory.dd_qrlze.js",
+      "sha": "ca095cdd21220655b6b730b17b76343c9b85db61",
+      "size": 4312
     },
     {
       "path": "/_astro/workouthistory.dgk7aubx.js",
@@ -5582,8 +5862,8 @@
     },
     {
       "path": "/application.html",
-      "sha": "0e984808d2ef3716521da2ede40eb9ee98f37962",
-      "size": 15915
+      "sha": "c2fc361d1494b1e1e66048ebb1b3a0892615d45c",
+      "size": 15974
     },
     {
       "path": "/assets/accesslinkcard-bwk4cx6k.css",
@@ -11672,20 +11952,5 @@
       "size": 66488,
       "localPath": "legacy/videopage.html"
     }
-  ],
-  "sourceProvenance": {
-    "receipt": "docs/releases/receipts/WEB_AI_SHARING_PRODUCTION.json",
-    "previousReceipt": "docs/releases/receipts/HOMEPAGE_ADMIN_POLISH_PRODUCTION.json",
-    "homepageCompiledSource": "b66a7306d6ece6358bd22e45aa9f0371ff86aede",
-    "homepageReviewedSource": "4ab4bc9105d0ee73d2f3294153655c9ab295a8c9",
-    "applicationRuntime": "bb3274c72be6baab301eab08da3a1c2766493232",
-    "approvedApplicationBase": "499dc81502a56d8b7b01c36e5ee780af55b87244",
-    "featureSource": "ea2fd92e5ad4dd7653b9c9324b4fac9a6dddbe05",
-    "reviewedSource": "683279f1ee22d3a7e17b4abff468ef7366fbcc45",
-    "integratedSourceMain": "a9dc512db49d3c753270f0cb0b05ca2f021161e7",
-    "preservedIsolatedEntries": "Feedback and coach enrollment retain exact predecessor bytes. Held policy, session and Ball Striking source is excluded from the released application runtime.",
-    "preservedAutomaticDeployment": "6ae3b61b65d402dd68565eb9",
-    "automaticDeploymentSource": "2207caf13269e52da6434e85ae646a6e3a9c2d09",
-    "applicationRuntimePreserved": true
-  }
+  ]
 }
