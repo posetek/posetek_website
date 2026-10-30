@@ -86,4 +86,28 @@ describe('parent reviewed result display contract', () => {
       expect(reviewRefreshIsCurrent(args[0], args[1], args[2], args[3], args[4])).toBe(false);
     }
   });
+
+  it('never substitutes a measured rep when a selected retest disappears during refresh or error', () => {
+    const retest = { ...parseReviewedResults(reviewedResultFixtures()).find(r => r.drill === 'jump' && r.status === 'retest_required')!, sessionNumber: 3, repNumber: 2 };
+    const measured = { id: 'synthetic-measured-jump', repType: 'jump', sessionNumber: 3, repNumber: 1, jumpHeight: .42, resultStatus: { qualified: true, duplicate: false } };
+    const props = { drill: drillByKey('jump'), folder: 'session3', selectedId: retest.repId, reps: [measured], access: 'preview' as const, playerId: 'synthetic-player', shareToken: null, onBack: () => {}, onSelectRep: () => {} };
+    const open = renderToStaticMarkup(<SessionView {...props} reviewedResults={[retest]} />);
+    expect(open).toContain('RETEST NEEDED');
+    expect(open).toContain(`class="rep-segment active" type="button" data-session-rep="${retest.repId}"`);
+    expect(open).not.toContain('class="rep-segment active" type="button" data-session-rep="synthetic-measured-jump"');
+    // A refresh clears the projection before a request; failures leave it cleared.
+    for (const reviews of [[], undefined]) {
+      const cleared = renderToStaticMarkup(<SessionView {...props} reviewedResults={reviews} />);
+      expect(cleared).toContain('This result is unavailable or is being refreshed');
+      expect(cleared).not.toContain('rep-segment active');
+      expect(cleared).not.toContain('Loading rep analysis');
+      expect(cleared).not.toContain('RETEST NEEDED');
+    }
+    const unknown = renderToStaticMarkup(<SessionView {...props} selectedId="missing-rep" />);
+    expect(unknown).toContain('This result is unavailable or is being refreshed');
+    expect(unknown).not.toContain('Loading rep analysis');
+    const defaultSelection = renderToStaticMarkup(<SessionView {...props} selectedId={null} />);
+    expect(defaultSelection).toContain('Loading rep analysis');
+    expect(defaultSelection).toContain('class="rep-segment active" type="button" data-session-rep="synthetic-measured-jump"');
+  });
 });

@@ -48,11 +48,15 @@ interface SessionViewProps {
 }
 
 export default function SessionView({ drill, folder, selectedId, reps, reviewedResults = [], access, playerId, shareToken, onBack, onSelectRep }: SessionViewProps) {
-  const reviewed = reviewedResults.find(r => r.repId === String(selectedId) && `session${r.sessionNumber}` === folder);
+  const sessionReviews = reviewedResults.filter(r => r.drill === drill.key && `session${r.sessionNumber}` === folder);
+  const reviewed = sessionReviews.find(r => r.repId === String(selectedId));
   const sessionReps = reps
     .filter(rep => sessionFolder(rep) === folder)
     .sort((a, b) => repNumber(a) - repNumber(b));
-  const selected = sessionReps.find(rep => String(rep.id) === String(selectedId)) || sessionReps[0];
+  const explicitSelection = selectedId != null && String(selectedId) !== '';
+  const selected = explicitSelection ? sessionReps.find(rep => String(rep.id) === String(selectedId)) : sessionReps[0];
+  const activeId = reviewed?.repId ?? selected?.id;
+  const reviewOnly = sessionReviews.filter(review => !sessionReps.some(rep => String(rep.id) === review.repId));
 
   return (
     <section className="session-view">
@@ -67,12 +71,18 @@ export default function SessionView({ drill, folder, selectedId, reps, reviewedR
         {sessionReps.map(rep => (
           <button
             key={String(rep.id)}
-            className={`rep-segment${rep === selected ? " active" : ""}`}
+            className={`rep-segment${String(rep.id) === String(activeId) ? " active" : ""}`}
             type="button"
             data-session-rep={rep.id}
             onClick={() => onSelectRep(rep.id)}
           >
             {attemptLabel(rep, sessionReps)}
+          </button>
+        ))}
+        {reviewOnly.map(review => (
+          <button key={review.repId} className={`rep-segment${review.repId === activeId ? " active" : ""}`}
+            type="button" data-session-rep={review.repId} onClick={() => onSelectRep(review.repId)}>
+            Rep {review.repNumber} · {review.status === 'estimate' ? 'Estimate' : 'Retest needed'}
           </button>
         ))}
       </nav>
@@ -86,7 +96,7 @@ export default function SessionView({ drill, folder, selectedId, reps, reviewedR
             playerId={playerId}
             shareToken={shareToken}
           />
-        ) : null}
+        ) : explicitSelection ? <p className="muted-copy" role="status">This result is unavailable or is being refreshed. Return to Results and try again.</p> : null}
       </section>
     </section>
   );
