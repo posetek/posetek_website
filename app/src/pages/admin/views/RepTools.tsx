@@ -58,6 +58,7 @@ import {
 } from "../lib/repTools";
 import type { FrameRange, Mark, Point, ShuttleFrames, StartingSide } from "../lib/repTools";
 import JumpTechniqueEditor from "./JumpTechniqueEditor";
+import JumpReviewPanel from "./JumpReviewPanel";
 import { resultsPath } from "../lib/results";
 import { ADMIN_RETURN_STATE } from '../lib/useAdminNavigation';
 
@@ -666,7 +667,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
       {!artifacts.mediaUrl && (
         <div className="admin-banner warn">
           <span className="material-symbols-outlined">videocam_off</span>
-          <p>No video was saved to the cloud for this rep, so there is nothing to scrub or annotate. Event frames and values can still be edited against the pose data below.</p>
+          <p>{drillKey === "jump" ? "The standard replay is unavailable. Jump review below checks for an exact retained source recording." : "No video was saved to the cloud for this rep, so there is nothing to scrub or annotate. Event frames and values can still be edited against the pose data below."}</p>
         </div>
       )}
       {videoError && <div className="admin-banner warn"><span className="material-symbols-outlined">error</span><p>{videoError}</p></div>}
@@ -682,6 +683,8 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
           <p>Processing flagged this rep: {(metadata.failedSteps || []).join(", ") || "partial results"}.</p>
         </div>
       ) : null}
+
+      {drillKey === "jump" && <JumpReviewPanel playerId={playerId} repId={repId} athleteName={athleteName} onSaved={onReload} />}
 
       <div className="rt-layout">
         <div className="rt-main">
@@ -936,7 +939,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
             </section>
           )}
 
-          {spec && (!rederive || Boolean(spec.stringFields?.length)) && (
+          {spec && drillKey !== "jump" && (!rederive || Boolean(spec.stringFields?.length)) && (
             <section className="admin-card">
               <h3>Values</h3>
               {!rederive && !kick?.fit && spec.derive !== "kick" && <p className="admin-note">This drill is not re-derived on the web; type the corrected values directly. Units are the stored units (meters, m/s, seconds).</p>}

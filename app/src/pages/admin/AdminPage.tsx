@@ -32,6 +32,7 @@ const CoachDetail = lazy(() => import("./views/CoachDetail"));
 const PlayerDetail = lazy(() => import("./views/PlayerDetail"));
 const WorkoutEditor = lazy(() => import("./views/WorkoutEditor"));
 const RepTools = lazy(() => import("./views/RepTools"));
+const JumpReviewDemo = import.meta.env.DEV ? lazy(() => import("./views/JumpReviewDemo")) : null;
 const PlannerRedirect = lazy(() => import("./views/PlannerRedirect"));
 const AnalysisWorkspace = lazy(() => import("./views/AnalysisWorkspace"));
 const PersonalizedPrograms = lazy(() => import("./views/PersonalizedPrograms"));
@@ -114,6 +115,7 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
     body = (
       <Suspense key={uid} fallback={<div className="portal-loading"><span className="spinner" /><p>Loading…</p></div>}>
         <Routes>
+          {preview && JumpReviewDemo && <Route path="jump-review-preview" element={<JumpReviewDemo />} />}
           <Route index element={<Navigate to={legacyAdminWorkspacePath(location.search)} state={location.state} replace />} />
           <Route path="feeds" element={<Navigate to="/feed" replace />} />
           <Route path="drills" element={<DrillLibrary />} />

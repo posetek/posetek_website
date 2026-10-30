@@ -1,0 +1,54 @@
+.pt-admin .jr-panel {
+  min-width: 0;
+  margin-bottom: 24px;
+  h2 { margin: 0; }
+  .jr-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .jr-estimate { flex-shrink: 0; border-radius: 6px; padding: 6px 10px; color: #765008; background: #fff3ce; font-size: 11px; font-weight: 750; letter-spacing: .06em; }
+  .jr-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, 1fr); gap: 24px; margin-top: 20px; align-items: start; }
+  .jr-media, .jr-controls { min-width: 0; }
+  .jr-controls { display: grid; gap: 14px; }
+  .jr-stage { position: relative; width: 100%; margin: 0 auto; background: #10251b; border: 1px solid var(--surface-border, #dce4df); border-radius: 8px; overflow: hidden; }
+  .jr-stage video, .jr-stage svg { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
+  .jr-stage video { object-fit: fill; }
+  .jr-stage svg { pointer-events: none; overflow: visible; }
+  .jr-stage.selecting svg { pointer-events: auto; cursor: crosshair; }
+  .jr-stage svg:focus { outline: 3px solid #d2fa8c; outline-offset: -3px; }
+  .jr-stage polyline, .jr-stage path { fill: none; stroke: #d7ff8b; stroke-width: 2; vector-effect: non-scaling-stroke; }
+  .jr-stage circle { fill: #d7ff8b; stroke: #10251b; stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .jr-stage text { fill: white; font-size: 25px; stroke: #10251b; stroke-width: 1px; paint-order: stroke; font-weight: bold; }
+  .jr-frame-chip { display: table; margin: 8px auto 0; background: #183d2b; color: white; padding: 6px 8px; border-radius: 5px; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .jr-playback, .jr-marker-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 0; }
+  .jr-marker-actions { justify-content: flex-start; margin: 0; }
+  .jr-scrubber { display: block; padding: 8px 0; }
+  .jr-scrubber input { width: 100%; accent-color: #20533d; }
+  .jr-source { font-size: 12px; overflow-wrap: anywhere; }
+  .jr-check { display: flex; align-items: flex-start; gap: 10px; min-height: 32px; font-size: 13px; line-height: 1.5; }
+  .jr-check input { margin-top: 4px; width: 17px; height: 17px; flex: 0 0 auto; accent-color: #20533d; }
+  .jr-frame-fields { display: grid; gap: 10px; }
+  .jr-frame-field { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: end; }
+  .jr-frame-field label { display: flex; align-items: center; justify-content: space-between; min-width: 0; gap: 8px; font-size: 13px; }
+  .jr-frame-field input { flex-shrink: 0; width: 74px; border: 1px solid var(--surface-border, #dce4df); border-radius: 6px; padding: 9px 6px; color: inherit; background: var(--surface-0, white); font: inherit; }
+  .jr-frame-field .small, .jr-playback .small { min-height: 38px; }
+  .jr-blockers { background: #fff8e8; border-radius: 7px; padding: 14px 14px 14px 32px; font-size: 13px; }
+  .jr-preview { margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--surface-border, #dce4df); }
+  .jr-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .jr-values span { display: block; font-size: 12px; color: var(--text-muted, #52665b); margin-bottom: 5px; }
+  .jr-values strong { display: block; font-size: 22px; color: var(--text-primary, #183d2b); font-variant-numeric: tabular-nums; }
+  .jr-preview .admin-field { margin: 16px 0; }
+  .jr-preview textarea { width: 100%; min-height: 76px; }
+  .jr-preview li { font-size: 13px; margin-bottom: 6px; }
+  .primary-cta { justify-self: start; }
+  @media (max-width: 1050px) {
+    .jr-layout { grid-template-columns: minmax(0, 1fr); }
+    .jr-stage { max-width: 600px; max-height: none; }
+  }
+  @media (max-width: 520px) {
+    .jr-heading { align-items: flex-start; }
+    .jr-estimate { font-size: 9px; padding: 6px; }
+    .jr-frame-field { grid-template-columns: minmax(0, 1fr) auto; }
+    .jr-frame-field label { grid-column: 1 / -1; }
+    .jr-frame-field > button { min-height: 44px; }
+    .jr-values { grid-template-columns: 1fr; gap: 14px; }
+    .jr-values strong { font-size: 20px; }
+  }
+}
