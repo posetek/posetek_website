@@ -81,10 +81,11 @@ workflow and readback, not the server's mathematical implementation.
 
 ## Validation boundary
 
-Local verification on October 30 passed 2,217 frontend tests, TypeScript and the
+Local verification on October 30 passed 2,220 frontend tests, TypeScript and the
 production Astro build. Scoped lint is clean; the full repository lint retains
 its existing warnings. After the paused-frame initialization fix, the 17
-focused recovery tests and TypeScript were repeated. Browser acceptance
+focused recovery tests and TypeScript were repeated. Nested-only estimate
+readback adds three regression tests, bringing the focused count to 20. Browser acceptance
 verified initialization at frame 1, stepping to frame 0, viewing frame 14,
 same-frame marker selection, and both complete estimate/save/readback flows.
 The production output was scanned to confirm that the synthetic route, service,
@@ -101,3 +102,22 @@ A local synthetic preview does not prove production callable availability,
 real-account authorization, all browser codecs, native failed-recording upload,
 or physical measurement accuracy. Those acceptance and release steps remain
 separate from this source candidate.
+
+## Release dependency qualification
+
+The October 30 dependency audit found a newly published high-severity advisory
+in the transitive `re2js` 2.8.6 package. The lockfile updates only that package to
+2.8.7, the fixed version for
+[GHSA-gg6h-894w-4m9c](https://github.com/advisories/GHSA-gg6h-894w-4m9c).
+It stays within Firestore's existing `^2.8.3` range; no manifest dependency,
+override or audit exception is added. Its Node 20 minimum is covered by the
+repository's Node 22 runtime. The production audit now has zero blocking
+findings; the two previously reviewed exact `grpc-js` paths remain under their
+existing exception. Static browser transport validation still excludes gRPC
+from the application bundle.
+
+The release runtime is composed from the last approved application runtime
+`bb3274c`, with only jump review and this dependency patch. The newer automatic
+deployment `6ae3b61b65d402dd68565eb9` is the preservation source for current
+marketing and all retained assets; its application still matches the approved
+runtime. Held policy, session and Ball Striking candidates remain excluded.
