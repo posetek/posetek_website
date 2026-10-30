@@ -87,7 +87,7 @@ function LeaderboardsContent({ ctx }: { ctx: PortalContext }) {
               <div className="card-heading">
                 <div>
                   <h2>{category.label} standings</h2>
-                  <p>Best verified result per athlete</p>
+                  <p>Best recorded result per athlete</p>
                 </div>
               </div>
               <div className="standings-list">

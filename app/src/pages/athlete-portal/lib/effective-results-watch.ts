@@ -23,7 +23,7 @@ export function watchEffectiveResults(playerId: string, callbacks: {
     void cloud.httpsCallable('getAthleteEffectiveResults')({ playerId }).then(response => {
       if (!current(requestVersion)) return;
       const payload = response.data as { reps?: unknown; provisionalEstimates?: unknown } | null;
-      if (!payload || !Array.isArray(payload.reps)) throw new Error('The latest results could not be verified.');
+      if (!payload || !Array.isArray(payload.reps)) throw new Error('The latest results could not be loaded.');
       callbacks.result({ reps: payload.reps, provisionalEstimates: payload.provisionalEstimates });
     }).catch(error => {
       if (current(requestVersion)) { callbacks.pending(); callbacks.error(error); }

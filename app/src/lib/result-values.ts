@@ -17,7 +17,7 @@ export function resultLabel(rep: any): string {
   if (!rep.resultStatus) return resultUsable(rep) ? "" : "Needs review";
   if (rep.resultStatus.duplicate) return "Duplicate recording";
   if (!rep.resultStatus.qualified) return "Result unavailable · needs review";
-  return rep.resultStatus.reason === "acceptedRevision" ? "Reviewed result" : "Verified result";
+  return rep.resultStatus.reason === "acceptedRevision" ? "Reviewed result" : "Recorded result";
 }
 
 export function sameResultStatus(left: any, right: any): boolean {

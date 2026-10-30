@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { finiteNumber, metricValue, visibleAttempts, resultUsable, attemptLabel } from "./result-values";
+import { finiteNumber, metricValue, visibleAttempts, resultUsable, attemptLabel, resultLabel } from "./result-values";
 import { metricRaw, repMetricSpecs, dashboardMetrics } from "../pages/athlete-portal/lib/metrics";
 import { drillByKey } from "../pages/athlete-portal/lib/drills";
 import { normalizeAuthRep, repMetricCards, summaryMetrics } from "../pages/drill-share/drill-lib";
@@ -8,6 +8,14 @@ import { buildProfile } from "../components/athlete-stats/profile";
 
 const broad = drillByKey("broadJump");
 describe("effective result readers", () => {
+  it("labels recorded results without implying independent physical verification or changing eligibility", () => {
+    const rep = { totalTime: 5, resultStatus: { qualified: true, duplicate: false, reason: 'complete' } };
+    expect(resultLabel(rep)).toBe('Recorded result');
+    expect(resultUsable(rep)).toBe(true);
+    expect(metricValue(rep, 'totalTime')).toBe(5);
+    expect(resultLabel({ ...rep, resultStatus: { ...rep.resultStatus, reason: 'acceptedRevision' } })).toBe('Reviewed result');
+    expect(resultLabel({ ...rep, resultStatus: { ...rep.resultStatus, qualified: false } })).toBe('Result unavailable · needs review');
+  });
   it("does not manufacture zero from absent data", () => {
     for (const value of [null, undefined, "", "  ", false, true, [], {}, NaN, Infinity]) expect(finiteNumber(value)).toBeNull();
     expect(finiteNumber(0)).toBe(0); expect(finiteNumber("1.2")).toBe(1.2);

@@ -26,6 +26,7 @@ import LeaderboardsView from "./views/LeaderboardsView";
 import { PortalLoading } from "./views/shared";
 import type { PortalContext } from "./views/shared";
 import PlayerExperience from "./player/PlayerExperience";
+import ReviewedResults from "./player/ReviewedResults";
 
 const NAV_ITEMS = [
   { view: "home", icon: "home", title: "Athlete Home", subtitle: "Skill chart and breakdown" },
@@ -232,6 +233,8 @@ export default function AthletePortalPage() {
   );
 
   const activeDrill = drillByKey(drill);
+  const visibleReviews = access === 'shared' ? [] : reviewedResults;
+  const drillReviews = visibleReviews.filter(result => result.drill === activeDrill.key);
   const rosterNavigation = athleteRosterNavigation(access, athlete, params.toString());
 
   if (phase === 'ready' && (access === 'athlete' || access === 'preview')) {
@@ -362,6 +365,10 @@ export default function AthletePortalPage() {
           )}
           {phase === "ready" && view === "home" && (
             <div className="athlete-overview">
+              <ReviewedResults results={visibleReviews} onOpen={result => {
+                chooseDrill(result.drill);
+                setSession({ folder: `session${result.sessionNumber}`, repId: result.repId });
+              }} />
               <AthleteStats athlete={athlete} athleteName={fullName(athlete)} reps={statsReps()} provisionalEstimates={provisionalEstimates} estimateReps={Object.values(reps).flat()} />
             </div>
           )}
@@ -372,6 +379,7 @@ export default function AthletePortalPage() {
                 folder={session.folder}
                 selectedId={session.repId}
                 reps={reps[activeDrill.key]}
+                reviewedResults={drillReviews}
                 access={(access || "athlete") as Access}
                 playerId={playerId}
                 shareToken={shareToken}
@@ -383,6 +391,7 @@ export default function AthletePortalPage() {
                 key={activeDrill.key}
                 drill={activeDrill}
                 reps={reps[activeDrill.key]}
+                reviewedResults={drillReviews}
                 athlete={athlete}
                 onOpenRep={(folder, repId) => setSession({ folder, repId })}
               />

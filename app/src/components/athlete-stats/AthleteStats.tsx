@@ -317,7 +317,7 @@ export default function AthleteStats({ reps, athlete, athleteName, provisionalEs
         <div className="stats-focus-grid">
           {strength && <SummaryRow icon="star" title="Strength" detail={`${strength.label} · ${Math.round(strength.score)} vs D1`} tone="lime" />}
           {focus && <SummaryRow icon="center_focus_strong" title="Focus area" detail={`${focus.label} · ${Math.round(focus.score)} vs D1`} tone="orange" />}
-          {missing && <SummaryRow icon="add_circle" title={estimates.length ? 'Missing verified data' : 'Missing data'} detail={missing} tone="cyan" />}
+          {missing && <SummaryRow icon="add_circle" title={estimates.length ? 'Missing recorded data' : 'Missing data'} detail={missing} tone="cyan" />}
         </div>
         <div className="stats-radar-section">
           <header>

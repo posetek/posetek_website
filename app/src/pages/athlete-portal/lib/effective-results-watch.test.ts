@@ -41,7 +41,7 @@ describe('effective results live refresh isolation', () => {
     expect(callbacks.pending).toHaveBeenCalled(); expect(callbacks.error).toHaveBeenCalledWith(expect.objectContaining({ message: 'unavailable' }));
     mock.snapshot!(); await settle();
     expect(callbacks.result).toHaveBeenCalledTimes(1);
-    expect(callbacks.error).toHaveBeenLastCalledWith(expect.objectContaining({ message: 'The latest results could not be verified.' }));
+    expect(callbacks.error).toHaveBeenLastCalledWith(expect.objectContaining({ message: 'The latest results could not be loaded.' }));
   });
   it.each(['other', undefined])('ignores an old owner response after switching to %s', async uid => {
     const pending = deferred(); mock.call.mockReturnValueOnce(pending.promise);
