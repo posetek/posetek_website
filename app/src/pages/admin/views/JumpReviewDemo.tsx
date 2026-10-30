@@ -10,7 +10,7 @@ function demoResult(input: JumpRecoveryInput): JumpRecoveryPreview {
   return { heightMetres: height, displayValue: `~${height * 100} cm`, method: input.method, label: "ESTIMATE", rangeMetres: [height - .02, height + .02], sourceFingerprint: input.sourceFingerprint, fields: { jumpHeight: height }, warnings: ["Synthetic preview calculation. This is not an athlete measurement."] };
 }
 
-const initialContext: JumpReviewContext = { source: { ...syntheticSource, path: "synthetic/jump/session1/kick1/demo.mp4", generation: "demo-1", mediaUrl: syntheticVideoUrl, poseAvailable: true }, expectedRevisionId: null, originalHeight: .18, availableMethods: ["manual_marker", "flight_time"], blockers: [], sourceFingerprint: syntheticSource.sourceVideoSha256 };
+const initialContext: JumpReviewContext = { source: { ...syntheticSource, path: "synthetic/jump/session1/kick1/demo.mp4", generation: "demo-1", mediaUrl: syntheticVideoUrl, poseAvailable: true }, expectedRevisionId: null, originalHeight: .18, originalHeightIsEstimate: false, rootJumpHeight: .18, jumpRecovery: null, availableMethods: ["manual_marker", "flight_time"], blockers: [], sourceFingerprint: syntheticSource.sourceVideoSha256 };
 
 export default function JumpReviewDemo() {
   const [context, setContext] = useState<JumpReviewContext>(initialContext);
@@ -24,8 +24,9 @@ export default function JumpReviewDemo() {
     save: async (_playerId, _repId, input) => {
       let saved = saves.current.get(input.operationId);
       if (!saved) { saved = { revisionId: `demo-estimate-${saves.current.size + 1}`, height: demoResult(input).heightMetres }; saves.current.set(input.operationId, saved); }
-      current.current = { ...current.current!, expectedRevisionId: saved.revisionId, originalHeight: saved.height };
-      return { revisionId: saved.revisionId, folder: "synthetic", rep: { jumpHeight: saved.height, resultsValid: false } };
+      const jumpRecovery = { isEstimate: true, heightMetres: saved.height };
+      current.current = { ...current.current!, expectedRevisionId: saved.revisionId, originalHeight: saved.height, originalHeightIsEstimate: true, rootJumpHeight: null, jumpRecovery };
+      return { revisionId: saved.revisionId, folder: "synthetic", rep: { jumpHeight: null, jumpRecovery, resultsValid: false } };
     },
   };
   return <><section className="admin-heading"><div><p className="eyebrow">Development preview</p><h1>Jump recovery review</h1></div></section>

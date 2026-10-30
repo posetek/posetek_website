@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assertJumpPreview, flightFrameProblem, jumpFrameAtTime, jumpFrameTime, jumpPlaybackProblem, jumpPresentedFrameMatches, markerProblem, validJumpSource } from "./jumpRecovery";
+import { assertJumpPreview, assertJumpRecoverySaved, flightFrameProblem, jumpFrameAtTime, jumpFrameTime, jumpPlaybackProblem, jumpPresentedFrameMatches, markerProblem, validJumpSource } from "./jumpRecovery";
 import type { JumpRecoveryInput, JumpRecoveryPreview, JumpReviewSource } from "./jumpRecovery";
 
 const source: JumpReviewSource = { path: "synthetic/jump.mov", generation: "1", mediaUrl: "https://example.test/recording", width: 480, height: 640, poseAvailable: true, presentationTimestampsSeconds: [4, 4.008, 4.017, 4.027, 4.035] };
@@ -75,5 +75,23 @@ describe("estimate preview identity", () => {
   it("rejects invalid or reversed uncertainty instead of presenting a result", () => {
     expect(() => assertJumpPreview({ ...preview, heightMetres: Number.NaN }, request)).toThrow();
     expect(() => assertJumpPreview({ ...preview, rangeMetres: [.4, .2] }, request)).toThrow();
+  });
+});
+
+describe("estimate save readback", () => {
+  const recovery = { isEstimate: true, heightMetres: .24 };
+  const result = { revisionId: "new-revision", rep: { jumpHeight: null, jumpRecovery: recovery } };
+  const fresh = { source, expectedRevisionId: result.revisionId, originalHeight: .24, originalHeightIsEstimate: true, rootJumpHeight: null, jumpRecovery: recovery, availableMethods: ["flight_time" as const], blockers: [], sourceFingerprint: request.sourceFingerprint };
+  it("accepts only a labeled nested estimate with empty legacy height", () => {
+    expect(() => assertJumpRecoverySaved(result, fresh, preview)).not.toThrow();
+    expect(() => assertJumpRecoverySaved({ ...result, rep: { ...result.rep, jumpHeight: .24 } }, fresh, preview)).toThrow();
+    expect(() => assertJumpRecoverySaved(result, { ...fresh, rootJumpHeight: .24 }, preview)).toThrow();
+    expect(() => assertJumpRecoverySaved(result, { ...fresh, jumpRecovery: { ...recovery, isEstimate: false } }, preview)).toThrow();
+    expect(() => assertJumpRecoverySaved(result, { ...fresh, originalHeightIsEstimate: false }, preview)).toThrow();
+  });
+  it("rejects missing or changed nested evidence and stale revision", () => {
+    expect(() => assertJumpRecoverySaved({ ...result, rep: { jumpHeight: null } }, fresh, preview)).toThrow();
+    expect(() => assertJumpRecoverySaved(result, { ...fresh, jumpRecovery: { ...recovery, heightMetres: .23 } }, preview)).toThrow();
+    expect(() => assertJumpRecoverySaved(result, { ...fresh, expectedRevisionId: "old" }, preview)).toThrow();
   });
 });

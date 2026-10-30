@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MouseEvent, KeyboardEvent } from "react";
-import { assertJumpPreview, flightFrameProblem, jumpFrameAtTime, jumpFrameTime, jumpPlaybackProblem, jumpPresentedFrameMatches, markerProblem, validJumpSource } from "../lib/jumpRecovery";
+import { assertJumpPreview, assertJumpRecoverySaved, flightFrameProblem, jumpFrameAtTime, jumpFrameTime, jumpPlaybackProblem, jumpPresentedFrameMatches, markerProblem, validJumpSource } from "../lib/jumpRecovery";
 import type { JumpPoint, JumpRecoveryInput, JumpRecoveryMethod, JumpRecoveryPreview, JumpReviewContext } from "../lib/jumpRecovery";
 import { loadJumpReview, previewJumpRecovery, saveJumpRecovery } from "../lib/jumpRecoveryData";
 import AdminModal from "./AdminModal";
@@ -197,7 +197,7 @@ export function JumpReviewEditor({ playerId, repId, athleteName, context, onSave
     try {
       const result = await services.save(playerId, repId, previewInput, note.trim());
       const fresh = await services.load(playerId, repId);
-      if (!result.revisionId || fresh.expectedRevisionId !== result.revisionId || fresh.originalHeight === null || Math.abs(fresh.originalHeight - preview.heightMetres) > 1e-8) throw new Error("The saved result could not be verified. Reload the review before another save.");
+      assertJumpRecoverySaved(result, fresh, preview);
       onSaved(result.revisionId);
     } catch (error) {
       setUncertain(true); setConfirming(false);
@@ -216,6 +216,7 @@ export function JumpReviewEditor({ playerId, repId, athleteName, context, onSave
   return <section className="admin-card jr-panel" aria-label="Jump recovery review">
     <div className="jr-heading"><div><p className="eyebrow">Recovery</p><h2>Review jump</h2></div><span className="jr-estimate">ESTIMATE ONLY</span></div>
     <p className="admin-note">Recover a missed measurement from the original recording. Saved estimates stay out of verified team rankings.</p>
+    {context.originalHeightIsEstimate && context.originalHeight !== null && <p className="admin-banner warn" role="status">Saved jump estimate: <strong>~{centimetres(context.originalHeight)} · ESTIMATE</strong>. This remains separate from verified measurements and rankings.</p>}
     {context.blockers.length > 0 && <ul className="jr-blockers">{context.blockers.map(text => <li key={text}>{text}</li>)}</ul>}
     {usable ? <div className="jr-layout">
       <div className="jr-media">
@@ -255,7 +256,7 @@ export function JumpReviewEditor({ playerId, repId, athleteName, context, onSave
         <button type="button" className="primary-cta" disabled={Boolean(problem) || locked || selecting || seeking} onClick={calculate}>{busy === "preview" ? "Calculating…" : "Calculate estimate"}</button>
       </div>
     </div> : <p className="form-message" role="alert">{problem}</p>}
-    {preview && <div className="jr-preview" aria-label="Recovered jump preview"><div className="jr-values"><div><span>Saved height</span><strong>{centimetres(context.originalHeight)}</strong></div><div><span>Recovered estimate</span><strong>~{centimetres(preview.heightMetres)}</strong></div><div><span>Selection sensitivity</span><strong>{centimetres(preview.rangeMetres[0])}–{centimetres(preview.rangeMetres[1])}</strong></div></div>
+    {preview && <div className="jr-preview" aria-label="Recovered jump preview"><div className="jr-values"><div><span>{context.originalHeightIsEstimate ? "Saved estimate" : "Saved height"}</span><strong>{context.originalHeightIsEstimate ? "~" : ""}{centimetres(context.originalHeight)}</strong></div><div><span>Recovered estimate</span><strong>~{centimetres(preview.heightMetres)}</strong></div><div><span>Selection sensitivity</span><strong>{centimetres(preview.rangeMetres[0])}–{centimetres(preview.rangeMetres[1])}</strong></div></div>
       <p className="admin-note">The range reflects frame or corner selection, not a full accuracy guarantee. Force, power and technique scores are not recovered by this review.</p>
       {preview.warnings.length > 0 && <ul>{preview.warnings.map(text => <li key={text}>{text}</li>)}</ul>}
       <label className="admin-field"><span>Review note</span><textarea value={note} maxLength={2000} disabled={locked} onChange={event => setNote(event.target.value)} placeholder="Describe the visible evidence and any limitations." /></label>

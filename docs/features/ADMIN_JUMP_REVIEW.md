@@ -23,7 +23,11 @@ review path. Existing technique review remains available separately.
   current revision and checks its ID and height before reporting success.
 
 Both methods remain estimates and stay outside verified team rankings. The
-review does not recover force, power or technique scores. Missing recording,
+numeric estimate is stored only under `jumpRecovery.heightMetres`; root and
+metadata `jumpHeight` stay null so older installed clients cannot display it as
+an unlabeled measurement. Admin shows the saved nested value with ESTIMATE,
+and save readback verifies the empty root height and matching labeled estimate.
+The review does not recover force, power or technique scores. Missing recording,
 unusable pose, unclear ground contact or unresolved timing needs evidence
 recovery or a retest; the interface does not fabricate a number.
 

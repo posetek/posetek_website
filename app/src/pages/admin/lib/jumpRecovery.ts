@@ -15,9 +15,20 @@ export interface JumpReviewContext {
   source: JumpReviewSource | null;
   expectedRevisionId: string | null;
   originalHeight: number | null;
+  originalHeightIsEstimate: boolean;
+  rootJumpHeight: number | null;
+  jumpRecovery: { isEstimate: boolean; heightMetres: number } | null;
   availableMethods: JumpRecoveryMethod[];
   blockers: string[];
   sourceFingerprint: string;
+}
+
+/** Legacy clients read root height without its quality flags: keep it empty. */
+export function assertJumpRecoverySaved(result: { revisionId: string; rep: { jumpHeight?: unknown; jumpRecovery?: { isEstimate?: unknown; heightMetres?: unknown } } }, fresh: JumpReviewContext, preview: JumpRecoveryPreview): void {
+  const saved = result.rep?.jumpRecovery;
+  const current = fresh.jumpRecovery;
+  const sameHeight = (height: unknown) => typeof height === "number" && Number.isFinite(height) && Math.abs(height - preview.heightMetres) <= 1e-8;
+  if (!result.revisionId || fresh.expectedRevisionId !== result.revisionId || result.rep?.jumpHeight !== null || fresh.rootJumpHeight !== null || saved?.isEstimate !== true || current?.isEstimate !== true || !sameHeight(saved.heightMetres) || !sameHeight(current.heightMetres) || fresh.originalHeightIsEstimate !== true || !sameHeight(fresh.originalHeight)) throw new Error("The saved estimate could not be verified separately from verified measurements. Reload the review before another save.");
 }
 export interface JumpRecoveryInput {
   schemaVersion: 1;
