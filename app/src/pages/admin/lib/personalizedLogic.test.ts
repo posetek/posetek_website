@@ -5,7 +5,27 @@ import { activationParams, activePlansMatch, PERSONALIZED_ENGINE, personalizedPa
   createPlannerAccessGuard, isPlannerAuthorizationError, normalizeAssessment, plannerPlayerDetailsLink,
   methodologyPriorities, blockTrainingRationale, METHODOLOGY_VERSION, PLANNER_GOALS } from "./personalizedLogic";
 import { DEFAULT_INTAKE } from "./planJobs";
+import { emptyTrainingContext } from "./wholeBodyTraining";
 describe("personalized preview contract", () => {
+  it("rejects the incomplete schedule before constructing a preview job request", () => {
+    const intake = { ...DEFAULT_INTAKE, sessionsPerWeek: 2, trainingContext: emptyTrainingContext() };
+    expect(() => personalizedParams([], {}, 16, intake)).toThrow("Choose 2 training days");
+  });
+  it("rejects duplicate preview weekdays and preserves a complete individual schedule", () => {
+    const context = { ...emptyTrainingContext(), startDate: "2026-11-02", sessionDays: [1, 1], scheduleConfirmed: true, equipmentConfirmed: true };
+    const intake = { ...DEFAULT_INTAKE, sessionsPerWeek: 2, trainingContext: context };
+    expect(() => personalizedParams([], {}, 16, intake)).toThrow("Choose 2 training days");
+    const valid = { ...intake, trainingContext: { ...context, sessionDays: [1, 3] } };
+    expect(personalizedParams([], {}, 16, valid).intake.trainingContext).toEqual(valid.trainingContext);
+    expect(personalizedParams([], {}, 16, DEFAULT_INTAKE).intake).not.toHaveProperty("trainingContext");
+  });
+  it("requires the date and confirmations when a training context is included", () => {
+    const context = { ...emptyTrainingContext(), startDate: "2026-11-02", sessionDays: [0, 3], scheduleConfirmed: true, equipmentConfirmed: true };
+    for (const patch of [{ startDate: "" }, { scheduleConfirmed: false }, { equipmentConfirmed: false }]) {
+      expect(() => personalizedParams([], {}, 16, { ...DEFAULT_INTAKE, sessionsPerWeek: 2, trainingContext: { ...context, ...patch } })).toThrow();
+    }
+    expect(personalizedParams([], {}, 16, { ...DEFAULT_INTAKE, sessionsPerWeek: 2, trainingContext: context }).intake.trainingContext.sessionDays).toEqual([0, 3]);
+  });
   it("uses only recent dated evidence; stale best results cannot dominate", () => {
     const now = Date.now();
     const reps = [
