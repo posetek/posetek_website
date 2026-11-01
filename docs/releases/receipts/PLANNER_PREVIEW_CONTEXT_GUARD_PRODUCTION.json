@@ -1,0 +1,343 @@
+{
+  "schemaVersion": 1,
+  "accepted": true,
+  "status": "published_verified",
+  "checkedAt": "2026-11-01T23:50:43.378579+00:00",
+  "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+  "deploymentId": "6ae7cb8d2a05c4dbbbd9b7e5",
+  "previousDeploymentId": "6ae52d6bd807c91041fc511a",
+  "publishedAt": "2026-11-01T23:42:59.659Z",
+  "authorization": "User explicitly authorized deploying and verifying the planner preview fix.",
+  "promotion": "Exact reviewed immutable candidate promoted without rebuilding.",
+  "sourceIntegration": {
+    "number": 111,
+    "url": "https://github.com/posetek/posetek-website/pull/111",
+    "head": "9337d1b79e22cf02260bd2f0faa18f0406b0dce8",
+    "mergeCommit": "f2871c32014648e3485e14c94e355a278b853440"
+  },
+  "sourceProvenance": {
+    "approvedApplicationBase": "757cf1b946ab4212634fae1f3cbec690969e320d",
+    "guardCommit": "c88293533098869d363d4d0beab6d1343b738014",
+    "assembledRuntime": "698d1b4600834442e191a76ee773ac5d9b704cf2",
+    "qualifiedRuntime": "f4ce1a8bd6b10a967bfb76dd5d98d2689124ae05",
+    "reviewedSource": "9337d1b79e22cf02260bd2f0faa18f0406b0dce8",
+    "qualifiedRuntimeNote": "Four frozen backend dependency qualification files changed after assembly; the static artifact digest remained exact. No backend was deployed."
+  },
+  "artifact": {
+    "files": 2436,
+    "bytes": 178325745,
+    "providerRecords": 2437,
+    "artifactDigest": "b67f64126968a3d07c934f8c7ecc7fadbc4056f34c3a4066e6458910d2ad4de2",
+    "manifestSha256": "f788344cf71271ae4501e182bfb2a80bd2418480a60d5544b89b4d6dcb3146c3",
+    "productionInventorySha256": "2cea7c4e5f49069e2e18ae12a250609489ea86b2dcb7df76698a0b1a554f08a7",
+    "verificationSha256": "02c4e0805dbc1255812598c413c9c962034d2b740ac02246d5b369debb6c75f7",
+    "promotionSha256": "096f583e791bc195ed270452ecb7c33ce173af8ce5afec551e4cb32b10ad6742"
+  },
+  "preservation": {
+    "previousProtectedFiles": 2427,
+    "unchangedProtectedFiles": 2426,
+    "previousServedFiles": 2429,
+    "unchangedServedFiles": 2428,
+    "changedProviderPaths": [
+      "/application.html",
+      "/netlify.toml"
+    ],
+    "addedAssets": 7,
+    "removedFiles": 0,
+    "protectedBaselineFiles": 2434,
+    "preservedLocalPathRecords": 37,
+    "baselineSha256": "07005d2a01f56af33929b012ef855bd9f1ecd18192d7b1c5b9b0dc0e70ec81b6",
+    "sourceBaselineReconciledFrom": "6adc6d7bf370755a2aabc65b",
+    "sourceBaselineNote": "Source main still pinned the October 24 artifact. The fresh current production inventory includes all intervening accepted runtime assets.",
+    "application": {
+      "path": "/application.html",
+      "sha": "51e701f862339a90e2a3fb8166d629edd2da56d1",
+      "size": 16040
+    },
+    "providerMetadata": "Netlify-generated metadata differs between deploys; effective redirects and headers were unchanged.",
+    "marketingAndIsolatedEntries": "Players, Coaches, feedback and coach enrollment retain exact predecessor bytes."
+  },
+  "ordinaryPreservationBuild": {
+    "passed": true,
+    "command": "node scripts/build-production.mjs",
+    "checkOnlyNotPublished": true,
+    "completedAt": "2026-11-01T23:46:27.007785+00:00",
+    "protectedFiles": 2434,
+    "baselineDeploymentId": "6ae7cb8d2a05c4dbbbd9b7e5",
+    "baselineSha256": "07005d2a01f56af33929b012ef855bd9f1ecd18192d7b1c5b9b0dc0e70ec81b6",
+    "logSha256": "fa04e68d9627c3b7d9778e6c1e87d335c079e84cad5b351d5b78321ca3741b17",
+    "sourceTree": "Merged source plus this baseline/receipt update. This check output was not uploaded; the accepted runtime artifact remains intact.",
+    "independentOutputVerification": {
+      "passed": true,
+      "protectedFiles": 2434,
+      "hashAlgorithm": "SHA-1 and exact size per provider baseline"
+    }
+  },
+  "validation": {
+    "sourceCI": {
+      "conclusion": "success",
+      "headSha": "9337d1b79e22cf02260bd2f0faa18f0406b0dce8",
+      "jobs": [
+        {
+          "conclusion": "success",
+          "name": "build",
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "server",
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "unit",
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "policy",
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "dependencies",
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "ci",
+          "status": "completed"
+        }
+      ],
+      "status": "completed",
+      "url": "https://github.com/posetek/posetek-website/actions/runs/41361935394"
+    },
+    "runtimeCI": {
+      "conclusion": "success",
+      "headSha": "f4ce1a8bd6b10a967bfb76dd5d98d2689124ae05",
+      "jobs": [
+        {
+          "conclusion": "success",
+          "name": "server",
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "build",
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "unit",
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "dependencies",
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "policy",
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "ci",
+          "status": "completed"
+        }
+      ],
+      "status": "completed",
+      "url": "https://github.com/posetek/posetek-website/actions/runs/41363036768"
+    },
+    "advisoryReview": {
+      "sourceHead": "9337d1b79e22cf02260bd2f0faa18f0406b0dce8",
+      "runtimeHead": "f4ce1a8bd6b10a967bfb76dd5d98d2689124ae05",
+      "status": "complete",
+      "actionableFindings": 0,
+      "sourceReviewSha256": "4b9bd40c5045fe81af4b12e44cabd7750e3fd2b6f3c490ad9a9a0141417df8b2",
+      "runtimeReviewSha256": "55e1a622cb4ba21c648a73476e9d2d7adc3c38c88b96631f9d4819285d6beb2d"
+    },
+    "sourceFrontendTests": 2203,
+    "runtimeFrontendTests": 2068,
+    "runtimeReleaseGuardTests": 16,
+    "sourceProductionDependencyFindings": 0,
+    "staticFirestoreTransport": {
+      "generatedSourceHtmlAndJsFiles": 120,
+      "fixtureTests": 2,
+      "scope": "Static browser output and Node initialization smoke; not server mTLS qualification."
+    },
+    "frozenRuntimeDependencyQualification": {
+      "serverPassed": 1256,
+      "serverSkipped": 3,
+      "legacyPassed": 13,
+      "artifactChecksPassed": 5,
+      "functionsAdvisoryPaths": 24,
+      "legacyAdvisoryPaths": 32,
+      "blockingPaths": 0,
+      "note": "Lower-severity paths remain. Lockfile qualification does not restore website backend ownership or deploy functions."
+    },
+    "productionRouteChecks": 14,
+    "productionRoutes": [
+      {
+        "route": "/",
+        "status": 200,
+        "sha256": "4ef9217f61564b6420e4c0e50a543be5d03b0e8cb3638cf2a0213993e9203c89",
+        "preserved": true
+      },
+      {
+        "route": "/coaches",
+        "status": 200,
+        "sha256": "4ca25e3fb0c1ee9d3c514d44a93d2bdf0f37c2b158fe4310ffd09bd83cd33830",
+        "preserved": true
+      },
+      {
+        "route": "/coaches/",
+        "status": 200,
+        "sha256": "4ca25e3fb0c1ee9d3c514d44a93d2bdf0f37c2b158fe4310ffd09bd83cd33830",
+        "preserved": true
+      },
+      {
+        "route": "/feedback",
+        "status": 200,
+        "sha256": "94cc8aa828223bd26c441e2aff478013721f6c92010c43ac660288dbe503af89",
+        "preserved": true
+      },
+      {
+        "route": "/feedback/",
+        "status": 200,
+        "sha256": "94cc8aa828223bd26c441e2aff478013721f6c92010c43ac660288dbe503af89",
+        "preserved": true
+      },
+      {
+        "route": "/coach-join",
+        "status": 200,
+        "sha256": "c9ecb571e935db674e3462058b9b207144e5b5717ae584688492ab09ffcd27cb",
+        "preserved": true
+      },
+      {
+        "route": "/coach-join/",
+        "status": 200,
+        "sha256": "c9ecb571e935db674e3462058b9b207144e5b5717ae584688492ab09ffcd27cb",
+        "preserved": true
+      },
+      {
+        "route": "/admin/accounts",
+        "status": 200,
+        "sha256": "2557f2278f53f664c093ab12de2f49ae88fec910dc6ae2f161b72310afbd6344"
+      },
+      {
+        "route": "/admin/access",
+        "status": 200,
+        "sha256": "2557f2278f53f664c093ab12de2f49ae88fec910dc6ae2f161b72310afbd6344"
+      },
+      {
+        "route": "/admin/rep-tools",
+        "status": 200,
+        "sha256": "2557f2278f53f664c093ab12de2f49ae88fec910dc6ae2f161b72310afbd6344"
+      },
+      {
+        "route": "/insights",
+        "status": 200,
+        "sha256": "2557f2278f53f664c093ab12de2f49ae88fec910dc6ae2f161b72310afbd6344"
+      },
+      {
+        "route": "/signin",
+        "status": 200,
+        "sha256": "2557f2278f53f664c093ab12de2f49ae88fec910dc6ae2f161b72310afbd6344"
+      },
+      {
+        "route": "/kickai.html",
+        "status": 200,
+        "sha256": "2557f2278f53f664c093ab12de2f49ae88fec910dc6ae2f161b72310afbd6344"
+      },
+      {
+        "route": "/privacy",
+        "status": 200,
+        "sha256": "2557f2278f53f664c093ab12de2f49ae88fec910dc6ae2f161b72310afbd6344"
+      }
+    ],
+    "candidateBrowser": {
+      "checkedAt": "2026-11-01T23:42:53.725598+00:00",
+      "surface": "Safari, supported computer-use controls, normal signed-in admin session",
+      "checks": {
+        "signedOutAdminGuard": true,
+        "normalAdminSignIn": true,
+        "missingContextDisablesPreview": true,
+        "missingContextGuidanceVisible": true,
+        "noJobBeforeValidSubmit": true,
+        "completeContextEnablesPreview": true,
+        "SundayZeroRetained": true,
+        "validAssessmentCompletesAndDisplays": true,
+        "removingWeekdayDisablesPreviewAgain": true
+      },
+      "receiptSha256": "2f677824397e2aa16a2af684afcdc879e8e47d9a629ad97491cf20ed8e89e86f"
+    },
+    "productionBrowser": {
+      "checkedAt": "2026-11-01T23:46:20.014386+00:00",
+      "surface": "Safari, supported computer-use controls, normal signed-in admin session",
+      "checks": {
+        "missingScheduleDisabledPreviewWithGuidance": true,
+        "validScheduleEnabledPreview": true,
+        "validAssessmentSubmitted": true,
+        "freshAssessmentCompleteAndRendered": true,
+        "sameSundayZeroPayload": true
+      },
+      "receiptSha256": "52a4bcb45a5c55fd31b79faca8ac24e9b1d7f915bbe02480d5b483594e30de64"
+    },
+    "acceptanceScope": "One owned synthetic player; two completed preview assessments across candidate and production. No plan was generated or activated.",
+    "physicalPhoneTested": false,
+    "exactRealPlayerRetryClaimed": false,
+    "receiptReleaseGuardTests": {
+      "command": "node --test scripts/production-baseline.test.mjs scripts/application-release.test.mjs",
+      "passed": 27,
+      "failed": 0,
+      "skipped": 0,
+      "logSha256": "318a08acdc12710df019abde2bed0cc8355462195fba261a694d3bd80dba3560"
+    }
+  },
+  "syntheticCleanup": {
+    "status": "complete",
+    "checkedAt": "2026-11-01T23:50:07.212146+00:00",
+    "primaryCleanupAt": "2026-11-01T23:49:26.317926+00:00",
+    "knownPathsChecked": 9,
+    "remainingDocuments": 0,
+    "remainingDescendants": 0,
+    "ownedLinkedQueryMatches": 0,
+    "independentReadOnlyVerification": true,
+    "readbackDelaySeconds": 34.984285,
+    "authAccountsCreated": 0,
+    "realProfilesChanged": 0,
+    "assessmentJobsCompletedAndRemoved": 2,
+    "sharedQuotaCounters": "Untouched; ordinary expiry retained.",
+    "storageObjects": "No storage artifact references in assessment results; no workout generated.",
+    "cleanupReceiptSha256": "476e3984d9a681b89570a97301a7fa8518711fa621d30e5d73a8dd93398fb895",
+    "independentReadbackReceiptSha256": "bc871a9d7bb24ad3c341e66bbb275481be485122627b6e8ba0522e9e103dc2de",
+    "note": "A late assessment projection appeared after the first cleanup. After closing the fixture UI, repeated cleanup and delayed independent readback found zero residue."
+  },
+  "hostingAutomation": {
+    "branch": "main",
+    "stopBuilds": false,
+    "allowedBranches": [
+      "main"
+    ]
+  },
+  "boundaries": {
+    "backendReleased": false,
+    "rulesPublished": false,
+    "indexesPublished": false,
+    "gatewayReleased": false,
+    "catalogPublished": false,
+    "nativeReleased": false,
+    "realAthleteRecordsChanged": false,
+    "authAccountsCreated": 0,
+    "realTrainingPlansChanged": false,
+    "heldSource": "Policy, session and Ball Striking candidates remain excluded. Runtime branch must not merge into main.",
+    "acceptanceLimit": "This release blocks incomplete planner preview contexts and verifies a completed synthetic web assessment. It does not claim every workout-generation failure is solved or a real athlete has retried successfully."
+  },
+  "recovery": {
+    "verifiedPredecessor": "6ae52d6bd807c91041fc511a",
+    "executed": false,
+    "instruction": "Prepare and verify a correction against the current serving inventory. Preserve unrelated accepted surfaces and retained historical assets; do not republish all of source main or infer a data reversal from website recovery."
+  }
+}

@@ -1,8 +1,27 @@
 # PoseTek website
 
-## Current web AI-sharing recovery release — October 24, 2026
+## Current planner preview context guard release — November 1, 2026
 
-Exact reviewed deployment `6adc6d7bf370755a2aabc65b` is live. Players can review
+Exact deployment `6ae7cb8d2a05c4dbbbd9b7e5` is live. **Preview priorities** now
+requires the same completed training context as generation, with visible guidance
+when schedule or equipment confirmation is missing. Candidate and production
+signed-in synthetic assessments completed; no real player profile or plan changed.
+
+All 2,436 artifact files match 2,437 provider records. The reconciled baseline
+protects 2,434 files and passes the ordinary preservation build. Only the existing
+application entry changed; seven runtime assets were added. Marketing, feedback,
+coach enrollment and prior accepted results remain preserved. Read [the release
+handoff](docs/releases/PLANNER_PREVIEW_CONTEXT_GUARD.md) and [production receipt](docs/releases/receipts/PLANNER_PREVIEW_CONTEXT_GUARD_PRODUCTION.json) for exact scope and limits.
+
+Runtime `f4ce1a8` extends approved `757cf1b`; it is separate from source main.
+Held policy, session and Ball Striking candidates remain excluded. Keep
+`[skip netlify]` on source/receipt integration. No backend, rules, indexes,
+gateway, catalog or native release is included. Earlier sections are historical.
+
+## Preserved web AI-sharing recovery release — October 24, 2026
+
+Exact reviewed deployment `6adc6d7bf370755a2aabc65b` was published October 24.
+Its preserved behavior lets players review
 AI sharing from Coach, personal Workouts and their own Profile, explicitly allow
 or decline, and retry a blocked AI request after allowing sharing. Opening the
 control never saves consent or starts generation. No real account choice was
