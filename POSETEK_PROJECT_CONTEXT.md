@@ -1,5 +1,12 @@
 # PoseTek website project context
 
+## Planner preview context guard source candidate
+
+Personalized priority previews now require the same completed training context
+as generation when whole-body preview is enabled. A shared request guard prevents
+empty schedule payloads from reaching the gateway. This is not a release; see
+[the handoff](docs/features/PLANNER_PREVIEW_CONTEXT_GUARD.md) for scope and limits.
+
 ## Shared AI chat transport source candidate
 
 The player workspace and staff athlete portal now share the existing SSE

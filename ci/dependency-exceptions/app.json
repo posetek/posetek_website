@@ -1,30 +1,4 @@
 {
   "schema": 1,
-  "exceptions": [
-    {
-      "advisory": "https://github.com/advisories/GHSA-m9gg-hp2v-232j",
-      "path": [
-        "firebase",
-        "@firebase/firestore",
-        "@grpc/grpc-js"
-      ],
-      "severity": "high",
-      "owner": "taiyyoson",
-      "reason": "Requalified 2026-10-24 through 2026-10-31 for the AI-sharing recovery candidate: fresh app audit retains only the two existing high-severity paths for this advisory. Package manifest, lockfile and Astro configuration are unchanged by the fix. The approved-runtime candidate passed the static Firestore transport check across 119 HTML/JS files: no server adapter or grpc-js browser transport. The primary advisory concerns server getAuthContext certificate authorization when requireClientCertificate is false; this affected API is absent from the static client bundle. Reassess on SSR, adapter, bundle, SDK or credential-path changes. See docs/releases/WEB_AI_SHARING_RECOVERY.md. No dependency override or audit-policy change.",
-      "expires": "2026-10-31"
-    },
-    {
-      "advisory": "https://github.com/advisories/GHSA-m9gg-hp2v-232j",
-      "path": [
-        "firebase",
-        "@firebase/firestore-compat",
-        "@firebase/firestore",
-        "@grpc/grpc-js"
-      ],
-      "severity": "high",
-      "owner": "taiyyoson",
-      "reason": "Requalified 2026-10-24 through 2026-10-31 for the AI-sharing recovery candidate: fresh app audit retains only the two existing high-severity paths for this advisory. Package manifest, lockfile and Astro configuration are unchanged by the fix. The approved-runtime candidate passed the static Firestore transport check across 119 HTML/JS files: no server adapter or grpc-js browser transport. The primary advisory concerns server getAuthContext certificate authorization when requireClientCertificate is false; this affected API is absent from the static client bundle. Reassess on SSR, adapter, bundle, SDK or credential-path changes. See docs/releases/WEB_AI_SHARING_RECOVERY.md. No dependency override or audit-policy change.",
-      "expires": "2026-10-31"
-    }
-  ]
+  "exceptions": []
 }
