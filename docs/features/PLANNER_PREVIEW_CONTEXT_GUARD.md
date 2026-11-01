@@ -1,6 +1,8 @@
 # Planner preview context guard
 
-Source candidate, November 1, 2026. Not published.
+Published and verified November 1, 2026. See the
+[release handoff](../releases/PLANNER_PREVIEW_CONTEXT_GUARD.md) and
+[production receipt](../releases/receipts/PLANNER_PREVIEW_CONTEXT_GUARD_PRODUCTION.json).
 
 When whole-body preview is enabled, **Preview priorities** previously submitted
 an empty training context before the player had chosen training days or a start
@@ -17,8 +19,8 @@ change server eligibility, or generate a plan automatically.
 
 Regression tests reproduce empty and duplicate weekday payloads, check missing
 dates and confirmations, and preserve complete and context-free requests.
-Focused tests, lint and TypeScript checks are local source evidence. Browser
-interaction, production artifact verification and deployed acceptance remain
-required before calling this fixed for a player. Release must use the current
-approved runtime and ordinary website artifact process; do not promote all of
-main or any held features with this change.
+Source and runtime CI, exact artifact verification, and signed-in synthetic
+preview assessments passed on both the candidate and production. This does not
+claim a real player has retried or that unrelated generation failures are fixed.
+Future releases must use the approved runtime and ordinary website artifact
+process; do not promote all of main or any held features with this change.
