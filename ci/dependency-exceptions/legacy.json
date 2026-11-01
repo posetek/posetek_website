@@ -1,16 +1,4 @@
 {
   "schema": 1,
-  "exceptions": [
-    {
-      "advisory": "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
-      "path": [
-        "firebase-admin",
-        "node-forge"
-      ],
-      "severity": "high",
-      "owner": "taiyyoson",
-      "reason": "Requalified 2026-10-15 under the user-authorized migration review through 2026-10-22: inspected locked firebase-admin 12.7.0 and 13.3.0; their only node-forge call parses the configured service-account private key (pki.privateKeyFromPem). The affected RSA signature verification API is not called in this SDK path. Advisory still has no patched version. Reassess on any SDK or credential-path change; see migration/REVIEW.md. No dependency or policy threshold change.",
-      "expires": "2026-10-22"
-    }
-  ]
+  "exceptions": []
 }
