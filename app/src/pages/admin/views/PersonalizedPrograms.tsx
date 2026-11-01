@@ -197,6 +197,8 @@ function Planner({ role = "admin", playerId = "", initialText = "", onActivated,
   const draftPriorities = methodologyPriorities(draft?.plan?.assessment);
   const ongoing = jobs.filter(j => !terminal(j.status));
   const inFlight = (playerId: string) => ongoing.some(j => j.playerId === playerId);
+  const focusedContextIssues = config?.wholeBodyTraining?.previewEnabled === true
+    ? trainingContextIssues(trainingContexts[focused] ?? emptyTrainingContext(), intake.sessionsPerWeek) : [];
   const canGenerate = accessReady && previewEnabled(config) && !limited && !busy && !loading && !intake.painFlag && selected.size > 0
     && freeTextGoals.trim().length <= contextLimit && [...selected].every(id => evidence[id] && !inFlight(id)
       && (config?.wholeBodyTraining?.previewEnabled !== true || trainingContextIssues(trainingContexts[id] ?? emptyTrainingContext(), intake.sessionsPerWeek).length === 0));
@@ -245,6 +247,7 @@ function Planner({ role = "admin", playerId = "", initialText = "", onActivated,
   async function assess() {
     const token = access.capture();
     if (!canOperate(token) || !previewEnabled(config, "assess_personalized_plan") || intake.painFlag || !athlete || !evidence[focused] || submitting.current || busy || inFlight(focused)) return;
+    if (focusedContextIssues.length) { setMessage(focusedContextIssues.join(" ")); return; }
     submitting.current = true;
     setBusy(true); setMessage("");
     try {
@@ -302,7 +305,8 @@ function Planner({ role = "admin", playerId = "", initialText = "", onActivated,
         {useEstimates && focusedEstimates.map(entry => <ProvisionalEstimateNote key={entry.id} estimate={entry} planning />)}
         {athlete && role === "admin" && <TrainingReadinessPanel key={athlete.id} playerId={athlete.id} playerName={athlete.name} />}
         {athlete && <div className="personalized-preflight"><h3>Proposed priorities · {athlete.name}</h3>
-          <button type="button" className="quiet-button" disabled={!accessReady || !evidence[focused] || busy || inFlight(focused) || intake.painFlag || !previewEnabled(config,"assess_personalized_plan")} onClick={() => void assess()}>Preview priorities</button>
+          <button type="button" className="quiet-button" disabled={!accessReady || !evidence[focused] || busy || inFlight(focused) || intake.painFlag || focusedContextIssues.length > 0 || !previewEnabled(config,"assess_personalized_plan")} aria-describedby={focusedContextIssues.length ? "planner-preview-context-help" : undefined} onClick={() => void assess()}>Preview priorities</button>
+          {focusedContextIssues.length > 0 && <p id="planner-preview-context-help" className="personalized-meta">Complete the training schedule and equipment confirmation below to preview priorities.</p>}
           {assessment && <><p className="personalized-meta">{millis(assessment.assessedAt) > 0 ? `Assessment from ${new Date(millis(assessment.assessedAt)).toLocaleString()}` : "Historical assessment date unavailable"} · {assessment.schedule ? `${assessment.schedule.sessionsPerWeek} × ${assessment.schedule.minutesPerSession} minutes/week · ${label(assessment.schedule.setting)}` : "Historical training schedule unavailable"}. Generation recalculates these priorities from current inputs.</p>
             <p>{assessment.evidenceReason}</p><PriorityCards priorities={assessment.priorities} />
             {!assessment.priorities.length && <><ul>{assessment.findings.map((f:any,i:number)=><li key={i}><strong>{label(f.domain)} · {f.confidence} confidence</strong><p>{f.statement}</p><small>{f.targetBeforePct}% baseline → {f.targetFinalPct}% final target. {f.limitation}</small></li>)}</ul>

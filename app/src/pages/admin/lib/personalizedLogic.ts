@@ -4,6 +4,7 @@ import type { PlanIntakeForm } from "./planJobs";
 import { accountContext, accountPlayerPath, accountQuery } from "./accountHierarchy";
 import { activeProvisionalEstimates, type ProvisionalEstimate } from '../../../lib/provisional-estimates';
 import { coachPlannerReturn, coachWorkspacePath } from '../../../lib/coach-navigation';
+import { trainingContextIssues } from "./wholeBodyTraining";
 
 export const PERSONALIZED_ENGINE = "personalized-v1";
 export const PERSONALIZED_CAPABILITIES = ["generate_personalized_plan", "activate_personalized_plan", "discard_personalized_plan", "assess_personalized_plan"] as const;
@@ -18,6 +19,10 @@ export function recentEvidence(reps: any[], now = Date.now()) {
       newestAt: new Date(Math.max(...recent.map(r => r.createdAtMillis))).toISOString() } : undefined };
 }
 export function personalizedParams(reps: any[], player: any, age: number | null, intake: PlanIntakeForm, goals: string[] = [], freeTextGoals = "", provisionalEstimates: ProvisionalEstimate[] = [], estimateReps: any[] = reps, useProvisionalEstimates?: boolean): Record<string, any> {
+  if (intake.trainingContext) {
+    const issues = trainingContextIssues(intake.trainingContext, intake.sessionsPerWeek);
+    if (issues.length) throw new Error(issues.join(" "));
+  }
   const evidence = recentEvidence(reps);
   const params = planV3JobParams(evidence.reps, player, age, intake);
   const estimates = activeProvisionalEstimates(provisionalEstimates, recentEvidence(estimateReps).reps);
